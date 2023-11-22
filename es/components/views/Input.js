@@ -17,6 +17,7 @@ export default class Input extends HTMLElement {
           height: 3em;
           font-size: max(16px, 1em); /* 16px ios mobile focus zoom fix */
           transition: height 0.3s ease-out;
+          resize: none;
         }
         :host > textarea:focus {
           height: max(25dvh, 6em);
