@@ -27,6 +27,9 @@ export default class Input extends HTMLElement {
           flex-grow: 1;
           min-height: 100%;
           word-break: break-all;
+          background-color: lightblue;
+          border-radius: 25px;
+          padding: 0.5em 2em;
         }
         :host > button#peer-web-site {
           flex-grow: 2;
