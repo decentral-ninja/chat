@@ -46,7 +46,7 @@ export default class Input extends HTMLElement {
       }))
     }
     this.clickEventListener = event => {
-      if (event.key === 'Enter' && event.shiftKey === false) return this.sendEventListener(undefined, this.shadowRoot.querySelector('textarea'))
+      if (!this.isTouchScreen && event.key === 'Enter' && event.shiftKey === false) return this.sendEventListener(undefined, this.shadowRoot.querySelector('textarea'))
       if (event.key === 'Escape') return this.shadowRoot.querySelector('textarea').blur()
       switch (event.composedPath()[0].getAttribute('id')) {
         case 'peer-web-site':
@@ -84,5 +84,9 @@ export default class Input extends HTMLElement {
     this.shadowRoot.removeEventListener('click', this.clickEventListener)
     this.shadowRoot.removeEventListener('keyup', this.clickEventListener)
     this.shadowRoot.querySelector('textarea').removeEventListener('focus', this.focusEventListener)
+  }
+
+  isTouchScreen () {
+    return ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (navigator.msMaxTouchPoints > 0)
   }
 }
