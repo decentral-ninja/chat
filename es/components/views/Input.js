@@ -46,7 +46,11 @@ export default class Input extends HTMLElement {
       }))
     }
     this.clickEventListener = event => {
-      if (!this.isTouchScreen && event.key === 'Enter' && event.shiftKey === false) return this.sendEventListener(undefined, this.shadowRoot.querySelector('textarea'))
+      if (!this.isTouchScreen() && event.key === 'Enter' && event.shiftKey === false) {
+        const textarea = this.shadowRoot.querySelector('textarea')
+        textarea.value = textarea.value.substring(0, textarea.value.length - 1) // cut the last character of enter = \n off
+        return this.sendEventListener(undefined, this.shadowRoot.querySelector('textarea'))
+      }
       if (event.key === 'Escape') return this.shadowRoot.querySelector('textarea').blur()
       switch (event.composedPath()[0].getAttribute('id')) {
         case 'peer-web-site':
