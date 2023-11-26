@@ -127,7 +127,7 @@ export default class Input extends Shadow() {
     this.html = /* html */`
       <textarea placeholder="type your message..."></textarea>
       <button id=send>send</button>
-      <button id=peer-web-site>&#10000; attach media</button>
+      <button id=peer-web-site>&#10000; attach</button>
     `
   }
 
