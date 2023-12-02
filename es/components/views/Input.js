@@ -34,6 +34,31 @@ export default class Input extends HTMLElement {
         :host > button#peer-web-site {
           flex-grow: 2;
         }
+
+
+
+        /* width */
+        ::-webkit-scrollbar {
+          width: 10px;
+        }
+        
+        /* Track */
+        ::-webkit-scrollbar-track {
+          background: #f1f1f1; 
+        }
+         
+        /* Handle */
+        ::-webkit-scrollbar-thumb {
+          background: #888; 
+        }
+        
+        /* Handle on hover */
+        ::-webkit-scrollbar-thumb:hover {
+          background: #555; 
+        }
+
+        
+
       </style>
       <textarea placeholder="type your message..."></textarea>
       <button id=send>send</button>
