@@ -79,7 +79,7 @@ export default class EmojiButton extends Shadow() {
     this.html = '';
     // Emoji picker logic can be added here
     this.html = /* html */`
-      <button>&#128515;</button> <!-- Unicode for smiling face emoji -->
+      <button id='emojiPickerToggler'>&#128515;</button> <!-- Unicode for smiling face emoji -->
       <emoji-picker></emoji-picker>
     `;
     return this.fetchModules([
