@@ -8,6 +8,9 @@ export default class Input extends Shadow() {
   constructor(options = {}, ...args) {
     super({ importMetaUrl: import.meta.url, ...options }, ...args);
 
+    /*TODO: change maxHeight logic to em or rem */
+    this.maxHeight = 200;
+
     this.sendEventListener = (event, input) => {
       this.dispatchEvent(new CustomEvent('yjs-input', {
         detail: {
@@ -32,11 +35,23 @@ export default class Input extends Shadow() {
       }
     }
 
+    this.keyupEventListener = event => {
+      this.resizeTextarea();
+    };
+
     this.focusEventListener = event => setTimeout(() => this.dispatchEvent(new CustomEvent('main-scroll', {
       bubbles: true,
       cancelable: true,
       composed: true
     })), 300)
+
+
+     /*Put cursor into input on click of chat area*/
+     this.windowClickEventListener = event => {     
+        const target = event.composedPath()[0]
+        
+        if (target.classList.contains('pattern') || target.nodeName === 'YJS-CHAT-UPDATE') this.textarea.focus();
+    }
 
     this.emojiClickedEventListener = event => (this.textarea.value += event.detail?.clickedEmoji || '')
   }
@@ -46,8 +61,13 @@ export default class Input extends Shadow() {
     if (this.shouldRenderHTML()) this.renderHTML()
     this.root.addEventListener('click', this.clickEventListener)
     this.root.addEventListener('keyup', this.clickEventListener)
+    this.root.addEventListener('keyup', this.keyupEventListener)
     this.textarea.addEventListener('focus', this.focusEventListener)
     this.addEventListener('emoji-clicked', this.emojiClickedEventListener)
+    self.addEventListener('click', this.windowClickEventListener);
+
+
+
     this.connectedCallbackOnce()
   }
 
@@ -62,9 +82,13 @@ export default class Input extends Shadow() {
 
   disconnectedCallback () {
     this.root.removeEventListener('click', this.clickEventListener)
+    this.root.removeEventListener('keyup', this.keyupEventListener)
     this.root.removeEventListener('keyup', this.clickEventListener)
+    
     this.textarea.removeEventListener('focus', this.focusEventListener)
     this.removeEventListener('emoji-clicked', this.emojiClickedEventListener)
+    self.removeEventListener('click', this.windowClickEventListener)
+
   }
 
   /**
@@ -97,23 +121,25 @@ export default class Input extends Shadow() {
       }
       :host > textarea {
         flex-grow: 15;
-        height: 3em;
+        height: auto;
         font-size: max(16px, 1em); /* 16px ios mobile focus zoom fix */
         transition: height 0.3s ease-out;
         resize: none;
         padding-left: 2em;
+
+        max-height: ${this.maxHeight}px;
+        overflow-y: auto; 
       }
-      :host > textarea:focus {
+      /*:host > textarea:focus {
         height: max(25dvh, 6em);
-      }
+      }*/
       :host > button {
         cursor: pointer;
         flex-grow: 1;
         min-height: 100%;
         word-break: break-all;
-        background-color: lightblue;
-        border-radius: 25px;
-        padding: 0.5em 2em;
+        
+        padding: 0.1em 1em;
       }
       :host > button#peer-web-site {
         flex-grow: 2;
@@ -144,11 +170,11 @@ export default class Input extends Shadow() {
   */
   renderHTML () {
     this.html = /* html */`
-        <button id=peer-web-site>&#43; attach media</button>
+        <!--<button disabled id=peer-web-site>&#43; attach media</button>-->
         <emoji-button></emoji-button>
         <textarea placeholder="type your message..." id="userInputTextArea"></textarea>
         <button id=send>send</button>
-        <button id=voiceRecord>&#9210; record</button>
+        <!--<button disabled id=voiceRecord>&#9210; record</button>-->
       `
     return this.fetchModules([
       {
@@ -160,5 +186,10 @@ export default class Input extends Shadow() {
 
   get textarea () {
     return this.root.querySelector('textarea')
+  }
+
+  resizeTextarea() {
+    this.textarea.style.height = 'auto'; // Reset height to auto to calculate scrollHeight
+    this.textarea.style.height = Math.min(this.textarea.scrollHeight, this.maxHeight) + 'px';
   }
 }
