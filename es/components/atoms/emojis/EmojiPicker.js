@@ -20,24 +20,12 @@ export default class EmojiPicker extends Shadow() {
   constructor(options = {}, ...args) {
     super({ importMetaUrl: import.meta.url, ...options }, ...args);
 
-    /*this.emojiCategories = [
-      { id: 'smileys', icon: '😀', emojis: ['😀', '😃', '😄', '😁', '😆', '😅', '😂', '🤣', '😊', '😇', '😍', '🥰', '😎', '🤩', '😘', '😗', '😚', '😙', '🤗', '🤔', '🤨', '😐', '😑', '😶', '🙄', '😏', '😣', '😥', '😮', '🤐', '😯', '😪', '😫', '😴', '😌', '😛', '😜', '😝', '🤤', '😒', '😓', '😔', '😕', '🙃', '🤑', '😲', '🙁', '😖', '😞', '😟', '😤', '😢', '😭', '😦', '😧', '😨', '😩', '😰', '😱', '😳', '😵', '😡', '😠', '🤬', '😷', '🤒', '🤕', '🤢', '🤮', '🥴', '🤧', '😇', '🥳', '🥺', '🤠', '🤡', '🤥', '🤫', '🤭', '🧐', '🤓', '😈', '👿', '👹', '👺', '💀', '👻', '👽', '👾', '🤖', '😺', '😸', '😹', '😻', '😼', '😽', '🙀', '😿', '😾'] },
-      { id: 'celebrations', icon: '🎉', emojis: ['🎉', '🎊', '🥳', '🎈', '🎂', '🍰', '🍾', '🎁', '🎆', '🎇'] },
-  { id: 'animals', icon: '🐶', emojis: ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯'] },
-  { id: 'food', icon: '🍔', emojis: ['🍔', '🍕', '🍎', '🍓', '🍦', '🍟', '🍩', '🍪', '🍰', '🥗'] },
-  { id: 'travel', icon: '🚗', emojis: ['🚗', '✈️', '🚀', '🚢', '🚲', '🛴', '🛵', '🚁', '🚆', '🚂'] },
-  { id: 'weather', icon: '☀️', emojis: ['☀️', '🌧️', '❄️', '⛅', '🌈', '🌪️', '🌊', '🌦️', '🌞', '🌧️'] },
-  { id: 'flags', icon: '🏳️', emojis: ['🏳️', '🇺🇸', '🇬🇧', '🇯🇵', '🇫🇷', '🇩🇪', '🇨🇳', '🇷🇺', '🇮🇳', '🇧🇷'] },
-  { id: 'sports', icon: '⚽', emojis: ['⚽', '🏀', '🏈', '⚾', '🎾', '🏓', '🏐', '🎱', '🏒', '🏸'] },
-  { id: 'music', icon: '🎵', emojis: ['🎵', '🎸', '🎹', '🥁', '🎷', '🎺', '🎻', '🎶', '🎧', '🎤'] },
-      // Add more categories as needed
-    ];*/
-
-/* REDFINE RANGES https://symbl.cc/en/unicode/blocks/miscellaneous-symbols-and-pictographs/ */
+/* REDFINE RANGES & ADD MORE EMOJIS https://symbl.cc/en/unicode/blocks/emoticons/ */
 
 
 this.emojiCategories = [
-  { id: 'emojis', icon: '😀', ranges: [{ start: 0x1F600, end: 0x1F64F }], list:[0x1F47A, 0x1F479, 0x1F921, 0x1F916, 0xF4A9, 0x1F47D, 0x1F47B] },
+  { id: 'emojis', icon: '😀', ranges: [{ start: 0x1F600, end: 0x1F64F }], list:[0x1F47A, 0x1F479, 0x1F921, 0x1F916, 0xF4A9,
+     0x1F47D, 0x1F47B] },
   { id: 'animals', icon: '🐰', ranges: [],
   list: [
     0x1F436, 0x1F43A, 0x1F431, 0x1F42D, 0x1F439,
@@ -58,7 +46,15 @@ this.emojiCategories = [
   { id: 'activities', icon: '⚽', ranges: [{start: 0x1FA80, end: 0x1FA86 }], list: [0x126F3,] },
   { id: 'travel', icon: '🚗', ranges: [{ start: 0x1F680, end: 0x1F6FF }] },
   { id: 'objects', icon: '🛋️', ranges: [{ start: 0x1F6C0, end: 0x1F6CF }] },
-  { id: 'symbols', icon: '💡', ranges: [{ start: 0x1F680, end: 0x1F6FF }] },
+  { id: 'symbols', icon: 'symb', ranges: [{ start: 0x1F680, end: 0x1F6FF }], list:[ 0x1F49F, 0x1F4AD, 0x1F49E, 0x1F48C, 0x1F4A2,
+    0x1F493, 0x1F4A3, 0x1F4AF, 0x1F495, 0x1F48B,
+    0x1F4A8, 0x1F4A6, 0x1F4AB, 0x1F497, 0x1F494,
+    0x1F498, 0x1F49A, 0x1F499, 0x1F49C, 0x1F49B,
+    0x1F4A5, 0x1F496, 0x1F4AC, 0x1F4A3, 0x1F4A4,
+    0x1F49D, 0x1F4DF, 0x1F473, 0x1F4E8, 0x1F4A4,
+    0x1F0CF, 0x1F0E8, 0x1F1A4, 0x1F1E4, 0x1F3A4,
+    0x1F3A1, 0x1F0EE, 0x1F0ED, 0x1F004, 0x2764,
+    0x2763] },
   { id: 'flags', icon: '🏳️', ranges: [{ start: 0x1F1E6, end: 0x1F1FF }] }
 ];
     
