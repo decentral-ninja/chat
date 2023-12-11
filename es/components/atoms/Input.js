@@ -21,7 +21,11 @@ export default class Input extends Shadow() {
     }
 
     this.clickEventListener = event => {
-      if (event.key === 'Enter' && event.shiftKey === false) return this.sendEventListener(undefined, this.textarea)
+      if (!this.isTouchScreen() && event.key === 'Enter' && event.shiftKey === false) {
+        const textarea = this.root.querySelector('textarea')
+        textarea.value = textarea.value.substring(0, textarea.value.length - 1) // cut the last character of enter = \n off
+        return this.sendEventListener(undefined, this.root.querySelector('textarea'))
+      }
       if (event.key === 'Escape') return this.textarea.blur()
       switch (event.composedPath()[0].getAttribute('id')) {
         case 'peer-web-site':
