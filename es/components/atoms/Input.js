@@ -7,8 +7,7 @@ export default class Input extends Shadow() {
   constructor (options = {}, ...args) {
     super({ importMetaUrl: import.meta.url, ...options }, ...args)
 
-    this.maxHeight = 200
-
+ 
     this.sendEventListener = (event, input) => {
       this.dispatchEvent(new CustomEvent('yjs-input', {
         detail: {
@@ -20,7 +19,16 @@ export default class Input extends Shadow() {
       }))
     }
 
-    this.clickEventListener = event => {
+
+    this.inputEventListener = event => {
+      this.textarea.style.height = 'auto';
+    
+      // Assuming 1em is equal to the font-size of the textarea
+      const emValue = this.textarea.scrollHeight / parseFloat(getComputedStyle(this.textarea).fontSize);
+      this.textarea.style.height = emValue  + 'em';
+    };
+
+    this.keyupEventListener = event => {
       if (!this.isTouchScreen() && event.key === 'Enter' && event.shiftKey === false) {
         const textarea = this.root.querySelector('textarea')
         textarea.value = textarea.value.substring(0, textarea.value.length - 1) // cut the last character of enter = \n off
@@ -36,10 +44,6 @@ export default class Input extends Shadow() {
           this.resizeTextarea(true)
           break
       }
-    }
-
-    this.keyupEventListener = event => {
-      this.resizeTextarea()
     }
 
     this.focusEventListener = event => setTimeout(() => this.dispatchEvent(new CustomEvent('main-scroll', {
@@ -60,13 +64,12 @@ export default class Input extends Shadow() {
   connectedCallback () {
     if (this.shouldRenderCSS()) this.renderCSS()
     if (this.shouldRenderHTML()) this.renderHTML()
-    this.root.addEventListener('click', this.clickEventListener)
-    this.root.addEventListener('keyup', this.clickEventListener)
+    this.root.addEventListener('click', this.keyupEventListener)
     this.root.addEventListener('keyup', this.keyupEventListener)
     this.textarea.addEventListener('focus', this.focusEventListener)
-    this.addEventListener('emoji-clicked', this.emojiClickedEventListener)
+    this.textarea.addEventListener('input', this.inputEventListener)
+    this.addEventListener('emoji-clicked', this.emojiClickedEventListener)    
     self.addEventListener('click', this.windowClickEventListener)
-
     this.connectedCallbackOnce()
   }
 
@@ -80,10 +83,10 @@ export default class Input extends Shadow() {
   }
 
   disconnectedCallback () {
-    this.root.removeEventListener('click', this.clickEventListener)
-    this.root.removeEventListener('keyup', this.clickEventListener)
+    this.root.removeEventListener('click', this.keyupEventListener)
     this.root.removeEventListener('keyup', this.keyupEventListener)
     this.textarea.removeEventListener('focus', this.focusEventListener)
+    this.textarea.removeEventListener('input', this.inputEventListener)
     this.removeEventListener('emoji-clicked', this.emojiClickedEventListener)
     self.removeEventListener('click', this.windowClickEventListener)
   }
@@ -117,18 +120,16 @@ export default class Input extends Shadow() {
         display: flex;
       }
       :host > textarea {
-        flex-grow: 15;
-        height: auto;
+        flex-grow: 15;        
         font-size: max(16px, 1em); /* 16px ios mobile focus zoom fix */
         transition: height 0.3s ease-out;
         resize: none;
         padding-left: 2em;
-        max-height: ${this.maxHeight}px;
+        min-height: auto;
+        max-height: 10em;
         overflow-y: auto; 
-      }
-      /*:host > textarea:focus {
-        height: max(25dvh, 6em);
-      }*/
+
+      }     
       :host > button {
         cursor: pointer;
         flex-grow: 1;
@@ -142,7 +143,7 @@ export default class Input extends Shadow() {
       }
       /* width */
       ::-webkit-scrollbar {
-        width: 10px;
+        width: 5px;
       }
       /* Track */
       ::-webkit-scrollbar-track {
@@ -167,7 +168,7 @@ export default class Input extends Shadow() {
   renderHTML () {
     this.html = /* html */`
       <emoji-button></emoji-button>
-      <textarea placeholder="type your message..." id="userInputTextArea"></textarea>
+      <textarea placeholder="type your message..." rows="2"></textarea>
       <button id=send>send</button>
       <button disabled id=peer-web-site>&#43; attach media</button>
       <!--<button disabled id=voiceRecord>&#9210; record</button>-->
@@ -185,10 +186,6 @@ export default class Input extends Shadow() {
     return ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (navigator.msMaxTouchPoints > 0)
   }
 
-  resizeTextarea (reset = false) {
-    if (reset) return (this.textarea.style.height = 'auto') // Reset height to auto to calculate scrollHeight
-    this.textarea.style.height = Math.min(this.textarea.scrollHeight, this.maxHeight) + 'px'
-  }
 
   get textarea () {
     return this.root.querySelector('textarea')

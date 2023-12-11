@@ -145,7 +145,7 @@ export default class EmojiPicker extends Shadow() {
     this.css = /* css */`
     :host {
       position: absolute;
-      bottom: 3.5rem;
+      bottom: 5em;
       width: 100%;
       height: 58vh;
       width: 30vw;
