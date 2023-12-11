@@ -8,8 +8,7 @@ export default class Input extends Shadow() {
   constructor(options = {}, ...args) {
     super({ importMetaUrl: import.meta.url, ...options }, ...args);
 
-    /*TODO: change maxHeight logic to em or rem */
-    this.maxHeight = 200;
+    this.maxHeight = 12.5;
 
     this.sendEventListener = (event, input) => {
       this.dispatchEvent(new CustomEvent('yjs-input', {
@@ -45,11 +44,9 @@ export default class Input extends Shadow() {
       composed: true
     })), 300)
 
-
      /*Put cursor into input on click of chat area*/
      this.windowClickEventListener = event => {     
         const target = event.composedPath()[0]
-        
         if (target.classList.contains('pattern') || target.nodeName === 'YJS-CHAT-UPDATE') this.textarea.focus();
     }
 
@@ -82,13 +79,11 @@ export default class Input extends Shadow() {
 
   disconnectedCallback () {
     this.root.removeEventListener('click', this.clickEventListener)
-    this.root.removeEventListener('keyup', this.keyupEventListener)
     this.root.removeEventListener('keyup', this.clickEventListener)
-    
+    this.root.removeEventListener('keyup', this.keyupEventListener)
     this.textarea.removeEventListener('focus', this.focusEventListener)
     this.removeEventListener('emoji-clicked', this.emojiClickedEventListener)
     self.removeEventListener('click', this.windowClickEventListener)
-
   }
 
   /**
@@ -127,7 +122,7 @@ export default class Input extends Shadow() {
         resize: none;
         padding-left: 2em;
 
-        max-height: ${this.maxHeight}px;
+        max-height: ${this.maxHeight}em;
         overflow-y: auto; 
       }
       /*:host > textarea:focus {
@@ -170,12 +165,12 @@ export default class Input extends Shadow() {
   */
   renderHTML () {
     this.html = /* html */`
-        <!--<button disabled id=peer-web-site>&#43; attach media</button>-->
-        <emoji-button></emoji-button>
-        <textarea placeholder="type your message..." id="userInputTextArea"></textarea>
-        <button id=send>send</button>
-        <!--<button disabled id=voiceRecord>&#9210; record</button>-->
-      `
+      <emoji-button></emoji-button>
+      <textarea placeholder="type your message..." id="userInputTextArea"></textarea>
+      <button id=send>send</button>
+      <button disabled id=peer-web-site>&#43; attach media</button>
+      <!--<button disabled id=voiceRecord>&#9210; record</button>-->
+    `
     return this.fetchModules([
       {
         path: `${this.importMetaUrl}./emojis/EmojiButton.js`,
@@ -190,6 +185,6 @@ export default class Input extends Shadow() {
 
   resizeTextarea() {
     this.textarea.style.height = 'auto'; // Reset height to auto to calculate scrollHeight
-    this.textarea.style.height = Math.min(this.textarea.scrollHeight, this.maxHeight) + 'px';
+    this.textarea.style.height = Math.min(this.textarea.scrollHeight, this.maxHeight) + 'em';
   }
 }
