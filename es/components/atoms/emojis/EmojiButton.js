@@ -1,5 +1,5 @@
 // @ts-check
-import { Shadow } from '../../../../../event-driven-web-components-prototypes/src/Shadow.js';
+import { Shadow } from '../../../../../event-driven-web-components-prototypes/src/Shadow.js'
 
 /**
  * EmojiButton for adding emojis to text in a chat
@@ -9,24 +9,24 @@ import { Shadow } from '../../../../../event-driven-web-components-prototypes/sr
  * @type {CustomElementConstructor}
  */
 export default class EmojiButton extends Shadow() {
-  constructor(options = {}, ...args) {
-    super({ importMetaUrl: import.meta.url, ...options }, ...args);
+  constructor (options = {}, ...args) {
+    super({ importMetaUrl: import.meta.url, ...options }, ...args)
 
     this.toggleEmojiPicker = event => {
-      const emojiPicker = this.root.querySelector('emoji-picker');
+      const emojiPicker = this.root.querySelector('emoji-picker')
       // Toggle visibility of the EmojiPicker
-      emojiPicker.classList.toggle('visible');
+      emojiPicker.classList.toggle('visible')
     }
   }
 
-  connectedCallback() {
-    if (this.shouldRenderCSS()) this.renderCSS();
-    if (this.shouldRenderHTML()) this.renderHTML();
-    this.root.querySelector('button').addEventListener('click', this.toggleEmojiPicker);
+  connectedCallback () {
+    if (this.shouldRenderCSS()) this.renderCSS()
+    if (this.shouldRenderHTML()) this.renderHTML()
+    this.root.querySelector('button').addEventListener('click', this.toggleEmojiPicker)
   }
 
-  disconnectedCallback() {
-    this.root.querySelector('button').removeEventListener('click', this.toggleEmojiPicker);
+  disconnectedCallback () {
+    this.root.querySelector('button').removeEventListener('click', this.toggleEmojiPicker)
   }
 
   /**
@@ -34,8 +34,8 @@ export default class EmojiButton extends Shadow() {
    *
    * @return {boolean}
    */
-  shouldRenderCSS() {
-    return !this.root.querySelector(`:host > style[_css], ${this.tagName} > style[_css]`);
+  shouldRenderCSS () {
+    return !this.root.querySelector(`:host > style[_css], ${this.tagName} > style[_css]`)
   }
 
   /**
@@ -43,8 +43,8 @@ export default class EmojiButton extends Shadow() {
    *
    * @return {boolean}
    */
-  shouldRenderHTML() {
-    return !this.emojiButton;
+  shouldRenderHTML () {
+    return !this.emojiButton
   }
 
   /**
@@ -52,7 +52,7 @@ export default class EmojiButton extends Shadow() {
    *
    * @return {void}
    */
-  renderCSS() {
+  renderCSS () {
     this.css = /* css */`
       :host {
         display: inline-block;
@@ -67,7 +67,7 @@ export default class EmojiButton extends Shadow() {
         margin-left: 0.5em;
         position: absolute;
       }
-    `;
+    `
   }
 
   /**
@@ -75,11 +75,11 @@ export default class EmojiButton extends Shadow() {
    *
    * @return {Promise<void>}
    */
-  renderHTML() {
+  renderHTML () {
     this.html = /* html */`
       <button id='emojiPickerToggler'>&#128515;</button> <!-- Unicode for smiling face emoji -->
       <emoji-picker></emoji-picker>
-    `;
+    `
     return this.fetchModules([
       {
         path: `${this.importMetaUrl}./EmojiPicker.js`,
@@ -88,7 +88,7 @@ export default class EmojiButton extends Shadow() {
     ])
   }
 
-  get emojiButton() {
-    return this.root.querySelector('button');
+  get emojiButton () {
+    return this.root.querySelector('button')
   }
 }

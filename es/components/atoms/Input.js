@@ -1,14 +1,13 @@
-import { Shadow } from '../../../../event-driven-web-components-prototypes/src/Shadow.js';
+import { Shadow } from '../../../../event-driven-web-components-prototypes/src/Shadow.js'
 
-/* global HTMLElement */
 /* global CustomEvent */
 /* global self */
 
 export default class Input extends Shadow() {
-  constructor(options = {}, ...args) {
-    super({ importMetaUrl: import.meta.url, ...options }, ...args);
+  constructor (options = {}, ...args) {
+    super({ importMetaUrl: import.meta.url, ...options }, ...args)
 
-    this.maxHeight = 12.5;
+    this.maxHeight = 12.5
 
     this.sendEventListener = (event, input) => {
       this.dispatchEvent(new CustomEvent('yjs-input', {
@@ -35,8 +34,8 @@ export default class Input extends Shadow() {
     }
 
     this.keyupEventListener = event => {
-      this.resizeTextarea();
-    };
+      this.resizeTextarea()
+    }
 
     this.focusEventListener = event => setTimeout(() => this.dispatchEvent(new CustomEvent('main-scroll', {
       bubbles: true,
@@ -44,10 +43,10 @@ export default class Input extends Shadow() {
       composed: true
     })), 300)
 
-     /*Put cursor into input on click of chat area*/
-     this.windowClickEventListener = event => {     
-        const target = event.composedPath()[0]
-        if (target.classList.contains('pattern') || target.nodeName === 'YJS-CHAT-UPDATE') this.textarea.focus();
+    /* Put cursor into input on click of chat area */
+    this.windowClickEventListener = event => {
+      const target = event.composedPath()[0]
+      if (target.classList.contains('pattern') || target.nodeName === 'YJS-CHAT-UPDATE') this.textarea.focus()
     }
 
     this.emojiClickedEventListener = event => (this.textarea.value += event.detail?.clickedEmoji || '')
@@ -61,9 +60,7 @@ export default class Input extends Shadow() {
     this.root.addEventListener('keyup', this.keyupEventListener)
     this.textarea.addEventListener('focus', this.focusEventListener)
     this.addEventListener('emoji-clicked', this.emojiClickedEventListener)
-    self.addEventListener('click', this.windowClickEventListener);
-
-
+    self.addEventListener('click', this.windowClickEventListener)
 
     this.connectedCallbackOnce()
   }
@@ -91,8 +88,8 @@ export default class Input extends Shadow() {
    *
    * @return {boolean}
    */
-  shouldRenderCSS() {
-    return !this.root.querySelector(`:host > style[_css], ${this.tagName} > style[_css]`);
+  shouldRenderCSS () {
+    return !this.root.querySelector(`:host > style[_css], ${this.tagName} > style[_css]`)
   }
 
   /**
@@ -100,8 +97,8 @@ export default class Input extends Shadow() {
    *
    * @return {boolean}
    */
-  shouldRenderHTML() {
-    return !this.textarea;
+  shouldRenderHTML () {
+    return !this.textarea
   }
 
   /**
@@ -109,7 +106,7 @@ export default class Input extends Shadow() {
    *
    * @return {void}
    */
-  renderCSS() {
+  renderCSS () {
     this.css = /* css */`
       :host {
         display: flex;
@@ -155,7 +152,7 @@ export default class Input extends Shadow() {
       ::-webkit-scrollbar-thumb:hover {
         background: #555; 
       }
-    `;
+    `
   }
 
   /**
@@ -183,8 +180,8 @@ export default class Input extends Shadow() {
     return this.root.querySelector('textarea')
   }
 
-  resizeTextarea() {
-    this.textarea.style.height = 'auto'; // Reset height to auto to calculate scrollHeight
-    this.textarea.style.height = Math.min(this.textarea.scrollHeight, this.maxHeight) + 'em';
+  resizeTextarea () {
+    this.textarea.style.height = 'auto' // Reset height to auto to calculate scrollHeight
+    this.textarea.style.height = Math.min(this.textarea.scrollHeight, this.maxHeight) + 'em'
   }
 }
