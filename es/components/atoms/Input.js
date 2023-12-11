@@ -180,12 +180,17 @@ export default class Input extends Shadow() {
     ])
   }
 
-  get textarea () {
-    return this.root.querySelector('textarea')
+  isTouchScreen () {
+    // @ts-ignore
+    return ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (navigator.msMaxTouchPoints > 0)
   }
 
   resizeTextarea (reset = false) {
     if (reset) return (this.textarea.style.height = 'auto') // Reset height to auto to calculate scrollHeight
     this.textarea.style.height = Math.min(this.textarea.scrollHeight, this.maxHeight) + 'px'
+  }
+
+  get textarea () {
+    return this.root.querySelector('textarea')
   }
 }
