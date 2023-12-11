@@ -23,9 +23,10 @@ export default class Input extends Shadow() {
     this.inputEventListener = event => {
       this.textarea.style.height = 'auto';
     
-      // Assuming 1em is equal to the font-size of the textarea
+      
       const emValue = this.textarea.scrollHeight / parseFloat(getComputedStyle(this.textarea).fontSize);
       this.textarea.style.height = emValue  + 'em';
+      //TODO: CHANGE EmojiPicker Offset to Bottom.
     };
 
     this.keyupEventListener = event => {
