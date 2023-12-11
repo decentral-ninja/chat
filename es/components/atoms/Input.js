@@ -7,7 +7,7 @@ export default class Input extends Shadow() {
   constructor (options = {}, ...args) {
     super({ importMetaUrl: import.meta.url, ...options }, ...args)
 
-    this.maxHeight = 12.5
+    this.maxHeight = 200
 
     this.sendEventListener = (event, input) => {
       this.dispatchEvent(new CustomEvent('yjs-input', {
@@ -29,6 +29,7 @@ export default class Input extends Shadow() {
           break
         case 'send':
           this.sendEventListener(undefined, this.textarea)
+          this.resizeTextarea(true)
           break
       }
     }
@@ -118,8 +119,7 @@ export default class Input extends Shadow() {
         transition: height 0.3s ease-out;
         resize: none;
         padding-left: 2em;
-
-        max-height: ${this.maxHeight}em;
+        max-height: ${this.maxHeight}px;
         overflow-y: auto; 
       }
       /*:host > textarea:focus {
@@ -180,8 +180,8 @@ export default class Input extends Shadow() {
     return this.root.querySelector('textarea')
   }
 
-  resizeTextarea () {
-    this.textarea.style.height = 'auto' // Reset height to auto to calculate scrollHeight
-    this.textarea.style.height = Math.min(this.textarea.scrollHeight, this.maxHeight) + 'em'
+  resizeTextarea (reset = false) {
+    if (reset) return (this.textarea.style.height = 'auto') // Reset height to auto to calculate scrollHeight
+    this.textarea.style.height = Math.min(this.textarea.scrollHeight, this.maxHeight) + 'px'
   }
 }
