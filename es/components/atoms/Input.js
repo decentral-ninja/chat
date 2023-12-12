@@ -3,12 +3,12 @@ import { Shadow } from '../../../../event-driven-web-components-prototypes/src/S
 
 /* global CustomEvent */
 /* global self */
+/* global Environment */
 
 export default class Input extends Shadow() {
   constructor (options = {}, ...args) {
     super({ importMetaUrl: import.meta.url, ...options }, ...args)
 
- 
     this.sendEventListener = (event, input) => {
       this.dispatchEvent(new CustomEvent('yjs-input', {
         detail: {
@@ -20,15 +20,13 @@ export default class Input extends Shadow() {
       }))
     }
 
-
     this.inputEventListener = event => {
-      this.textarea.style.height = 'auto';
-    
-      
-      const emValue = this.textarea.scrollHeight / parseFloat(getComputedStyle(this.textarea).fontSize);
-      this.textarea.style.height = emValue  + 'em';
-      //TODO: CHANGE EmojiPicker Offset to Bottom.
-    };
+      this.textarea.style.height = 'auto'
+
+      const emValue = this.textarea.scrollHeight / parseFloat(self.getComputedStyle(this.textarea).fontSize)
+      this.textarea.style.height = emValue + 'em'
+      // TODO: CHANGE EmojiPicker Offset to Bottom.
+    }
 
     this.keyupEventListener = event => {
       if (!this.isTouchScreen() && event.key === 'Enter' && event.shiftKey === false) {
@@ -70,7 +68,7 @@ export default class Input extends Shadow() {
     this.root.addEventListener('keyup', this.keyupEventListener)
     this.textarea.addEventListener('focus', this.focusEventListener)
     this.textarea.addEventListener('input', this.inputEventListener)
-    this.addEventListener('emoji-clicked', this.emojiClickedEventListener)    
+    this.addEventListener('emoji-clicked', this.emojiClickedEventListener)
     self.addEventListener('click', this.windowClickEventListener)
     this.connectedCallbackOnce()
   }
@@ -130,7 +128,6 @@ export default class Input extends Shadow() {
         min-height: auto;
         max-height: 10em;
         overflow-y: auto; 
-
       }     
       :host > button {
         cursor: pointer;
@@ -188,7 +185,6 @@ export default class Input extends Shadow() {
     // @ts-ignore
     return ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (navigator.msMaxTouchPoints > 0)
   }
-
 
   get textarea () {
     return this.root.querySelector('textarea')
