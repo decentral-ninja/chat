@@ -82,7 +82,8 @@ export default class EmojiButton extends Shadow() {
     `
     return this.fetchModules([
       {
-        path: `${this.importMetaUrl}./EmojiPicker.js`,
+        // @ts-ignore
+        path: `${this.importMetaUrl}./EmojiPicker.js?${Environment?.version || ''}`,
         name: 'emoji-picker'
       }
     ])

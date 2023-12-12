@@ -1,3 +1,4 @@
+// @ts-check
 import { Shadow } from '../../../../event-driven-web-components-prototypes/src/Shadow.js'
 
 /* global CustomEvent */
@@ -176,7 +177,8 @@ export default class Input extends Shadow() {
     `
     return this.fetchModules([
       {
-        path: `${this.importMetaUrl}./emojis/EmojiButton.js`,
+        // @ts-ignore
+        path: `${this.importMetaUrl}./emojis/EmojiButton.js?${Environment?.version || ''}`,
         name: 'emoji-button'
       }
     ])
