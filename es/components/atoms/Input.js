@@ -21,10 +21,7 @@ export default class Input extends Shadow() {
     }
 
     this.inputEventListener = event => {
-      this.textarea.style.height = 'auto'
-
-      const emValue = this.textarea.scrollHeight / parseFloat(self.getComputedStyle(this.textarea).fontSize)
-      this.textarea.style.height = emValue + 'em'
+      this.updateTextareaHeight()
       // TODO: CHANGE EmojiPicker Offset to Bottom.
     }
 
@@ -41,7 +38,7 @@ export default class Input extends Shadow() {
           break
         case 'send':
           this.sendEventListener(undefined, this.textarea)
-          this.textarea.style.height = 'auto';
+          this.updateTextareaHeight()
           break
       }
     }
@@ -159,28 +156,33 @@ export default class Input extends Shadow() {
     `
   }
 
-  /**
-  * renders the html
-  *
-  * @return {Promise<void>}
-  */
-  renderHTML () {
-    this.html = /* html */`
-      <emoji-button></emoji-button>
-      <textarea placeholder="type your message..." rows="2"></textarea>
-      <button id=send>send</button>
-      <button disabled id=peer-web-site>&#43; attach media</button>
-      <!--<button disabled id=voiceRecord>&#9210; record</button>-->
-    `
-    return this.fetchModules([
-      {
-        // @ts-ignore
-        path: `${this.importMetaUrl}./emojis/EmojiButton.js?${Environment?.version || ''}`,
-        name: 'emoji-button'
-      }
-    ])
-  }
+ /**
+   * renders the html
+   *
+   * @return {Promise<void>}
+   */
+ renderHTML() {
+  this.html = /* html */ `
+    <emoji-picker></emoji-picker>
+    <textarea placeholder="type your message..." rows="2"></textarea>
+    <button id=send>send</button>
+    <button disabled id=peer-web-site>&#43; attach media</button>
+    <!--<button disabled id=voiceRecord>&#9210; record</button>-->
+  `;
+  this.updateTextareaHeight();
+  return this.fetchModules([
+    {
+      path: `${this.importMetaUrl}./emojiMart/EmojiMartPicker.js?${Environment?.version || ''}`,
+      name: 'emoji-picker',
+    },
+  ]);
+} /*path: `${this.importMetaUrl}./emojis/EmojiButton.js?${Environment?.version || ''}`,*/
 
+  updateTextareaHeight() {
+    this.textarea.style.height = 'auto';
+    const emValue = this.textarea.scrollHeight / parseFloat(self.getComputedStyle(this.textarea).fontSize)
+    this.textarea.style.height = emValue + 'em'
+  }
   isTouchScreen () {
     // @ts-ignore
     return ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (navigator.msMaxTouchPoints > 0)
