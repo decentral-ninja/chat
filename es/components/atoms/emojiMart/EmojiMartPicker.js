@@ -60,10 +60,12 @@ export default class EmojiPicker extends Shadow() {
   connectedCallback () {
     if (this.shouldRenderCSS()) this.renderCSS()
     if (this.shouldRenderHTML()) this.renderHTML()
+    // @ts-ignore
     self.addEventListener('click', this.windowClickEventListener)
   }
 
   disconnectedCallback () {
+    // @ts-ignore
     self.removeEventListener('click', this.windowClickEventListener)
   }
 
@@ -80,7 +82,7 @@ export default class EmojiPicker extends Shadow() {
       :host {
         display: none;
         position: absolute;
-      bottom: 5em;
+      bottom: 9em;
       }
       :host(.visible) {
         display: block;
