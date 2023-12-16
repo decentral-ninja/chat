@@ -8,7 +8,7 @@ import { Shadow } from '../../../../event-driven-web-components-prototypes/src/S
 export default class Input extends Shadow() {
   constructor (options = {}, ...args) {
     super({ importMetaUrl: import.meta.url, ...options }, ...args)
-    this.textareaDefaultHeight = 2.625;
+    this.textareaDefaultHeight = 2.625
     this.sendEventListener = (event, input) => {
       this.dispatchEvent(new CustomEvent('yjs-input', {
         detail: {
@@ -58,8 +58,6 @@ export default class Input extends Shadow() {
     this.emojiClickedEventListener = event => {
       console.log(event.detail)
       this.textarea.value += event.detail?.clickedEmoji || ''
-
-
     }
   }
 
@@ -162,43 +160,43 @@ export default class Input extends Shadow() {
     `
   }
 
- /**
+  /**
    * renders the html
    *
    * @return {Promise<void>}
    */
- renderHTML() {
-  this.html = /* html */ `
+  renderHTML () {
+    this.html = /* html */ `
     <emoji-button></emoji-button>
     <textarea placeholder="type your message..." rows="2"></textarea>
     <button id=send>send</button>
     <button disabled id=peer-web-site>&#43; attach media</button>
     <!--<button disabled id=voiceRecord>&#9210; record</button>-->
-  `;
-  this.updateTextareaHeight();
-  return this.fetchModules([
-    {
-      path: `${this.importMetaUrl}./emojiMart/EmojiButton.js?${Environment?.version || ''}`,
-      name: 'emoji-button',
-    },
-  ]);
-} /*path: `${this.importMetaUrl}./emojis/EmojiButton.js?${Environment?.version || ''}`,*/
+  `
+    this.updateTextareaHeight()
+    return this.fetchModules([
+      {
+        path: `${this.importMetaUrl}./emojiMart/EmojiButton.js?${Environment?.version || ''}`,
+        name: 'emoji-button'
+      }
+    ])
+  } /* path: `${this.importMetaUrl}./emojis/EmojiButton.js?${Environment?.version || ''}`, */
 
-  updateTextareaHeight() {
-    this.textarea.style.height = 'auto';
-    
+  updateTextareaHeight () {
+    this.textarea.style.height = 'auto'
+
     const emValue = this.textarea.scrollHeight / parseFloat(self.getComputedStyle(this.textarea).fontSize)
-    this.textarea.style.height = isNaN(emValue) ? this.textareaDefaultHeight + 'em' : emValue + 'em' 
-/*
+    this.textarea.style.height = isNaN(emValue) ? this.textareaDefaultHeight + 'em' : emValue + 'em'
+    /*
     if(isNaN(emValue)){
-      this.textarea.style.height = this.textareaDefaultHeight + 'em' 
+      this.textarea.style.height = this.textareaDefaultHeight + 'em'
     }
     else{
-      this.textarea.style.height = emValue + 'em' 
-    } 
+      this.textarea.style.height = emValue + 'em'
+    }
 */
-    
   }
+
   isTouchScreen () {
     // @ts-ignore
     return ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (navigator.msMaxTouchPoints > 0)
