@@ -1,0 +1,71 @@
+// @ts-check
+import { Shadow } from '../../../../event-driven-web-components-prototypes/src/Shadow.js'
+
+/**
+ * The providers view
+ * TODO: display providers and also allow provider changes
+ * TODO: keepAlive time
+ * TODO: view component for controllers/Providers.js with https://github.com/feross/p2p-graph
+ *
+ * @export
+ * @class Providers
+ */
+export default class Providers extends Shadow() {
+  constructor (options = {}, ...args) {
+    super({ importMetaUrl: import.meta.url, ...options }, ...args)
+
+    this.providersEventListener = event => {
+      console.log('providers', event.detail.getData())
+    }
+  }
+
+  connectedCallback () {
+    //if (this.shouldRenderCSS()) this.renderCSS()
+    //if (this.shouldRenderHTML()) this.renderHTML()
+    document.body.addEventListener('yjs-providers', this.providersEventListener)
+  }
+
+  disconnectedCallback () {
+    document.body.removeEventListener('yjs-providers', this.providersEventListener)
+  }
+
+  /**
+   * Evaluates if a render of CSS is necessary
+   *
+   * @return {boolean}
+   */
+  shouldRenderCSS () {
+    return !this.root.querySelector(`:host > style[_css], ${this.tagName} > style[_css]`)
+  }
+
+  /**
+   * Evaluates if a render of HTML is necessary
+   *
+   * @return {boolean}
+   */
+  shouldRenderHTML () {
+    return !this.root.querySelector('span')
+  }
+
+  /**
+   * Renders the CSS
+   *
+   * @return {void}
+   */
+  renderCSS () {
+    this.css = /* css */`
+      
+    `
+  }
+
+  /**
+  * renders the html
+  *
+  * @return {void}
+  */
+  renderHTML () {
+    this.html = /* html */`
+      
+    `
+  }
+}

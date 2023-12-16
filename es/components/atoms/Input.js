@@ -169,7 +169,7 @@ export default class Input extends Shadow() {
       <emoji-button></emoji-button>
       <textarea placeholder="type your message..." rows="2"></textarea>
       <button id=send>send</button>
-      <button disabled id=peer-web-site>&#43; attach media</button>
+      <button id=peer-web-site>&#43; attach media</button>
       <!--<button disabled id=voiceRecord>&#9210; record</button>-->
     `
     return this.fetchModules([
