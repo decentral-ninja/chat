@@ -1,6 +1,8 @@
 // @ts-check
 import { Shadow } from '../../../../event-driven-web-components-prototypes/src/Shadow.js'
 
+/* global self */
+
 /**
  * The rooms view
  * TODO: replace confirm box
@@ -11,12 +13,11 @@ import { Shadow } from '../../../../event-driven-web-components-prototypes/src/S
 export default class Rooms extends Shadow() {
   constructor (options = {}, ...args) {
     super({ importMetaUrl: import.meta.url, ...options }, ...args)
-
   }
 
   connectedCallback () {
-    //if (this.shouldRenderCSS()) this.renderCSS()
-    //if (this.shouldRenderHTML()) this.renderHTML()
+    // if (this.shouldRenderCSS()) this.renderCSS()
+    // if (this.shouldRenderHTML()) this.renderHTML()
     new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-room', {
       detail: {
         resolve

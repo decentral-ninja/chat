@@ -14,8 +14,8 @@ export default class Notifications extends Shadow() {
   }
 
   connectedCallback () {
-    //if (this.shouldRenderCSS()) this.renderCSS()
-    //if (this.shouldRenderHTML()) this.renderHTML()
+    // if (this.shouldRenderCSS()) this.renderCSS()
+    // if (this.shouldRenderHTML()) this.renderHTML()
     this.connectedCallbackOnce()
   }
 

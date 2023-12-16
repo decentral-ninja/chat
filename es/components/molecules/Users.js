@@ -1,6 +1,8 @@
 // @ts-check
 import { Shadow } from '../../../../event-driven-web-components-prototypes/src/Shadow.js'
 
+/* global self */
+
 /**
  * The users view
  * TODO: replace confirm box
@@ -40,6 +42,7 @@ export default class Users extends Shadow() {
     }))).then(async ({ room }) => {
       let nickname = 'no-name' + Date.now()
       if (self.localStorage.getItem(await room + '-nickname')) {
+        // TODO: localstorage analog breathing app in one object with epoch per room and general local epoch without room ref. but just first contact
         // @ts-ignore
         nickname = self.localStorage.getItem(await room + '-nickname')
       } else {

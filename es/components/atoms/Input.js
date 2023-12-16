@@ -41,7 +41,7 @@ export default class Input extends Shadow() {
           break
         case 'send':
           this.sendEventListener(undefined, this.textarea)
-          this.textarea.style.height = 'auto';
+          this.textarea.style.height = 'auto'
           break
       }
     }

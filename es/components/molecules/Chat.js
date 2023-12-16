@@ -165,7 +165,6 @@ smallerList.appendChild(smallerListLi2) */
     document.body.addEventListener('yjs-chat-update', this.eventListener)
   }
 
-
   disconnectedCallback () {
     document.body.removeEventListener('yjs-chat-update', this.eventListener)
   }
