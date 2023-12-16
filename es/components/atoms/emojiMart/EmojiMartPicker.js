@@ -4,50 +4,68 @@ export default class EmojiPicker extends Shadow() {
   constructor(options = {}, ...args) {
     super({ importMetaUrl: import.meta.url, ...options }, ...args);
 
-    this.pickerOptions = options.onEmojiSelect ? options : { onEmojiSelect: console.log };
+    this.pickerOptions = options.pickerOptions
+      ? options.pickerOptions
+      : {
+        onEmojiSelect: emoji => this.dispatchEvent(new CustomEvent('emoji-clicked', {
+          detail: {
+            clickedEmoji: emoji.native,
+            emoji
+          },
+          bubbles: true,
+          cancelable: true,
+          composed: true
+        })),
+        data: async () => {
+          const response = await fetch(
+            `${this.importMetaUrl}./data/sets/14/apple.json`,
+          )
+      
+          return response.json()
+        },
+        autoFocus: true,
+        emojiSize: 28,
+        emojiVersion: 14,
+        previewPosition: 'none',
+        set: 'apple',
 
-    // Load EmojiMart script as a dependency
-    this.loadDependency().then(() => {
-      this.picker = new EmojiMart.Picker(this.pickerOptions);
-      this.renderHTML();
-    });
+        //TODO: make skin tones working and pass/add whole span to textarea
+        skin: 3,
+        skinTonePosition: 'none',
+        theme: 'light',
+        getSpritesheetURL: () => `${this.importMetaUrl}./data/64.png`
+      };
+
+
+       /* Toggle EmojiPicker while */
+    this.windowClickEventListener = event => {
+      const target = event.composedPath()[0]
+      if (this.classList.contains('visible') && target.id !== 'emojiPickerToggler') {
+         if (target.classList.contains('pattern') || target.nodeName === 'YJS-CHAT-UPDATE'){
+          this.classList.toggle('visible')
+        }        
+      }
+    }
+
+    this.clickEventListener = event => this.dispatchEvent(new CustomEvent('emoji-clicked', {
+      detail: {
+        clickedEmoji: event.composedPath()[0],
+        emoji
+      },
+      bubbles: true,
+      cancelable: true,
+      composed: true
+    }))
   }
 
   connectedCallback() {
     if (this.shouldRenderCSS()) this.renderCSS();
     if (this.shouldRenderHTML()) this.renderHTML();
-    Promise.all([this.loadDependency()]).then(() => {
-      this.dispatchEvent(new CustomEvent(this.getAttribute('request-event-name') || 'request-event-name', {
-        bubbles: true,
-        cancelable: true,
-        composed: true
-      }));
-    });
+    self.addEventListener('click', this.windowClickEventListener)
   }
 
   disconnectedCallback() {
-    // Cleanup if needed
-  }
-
-  loadDependency() {
-    return new Promise((resolve, reject) => {
-      if (document.getElementById('emoji-mart-script')) {
-        return resolve(this.RESOLVE_STATE)
-      }
-
-      const emojiMartScript = document.createElement('script')
-      emojiMartScript.setAttribute('type', 'text/javascript')
-      emojiMartScript.setAttribute('id', 'emoji-mart-script')
-
-      try {
-        //TODO: Load from file in project
-        emojiMartScript.setAttribute('src', 'https://cdn.jsdelivr.net/npm/emoji-mart@latest/dist/browser.js')
-        document.body.appendChild(emojiMartScript)
-        emojiMartScript.onload = () => resolve(this.RESOLVE_STATE)
-      } catch (e) {
-        return reject(e)
-      }
-    });
+    self.removeEventListener('click', this.windowClickEventListener)
   }
 
   shouldRenderCSS() {
@@ -61,23 +79,46 @@ export default class EmojiPicker extends Shadow() {
   renderCSS() {
     this.css = /* css */ `
       :host {
+        display: none;
+        position: absolute;
+      bottom: 5em;
       }
+      :host(.visible) {
+        display: block;
+      }
+  
       @media only screen and (max-width: _max-width_) {}
     `
   }
 
   renderHTML() {
-    if (!this.shouldRenderHTML()) {
-      return;
-    }
-
-    this.html = /* HTML */`
-      ${this.picker}
-    `;
+    // Load EmojiMart script as a dependency
+    this.loadDependency().then(() => {
+      this.picker = new EmojiMart.Picker(this.pickerOptions);
+      this.html = this.picker;
+    });
   }
 
-  static initialize(options) {
-    const emojiPicker = new EmojiPicker(options);
-    return emojiPicker;
+  /**
+   * fetch dependency
+   *
+   * @returns {Promise<{components: any}>}
+   */
+  loadDependency () {
+    // make it global to self so that other components can know when it has been loaded
+    return this._loadDependcy || (this._loadDependcy = new Promise(resolve => {
+        const emojiScript = document.createElement('script')
+        emojiScript.setAttribute('type', 'text/javascript')
+        emojiScript.setAttribute('async', '')
+        emojiScript.setAttribute('src', `${this.importMetaUrl}./data/broswer.js`)
+        emojiScript.setAttribute('crossorigin', 'anonymous')
+        emojiScript.onload = () => resolve()
+        this.html = emojiScript
+    }))
   }
+
+  get emojiPickerEl () {
+    return this.root.querySelector('em-emoji-picker')
+  }
+
 }

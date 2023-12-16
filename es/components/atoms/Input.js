@@ -8,7 +8,7 @@ import { Shadow } from '../../../../event-driven-web-components-prototypes/src/S
 export default class Input extends Shadow() {
   constructor (options = {}, ...args) {
     super({ importMetaUrl: import.meta.url, ...options }, ...args)
-
+    this.textareaDefaultHeight = 2.625;
     this.sendEventListener = (event, input) => {
       this.dispatchEvent(new CustomEvent('yjs-input', {
         detail: {
@@ -55,7 +55,12 @@ export default class Input extends Shadow() {
       if (target.classList.contains('pattern') || target.nodeName === 'YJS-CHAT-UPDATE') this.textarea.focus()
     }
 
-    this.emojiClickedEventListener = event => (this.textarea.value += event.detail?.clickedEmoji || '')
+    this.emojiClickedEventListener = event => {
+      console.log(event.detail)
+      this.textarea.value += event.detail?.clickedEmoji || ''
+
+
+    }
   }
 
   connectedCallback () {
@@ -121,11 +126,12 @@ export default class Input extends Shadow() {
         font-size: max(16px, 1em); /* 16px ios mobile focus zoom fix */
         transition: height 0.3s ease-out;
         resize: none;
-        padding-left: 2em;
-        min-height: auto;
+        padding-left: 2.5em;
+        
         max-height: 10em;
         overflow-y: auto; 
       }     
+    
       :host > button {
         cursor: pointer;
         flex-grow: 1;
@@ -163,7 +169,7 @@ export default class Input extends Shadow() {
    */
  renderHTML() {
   this.html = /* html */ `
-    <emoji-picker></emoji-picker>
+    <emoji-button></emoji-button>
     <textarea placeholder="type your message..." rows="2"></textarea>
     <button id=send>send</button>
     <button disabled id=peer-web-site>&#43; attach media</button>
@@ -172,16 +178,26 @@ export default class Input extends Shadow() {
   this.updateTextareaHeight();
   return this.fetchModules([
     {
-      path: `${this.importMetaUrl}./emojiMart/EmojiMartPicker.js?${Environment?.version || ''}`,
-      name: 'emoji-picker',
+      path: `${this.importMetaUrl}./emojiMart/EmojiButton.js?${Environment?.version || ''}`,
+      name: 'emoji-button',
     },
   ]);
 } /*path: `${this.importMetaUrl}./emojis/EmojiButton.js?${Environment?.version || ''}`,*/
 
   updateTextareaHeight() {
     this.textarea.style.height = 'auto';
+    
     const emValue = this.textarea.scrollHeight / parseFloat(self.getComputedStyle(this.textarea).fontSize)
-    this.textarea.style.height = emValue + 'em'
+    this.textarea.style.height = isNaN(emValue) ? this.textareaDefaultHeight + 'em' : emValue + 'em' 
+/*
+    if(isNaN(emValue)){
+      this.textarea.style.height = this.textareaDefaultHeight + 'em' 
+    }
+    else{
+      this.textarea.style.height = emValue + 'em' 
+    } 
+*/
+    
   }
   isTouchScreen () {
     // @ts-ignore
