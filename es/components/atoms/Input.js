@@ -9,6 +9,8 @@ export default class Input extends Shadow() {
   constructor(options = {}, ...args) {
     super({ importMetaUrl: import.meta.url, ...options }, ...args)
     this.textareaDefaultHeight = 2.625
+    //TODO: remove workaround so it only renders once
+    this.htmlRendered = false
     this.sendEventListener = (event, input) => {
       this.dispatchEvent(new CustomEvent('yjs-input', {
         detail: {
@@ -29,7 +31,7 @@ export default class Input extends Shadow() {
       if (!this.isTouchScreen() && event.key === 'Enter' && event.shiftKey === false) {
         /* const textarea = this.root.querySelector('textarea')*/
         this.textarea.value = this.textarea.value.substring(0, this.textarea.value.length - 1) // cut the last character of enter = \n off
-        return this.sendEventListener(undefined, this.root.querySelector('textarea'))
+        return this.sendEventListener(undefined, this.textarea)
       }
       if (event.key === 'Escape') return this.textarea.blur()
       switch (event.composedPath()[0].getAttribute('id')) {
@@ -62,8 +64,6 @@ export default class Input extends Shadow() {
   }
 
   connectedCallback() {
-    console.log('connectedCallback called');
-
     if (this.shouldRenderCSS()) this.renderCSS()
     if (this.shouldRenderHTML()) this.renderHTML()
     this.root.addEventListener('click', this.keyupEventListener)
@@ -117,7 +117,6 @@ export default class Input extends Shadow() {
    * @return {void}
    */
   renderCSS() {
-    console.log('renderCSS called');
     this.css = /* css */`
       :host {
         display: flex;
@@ -177,13 +176,14 @@ export default class Input extends Shadow() {
  * @return {Promise<void>}
  */
   renderHTML() {
-    console.log('renderHTML called');
-
+    if(!this.htmlRendered){
     this.html = /* html */ `
+    <emoji-button></emoji-button> 
   <!-- Create the toolbar container -->
   <div id="toolbar">
     <button class="ql-bold">Bold</button>
     <button class="ql-italic">Italic</button>
+   
   </div>
   
   <!-- Create the editor container -->
@@ -202,16 +202,18 @@ export default class Input extends Shadow() {
   <button disabled id="voiceRecord">&#9210; record</button>-->
 `;
 
-    this.loadDependency().then(() => {
-          // @ts-ignore
-      this.quillRichText = new Quill(this.root.querySelector('div#editor'),      
-      {        
-        theme: 'snow' 
-      });
-      this.quillRichText.getModule('toolbar', { container: this.root.querySelector('div#toolbar') });
-      this.html = this.quillRichText;
-    });
+this.loadDependency().then(() => {
+  // @ts-ignore
+  this.quillRichText = new Quill(this.root.querySelector('div#editor'), {
+    theme: 'snow'
+  });
+  this.quillRichText.getModule('toolbar', { container: this.root.querySelector('div#toolbar') });
 
+
+  this.textarea.appendChild(this.quillRichText.root);
+});
+    this.htmlRendered = true
+  }
 
     // Fetch additional modules if needed
     return this.fetchModules([
