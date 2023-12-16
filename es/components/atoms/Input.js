@@ -6,7 +6,7 @@ import { Shadow } from '../../../../event-driven-web-components-prototypes/src/S
 /* global Environment */
 
 export default class Input extends Shadow() {
-  constructor (options = {}, ...args) {
+  constructor(options = {}, ...args) {
     super({ importMetaUrl: import.meta.url, ...options }, ...args)
     this.textareaDefaultHeight = 2.625
     this.sendEventListener = (event, input) => {
@@ -21,7 +21,7 @@ export default class Input extends Shadow() {
     }
 
     this.inputEventListener = event => {
-      this.updateTextareaHeight()
+      // this.updateTextareaHeight()
       // TODO: CHANGE EmojiPicker Offset to Bottom.
     }
 
@@ -38,7 +38,7 @@ export default class Input extends Shadow() {
           break
         case 'send':
           this.sendEventListener(undefined, this.textarea)
-          this.updateTextareaHeight()
+          //this.updateTextareaHeight()
           break
       }
     }
@@ -61,7 +61,7 @@ export default class Input extends Shadow() {
     }
   }
 
-  connectedCallback () {
+  connectedCallback() {
     if (this.shouldRenderCSS()) this.renderCSS()
     if (this.shouldRenderHTML()) this.renderHTML()
     this.root.addEventListener('click', this.keyupEventListener)
@@ -73,16 +73,16 @@ export default class Input extends Shadow() {
     this.connectedCallbackOnce()
   }
 
-  connectedCallbackOnce () {
+  connectedCallbackOnce() {
     self.addEventListener('message', event => {
       if (!event.data.title || !event.data.href || event.origin !== 'https://peerweb.site') return
       this.textarea.value = `${event.data.title} 👉 ${event.data.href} <span class=peer-web-site>(temporary hosted media content @peerweb.site)</span></a>`
       this.sendEventListener(undefined, this.textarea)
     })
-    this.connectedCallbackOnce = () => {}
+    this.connectedCallbackOnce = () => { }
   }
 
-  disconnectedCallback () {
+  disconnectedCallback() {
     this.root.removeEventListener('click', this.keyupEventListener)
     this.root.removeEventListener('keyup', this.keyupEventListener)
     this.textarea.removeEventListener('focus', this.focusEventListener)
@@ -96,7 +96,7 @@ export default class Input extends Shadow() {
    *
    * @return {boolean}
    */
-  shouldRenderCSS () {
+  shouldRenderCSS() {
     return !this.root.querySelector(`:host > style[_css], ${this.tagName} > style[_css]`)
   }
 
@@ -105,8 +105,8 @@ export default class Input extends Shadow() {
    *
    * @return {boolean}
    */
-  shouldRenderHTML () {
-    return !this.textarea
+  shouldRenderHTML() {
+    return !this.quillRichText
   }
 
   /**
@@ -114,7 +114,7 @@ export default class Input extends Shadow() {
    *
    * @return {void}
    */
-  renderCSS () {
+  renderCSS() {
     this.css = /* css */`
       :host {
         display: flex;
@@ -125,6 +125,16 @@ export default class Input extends Shadow() {
         transition: height 0.3s ease-out;
         resize: none;
         padding-left: 2.5em;        
+        max-height: 10em;
+        overflow-y: auto; 
+      }     
+      :host > div#editor {
+        flex-grow: 15;        
+        font-size: max(16px, 1em); /* 16px ios mobile focus zoom fix */
+        transition: height 0.3s ease-out;
+        resize: none;
+        padding-left: 2.5em;       
+        min-height: 3em; /*TODO: delete and update as before textarea */
         max-height: 10em;
         overflow-y: auto; 
       }     
@@ -159,40 +169,87 @@ export default class Input extends Shadow() {
   }
 
   /**
-   * renders the html
-   *
-   * @return {Promise<void>}
-   */
-  renderHTML () {
-    this.html = /* html */ `
-    <emoji-button></emoji-button>
-    <textarea placeholder="type your message..." rows="2"></textarea>
-    <button id=send>send</button>
-    <button disabled id=peer-web-site>&#43; attach media</button>
-    <!--<button disabled id=voiceRecord>&#9210; record</button>-->
-  `
-    this.updateTextareaHeight()
-    return this.fetchModules([
-      {
-        path: `${this.importMetaUrl}./emojiMart/EmojiButton.js?${Environment?.version || ''}`,
-        name: 'emoji-button'
-      }
-    ])
-  }
+ * renders the html
+ *
+ * @return {Promise<void>}
+ */
+renderHTML() {
+   this.loadDependency().then(() => {
+      this.quillRichText = new Quill('#editor', {
+          theme: 'snow'
+      });
 
-  updateTextareaHeight () {
+      this.html = /* html */ `
+          <emoji-button></emoji-button>
+          <div id="editor">
+              <p>Hello World!</p>
+              <p>Some initial <strong>bold</strong> text</p>
+              <p><br></p>
+          </div>
+          <!--<textarea placeholder="type your message..." rows="2"></textarea>-->
+          <button id="send">send</button>
+          <button disabled id="peer-web-site">&#43; attach media</button>
+          <!--<button disabled id="voiceRecord">&#9210; record</button>-->
+      `;
+      
+      // Update the Shadow DOM
+      this.shadowRoot.innerHTML = this.html;
+
+      // Fetch additional modules if needed
+      return this.fetchModules([
+          {
+              path: `${this.importMetaUrl}./emojiMart/EmojiButton.js?${Environment?.version || ''}`,
+              name: 'emoji-button'
+          }
+      ]);
+  });
+}
+
+  updateTextareaHeight() {
     this.textarea.style.height = 'auto'
 
     const emValue = this.textarea.scrollHeight / parseFloat(self.getComputedStyle(this.textarea).fontSize)
-    this.textarea.style.height = isNaN(emValue) ? this.textareaDefaultHeight + 'em' : emValue + 'em'  
+    this.textarea.style.height = isNaN(emValue) ? this.textareaDefaultHeight + 'em' : emValue + 'em'
   }
 
-  isTouchScreen () {
+  isTouchScreen() {
     // @ts-ignore
     return ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (navigator.msMaxTouchPoints > 0)
   }
 
-  get textarea () {
+ /**
+ * fetch dependency
+ *
+ * @returns {Promise<void>}
+ */
+loadDependency() {
+  // make it global to self so that other components can know when it has been loaded
+  return this._loadQuillDependency || (this._loadQuillDependency = new Promise(resolve => {
+      // Load Quill JavaScript file
+      const quillScript = document.createElement('script');
+      quillScript.setAttribute('type', 'text/javascript');
+      quillScript.setAttribute('async', '');
+      quillScript.setAttribute('src', `${this.importMetaUrl}./quillRichText/quill.min.js`);
+      quillScript.setAttribute('crossorigin', 'anonymous');
+      quillScript.onload = () => {
+          // Quill JavaScript has loaded, now load the CSS file
+          const quillStylesheet = document.createElement('link');
+          quillStylesheet.setAttribute('rel', 'stylesheet');
+          quillStylesheet.setAttribute('type', 'text/css');
+          quillStylesheet.setAttribute('href', `${this.importMetaUrl}./quillRichText/quill.snow.css`);
+          quillStylesheet.onload = () => resolve();
+          
+          // Append the link element to the document head
+          document.head.appendChild(quillStylesheet);
+      };
+
+      // Append the script element to the document body
+      document.body.appendChild(quillScript);
+  }));
+}
+
+
+  get textarea() {
     return this.root.querySelector('textarea')
   }
 }

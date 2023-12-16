@@ -112,7 +112,7 @@ export default class EmojiPicker extends Shadow() {
    */
   loadDependency () {
     // make it global to self so that other components can know when it has been loaded
-    return this._loadDependcy || (this._loadDependcy = new Promise(resolve => {
+    return this._loadDependency || (this._loadDependency = new Promise(resolve => {
       const emojiScript = document.createElement('script')
       emojiScript.setAttribute('type', 'text/javascript')
       emojiScript.setAttribute('async', '')
