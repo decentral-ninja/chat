@@ -97,7 +97,7 @@ export default class EmojiPicker extends Shadow() {
       this.picker = new EmojiMart.Picker(this.pickerOptions)
       this.html = this.picker
     })
-    this.updatePickerBottomSpace()
+    //this.updatePickerBottomSpace()
   }
 
   updatePickerBottomSpace () {

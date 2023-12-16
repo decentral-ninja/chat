@@ -27,8 +27,8 @@ export default class Input extends Shadow() {
 
     this.keyupEventListener = event => {
       if (!this.isTouchScreen() && event.key === 'Enter' && event.shiftKey === false) {
-        const textarea = this.root.querySelector('textarea')
-        textarea.value = textarea.value.substring(0, textarea.value.length - 1) // cut the last character of enter = \n off
+        /* const textarea = this.root.querySelector('textarea')*/
+        this.textarea.value = this.textarea.value.substring(0, this.textarea.value.length - 1) // cut the last character of enter = \n off
         return this.sendEventListener(undefined, this.root.querySelector('textarea'))
       }
       if (event.key === 'Escape') return this.textarea.blur()
@@ -62,6 +62,8 @@ export default class Input extends Shadow() {
   }
 
   connectedCallback() {
+    console.log('connectedCallback called');
+
     if (this.shouldRenderCSS()) this.renderCSS()
     if (this.shouldRenderHTML()) this.renderHTML()
     this.root.addEventListener('click', this.keyupEventListener)
@@ -96,7 +98,7 @@ export default class Input extends Shadow() {
    *
    * @return {boolean}
    */
-  shouldRenderCSS() {
+  shouldRenderCSS() {    
     return !this.root.querySelector(`:host > style[_css], ${this.tagName} > style[_css]`)
   }
 
@@ -115,6 +117,7 @@ export default class Input extends Shadow() {
    * @return {void}
    */
   renderCSS() {
+    console.log('renderCSS called');
     this.css = /* css */`
       :host {
         display: flex;
@@ -173,37 +176,52 @@ export default class Input extends Shadow() {
  *
  * @return {Promise<void>}
  */
-renderHTML() {
-   this.loadDependency().then(() => {
-      this.quillRichText = new Quill('#editor', {
-          theme: 'snow'
+  renderHTML() {
+    console.log('renderHTML called');
+
+    this.html = /* html */ `
+  <!-- Create the toolbar container -->
+  <div id="toolbar">
+    <button class="ql-bold">Bold</button>
+    <button class="ql-italic">Italic</button>
+  </div>
+  
+  <!-- Create the editor container -->
+  <div id="editor">
+  <p>Hello World!</p>
+      <p>Some initial <strong>bold</strong> text</p>
+      <p><br></p>
+</div>
+<button id="send">send</button>
+  
+  <!--
+  HIDDEN BTNS
+  <emoji-button></emoji-button> 
+ <textarea placeholder="type your message..." rows="2"></textarea>
+  <button disabled id="peer-web-site">&#43; attach media</button>
+  <button disabled id="voiceRecord">&#9210; record</button>-->
+`;
+
+    this.loadDependency().then(() => {
+          // @ts-ignore
+      this.quillRichText = new Quill(this.root.querySelector('div#editor'),      
+      {        
+        theme: 'snow' 
       });
+      this.quillRichText.getModule('toolbar', { container: this.root.querySelector('div#toolbar') });
+      this.html = this.quillRichText;
+    });
 
-      this.html = /* html */ `
-          <emoji-button></emoji-button>
-          <div id="editor">
-              <p>Hello World!</p>
-              <p>Some initial <strong>bold</strong> text</p>
-              <p><br></p>
-          </div>
-          <!--<textarea placeholder="type your message..." rows="2"></textarea>-->
-          <button id="send">send</button>
-          <button disabled id="peer-web-site">&#43; attach media</button>
-          <!--<button disabled id="voiceRecord">&#9210; record</button>-->
-      `;
-      
-      // Update the Shadow DOM
-      this.shadowRoot.innerHTML = this.html;
 
-      // Fetch additional modules if needed
-      return this.fetchModules([
-          {
-              path: `${this.importMetaUrl}./emojiMart/EmojiButton.js?${Environment?.version || ''}`,
-              name: 'emoji-button'
-          }
-      ]);
-  });
-}
+    // Fetch additional modules if needed
+    return this.fetchModules([
+      {
+            // @ts-ignore
+        path: `${this.importMetaUrl}./emojiMart/EmojiButton.js?${Environment?.version || ''}`,
+        name: 'emoji-button'
+      }
+    ]);
+  }
 
   updateTextareaHeight() {
     this.textarea.style.height = 'auto'
@@ -218,38 +236,41 @@ renderHTML() {
   }
 
  /**
- * fetch dependency
- *
+ * Fetches the Quill dependency and resolves a promise when loaded.
  * @returns {Promise<void>}
  */
 loadDependency() {
-  // make it global to self so that other components can know when it has been loaded
-  return this._loadQuillDependency || (this._loadQuillDependency = new Promise(resolve => {
-      // Load Quill JavaScript file
-      const quillScript = document.createElement('script');
-      quillScript.setAttribute('type', 'text/javascript');
-      quillScript.setAttribute('async', '');
-      quillScript.setAttribute('src', `${this.importMetaUrl}./quillRichText/quill.min.js`);
-      quillScript.setAttribute('crossorigin', 'anonymous');
-      quillScript.onload = () => {
-          // Quill JavaScript has loaded, now load the CSS file
-          const quillStylesheet = document.createElement('link');
-          quillStylesheet.setAttribute('rel', 'stylesheet');
-          quillStylesheet.setAttribute('type', 'text/css');
-          quillStylesheet.setAttribute('href', `${this.importMetaUrl}./quillRichText/quill.snow.css`);
-          quillStylesheet.onload = () => resolve();
-          
-          // Append the link element to the document head
-          document.head.appendChild(quillStylesheet);
-      };
+  // Make it global to self so that other components can know when it has been loaded.
+  return this._loadQuillDependency || (this._loadQuillDependency = new Promise((resolve, reject) => {
+    // Load Quill JavaScript file.
+    const quillScript = document.createElement('script');
+    quillScript.setAttribute('type', 'text/javascript');
+    quillScript.setAttribute('async', '');
+    quillScript.setAttribute('src', `${this.importMetaUrl}/quillRichText/quill.js`);
+    quillScript.setAttribute('crossorigin', 'anonymous');
+    quillScript.onerror = (error) => {
+      console.error('Error loading Quill script:', error);
+      reject(error);
+    };
+    quillScript.onload = () => {
+      // Quill JavaScript has loaded, now load the CSS file.
+      const quillStylesheet = document.createElement('link');
+      quillStylesheet.setAttribute('rel', 'stylesheet');
+      quillStylesheet.setAttribute('type', 'text/css');
+      quillStylesheet.setAttribute('href', `${this.importMetaUrl}/quillRichText/quill.snow.css`);
+      quillStylesheet.onload = () => resolve();
 
-      // Append the script element to the document body
-      document.body.appendChild(quillScript);
+      // Append the link element to the document head.
+      this.shadowRoot.appendChild(quillStylesheet);
+    };
+
+    // Append the script element to the document body.
+    this.shadowRoot.appendChild(quillScript);
   }));
 }
 
 
   get textarea() {
-    return this.root.querySelector('textarea')
+    return this.root.querySelector('div#editor')
   }
 }
