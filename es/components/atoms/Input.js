@@ -29,7 +29,6 @@ export default class Input extends Shadow() {
 
     this.keyupEventListener = event => {
       if (!this.isTouchScreen() && event.key === 'Enter' && event.shiftKey === false) {
-        /* const textarea = this.root.querySelector('textarea')*/
         this.textarea.value = this.textarea.value.substring(0, this.textarea.value.length - 1) // cut the last character of enter = \n off
         return this.sendEventListener(undefined, this.textarea)
       }
@@ -134,11 +133,12 @@ export default class Input extends Shadow() {
         flex-grow: 15;        
         font-size: max(16px, 1em); /* 16px ios mobile focus zoom fix */
         transition: height 0.3s ease-out;
-        resize: none;
         padding-left: 2.5em;       
         min-height: 3em; /*TODO: delete and update as before textarea */
         max-height: 10em;
         overflow-y: auto; 
+        border: 1px solid #000000;
+        background-color: #ffffff;
       }     
     
       :host > button {
@@ -187,7 +187,7 @@ export default class Input extends Shadow() {
   </div>
   
   <!-- Create the editor container -->
-  <div id="editor">
+  <div id="editor" contenteditable="true">
   <p>Hello World!</p>
       <p>Some initial <strong>bold</strong> text</p>
       <p><br></p>
@@ -205,9 +205,11 @@ export default class Input extends Shadow() {
 this.loadDependency().then(() => {
   // @ts-ignore
   this.quillRichText = new Quill(this.root.querySelector('div#editor'), {
-    theme: 'snow'
+    /*theme: 'snow'*/
+    'toolbar': { container: this.root.querySelector('div#toolbar') },
+    'link-tooltip': true
   });
-  this.quillRichText.getModule('toolbar', { container: this.root.querySelector('div#toolbar') });
+  //this.quillRichText.getModule('toolbar', { container: this.root.querySelector('div#toolbar') });
 
 
   this.textarea.appendChild(this.quillRichText.root);
@@ -254,6 +256,7 @@ loadDependency() {
       console.error('Error loading Quill script:', error);
       reject(error);
     };
+    /*
     quillScript.onload = () => {
       // Quill JavaScript has loaded, now load the CSS file.
       const quillStylesheet = document.createElement('link');
@@ -264,7 +267,7 @@ loadDependency() {
 
       // Append the link element to the document head.
       this.shadowRoot.appendChild(quillStylesheet);
-    };
+    };*/
 
     // Append the script element to the document body.
     this.shadowRoot.appendChild(quillScript);
