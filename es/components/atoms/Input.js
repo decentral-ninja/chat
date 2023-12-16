@@ -124,8 +124,7 @@ export default class Input extends Shadow() {
         font-size: max(16px, 1em); /* 16px ios mobile focus zoom fix */
         transition: height 0.3s ease-out;
         resize: none;
-        padding-left: 2.5em;
-        
+        padding-left: 2.5em;        
         max-height: 10em;
         overflow-y: auto; 
       }     
@@ -134,8 +133,7 @@ export default class Input extends Shadow() {
         cursor: pointer;
         flex-grow: 1;
         min-height: 100%;
-        word-break: break-all;
-        
+        word-break: break-all;        
         padding: 0.1em 1em;
       }
       :host > button#peer-web-site {
@@ -180,21 +178,13 @@ export default class Input extends Shadow() {
         name: 'emoji-button'
       }
     ])
-  } /* path: `${this.importMetaUrl}./emojis/EmojiButton.js?${Environment?.version || ''}`, */
+  }
 
   updateTextareaHeight () {
     this.textarea.style.height = 'auto'
 
     const emValue = this.textarea.scrollHeight / parseFloat(self.getComputedStyle(this.textarea).fontSize)
-    this.textarea.style.height = isNaN(emValue) ? this.textareaDefaultHeight + 'em' : emValue + 'em'
-    /*
-    if(isNaN(emValue)){
-      this.textarea.style.height = this.textareaDefaultHeight + 'em'
-    }
-    else{
-      this.textarea.style.height = emValue + 'em'
-    }
-*/
+    this.textarea.style.height = isNaN(emValue) ? this.textareaDefaultHeight + 'em' : emValue + 'em'  
   }
 
   isTouchScreen () {

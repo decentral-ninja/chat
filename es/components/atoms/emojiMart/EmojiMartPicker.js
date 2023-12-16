@@ -3,7 +3,7 @@ import { Shadow } from '../../../../../event-driven-web-components-prototypes/sr
 export default class EmojiPicker extends Shadow() {
   constructor (options = {}, ...args) {
     super({ importMetaUrl: import.meta.url, ...options }, ...args)
-
+    this.pickerDefaultBottomSpace = 9
     this.pickerOptions = options.pickerOptions
       ? options.pickerOptions
       : {
@@ -82,8 +82,7 @@ export default class EmojiPicker extends Shadow() {
       :host {
         display: none;
         position: absolute;
-      bottom: 9em;
-      }
+        bottom: ${this.pickerDefaultBottomSpace}em;      }
       :host(.visible) {
         display: block;
       }
@@ -98,7 +97,13 @@ export default class EmojiPicker extends Shadow() {
       this.picker = new EmojiMart.Picker(this.pickerOptions)
       this.html = this.picker
     })
+    this.updatePickerBottomSpace()
   }
+
+  updatePickerBottomSpace () {
+    const emValue = this.root.querySelector('textarea').clientHeight / parseFloat(self.getComputedStyle(this.emojiPickerEl).fontSize)
+    this.emojiPickerEl.style.bottom = isNaN(emValue) ? pickerDefaultBottomSpace + 'em' : emValue + 'em'
+}
 
   /**
    * fetch dependency
