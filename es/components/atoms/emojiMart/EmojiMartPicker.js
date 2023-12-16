@@ -49,7 +49,7 @@ export default class EmojiPicker extends Shadow() {
     this.clickEventListener = event => this.dispatchEvent(new CustomEvent('emoji-clicked', {
       detail: {
         clickedEmoji: event.composedPath()[0],
-        emoji
+        emoji: null
       },
       bubbles: true,
       cancelable: true,

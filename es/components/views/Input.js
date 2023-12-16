@@ -1,4 +1,6 @@
-// @ts-check
+// @ts-check OLD VERSION! NEW ONE IS IN ATOMS 
+/*--------------------------------------------------
+*/
 import { Shadow } from '../../../../event-driven-web-components-prototypes/src/Shadow.js'
 
 /* global CustomEvent */
