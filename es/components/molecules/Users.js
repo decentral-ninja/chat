@@ -16,8 +16,11 @@ export default class Users extends Shadow() {
   constructor (options = {}, ...args) {
     super({ importMetaUrl: import.meta.url, ...options }, ...args)
 
-    this.usersEventListener = event => {
-      console.log('users', event.detail.getData())
+    this.usersEventListener = async event => {
+      console.log('users', {
+        data: event.detail.getData(),
+        selfUser: event.detail.selfUser
+      })
     }
 
     this.stateValues = new Map()
@@ -25,6 +28,11 @@ export default class Users extends Shadow() {
       this.stateValues.set(event.detail.url, JSON.stringify(event.detail.stateValues))
       this.renderHTML(event.detail)
     }
+
+    /** @type {(any)=>void} */
+    this.uidResolve = map => map
+    /** @type {Promise<string>} */
+    this.uid = new Promise(resolve => (this.uidResolve = resolve))
   }
 
   connectedCallback () {
@@ -32,37 +40,27 @@ export default class Users extends Shadow() {
     if (this.shouldRenderHTML()) this.renderHTML()
     document.body.addEventListener('yjs-users', this.usersEventListener)
     document.body.addEventListener(`yjs-${this.getAttribute('key') || 'websocket'}-awareness-change`, this.eventListener)
-    new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-room', {
+    new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-nickname', {
       detail: {
         resolve
       },
       bubbles: true,
       cancelable: true,
       composed: true
-    }))).then(async ({ room }) => {
-      let nickname = 'no-name' + Date.now()
-      if (self.localStorage.getItem(await room + '-nickname')) {
-        // TODO: localstorage analog breathing app in one object with epoch per room and general local epoch without room ref. but just first contact
-        // @ts-ignore
-        nickname = self.localStorage.getItem(await room + '-nickname')
-      } else {
-        // browser issue with two prompts too close, so we wait a moment here
-        // @ts-ignore
-        await new Promise(resolve => setTimeout(() => resolve(), 200))
-        nickname = self.prompt('nickname', `${nickname}-${new Date().getUTCMilliseconds()}`) || `${nickname}-${new Date().getUTCMilliseconds()}`
+    }))).then(nickname => {
+      if (!nickname) {
+        nickname = 'no-name-' + new Date().getUTCMilliseconds()
+        nickname = self.prompt('nickname', nickname) || `${nickname}-${new Date().getUTCMilliseconds()}`
       }
-      this.dispatchEvent(new CustomEvent('yjs-set-local-state-field', {
-        /** @type {import("../../../../event-driven-web-components-yjs/src/es/EventDrivenYjs.js").SetLocalStateFieldEventDetail} */
+      this.dispatchEvent(new CustomEvent('yjs-set-nickname', {
+        /** @type {import("../../../../event-driven-web-components-yjs/src/es/controllers/Users.js").SetNicknameDetail} */
         detail: {
-          value: {
-            nickname
-          }
+          nickname
         },
         bubbles: true,
         cancelable: true,
         composed: true
       }))
-      self.localStorage.setItem(await room + '-nickname', nickname)
     })
   }
 
