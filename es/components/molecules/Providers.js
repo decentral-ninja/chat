@@ -14,8 +14,10 @@ export default class Providers extends Shadow() {
   constructor (options = {}, ...args) {
     super({ importMetaUrl: import.meta.url, ...options }, ...args)
 
+    let timeoutId = null
     this.providersEventListener = event => {
-      console.log('providers', event.detail.getData())
+      clearTimeout(timeoutId)
+      timeoutId = setTimeout(() => console.log('providers', event.detail.getData()), 2000) 
     }
   }
 

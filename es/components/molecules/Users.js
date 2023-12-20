@@ -16,17 +16,16 @@ export default class Users extends Shadow() {
   constructor (options = {}, ...args) {
     super({ importMetaUrl: import.meta.url, ...options }, ...args)
 
+    let timeoutId = null
     this.usersEventListener = async event => {
-      console.log('users', {
-        data: event.detail.getData(),
-        selfUser: event.detail.selfUser
-      })
-    }
-
-    this.stateValues = new Map()
-    this.eventListener = event => {
-      this.stateValues.set(event.detail.url, JSON.stringify(event.detail.stateValues))
-      this.renderHTML(event.detail)
+      clearTimeout(timeoutId)
+      timeoutId = setTimeout(() => {
+        console.log('users', {
+          data: event.detail.getData(),
+          selfUser: event.detail.selfUser
+        })
+        this.renderHTML(event.detail.getData(), event.detail.selfUser)
+      }, 2000)
     }
 
     /** @type {(any)=>void} */
@@ -39,7 +38,6 @@ export default class Users extends Shadow() {
     if (this.shouldRenderCSS()) this.renderCSS()
     if (this.shouldRenderHTML()) this.renderHTML()
     document.body.addEventListener('yjs-users', this.usersEventListener)
-    document.body.addEventListener(`yjs-${this.getAttribute('key') || 'websocket'}-awareness-change`, this.eventListener)
     new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-nickname', {
       detail: {
         resolve
@@ -51,22 +49,21 @@ export default class Users extends Shadow() {
       if (!nickname) {
         nickname = 'no-name-' + new Date().getUTCMilliseconds()
         nickname = self.prompt('nickname', nickname) || `${nickname}-${new Date().getUTCMilliseconds()}`
+        this.dispatchEvent(new CustomEvent('yjs-set-nickname', {
+          /** @type {import("../../../../event-driven-web-components-yjs/src/es/controllers/Users.js").SetNicknameDetail} */
+          detail: {
+            nickname
+          },
+          bubbles: true,
+          cancelable: true,
+          composed: true
+        }))
       }
-      this.dispatchEvent(new CustomEvent('yjs-set-nickname', {
-        /** @type {import("../../../../event-driven-web-components-yjs/src/es/controllers/Users.js").SetNicknameDetail} */
-        detail: {
-          nickname
-        },
-        bubbles: true,
-        cancelable: true,
-        composed: true
-      }))
     })
   }
 
   disconnectedCallback () {
     document.body.removeEventListener('yjs-users', this.usersEventListener)
-    document.body.removeEventListener(`yjs-${this.getAttribute('key') || 'websocket'}-awareness-change`, this.eventListener)
   }
 
   /**
@@ -94,7 +91,11 @@ export default class Users extends Shadow() {
    */
   renderCSS () {
     this.css = /* css */`
-      :host > ul > li {
+      :host > details > div {
+        overflow-y: auto;
+        max-height: 25dvh;
+      }
+      :host ul > li {
         word-break: break-all;
         margin-bottom: 1em;
       }
@@ -103,18 +104,8 @@ export default class Users extends Shadow() {
         font-weight: bold;
       }
       :host .self {
-        color: orange;
-        font-weight: bold;
-      }
-      :host .certainly-self {
         color: green;
         font-weight: bold;
-      }
-      :host .certainly-self::after {
-        color: black;
-        content: ' <- this is your own user';
-        font-weight: normal;
-        text-decoration: underline;
       }
       :host .warning {
         color: red;
@@ -127,35 +118,65 @@ export default class Users extends Shadow() {
   *
   * @return {void}
   */
-  renderHTML (detail) {
-    this.html = ''
-    this.html = /* html */`
-      <details>
-        <summary>Directly connected Users...</summary>
+  renderHTML (data, selfUser) {
+    if (data) {
+      if (data.users.size) {
+        this.connectedUsers.textContent = data.users.size ? data.users.size : 'You are alone!'
+        this.connectedUsers.classList.remove('warning')
+      } else {
+        this.connectedUsers.textContent = 'You are alone!'
+        this.connectedUsers.classList.add('warning')
+      }
+      this.usersUl.innerHTML = ''
+      Users.renderUserTableList(this.usersUl, data.users, selfUser)
+      this.allUsersUl.innerHTML = ''
+      Users.renderUserTableList(this.allUsersUl, data.users, selfUser)
+      
+    } else {
+      this.html = /* html */`
+        <details>
+          <summary>Directly connected Users <span id="connected-users">...</span></summary>
           <div>
-            <span>Awareness on ${this.getAttribute('key') || 'websocket'} changed with stateValues:</span>
+            <h3>Mutually connected users</h3>
+            <ul id="users"></ul>
+            <h3>All users</h3>
+            <ul id="all-users"></ul>
           </div>
-      </details>
-    `
-    if (!detail) return
-    const ul = document.createElement('ul')
-    let length = 0
-    this.stateValues.forEach((stateValue, url) => {
-      length += JSON.parse(stateValue).reduce((prev, curr) => {
-        // TODO: TypeError: Cannot read properties of undefined (reading 'localEpoch')
-        return (prev += curr.user.localEpoch !== detail.localEpoch ? 1 : 0)
-      }, 0)
-      const uuid = JSON.parse(detail.localEpoch).uuid
-      // TODO: TypeError: Cannot read properties of undefined (reading 'localEpoch')
-      JSON.parse(stateValue).forEach(user => (ul.innerHTML += `<li class=${JSON.parse(user?.user.localEpoch).uuid === uuid ? 'certainly-self' : ''}>${url}:<br>${
-        JSON.stringify(user)
-          .replace(/},/g, '},<br><br>')
-          .replace(/"nickname":"(.*?)"/g, '<span class=nickname>"nickname":"$1"</span>')
-          .replace(new RegExp(`"fingerprint":(${detail.fingerprint})`, 'g'), '<span class=self>"own-fingerprint":$1</span>')
-        }</li>`)
-      )
+        </details>
+      `
+    }
+  }
+
+  static renderUserTableList (ul, users, selfUser) {
+    users.forEach(user => {
+      const li = document.createElement('li')
+      if (user.uid === selfUser.uid) li.classList.add('self')
+      ul.appendChild(li)
+      const table = document.createElement('table')
+      li.appendChild(table)
+      for (const key in user) {
+        const tr = document.createElement('tr')
+        if (key === 'nickname') tr.classList.add('nickname')
+        table.appendChild(tr)
+        const tdOne = document.createElement('td')
+        tdOne.textContent = key
+        tr.appendChild(tdOne)
+        const tdTwo = document.createElement('td')
+        tdTwo.textContent = user[key]
+        tr.appendChild(tdTwo)
+      }
     })
-    this.root.querySelector(':host > details > summary').innerHTML = `Directly connected Users: ${length < 1 ? '<span class=warning>You are alone!</span>' : length}`
-    this.root.querySelector(':host > details > div').appendChild(ul)
+  }
+
+  get connectedUsers () {
+    return this.root.querySelector('#connected-users')
+  }
+
+  get usersUl () {
+    return this.root.querySelector('#users')
+  }
+
+  get allUsersUl () {
+    return this.root.querySelector('#all-users')
   }
 }

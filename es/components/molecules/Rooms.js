@@ -26,6 +26,7 @@ export default class Rooms extends Shadow() {
       cancelable: true,
       composed: true
     }))).then(async ({ room }) => {
+      document.title = await room
       if (!room.done) {
         await new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-set-room', {
           detail: {

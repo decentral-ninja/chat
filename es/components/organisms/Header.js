@@ -116,7 +116,6 @@ export default class Header extends Shadow() {
       composed: true
     }))).then(async ({ room }) => {
       this.root.querySelector('#room-name').textContent = await room
-      document.title = await room
     })
   }
 
