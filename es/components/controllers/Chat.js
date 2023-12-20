@@ -22,15 +22,19 @@ export const Chat = (ChosenHTMLElement = HTMLElement) => class Chat extends Chos
     super(...args)
 
     this.usersEventListener = async event => {
-      this.uidResolve(event.detail.selfUser.uid)
-      // TODO: on nickname change trigger a new this.chatObserveEventListener / yjs-chat-update
-      this.nicknameResolve(event.detail.selfUser.nickname)
-      /**
-       * Update the nickname on changes
-       * 
-       * @type {Promise<string>}
-       */
-      this.nickname = Promise.resolve(event.detail.selfUser.nickname)
+      if (event.detail.selfUser) {
+        if (event.detail.selfUser.uid) this.uidResolve(event.detail.selfUser.uid)
+        if (event.detail.selfUser.nickname) {
+          // TODO: on nickname change trigger a new this.chatObserveEventListener / yjs-chat-update to update all messages
+          this.nicknameResolve(event.detail.selfUser.nickname)
+          /**
+           * Update the nickname on changes
+           * 
+           * @type {Promise<string>}
+           */
+          this.nickname = Promise.resolve(event.detail.selfUser.nickname)
+        }
+      }
       this.usersDataResolve(event.detail.getData)
       /**
        * Update the user data on changes

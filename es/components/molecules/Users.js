@@ -27,11 +27,6 @@ export default class Users extends Shadow() {
         this.renderHTML(event.detail.getData(), event.detail.selfUser)
       }, 2000)
     }
-
-    /** @type {(any)=>void} */
-    this.uidResolve = map => map
-    /** @type {Promise<string>} */
-    this.uid = new Promise(resolve => (this.uidResolve = resolve))
   }
 
   connectedCallback () {
