@@ -30,7 +30,7 @@ export default class Header extends Shadow() {
         if (!confirm('api.qrserver.com generates your qr code, continue?')) return
         self.open(`https://api.qrserver.com/v1/create-qr-code/?data="${self.encodeURIComponent(location.href)}"`)
       } else if (event.composedPath()[0].getAttribute('id') === 'reload') {
-        self.open(location.origin + location.pathname)
+        self.open(location.origin + location.pathname + '?page=/chat')
       } else if (event.composedPath()[0].getAttribute('id') === 'jitsi') {
         self.open(`https://meet.hostpoint.ch/${this.root.querySelector('#room-name').textContent.replace(/\s+/g, '')}`)
       } else if (event.composedPath()[0].getAttribute('id') === 'nickname') {
