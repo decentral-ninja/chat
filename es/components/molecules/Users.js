@@ -95,7 +95,11 @@ export default class Users extends Shadow() {
         overflow-y: auto;
         max-height: 25dvh;
       }
-      :host ul > li {
+      :host h3 {
+        position: sticky;
+        top: 0;
+      }
+      :host ol > li {
         word-break: break-all;
         margin-bottom: 1em;
       }
@@ -121,37 +125,41 @@ export default class Users extends Shadow() {
   renderHTML (data, selfUser) {
     if (data) {
       if (data.users.size) {
-        this.connectedUsers.textContent = data.users.size ? data.users.size : 'You are alone!'
+        this.connectedUsers.textContent = data.users.size ? data.users.size - 1 : 'You are alone!'
         this.connectedUsers.classList.remove('warning')
       } else {
         this.connectedUsers.textContent = 'You are alone!'
         this.connectedUsers.classList.add('warning')
       }
-      this.usersUl.innerHTML = ''
-      Users.renderUserTableList(this.usersUl, data.users, selfUser)
-      this.allUsersUl.innerHTML = ''
-      Users.renderUserTableList(this.allUsersUl, data.users, selfUser)
+      this.usersOl.innerHTML = ''
+      Users.renderUserTableList(this.usersOl, data.users, selfUser)
+      this.allUsersOl.innerHTML = ''
+      Users.renderUserTableList(this.allUsersOl, data.allUsers, selfUser)
       
     } else {
       this.html = /* html */`
         <details>
           <summary>Directly connected Users <span id="connected-users">...</span></summary>
           <div>
-            <h3>Mutually connected users</h3>
-            <ul id="users"></ul>
-            <h3>All users</h3>
-            <ul id="all-users"></ul>
+            <div>
+              <h3>Mutually connected users</h3>
+              <ol id="users"></ol>
+            </div>
+            <div>
+              <h3>Users which once were connected</h3>
+              <ol id="all-users"></ol>
+            </div>
           </div>
         </details>
       `
     }
   }
 
-  static renderUserTableList (ul, users, selfUser) {
+  static renderUserTableList (ol, users, selfUser) {
     users.forEach(user => {
       const li = document.createElement('li')
       if (user.uid === selfUser.uid) li.classList.add('self')
-      ul.appendChild(li)
+      ol.appendChild(li)
       const table = document.createElement('table')
       li.appendChild(table)
       for (const key in user) {
@@ -172,11 +180,11 @@ export default class Users extends Shadow() {
     return this.root.querySelector('#connected-users')
   }
 
-  get usersUl () {
+  get usersOl () {
     return this.root.querySelector('#users')
   }
 
-  get allUsersUl () {
+  get allUsersOl () {
     return this.root.querySelector('#all-users')
   }
 }
