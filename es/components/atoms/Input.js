@@ -167,7 +167,7 @@ export default class Input extends Shadow() {
   renderHTML () {
     this.html = /* html */`
       <emoji-button></emoji-button>
-      <textarea enterkeyhint="send" placeholder="type your message..." rows="2"></textarea>
+      <textarea enterkeyhint="enter" placeholder="type your message..." rows="2"></textarea>
       <button id=send>send</button>
       <button id=peer-web-site>&#43; attach media</button>
       <!--<button disabled id=voiceRecord>&#9210; record</button>-->
