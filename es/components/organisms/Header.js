@@ -32,7 +32,7 @@ export default class Header extends Shadow() {
       } else if (event.composedPath()[0].getAttribute('id') === 'reload') {
         self.open(location.origin + location.pathname + '?page=/chat')
       } else if (event.composedPath()[0].getAttribute('id') === 'jitsi') {
-        self.open(`https://meet.hostpoint.ch/${this.root.querySelector('#room-name').textContent.replace(/\s+/g, '')}`)
+        self.open(`https://jitsi.mgrs.dev/${this.root.querySelector('#room-name').textContent.replace(/\s+/g, '')}`)
       } else if (event.composedPath()[0].getAttribute('id') === 'nickname') {
         new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-nickname', {
           detail: {
