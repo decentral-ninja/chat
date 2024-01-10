@@ -36,8 +36,8 @@ export default class Input extends Shadow() {
       }
       if (event.key === 'Escape') return this.textarea.blur()
       switch (event.composedPath()[0].getAttribute('id')) {
-        case 'peer-web-site':
-          self.open('https://peerweb.site/')
+        case 'wormhole':
+          self.open('https://wormhole.app/')
           break
         case 'send':
           this.sendEventListener(undefined, this.textarea)
@@ -70,16 +70,6 @@ export default class Input extends Shadow() {
     this.textarea.addEventListener('input', this.inputEventListener)
     this.addEventListener('emoji-clicked', this.emojiClickedEventListener)
     self.addEventListener('click', this.windowClickEventListener)
-    this.connectedCallbackOnce()
-  }
-
-  connectedCallbackOnce () {
-    self.addEventListener('message', event => {
-      if (!event.data.title || !event.data.href || event.origin !== 'https://peerweb.site') return
-      this.textarea.value = `${event.data.title} 👉 ${event.data.href} <span class=peer-web-site>(temporary hosted media content @peerweb.site)</span></a>`
-      this.sendEventListener(undefined, this.textarea)
-    })
-    this.connectedCallbackOnce = () => {}
   }
 
   disconnectedCallback () {
@@ -137,7 +127,7 @@ export default class Input extends Shadow() {
         
         padding: 0.1em 1em;
       }
-      :host > button#peer-web-site {
+      :host > button#wormhole {
         flex-grow: 2;
       }
       /* width */
@@ -169,7 +159,7 @@ export default class Input extends Shadow() {
       <emoji-button></emoji-button>
       <textarea enterkeyhint="enter" placeholder="type your message..." rows="2"></textarea>
       <button id=send>send</button>
-      <button id=peer-web-site>&#43; attach media</button>
+      <button id=wormhole>&#43; media (24h)</button>
       <!--<button disabled id=voiceRecord>&#9210; record</button>-->
     `
     return this.fetchModules([

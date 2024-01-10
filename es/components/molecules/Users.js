@@ -88,7 +88,7 @@ export default class Users extends Shadow() {
     this.css = /* css */`
       :host > details > div {
         overflow-y: auto;
-        max-height: 25dvh;
+        max-height: 25svh;
       }
       :host h3 {
         position: sticky;
