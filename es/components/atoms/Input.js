@@ -159,7 +159,7 @@ export default class Input extends Shadow() {
       <emoji-button></emoji-button>
       <textarea enterkeyhint="enter" placeholder="type your message..." rows="2"></textarea>
       <button id=send>send</button>
-      <button id=wormhole>&#43; media (24h)</button>
+      <button id=wormhole>&#43; media</button>
       <!--<button disabled id=voiceRecord>&#9210; record</button>-->
     `
     return this.fetchModules([

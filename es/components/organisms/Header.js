@@ -30,7 +30,11 @@ export default class Header extends Shadow() {
         if (!confirm('api.qrserver.com generates your qr code, continue?')) return
         self.open(`https://api.qrserver.com/v1/create-qr-code/?data="${self.encodeURIComponent(location.href)}"`)
       } else if (event.composedPath()[0].getAttribute('id') === 'reload') {
-        self.open(location.origin + location.pathname + '?page=/chat')
+        // TODO: move this logic to src/es/chat/es/components/molecules/Rooms.js 
+        const url = new URL(location.href)
+        let room = url.searchParams.get('room') || ''
+        url.searchParams.set('room', (room = `chat-${self.prompt('room name', room.replace(/^chat-/, '')) || room.replace(/^chat-/, '')}` || room))
+        history.pushState({ ...history.state, pageTitle: (document.title = room) }, room, url.href)
       } else if (event.composedPath()[0].getAttribute('id') === 'jitsi') {
         self.open(`https://jitsi.mgrs.dev/${this.root.querySelector('#room-name').textContent.replace(/\s+/g, '')}`)
       } else if (event.composedPath()[0].getAttribute('id') === 'nickname') {
@@ -175,7 +179,7 @@ export default class Header extends Shadow() {
   */
   renderHTML () {
     this.html = /* html */`
-      <button id=reload>&#9842;<br>new room</button>
+      <button id=reload>&#9842;<br>change room</button>
       <button id=server>&#9741;<br>connections</button>
       <button id=jitsi>&#9743;<br>video</button>
       <button id=share>💌<br>${this.textContent} [<span id=room-name></span>]</button>

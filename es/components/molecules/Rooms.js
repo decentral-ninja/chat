@@ -13,6 +13,8 @@ import { Shadow } from '../../../../event-driven-web-components-prototypes/src/S
 export default class Rooms extends Shadow() {
   constructor (options = {}, ...args) {
     super({ importMetaUrl: import.meta.url, ...options }, ...args)
+
+    this.namespace = 'chat-'
   }
 
   connectedCallback () {
@@ -29,7 +31,7 @@ export default class Rooms extends Shadow() {
       if (!room.done) {
         await new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-set-room', {
           detail: {
-            room: `chat-${self.prompt('room-name', `random-room-${Date.now()}`) || 'weedshakers-event-driven-web-components-test-22'}`,
+            room: this.namespace + self.prompt('room-name', `random-room-${Date.now()}`) || 'weedshakers-event-driven-web-components-test-22',
             resolve
           },
           bubbles: true,
