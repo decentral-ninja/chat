@@ -11,6 +11,7 @@ export default class Input extends Shadow() {
     this.editorDefaultHeight = 2.625
 
     this.sendEventListener = (event) => {
+      if(this.editorHTML !== "<div><br></div>"){
       this.dispatchEvent(new CustomEvent('yjs-input', {
         detail: {
           input: this.editorHTML
@@ -19,11 +20,12 @@ export default class Input extends Shadow() {
         cancelable: true,
         composed: true
       }))
-      this.clearEditor()
+     this.clearEditor()
+    }
     }
 
     this.inputEventListener = event => {
-      // this.updateEditorHeight()
+       this.updateEditorHeight()
       // TODO: CHANGE EmojiPicker Offset to Bottom.
     }
 
@@ -41,7 +43,7 @@ export default class Input extends Shadow() {
       }
     }
 
-    this.focusEventListener = event => setTimeout(() => this.dispatchEvent(new CustomEv ent('main-scroll', {
+    this.focusEventListener = event => setTimeout(() => this.dispatchEvent(new CustomEvent('main-scroll', {
       bubbles: true,
       cancelable: true,
       composed: true
@@ -68,6 +70,9 @@ export default class Input extends Shadow() {
     this.editor.addEventListener('input', this.inputEventListener)
     this.addEventListener('emoji-clicked', this.emojiClickedEventListener)
     self.addEventListener('click', this.windowClickEventListener)
+
+   
+
   }
 
   disconnectedCallback() {
@@ -107,11 +112,14 @@ export default class Input extends Shadow() {
       :host {
         display: flex;
       }  
-      :host > div#editor {
+      :host > div#editor-container .ql-editor {
+      height: unset;
+      }
+      :host > div#editor-container {
         flex-grow: 15;        
         font-size: max(16px, 1em); /* 16px ios mobile focus zoom fix */
         transition: height 0.3s ease-out;
-        padding-left: 2.5em;       
+          
         min-height: 3em; /*TODO: delete and update as before editor */
         max-height: 10em;
         overflow-y: auto; 
@@ -155,38 +163,53 @@ export default class Input extends Shadow() {
  */
   renderHTML() {
     this.html = /* html */`
-      <emoji-button></emoji-button> 
-      <!-- Create the toolbar container -->
-      <div id="toolbar">
-        <button class="ql-bold">Bold</button>
-        <button class="ql-italic">Italic</button>
-      </div>
-      <!-- Create the editor container -->
-      <div id="editor">
-      <p>Hello World!</p>
-        <p>Some initial <strong>bold</strong> text</p>
-        <p><br></p>
-      </div>
-      <button id="send">send</button>
+
+   <!-- <emoji-button></emoji-button> -->
+        <div id="toolbar-container"></div>
+        <div id="editor-container">
+       
+        </div>
+        <button id="send">send</button>
+      
     `;
 
-    this.loadDependency().then(Quill => {
       // @ts-ignore
-      this.Quill = new Quill(this.root.querySelector('div#editor'), {
-        theme: 'snow',
-        'toolbar': { container: this.root.querySelector('div#toolbar') },
-        'link-tooltip': true
-      });
-    });
+      this.Quill = new Quill(this.root.querySelector('div#editor-container'), {
+        toolbar: {
+           container: this.root.querySelector('div#toolbar-container'),
+           handlers: {
+              bold: function() {  },
+              italic: function() {  },
+              // Add only the necessary buttons
+           },
+        },
+         /*toolbar: {
+           container: this.root.querySelector('div#toolbar-container'),
+           font: [],
+           header: [1, 2, 3, 4, 5, 6, false],
+           align: [],
+           bold: true,
+           italic: true,
+           underline: true,
+           color: [],
+           background: [],
+           list: 'bullet',
+           link: true,
+         },
+         placeholder: 'start typing...',*/
+         theme: 'snow'  
+       });
+     
+     
+     // Fetch additional modules if needed
+     this.fetchModules([
+       {
+             // @ts-ignore
+         path: `${this.importMetaUrl}./emojiMart/EmojiButton.js?${Environment?.version || ''}`,
+         name: 'emoji-button'
+       }
+     ])
 
-    // Fetch additional modules if needed
-    this.fetchModules([
-      {
-            // @ts-ignore
-        path: `${this.importMetaUrl}./emojiMart/EmojiButton.js?${Environment?.version || ''}`,
-        name: 'emoji-button'
-      }
-    ]);
   }
 
   updateEditorHeight() {
@@ -218,10 +241,20 @@ loadDependency() {
       console.error('Error loading Quill script:', error);
       reject(error);
     };
+    /*const pasteSmartQuillScript = document.createElement('script');
+    pasteSmartQuillScript.setAttribute('type', 'text/javascript');
+    pasteSmartQuillScript.setAttribute('async', '');
+    pasteSmartQuillScript.setAttribute('src', `https://unpkg.com/quill-paste-smart@latest/dist/quill-paste-smart.js`);
+    pasteSmartQuillScript.setAttribute('crossorigin', 'anonymous');
+    pasteSmartQuillScript.onerror = (error) => {
+      console.error('Error loading Quill script:', error);
+      reject(error);
+    };*/
     // @ts-ignore
     quillScript.onload = () => resolve(self.Quill)
     // Append the script element to the document body.
     this.shadowRoot.appendChild(quillScript);
+   // this.shadowRoot.appendChild(pasteSmartQuillScript);
     this.fetchCSS([{
       // @ts-ignore
       path: `${this.importMetaUrl}./quillRichText/quill.snow.css`,
@@ -231,7 +264,7 @@ loadDependency() {
 
 
   get editor() {
-    return this.root.querySelector('div#editor')
+    return this.root.querySelector('div#editor-container')
   }
 
   clearEditor () {
