@@ -117,8 +117,9 @@ export default class Input extends Shadow() {
         padding-left: 2em;
         min-height: auto;
         max-height: 10em;
-        overflow-y: auto; 
-      }     
+        overflow-y: auto;
+        /*field-sizing: content; Coming soon: https://toot.cafe/@seaotta/111812940330557783*/
+      }
       :host > button {
         cursor: pointer;
         flex-grow: 1;
