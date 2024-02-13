@@ -58,7 +58,6 @@ export default class EmojiButton extends Shadow() {
     this.css = /* css */`
       :host {
         display: inline-block;
-        width: 1em;
         position: relative;
       }
       :host > button {
@@ -66,7 +65,7 @@ export default class EmojiButton extends Shadow() {
         border: none;
         cursor: pointer;
         font-size: 1.5em;
-        margin-left: 0.5em;
+        margin-top: 0.5em;
         position: absolute;
       }
     `

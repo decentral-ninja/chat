@@ -119,12 +119,13 @@ export default class Header extends Shadow() {
       cancelable: true,
       composed: true
     }))).then(async ({ room }) => {
-      this.root.querySelector('#room-name').textContent = await room
+      if (this.root.querySelector('#room-name')) this.root.querySelector('#room-name').textContent = await room
     })
   }
 
   disconnectedCallback () {
     this.removeEventListener('click', this.eventListener)
+    if (typeof this.dialog?.close === 'function') this.dialog.close()
   }
 
   /**
@@ -142,7 +143,7 @@ export default class Header extends Shadow() {
    * @return {boolean}
    */
   shouldRenderHTML () {
-    return !this.root.querySelector('span')
+    return !this.dialog
   }
 
   /**
@@ -157,18 +158,7 @@ export default class Header extends Shadow() {
         flex-wrap: wrap;
         align-items: stretch;
         gap: 0.3em;
-      }
-      :host > button {
-        cursor: pointer;
-        flex-grow: 1;
-        max-width: calc(50% - 0.25em);
-        min-height: max(3em, 100%);
-        word-break: break-all;
-        font-size: 0.7em;
-      }
-      :host > button > #room-name {
-        font-size: 0.9em;
-      }
+      } 
     `
   }
 
@@ -179,12 +169,53 @@ export default class Header extends Shadow() {
   */
   renderHTML () {
     this.html = /* html */`
-      <button id=reload>&#9842;<br>change room</button>
-      <button id=server>&#9741;<br>connections</button>
-      <button id=jitsi>&#9743;<br>video</button>
-      <button id=share>💌<br>${this.textContent} [<span id=room-name></span>]</button>
-      <button id=qr>&#9783;<br>generate a qr code</button>
-      <button id=nickname>&#9731;<br>nickname</button>
+      <m-dialog
+        namespace="dialog-left-slide-in-"
+        autofocus
+      >
+        <a-menu-icon id="close" class="open" namespace="menu-icon-close-" no-click></a-menu-icon>
+        <a-menu-icon id="show-modal" namespace="menu-icon-open-" no-click></a-menu-icon>
+        <o-grid auto-fill="calc(25% - 0.75em)" auto-fill-mobile="calc(50% - 0.5em)" gap="1em" padding="1em">
+          <style protected=true>
+            :host >section > button {
+              cursor: pointer;
+              word-break: break-all;
+            }
+          </style>
+          <button id=jitsi>&#9743;<br>start video meeting</button>
+          <button id=reload>&#9842;<br>change room</button>
+          <button id=nickname>&#9731;<br>change nickname</button>
+          <button id=server>&#9741;<br>adjust connections</button>
+          <button id=share>💌<br>${this.textContent} [<span id=room-name></span>]</button>
+          <button id=qr>&#9783;<br>generate a qr code</button>
+        </o-grid>
+      </m-dialog>
     `
+    return this.fetchModules([
+      {
+        // @ts-ignore
+        path: `${this.importMetaUrl}../../../..//web-components-toolbox/src/es/components/atoms/button/Button.js?${Environment?.version || ''}`,
+        name: 'a-button'
+      },
+      {
+        // @ts-ignore
+        path: `${this.importMetaUrl}../../../..//web-components-toolbox/src/es/components/atoms/menuIcon/MenuIcon.js?${Environment?.version || ''}`,
+        name: 'a-menu-icon'
+      },
+      {
+        // @ts-ignore
+        path: `${this.importMetaUrl}../../../..//web-components-toolbox/src/es/components/molecules/dialog/Dialog.js?${Environment?.version || ''}`,
+        name: 'm-dialog'
+      },
+      {
+        // @ts-ignore
+        path: `${this.importMetaUrl}../../../..//web-components-toolbox/src/es/components/organisms/grid/Grid.js?${Environment?.version || ''}`,
+        name: 'o-grid'
+      }
+    ])
+  }
+
+  get dialog () {
+    return this.root.querySelector('m-dialog')
   }
 }
