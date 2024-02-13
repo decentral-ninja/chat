@@ -36,7 +36,7 @@ export default class Header extends Shadow() {
         url.searchParams.set('room', (room = `chat-${self.prompt('room name', room.replace(/^chat-/, '')) || room.replace(/^chat-/, '')}` || room))
         history.pushState({ ...history.state, pageTitle: (document.title = room) }, room, url.href)
       } else if (event.composedPath()[0].getAttribute('id') === 'jitsi') {
-        self.open(`https://jitsi.mgrs.dev/${this.root.querySelector('#room-name').textContent.replace(/\s+/g, '')}`)
+        self.open(`https://jitsi.mgrs.dev/${this.dialogGrid.root.querySelector('#room-name').textContent.replace(/\s+/g, '')}`)
       } else if (event.composedPath()[0].getAttribute('id') === 'nickname') {
         new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-nickname', {
           detail: {
@@ -109,17 +109,21 @@ export default class Header extends Shadow() {
 
   connectedCallback () {
     if (this.shouldRenderCSS()) this.renderCSS()
-    if (this.shouldRenderHTML()) this.renderHTML()
     this.addEventListener('click', this.eventListener)
-    new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-room', {
-      detail: {
-        resolve
-      },
-      bubbles: true,
-      cancelable: true,
-      composed: true
-    }))).then(async ({ room }) => {
-      if (this.root.querySelector('#room-name')) this.root.querySelector('#room-name').textContent = await room
+    Promise.all([
+      new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-room', {
+        detail: {
+          resolve
+        },
+        bubbles: true,
+        cancelable: true,
+        composed: true
+      }))),
+      this.shouldRenderHTML()
+        ? this.renderHTML()
+        : null
+    ]).then(async ([{room}]) => {
+      if (this.dialogGrid) this.dialogGrid.root.querySelector('#room-name').textContent = await room
     })
   }
 
@@ -217,5 +221,8 @@ export default class Header extends Shadow() {
 
   get dialog () {
     return this.root.querySelector('m-dialog')
+  }
+  get dialogGrid () {
+    return this.dialog.root?.querySelector('o-grid')
   }
 }
