@@ -162,7 +162,10 @@ export default class Header extends Shadow() {
         flex-wrap: wrap;
         align-items: stretch;
         gap: 0.3em;
-      } 
+      }
+      :host > m-dialog {
+        display: contents;
+      }
     `
   }
 

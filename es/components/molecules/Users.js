@@ -96,7 +96,7 @@ export default class Users extends Shadow() {
       }
       :host ol > li {
         word-break: break-all;
-        margin-bottom: 1em;
+        margin-bottom: var(--spacing);
       }
       :host .nickname {
         color: blue;

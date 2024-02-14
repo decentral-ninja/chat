@@ -108,6 +108,7 @@ export default class Input extends Shadow() {
     this.css = /* css */`
       :host {
         display: flex;
+        width: 100%;
       }
       :host > textarea {
         flex-grow: 15;        

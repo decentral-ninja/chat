@@ -203,7 +203,7 @@ smallerList.appendChild(smallerListLi2) */
         border-radius: 0.5em;
         float: left;
         list-style: none;
-        padding: 1em;
+        padding: var(--spacing);
         margin: 0.25em 0.1em 0.25em 0;
         width: 80%;          
         
