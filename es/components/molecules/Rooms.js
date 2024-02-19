@@ -14,33 +14,12 @@ export default class Rooms extends Shadow() {
   constructor (options = {}, ...args) {
     super({ importMetaUrl: import.meta.url, ...options }, ...args)
 
-    this.namespace = 'chat-'
+    this.roomNamePrefix = 'chat-'
   }
 
   connectedCallback () {
-    // if (this.shouldRenderCSS()) this.renderCSS()
-    // if (this.shouldRenderHTML()) this.renderHTML()
-    new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-room', {
-      detail: {
-        resolve
-      },
-      bubbles: true,
-      cancelable: true,
-      composed: true
-    }))).then(async ({ room }) => {
-      if (!room.done) {
-        await new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-set-room', {
-          detail: {
-            room: this.namespace + self.prompt('room-name', `random-room-${Date.now()}`) || 'weedshakers-event-driven-web-components-test-22',
-            resolve
-          },
-          bubbles: true,
-          cancelable: true,
-          composed: true
-        })))
-      }
-      document.title = await room
-    })
+    if (this.shouldRenderCSS()) this.renderCSS()
+    if (this.shouldRenderHTML()) this.renderHTML()
   }
 
   disconnectedCallback () {
@@ -62,7 +41,7 @@ export default class Rooms extends Shadow() {
    * @return {boolean}
    */
   shouldRenderHTML () {
-    return !this.root.querySelector('span')
+    return !this.root.querySelector('m-dialog')
   }
 
   /**
@@ -79,11 +58,67 @@ export default class Rooms extends Shadow() {
   /**
   * renders the html
   *
-  * @return {void}
+  * @return {Promise<void>}
   */
   renderHTML () {
-    this.html = /* html */`
-      
-    `
+    return Promise.all([
+      new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-room', {
+        detail: {
+          resolve
+        },
+        bubbles: true,
+        cancelable: true,
+        composed: true
+      }))),
+      this.fetchModules([
+        {
+          // @ts-ignore
+          path: `${this.importMetaUrl}../../../..//web-components-toolbox/src/es/components/atoms/button/Button.js?${Environment?.version || ''}`,
+          name: 'a-button'
+        },
+        {
+          // @ts-ignore
+          path: `${this.importMetaUrl}../../../..//web-components-toolbox/src/es/components/atoms/menuIcon/MenuIcon.js?${Environment?.version || ''}`,
+          name: 'a-menu-icon'
+        },
+        {
+          // @ts-ignore
+          path: `${this.importMetaUrl}../../../..//web-components-toolbox/src/es/components/molecules/dialog/Dialog.js?${Environment?.version || ''}`,
+          name: 'm-dialog'
+        },
+        {
+          // @ts-ignore
+          path: `${this.importMetaUrl}../../../..//web-components-toolbox/src/es/components/organisms/grid/Grid.js?${Environment?.version || ''}`,
+          name: 'o-grid'
+        }
+      ])
+    ]).then(async ([{ room }]) => {
+      if (!room.done) {
+        await new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-set-room', {
+          detail: {
+            room: this.roomNamePrefix + self.prompt('room-name', `random-room-${Date.now()}`) || 'weedshakers-event-driven-web-components-test-22',
+            resolve
+          },
+          bubbles: true,
+          cancelable: true,
+          composed: true
+        })))
+      }
+      // this.html = /* html */`
+      //   <m-dialog
+      //     namespace="dialog-top-slide-in-"
+      //     ${room.done
+      //        ? ''
+      //        : 'open=show-modal'
+      //     }
+      //   >
+      //     <a-menu-icon id="close" class="open" namespace="menu-icon-close-" no-click></a-menu-icon>
+      //     <o-grid auto-fill="calc(25% - 0.75em)" auto-fill-mobile="calc(50% - 0.5em)" gap="1em" padding="1em">
+      //     <p>rooms</p>
+      //     </o-grid>
+      //   </m-dialog>
+      // `
+      document.title = await room
+    })
   }
 }

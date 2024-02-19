@@ -178,7 +178,6 @@ export default class Header extends Shadow() {
     this.html = /* html */`
       <m-dialog
         namespace="dialog-left-slide-in-"
-        autofocus
       >
         <a-menu-icon id="close" class="open" namespace="menu-icon-close-" no-click></a-menu-icon>
         <a-menu-icon id="show-modal" namespace="menu-icon-open-" no-click></a-menu-icon>
@@ -200,6 +199,7 @@ export default class Header extends Shadow() {
     `
     return this.fetchModules([
       {
+        // TODO: Implement a button with click events later
         // @ts-ignore
         path: `${this.importMetaUrl}../../../..//web-components-toolbox/src/es/components/atoms/button/Button.js?${Environment?.version || ''}`,
         name: 'a-button'
