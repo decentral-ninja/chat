@@ -163,7 +163,7 @@ export default class Header extends Shadow() {
         align-items: stretch;
         gap: 0.3em;
       }
-      :host > m-dialog {
+      :host > wct-dialog {
         display: contents;
       }
     `
@@ -176,12 +176,12 @@ export default class Header extends Shadow() {
   */
   renderHTML () {
     this.html = /* html */`
-      <m-dialog
+      <wct-dialog
         namespace="dialog-left-slide-in-"
       >
-        <a-menu-icon id="close" class="open" namespace="menu-icon-close-" no-click></a-menu-icon>
-        <a-menu-icon id="show-modal" namespace="menu-icon-open-" no-click></a-menu-icon>
-        <o-grid auto-fill="calc(25% - 0.75em)" auto-fill-mobile="calc(50% - 0.5em)" gap="1em" padding="1em">
+        <wct-menu-icon id="close" class="open" namespace="menu-icon-close-" no-click></wct-menu-icon>
+        <wct-menu-icon id="show-modal" namespace="menu-icon-open-" no-click></wct-menu-icon>
+        <wct-grid auto-fill="calc(25% - 0.75em)" auto-fill-mobile="calc(50% - 0.5em)" gap="1em" padding="1em">
           <style protected=true>
             :host >section > button {
               cursor: pointer;
@@ -194,38 +194,38 @@ export default class Header extends Shadow() {
           <button id=server>&#9741;<br>adjust connections</button>
           <button id=share>💌<br>${this.textContent} [<span id=room-name></span>]</button>
           <button id=qr>&#9783;<br>generate a qr code</button>
-        </o-grid>
-      </m-dialog>
+        </wct-grid>
+      </wct-dialog>
     `
     return this.fetchModules([
       {
         // TODO: Implement a button with click events later
         // @ts-ignore
-        path: `${this.importMetaUrl}../../../..//web-components-toolbox/src/es/components/atoms/button/Button.js?${Environment?.version || ''}`,
-        name: 'a-button'
+        path: `${this.importMetaUrl}../../../../web-components-toolbox/src/es/components/atoms/button/Button.js?${Environment?.version || ''}`,
+        name: 'wct-button'
       },
       {
         // @ts-ignore
-        path: `${this.importMetaUrl}../../../..//web-components-toolbox/src/es/components/atoms/menuIcon/MenuIcon.js?${Environment?.version || ''}`,
-        name: 'a-menu-icon'
+        path: `${this.importMetaUrl}../../../../web-components-toolbox/src/es/components/atoms/menuIcon/MenuIcon.js?${Environment?.version || ''}`,
+        name: 'wct-menu-icon'
       },
       {
         // @ts-ignore
-        path: `${this.importMetaUrl}../../../..//web-components-toolbox/src/es/components/molecules/dialog/Dialog.js?${Environment?.version || ''}`,
-        name: 'm-dialog'
+        path: `${this.importMetaUrl}../../../../web-components-toolbox/src/es/components/molecules/dialog/Dialog.js?${Environment?.version || ''}`,
+        name: 'wct-dialog'
       },
       {
         // @ts-ignore
-        path: `${this.importMetaUrl}../../../..//web-components-toolbox/src/es/components/organisms/grid/Grid.js?${Environment?.version || ''}`,
-        name: 'o-grid'
+        path: `${this.importMetaUrl}../../../../web-components-toolbox/src/es/components/organisms/grid/Grid.js?${Environment?.version || ''}`,
+        name: 'wct-grid'
       }
     ])
   }
 
   get dialog () {
-    return this.root.querySelector('m-dialog')
+    return this.root.querySelector('wct-dialog')
   }
   get dialogGrid () {
-    return this.dialog.root?.querySelector('o-grid')
+    return this.dialog.root?.querySelector('wct-grid')
   }
 }

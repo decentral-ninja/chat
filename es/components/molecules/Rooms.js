@@ -15,15 +15,20 @@ export default class Rooms extends Shadow() {
     super({ importMetaUrl: import.meta.url, ...options }, ...args)
 
     this.roomNamePrefix = 'chat-'
+    this.roomNameEventListener = event => {
+      event.stopPropagation()
+      console.log('room name', event);
+    }
   }
 
   connectedCallback () {
     if (this.shouldRenderCSS()) this.renderCSS()
     if (this.shouldRenderHTML()) this.renderHTML()
+    this.addEventListener('room-name', this.roomNameEventListener)
   }
 
   disconnectedCallback () {
-
+    this.removeEventListener('room-name', this.roomNameEventListener)
   }
 
   /**
@@ -41,7 +46,7 @@ export default class Rooms extends Shadow() {
    * @return {boolean}
    */
   shouldRenderHTML () {
-    return !this.root.querySelector('m-dialog')
+    return !this.rendered
   }
 
   /**
@@ -51,7 +56,16 @@ export default class Rooms extends Shadow() {
    */
   renderCSS () {
     this.css = /* css */`
-      
+      :host {
+        --button-primary-width: 100%;
+        --wct-input-input-height: 100%;
+        --wct-input-height: var(--wct-input-input-height);
+        --wct-input-border-radius: var(--border-radius) 0 0 var(--border-radius);
+        --wct-middle-input-input-height: var(--wct-input-input-height);
+        --wct-middle-input-height: var(--wct-middle-input-input-height);
+        --wct-middle-input-border-radius: 0;
+        --button-primary-border-radius: 0 var(--border-radius) var(--border-radius) 0;
+      }
     `
   }
 
@@ -61,6 +75,7 @@ export default class Rooms extends Shadow() {
   * @return {Promise<void>}
   */
   renderHTML () {
+    this.rendered = true
     return Promise.all([
       new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-room', {
         detail: {
@@ -73,23 +88,28 @@ export default class Rooms extends Shadow() {
       this.fetchModules([
         {
           // @ts-ignore
-          path: `${this.importMetaUrl}../../../..//web-components-toolbox/src/es/components/atoms/button/Button.js?${Environment?.version || ''}`,
-          name: 'a-button'
+          path: `${this.importMetaUrl}../../../../web-components-toolbox/src/es/components/atoms/button/Button.js?${Environment?.version || ''}`,
+          name: 'wct-button'
         },
         {
           // @ts-ignore
-          path: `${this.importMetaUrl}../../../..//web-components-toolbox/src/es/components/atoms/menuIcon/MenuIcon.js?${Environment?.version || ''}`,
-          name: 'a-menu-icon'
+          path: `${this.importMetaUrl}../../../../web-components-toolbox/src/es/components/atoms/input/Input.js?${Environment?.version || ''}`,
+          name: 'wct-input'
         },
         {
           // @ts-ignore
-          path: `${this.importMetaUrl}../../../..//web-components-toolbox/src/es/components/molecules/dialog/Dialog.js?${Environment?.version || ''}`,
-          name: 'm-dialog'
+          path: `${this.importMetaUrl}../../../../web-components-toolbox/src/es/components/atoms/menuIcon/MenuIcon.js?${Environment?.version || ''}`,
+          name: 'wct-menu-icon'
         },
         {
           // @ts-ignore
-          path: `${this.importMetaUrl}../../../..//web-components-toolbox/src/es/components/organisms/grid/Grid.js?${Environment?.version || ''}`,
-          name: 'o-grid'
+          path: `${this.importMetaUrl}../../../../web-components-toolbox/src/es/components/molecules/dialog/Dialog.js?${Environment?.version || ''}`,
+          name: 'wct-dialog'
+        },
+        {
+          // @ts-ignore
+          path: `${this.importMetaUrl}../../../../web-components-toolbox/src/es/components/organisms/grid/Grid.js?${Environment?.version || ''}`,
+          name: 'wct-grid'
         }
       ])
     ]).then(async ([{ room }]) => {
@@ -104,20 +124,32 @@ export default class Rooms extends Shadow() {
           composed: true
         })))
       }
-      // this.html = /* html */`
-      //   <m-dialog
-      //     namespace="dialog-top-slide-in-"
-      //     ${room.done
-      //        ? ''
-      //        : 'open=show-modal'
-      //     }
-      //   >
-      //     <a-menu-icon id="close" class="open" namespace="menu-icon-close-" no-click></a-menu-icon>
-      //     <o-grid auto-fill="calc(25% - 0.75em)" auto-fill-mobile="calc(50% - 0.5em)" gap="1em" padding="1em">
-      //     <p>rooms</p>
-      //     </o-grid>
-      //   </m-dialog>
-      // `
+      const hasRoomHtml = /* html */`
+        <wct-dialog
+          namespace="dialog-top-slide-in-"
+        >
+          <wct-menu-icon id="close" class="open" namespace="menu-icon-close-" no-click></wct-menu-icon>
+          <wct-grid auto-fill="20%">
+            <wct-input inputId="room-name" placeholder="${this.roomNamePrefix}" namespace="wct-input-" disabled></wct-input>
+            <wct-button namespace="button-primary-" request-event-name="room-name">enter</wct-button>
+          </wct-grid>
+        </wct-dialog>
+      `
+      const hasNoRoomHtml = /* html */`
+        <wct-dialog
+          namespace="dialog-top-slide-in-"
+          open=show-modal
+        >
+          <wct-grid auto-fill="20%">
+            <wct-input inputId="room-name" placeholder="${this.roomNamePrefix}" namespace="wct-input-" disabled></wct-input>
+            <wct-input inputId="room-name" placeholder="${`random-room-${Date.now()}`}" namespace="wct-middle-input-" grid-column="2/5" autofocus></wct-input>
+            <wct-button namespace="button-primary-" request-event-name="room-name">enter</wct-button>
+          </wct-grid>
+        </wct-dialog>
+      `
+      this.html = room.done
+        ? hasRoomHtml
+        : hasNoRoomHtml
       document.title = await room
     })
   }

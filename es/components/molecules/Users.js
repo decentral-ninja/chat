@@ -76,7 +76,7 @@ export default class Users extends Shadow() {
    * @return {boolean}
    */
   shouldRenderHTML () {
-    return !this.root.querySelector('span')
+    return !this.usersOl
   }
 
   /**
