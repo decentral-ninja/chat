@@ -130,7 +130,8 @@ export default class Rooms extends Shadow() {
         >
           <wct-menu-icon id="close" class="open" namespace="menu-icon-close-" no-click></wct-menu-icon>
           <wct-grid auto-fill="20%">
-            <wct-input inputId="room-name" placeholder="${this.roomNamePrefix}" namespace="wct-input-" disabled></wct-input>
+            <wct-input inputId="room-name-prefix" placeholder="${this.roomNamePrefix}" namespace="wct-input-" disabled></wct-input>
+            <wct-input inputId="room-name" placeholder="TODO: Fill here the current room name" namespace="wct-middle-input-" grid-column="2/5" autofocus></wct-input>
             <wct-button namespace="button-primary-" request-event-name="room-name">enter</wct-button>
           </wct-grid>
         </wct-dialog>
@@ -141,12 +142,13 @@ export default class Rooms extends Shadow() {
           open=show-modal
         >
           <wct-grid auto-fill="20%">
-            <wct-input inputId="room-name" placeholder="${this.roomNamePrefix}" namespace="wct-input-" disabled></wct-input>
+            <wct-input inputId="room-name-prefix" placeholder="${this.roomNamePrefix}" namespace="wct-input-" disabled></wct-input>
             <wct-input inputId="room-name" placeholder="${`random-room-${Date.now()}`}" namespace="wct-middle-input-" grid-column="2/5" autofocus></wct-input>
             <wct-button namespace="button-primary-" request-event-name="room-name">enter</wct-button>
           </wct-grid>
         </wct-dialog>
       `
+      // TODO: Block backdrop click close
       this.html = room.done
         ? hasRoomHtml
         : hasNoRoomHtml
