@@ -140,6 +140,7 @@ export default class Rooms extends Shadow() {
         <wct-dialog
           namespace="dialog-top-slide-in-"
           open=show-modal
+          no-backdrop-close
         >
           <wct-grid auto-fill="20%">
             <wct-input inputId="room-name-prefix" placeholder="${this.roomNamePrefix}" namespace="wct-input-" disabled></wct-input>
