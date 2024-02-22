@@ -30,11 +30,11 @@ export default class Header extends Shadow() {
         if (!confirm('api.qrserver.com generates your qr code, continue?')) return
         self.open(`https://api.qrserver.com/v1/create-qr-code/?data="${self.encodeURIComponent(location.href)}"`)
       } else if (event.composedPath()[0].getAttribute('id') === 'reload') {
-        // TODO: move this logic to src/es/chat/es/components/molecules/Rooms.js 
-        const url = new URL(location.href)
-        let room = url.searchParams.get('room') || ''
-        url.searchParams.set('room', (room = `chat-${self.prompt('room name', room.replace(/^chat-/, '')) || room.replace(/^chat-/, '')}` || room))
-        history.pushState({ ...history.state, pageTitle: (document.title = room) }, room, url.href)
+        this.dispatchEvent(new CustomEvent('open-room', {
+          bubbles: true,
+          cancelable: true,
+          composed: true
+        }))
       } else if (event.composedPath()[0].getAttribute('id') === 'jitsi') {
         self.open(`https://jitsi.mgrs.dev/${this.dialogGrid.root.querySelector('#room-name').textContent.replace(/\s+/g, '')}`)
       } else if (event.composedPath()[0].getAttribute('id') === 'nickname') {
@@ -108,6 +108,7 @@ export default class Header extends Shadow() {
   }
 
   connectedCallback () {
+    this.hidden = true
     if (this.shouldRenderCSS()) this.renderCSS()
     this.addEventListener('click', this.eventListener)
     Promise.all([
@@ -119,11 +120,15 @@ export default class Header extends Shadow() {
         cancelable: true,
         composed: true
       }))),
+      this.shouldRenderCSS()
+        ? this.renderCSS()
+        : null,
       this.shouldRenderHTML()
         ? this.renderHTML()
         : null
     ]).then(async ([{room}]) => {
       if (this.dialogGrid) this.dialogGrid.root.querySelector('#room-name').textContent = await room
+      this.hidden = false
     })
   }
 
@@ -153,7 +158,7 @@ export default class Header extends Shadow() {
   /**
    * Renders the CSS
    *
-   * @return {void}
+   * @return {Promise<void>}
    */
   renderCSS () {
     this.css = /* css */`
@@ -167,34 +172,40 @@ export default class Header extends Shadow() {
         display: contents;
       }
     `
+    return Promise.resolve()
   }
 
   /**
   * renders the html
   *
-  * @return {void}
+  * @return {Promise<void>}
   */
   renderHTML () {
     this.html = /* html */`
       <wct-dialog
         namespace="dialog-left-slide-in-"
+        close-event-name="close-menu"
       >
         <wct-menu-icon id="close" class="open" namespace="menu-icon-close-" no-click></wct-menu-icon>
         <wct-menu-icon id="show-modal" namespace="menu-icon-open-" no-click></wct-menu-icon>
-        <wct-grid auto-fill="calc(25% - 0.75em)" auto-fill-mobile="calc(50% - 0.5em)" gap="1em" padding="1em">
-          <style protected=true>
-            :host >section > button {
-              cursor: pointer;
-              word-break: break-all;
-            }
-          </style>
-          <button id=jitsi>&#9743;<br>start video meeting</button>
-          <button id=reload>&#9842;<br>change room</button>
-          <button id=nickname>&#9731;<br>change nickname</button>
-          <button id=server>&#9741;<br>adjust connections</button>
-          <button id=share>💌<br>${this.textContent} [<span id=room-name></span>]</button>
-          <button id=qr>&#9783;<br>generate a qr code</button>
-        </wct-grid>
+        <dialog>
+          <wct-grid auto-fill="calc(25% - 0.75em)" auto-fill-mobile="calc(50% - 0.5em)" gap="1em" padding="1em">
+            <section>
+              <style protected=true>
+                :host >section > button {
+                  cursor: pointer;
+                  word-break: break-all;
+                }
+              </style>
+              <button id=jitsi>&#9743;<br>start video meeting</button>
+              <button id=reload>&#9842;<br>change room</button>
+              <button id=nickname>&#9731;<br>change nickname</button>
+              <button id=server>&#9741;<br>adjust connections</button>
+              <button id=share>💌<br>${this.textContent} [<span id=room-name></span>]</button>
+              <button id=qr>&#9783;<br>generate a qr code</button>
+            </section>
+          </wct-grid>
+        </dialog>
       </wct-dialog>
     `
     return this.fetchModules([

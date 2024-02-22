@@ -33,28 +33,30 @@ export default class Users extends Shadow() {
     if (this.shouldRenderCSS()) this.renderCSS()
     if (this.shouldRenderHTML()) this.renderHTML()
     document.body.addEventListener('yjs-users', this.usersEventListener)
-    new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-nickname', {
-      detail: {
-        resolve
-      },
-      bubbles: true,
-      cancelable: true,
-      composed: true
-    }))).then(nickname => {
-      if (!nickname) {
-        nickname = 'no-name-' + new Date().getUTCMilliseconds()
-        nickname = self.prompt('nickname', nickname) || `${nickname}-${new Date().getUTCMilliseconds()}`
-        this.dispatchEvent(new CustomEvent('yjs-set-nickname', {
-          /** @type {import("../../../../event-driven-web-components-yjs/src/es/controllers/Users.js").SetNicknameDetail} */
-          detail: {
-            nickname
-          },
-          bubbles: true,
-          cancelable: true,
-          composed: true
-        }))
-      }
-    })
+    setTimeout(() => {
+      new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-nickname', {
+        detail: {
+          resolve
+        },
+        bubbles: true,
+        cancelable: true,
+        composed: true
+      }))).then(nickname => {
+        if (!nickname) {
+          nickname = 'no-name-' + new Date().getUTCMilliseconds()
+          nickname = self.prompt('nickname', nickname) || `${nickname}-${new Date().getUTCMilliseconds()}`
+          this.dispatchEvent(new CustomEvent('yjs-set-nickname', {
+            /** @type {import("../../../../event-driven-web-components-yjs/src/es/controllers/Users.js").SetNicknameDetail} */
+            detail: {
+              nickname
+            },
+            bubbles: true,
+            cancelable: true,
+            composed: true
+          }))
+        }
+      })
+    }, 2000);
   }
 
   disconnectedCallback () {

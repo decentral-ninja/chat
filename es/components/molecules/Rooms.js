@@ -5,7 +5,6 @@ import { Shadow } from '../../../../event-driven-web-components-prototypes/src/S
 
 /**
  * The rooms view
- * TODO: replace confirm box
  *
  * @export
  * @class Rooms
@@ -15,20 +14,66 @@ export default class Rooms extends Shadow() {
     super({ importMetaUrl: import.meta.url, ...options }, ...args)
 
     this.roomNamePrefix = 'chat-'
-    this.roomNameEventListener = event => {
+
+    this.roomNameEventListener = async (event) => {
       event.stopPropagation()
-      console.log('room name', event);
+      this.dialog.close()
+      this.dispatchEvent(new CustomEvent('close-menu', {
+        bubbles: true,
+        cancelable: true,
+        composed: true
+      }))
+      const url = new URL(location.href)
+      let inputField = event.composedPath()[0].inputField || event.composedPath()[0].previousElementSibling?.inputField
+      const roomName = `${this.roomNamePrefix}${inputField?.value || url.searchParams.get('room')?.replace(this.roomNamePrefix, '') || this.randomRoom}`
+      if ((await this.room).room.done) {
+        // enter new room
+        if (inputField) inputField.value = ''
+        url.searchParams.set('room', roomName)
+        history.pushState({ ...history.state, pageTitle: (document.title = roomName) }, roomName, url.href)
+      } else {
+        // open first room
+        this.dispatchEvent(new CustomEvent('yjs-set-room', {
+          detail: {
+            room: roomName
+          },
+          bubbles: true,
+          cancelable: true,
+          composed: true
+        }))
+        this.renderHTML()
+      }
     }
+    this.openRoomListener = event => {
+      this.dialog.show('show-modal')
+    }
+
+    /** @type {(any)=>void} */
+    this.roomResolve = map => map
+    /** @type {Promise<{ room: Promise<string> & {done: boolean} }>} */
+    this.room = new Promise(resolve => (this.roomResolve = resolve))
   }
 
   connectedCallback () {
     if (this.shouldRenderCSS()) this.renderCSS()
     if (this.shouldRenderHTML()) this.renderHTML()
     this.addEventListener('room-name', this.roomNameEventListener)
+    this.addEventListener('submit-search', this.roomNameEventListener)
+    document.body.addEventListener('open-room', this.openRoomListener)
+    this.dispatchEvent(new CustomEvent('yjs-get-room', {
+      detail: {
+        resolve: this.roomResolve
+      },
+      bubbles: true,
+      cancelable: true,
+      composed: true
+    }))
   }
 
   disconnectedCallback () {
     this.removeEventListener('room-name', this.roomNameEventListener)
+    this.removeEventListener('submit-search', this.roomNameEventListener)
+    document.body.removeEventListener('open-room', this.openRoomListener)
   }
 
   /**
@@ -77,14 +122,7 @@ export default class Rooms extends Shadow() {
   renderHTML () {
     this.rendered = true
     return Promise.all([
-      new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-room', {
-        detail: {
-          resolve
-        },
-        bubbles: true,
-        cancelable: true,
-        composed: true
-      }))),
+      this.room,
       this.fetchModules([
         {
           // @ts-ignore
@@ -113,47 +151,50 @@ export default class Rooms extends Shadow() {
         }
       ])
     ]).then(async ([{ room }]) => {
-      if (!room.done) {
-        await new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-set-room', {
-          detail: {
-            room: this.roomNamePrefix + self.prompt('room-name', `random-room-${Date.now()}`) || 'weedshakers-event-driven-web-components-test-22',
-            resolve
-          },
-          bubbles: true,
-          cancelable: true,
-          composed: true
-        })))
-      }
-      const hasRoomHtml = /* html */`
-        <wct-dialog
-          namespace="dialog-top-slide-in-"
-        >
-          <wct-menu-icon id="close" class="open" namespace="menu-icon-close-" no-click></wct-menu-icon>
-          <wct-grid auto-fill="20%">
-            <wct-input inputId="room-name-prefix" placeholder="${this.roomNamePrefix}" namespace="wct-input-" disabled></wct-input>
-            <wct-input inputId="room-name" placeholder="TODO: Fill here the current room name" namespace="wct-middle-input-" grid-column="2/5" autofocus></wct-input>
-            <wct-button namespace="button-primary-" request-event-name="room-name">enter</wct-button>
-          </wct-grid>
-        </wct-dialog>
-      `
-      const hasNoRoomHtml = /* html */`
-        <wct-dialog
-          namespace="dialog-top-slide-in-"
-          open=show-modal
-          no-backdrop-close
-        >
-          <wct-grid auto-fill="20%">
-            <wct-input inputId="room-name-prefix" placeholder="${this.roomNamePrefix}" namespace="wct-input-" disabled></wct-input>
-            <wct-input inputId="room-name" placeholder="${`random-room-${Date.now()}`}" namespace="wct-middle-input-" grid-column="2/5" autofocus></wct-input>
-            <wct-button namespace="button-primary-" request-event-name="room-name">enter</wct-button>
-          </wct-grid>
-        </wct-dialog>
-      `
-      // TODO: Block backdrop click close
+      this.html = ''
       this.html = room.done
-        ? hasRoomHtml
-        : hasNoRoomHtml
+        ? /* html */`
+          <wct-dialog
+            namespace="dialog-top-slide-in-"
+          >
+            <wct-menu-icon id="close" class="open" namespace="menu-icon-close-" no-click></wct-menu-icon>
+            <dialog>
+              <wct-grid auto-fill="20%">
+                <section>
+                  <wct-input inputId="room-name-prefix" placeholder="${this.roomNamePrefix}" namespace="wct-input-" disabled></wct-input>
+                  <wct-input inputId="room-name" placeholder="${(await room).replace(this.roomNamePrefix, '')}" namespace="wct-middle-input-" grid-column="2/5" submit-search autofocus force></wct-input>
+                  <wct-button namespace="button-primary-" request-event-name="room-name">enter</wct-button>
+                </section>
+              </wct-grid>
+            </dialog>
+          </wct-dialog>
+        `
+        : /* html */`
+          <wct-dialog
+            namespace="dialog-top-slide-in-"
+            open=show-modal
+            no-backdrop-close
+          >
+            <dialog>
+              <wct-grid auto-fill="20%">
+                <section>
+                  <wct-input inputId="room-name-prefix" placeholder="${this.roomNamePrefix}" namespace="wct-input-" disabled></wct-input>
+                  <wct-input inputId="room-name" placeholder="${this.randomRoom}" namespace="wct-middle-input-" grid-column="2/5" submit-search autofocus force></wct-input>
+                  <wct-button namespace="button-primary-" request-event-name="room-name">enter</wct-button>
+                </section>
+              </wct-grid>
+            </dialog>
+          </wct-dialog>
+        `
       document.title = await room
     })
+  }
+
+  get randomRoom () {
+    return this._randomRoom || (this._randomRoom = `random-room-${Date.now()}`)
+  }
+
+  get dialog () {
+    return this.root.querySelector('wct-dialog')
   }
 }
