@@ -22,19 +22,7 @@ export const Chat = (ChosenHTMLElement = HTMLElement) => class Chat extends Chos
     super(...args)
 
     this.usersEventListener = async event => {
-      if (event.detail.selfUser) {
-        if (event.detail.selfUser.uid) this.uidResolve(event.detail.selfUser.uid)
-        if (event.detail.selfUser.nickname) {
-          // TODO: on nickname change trigger a new this.chatObserveEventListener / yjs-chat-update to update all messages
-          this.nicknameResolve(event.detail.selfUser.nickname)
-          /**
-           * Update the nickname on changes
-           * 
-           * @type {Promise<string>}
-           */
-          this.nickname = Promise.resolve(event.detail.selfUser.nickname)
-        }
-      }
+      if (event.detail.selfUser?.uid) this.uidResolve(event.detail.selfUser.uid)
       this.usersDataResolve(event.detail.getData)
       /**
        * Update the user data on changes
@@ -78,6 +66,8 @@ export const Chat = (ChosenHTMLElement = HTMLElement) => class Chat extends Chos
       }))
     }
 
+    this.nicknameEventListener = event => (this.nickname = Promise.resolve(event.detail.nickname))
+
     /** @type {(any)=>void} */
     this.uidResolve = map => map
     /** @type {Promise<string>} */
@@ -95,9 +85,9 @@ export const Chat = (ChosenHTMLElement = HTMLElement) => class Chat extends Chos
   }
 
   connectedCallback () {
-    document.body.addEventListener('yjs-users', this.usersEventListener)
+    this.globalEventTarget.addEventListener('yjs-users', this.usersEventListener)
     this.addEventListener('yjs-input', this.inputEventListener)
-    document.body.addEventListener('yjs-chat-observe', this.chatObserveEventListener)
+    this.globalEventTarget.addEventListener('yjs-chat-observe', this.chatObserveEventListener)
     this.array = new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-doc', {
       detail: {
         command: 'getArray',
@@ -112,11 +102,26 @@ export const Chat = (ChosenHTMLElement = HTMLElement) => class Chat extends Chos
       this.chatObserveEventListener({ detail: { type: result.type } })
       return result.type
     })
+    this.globalEventTarget.addEventListener('yjs-nickname', this.nicknameEventListener)
+    this.dispatchEvent(new CustomEvent('yjs-get-nickname', {
+      detail: {
+        resolve: this.nicknameResolve
+      },
+      bubbles: true,
+      cancelable: true,
+      composed: true
+    }))
   }
 
   disconnectedCallback () {
-    document.body.removeEventListener('yjs-users', this.usersEventListener)
+    this.globalEventTarget.removeEventListener('yjs-users', this.usersEventListener)
     this.removeEventListener('yjs-input', this.inputEventListener)
-    document.body.removeEventListener('yjs-chat-observe', this.chatObserveEventListener)
+    this.globalEventTarget.removeEventListener('yjs-chat-observe', this.chatObserveEventListener)
+    this.globalEventTarget.removeEventListener('yjs-nickname', this.nicknameEventListener)
+  }
+
+  get globalEventTarget () {
+    // @ts-ignore
+    return this._globalEventTarget || (this._globalEventTarget = self.Environment?.activeRoute || document.body)
   }
 }

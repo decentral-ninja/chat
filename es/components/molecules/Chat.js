@@ -162,11 +162,11 @@ smallerList.appendChild(smallerListLi2) */
   connectedCallback () {
     if (this.shouldRenderCSS()) this.renderCSS()
     if (this.shouldRenderHTML()) this.renderHTML()
-    document.body.addEventListener('yjs-chat-update', this.eventListener)
+    this.globalEventTarget.addEventListener('yjs-chat-update', this.eventListener)
   }
 
   disconnectedCallback () {
-    document.body.removeEventListener('yjs-chat-update', this.eventListener)
+    this.globalEventTarget.removeEventListener('yjs-chat-update', this.eventListener)
   }
 
   /**
@@ -279,5 +279,10 @@ smallerList.appendChild(smallerListLi2) */
 
   get ul () {
     return this.root.querySelector('ul')
+  }
+
+  get globalEventTarget () {
+    // @ts-ignore
+    return this._globalEventTarget || (this._globalEventTarget = self.Environment?.activeRoute || document.body)
   }
 }

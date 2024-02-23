@@ -38,26 +38,11 @@ export default class Header extends Shadow() {
       } else if (event.composedPath()[0].getAttribute('id') === 'jitsi') {
         self.open(`https://jitsi.mgrs.dev/${this.dialogGrid.root.querySelector('#room-name').textContent.replace(/\s+/g, '')}`)
       } else if (event.composedPath()[0].getAttribute('id') === 'nickname') {
-        new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-nickname', {
-          detail: {
-            resolve
-          },
+        this.dispatchEvent(new CustomEvent('open-nickname', {
           bubbles: true,
           cancelable: true,
           composed: true
-        }))).then(nickname => {
-          if ((nickname = self.prompt('nickname', nickname))) {
-            this.dispatchEvent(new CustomEvent('yjs-set-nickname', {
-              /** @type {import("../../../../event-driven-web-components-yjs/src/es/controllers/Users.js").SetNicknameDetail} */
-              detail: {
-                nickname
-              },
-              bubbles: true,
-              cancelable: true,
-              composed: true
-            }))
-          }
-        })
+        }))
       } else if (event.composedPath()[0].getAttribute('id') === 'server') {
         new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-providers', {
           detail: {

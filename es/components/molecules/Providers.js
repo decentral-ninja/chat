@@ -24,11 +24,11 @@ export default class Providers extends Shadow() {
   connectedCallback () {
     // if (this.shouldRenderCSS()) this.renderCSS()
     // if (this.shouldRenderHTML()) this.renderHTML()
-    document.body.addEventListener('yjs-providers', this.providersEventListener)
+    this.globalEventTarget.addEventListener('yjs-providers', this.providersEventListener)
   }
 
   disconnectedCallback () {
-    document.body.removeEventListener('yjs-providers', this.providersEventListener)
+    this.globalEventTarget.removeEventListener('yjs-providers', this.providersEventListener)
   }
 
   /**
@@ -69,5 +69,10 @@ export default class Providers extends Shadow() {
     this.html = /* html */`
       
     `
+  }
+
+  get globalEventTarget () {
+    // @ts-ignore
+    return this._globalEventTarget || (this._globalEventTarget = self.Environment?.activeRoute || document.body)
   }
 }

@@ -59,7 +59,7 @@ export default class Rooms extends Shadow() {
     if (this.shouldRenderHTML()) this.renderHTML()
     this.addEventListener('room-name', this.roomNameEventListener)
     this.addEventListener('submit-search', this.roomNameEventListener)
-    document.body.addEventListener('open-room', this.openRoomListener)
+    this.globalEventTarget.addEventListener('open-room', this.openRoomListener)
     this.dispatchEvent(new CustomEvent('yjs-get-room', {
       detail: {
         resolve: this.roomResolve
@@ -73,7 +73,7 @@ export default class Rooms extends Shadow() {
   disconnectedCallback () {
     this.removeEventListener('room-name', this.roomNameEventListener)
     this.removeEventListener('submit-search', this.roomNameEventListener)
-    document.body.removeEventListener('open-room', this.openRoomListener)
+    this.globalEventTarget.removeEventListener('open-room', this.openRoomListener)
   }
 
   /**
@@ -198,5 +198,10 @@ export default class Rooms extends Shadow() {
 
   get dialog () {
     return this.root.querySelector('wct-dialog')
+  }
+
+  get globalEventTarget () {
+    // @ts-ignore
+    return this._globalEventTarget || (this._globalEventTarget = self.Environment?.activeRoute || document.body)
   }
 }
