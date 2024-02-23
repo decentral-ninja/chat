@@ -157,12 +157,13 @@ export default class Rooms extends Shadow() {
           <wct-dialog
             namespace="dialog-top-slide-in-"
           >
-            <wct-menu-icon id="close" class="open" namespace="menu-icon-close-" no-click></wct-menu-icon>
+            <wct-menu-icon id="close" class="open" namespace="menu-icon-close-" no-click click-event-name="close-menu"></wct-menu-icon>
             <dialog>
+              <h4>Enter the room name:</h4>
               <wct-grid auto-fill="20%">
                 <section>
                   <wct-input inputId="room-name-prefix" placeholder="${this.roomNamePrefix}" namespace="wct-input-" disabled></wct-input>
-                  <wct-input inputId="room-name" placeholder="${(await room).replace(this.roomNamePrefix, '')}" namespace="wct-middle-input-" grid-column="2/5" submit-search autofocus force></wct-input>
+                  <wct-input inputId="room-name" placeholder="${(await room).replace(this.roomNamePrefix, '')}" namespace="wct-middle-input-" namespace-fallback grid-column="2/5" submit-search autofocus force></wct-input>
                   <wct-button namespace="button-primary-" request-event-name="room-name">enter</wct-button>
                 </section>
               </wct-grid>
@@ -176,10 +177,11 @@ export default class Rooms extends Shadow() {
             no-backdrop-close
           >
             <dialog>
+              <h4>Enter the room name:</h4>
               <wct-grid auto-fill="20%">
                 <section>
                   <wct-input inputId="room-name-prefix" placeholder="${this.roomNamePrefix}" namespace="wct-input-" disabled></wct-input>
-                  <wct-input inputId="room-name" placeholder="${this.randomRoom}" namespace="wct-middle-input-" grid-column="2/5" submit-search autofocus force></wct-input>
+                  <wct-input inputId="room-name" placeholder="${this.randomRoom}" namespace="wct-middle-input-" namespace-fallback grid-column="2/5" submit-search autofocus force></wct-input>
                   <wct-button namespace="button-primary-" request-event-name="room-name">enter</wct-button>
                 </section>
               </wct-grid>
