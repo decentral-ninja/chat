@@ -5,8 +5,6 @@ import { Shadow } from '../../../../event-driven-web-components-prototypes/src/S
 
 /**
  * The users view
- * TODO: replace confirm box
- * TODO: listen to "yjs-users" event dispatched from controller/Users.js with func. detail.getData() and not awareness-change event!!!
  * TODO: view component for controllers/Users.js with https://github.com/feross/p2p-graph
  *
  * @export

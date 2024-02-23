@@ -7,7 +7,6 @@ import { Shadow } from '../../../../event-driven-web-components-prototypes/src/S
  * The chats header
  * TODO: replace all buttons and move them into navigation
  * TODO: use this chat header for status information
- * TODO: ... properly spread functionality to ../../chat/es/components/molecules/... Rooms, Providers, Users and move the triggers (buttons) to a simple navigation view component including room, provider, user, video, share and qr code
  *
  * @export
  * @class Users

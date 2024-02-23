@@ -35,7 +35,6 @@ export const Chat = (ChosenHTMLElement = HTMLElement) => class Chat extends Chos
     this.inputEventListener = async event => {
       const input = event.detail.input
       if (input.value) {
-        // TODO: make this nicer, this.array should be set as promise within the constructor and only dispatch once on connectedCallback
         // @ts-ignore
         (await this.array).push([{
           uid: await this.uid,
@@ -82,26 +81,31 @@ export const Chat = (ChosenHTMLElement = HTMLElement) => class Chat extends Chos
     this.usersDataResolve = map => map
     /** @type {Promise<() => {allUsers: import("../../../../event-driven-web-components-yjs/src/es/controllers/Users.js").UsersContainer, users: import("../../../../event-driven-web-components-yjs/src/es/controllers/Users.js").UsersContainer}>} */
     this.usersData = new Promise(resolve => (this.usersDataResolve = resolve))
+
+    /** @type {(any)=>void} */
+    this.arrayResolve = map => map
+    /** @type {Promise<string>} */
+    this.array = new Promise(resolve => (this.arrayResolve = resolve)).then(result => {
+      this.chatObserveEventListener({ detail: { type: result.type } })
+      return result.type
+    })
   }
 
   connectedCallback () {
     this.globalEventTarget.addEventListener('yjs-users', this.usersEventListener)
     this.addEventListener('yjs-input', this.inputEventListener)
     this.globalEventTarget.addEventListener('yjs-chat-observe', this.chatObserveEventListener)
-    this.array = new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-doc', {
+    this.dispatchEvent(new CustomEvent('yjs-doc', {
       detail: {
         command: 'getArray',
         arguments: ['chat-test-1'], // this could be simply 'chat' but since it has been in use with the name 'chat-test-1', we can not change it without breaking all older chats. So keep it!
         observe: 'yjs-chat-observe',
-        resolve
+        resolve: this.arrayResolve
       },
       bubbles: true,
       cancelable: true,
       composed: true
-    }))).then(result => {
-      this.chatObserveEventListener({ detail: { type: result.type } })
-      return result.type
-    })
+    }))
     this.globalEventTarget.addEventListener('yjs-nickname', this.nicknameEventListener)
     this.dispatchEvent(new CustomEvent('yjs-get-nickname', {
       detail: {
