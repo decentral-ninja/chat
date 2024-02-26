@@ -108,6 +108,7 @@ export default class Users extends Shadow() {
     this.css = /* css */`
       :host {
         --button-primary-width: 100%;
+        --button-primary-height: 100%;
         --wct-input-input-height: 100%;
         --wct-input-height: var(--wct-input-input-height);
         --wct-input-border-radius: var(--border-radius) 0 0 var(--border-radius);
