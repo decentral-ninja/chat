@@ -24,11 +24,11 @@ export default class Providers extends Shadow() {
   connectedCallback () {
     // if (this.shouldRenderCSS()) this.renderCSS()
     // if (this.shouldRenderHTML()) this.renderHTML()
-    this.globalEventTarget.addEventListener('yjs-providers', this.providersEventListener)
+    this.globalEventTarget.addEventListener('yjs-providers-data', this.providersEventListener)
   }
 
   disconnectedCallback () {
-    this.globalEventTarget.removeEventListener('yjs-providers', this.providersEventListener)
+    this.globalEventTarget.removeEventListener('yjs-providers-data', this.providersEventListener)
   }
 
   /**

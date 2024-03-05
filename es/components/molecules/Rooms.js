@@ -15,6 +15,34 @@ export default class Rooms extends Shadow() {
 
     this.roomNamePrefix = 'chat-'
 
+    this.clickEventListener = async event => {
+      let target
+      if ((target = event.composedPath()[0]).hasAttribute('route')) {
+        if ((await this.roomPromise).room.done) {
+          // enter new room
+          this.dialog.close()
+          this.dispatchEvent(new CustomEvent('close-menu', {
+            bubbles: true,
+            cancelable: true,
+            composed: true
+          }))
+        } else if(target.hasAttribute('room-name')) {
+          event.preventDefault()
+          event.stopPropagation()
+          // open first room
+          this.dispatchEvent(new CustomEvent('yjs-set-room', {
+            detail: {
+              room: target.getAttribute('room-name')
+            },
+            bubbles: true,
+            cancelable: true,
+            composed: true
+          }))
+          this.renderHTML()
+        }
+      }
+    }
+
     this.roomNameEventListener = async (event) => {
       event.stopPropagation()
       this.dialog.close()
@@ -26,7 +54,7 @@ export default class Rooms extends Shadow() {
       const url = new URL(location.href)
       let inputField = event.composedPath()[0].inputField || event.composedPath()[0].previousElementSibling?.inputField
       const roomName = `${this.roomNamePrefix}${inputField?.value || url.searchParams.get('room')?.replace(this.roomNamePrefix, '') || this.randomRoom}`
-      if ((await this.room).room.done) {
+      if ((await this.roomPromise).room.done) {
         // enter new room
         if (inputField) inputField.value = ''
         url.searchParams.set('room', roomName)
@@ -44,22 +72,55 @@ export default class Rooms extends Shadow() {
         this.renderHTML()
       }
     }
+
     this.openRoomListener = event => {
       this.dialog.show('show-modal')
     }
 
+    // save room name to local storage
+    this.providersUpdateEventListener = async event => this.dispatchEvent(new CustomEvent('storage-merge', {
+      detail: {
+        key: `${this.roomNamePrefix}rooms`,
+        value: {
+          [await (await this.roomPromise).room]: {
+            locationHref: event.detail.locationHref,
+          }
+        }
+      },
+      bubbles: true,
+      cancelable: true,
+      composed: true
+    }))
+
     /** @type {(any)=>void} */
     this.roomResolve = map => map
-    /** @type {Promise<{ room: Promise<string> & {done: boolean} }>} */
-    this.room = new Promise(resolve => (this.roomResolve = resolve))
+    /** @type {Promise<{ locationHref: string, room: Promise<string> & {done: boolean} }>} */
+    this.roomPromise = new Promise(resolve => (this.roomResolve = resolve))
+
+    // save room name to local storage
+    this.roomPromise.then(async ({locationHref, room}) => this.dispatchEvent(new CustomEvent('storage-merge', {
+      detail: {
+        key: `${this.roomNamePrefix}rooms`,
+        value: {
+          [await room]: {
+            locationHref,
+            entered: [Date.now()]
+          }
+        }
+      },
+      bubbles: true,
+      cancelable: true,
+      composed: true
+    })))
   }
 
   connectedCallback () {
     if (this.shouldRenderCSS()) this.renderCSS()
     if (this.shouldRenderHTML()) this.renderHTML()
-    this.addEventListener('room-name', this.roomNameEventListener)
-    this.addEventListener('submit-search', this.roomNameEventListener)
+    this.addEventListener('click', this.clickEventListener)
+    this.addEventListener('submit-room-name', this.roomNameEventListener)
     this.globalEventTarget.addEventListener('open-room', this.openRoomListener)
+    this.globalEventTarget.addEventListener('yjs-providers-update', this.providersUpdateEventListener)
     this.dispatchEvent(new CustomEvent('yjs-get-room', {
       detail: {
         resolve: this.roomResolve
@@ -71,9 +132,10 @@ export default class Rooms extends Shadow() {
   }
 
   disconnectedCallback () {
-    this.removeEventListener('room-name', this.roomNameEventListener)
-    this.removeEventListener('submit-search', this.roomNameEventListener)
+    this.removeEventListener('click', this.clickEventListener)
+    this.removeEventListener('submit-room-name', this.roomNameEventListener)
     this.globalEventTarget.removeEventListener('open-room', this.openRoomListener)
+    this.globalEventTarget.removeEventListener('yjs-providers-update', this.providersUpdateEventListener)
   }
 
   /**
@@ -97,7 +159,7 @@ export default class Rooms extends Shadow() {
   /**
    * Renders the CSS
    *
-   * @return {void}
+   * @return {Promise<void>}
    */
   renderCSS () {
     this.css = /* css */`
@@ -113,6 +175,30 @@ export default class Rooms extends Shadow() {
         --button-primary-border-radius: 0 var(--border-radius) var(--border-radius) 0;
       }
     `
+    return this.fetchTemplate()
+  }
+
+  /**
+   * fetches the template
+   *
+   * @return {Promise<void>}
+   */
+  fetchTemplate () {
+    /** @type {import("../../../../event-driven-web-components-prototypes/src/Shadow.js").fetchCSSParams[]} */
+    const styles = [
+      {
+        path: `${this.importMetaUrl}../../../../web-components-toolbox/src/css/reset.css`, // no variables for this reason no namespace
+        namespace: false
+      },
+      {
+        path: `${this.importMetaUrl}../../../../web-components-toolbox/src/css/style.css`, // apply namespace and fallback to allow overwriting on deeper level
+        namespaceFallback: true
+      }
+    ]
+    switch (this.getAttribute('namespace')) {
+      default:
+        return this.fetchCSS(styles, false)
+    }
   }
 
   /**
@@ -123,7 +209,16 @@ export default class Rooms extends Shadow() {
   renderHTML () {
     this.rendered = true
     return Promise.all([
-      this.room,
+      this.roomPromise,
+      new Promise(resolve => this.dispatchEvent(new CustomEvent('storage-get', {
+        detail: {
+          key: `${this.roomNamePrefix}rooms`,
+          resolve
+        },
+        bubbles: true,
+        cancelable: true,
+        composed: true
+      }))),
       this.fetchModules([
         {
           // @ts-ignore
@@ -151,7 +246,8 @@ export default class Rooms extends Shadow() {
           name: 'wct-grid'
         }
       ])
-    ]).then(async ([{ room }]) => {
+    ]).then(async ([{ room }, getRoomsResult]) => {
+      let roomName
       this.html = ''
       this.html = room.done
         ? /* html */`
@@ -160,14 +256,18 @@ export default class Rooms extends Shadow() {
           >
             <wct-menu-icon id="close" class="open" namespace="menu-icon-close-" no-click click-event-name="close-menu"></wct-menu-icon>
             <dialog>
-              <h4>Enter the room name:</h4>
+              <h4>Enter room name:</h4>
               <wct-grid auto-fill="20%">
                 <section>
                   <wct-input inputId="room-name-prefix" placeholder="${this.roomNamePrefix}" namespace="wct-input-" disabled></wct-input>
-                  <wct-input inputId="room-name" placeholder="${(await room).replace(this.roomNamePrefix, '')}" namespace="wct-middle-input-" namespace-fallback grid-column="2/5" submit-search autofocus force></wct-input>
-                  <wct-button namespace="button-primary-" request-event-name="room-name">enter</wct-button>
+                  <wct-input inputId="room-name" placeholder="${(roomName = await room).replace(this.roomNamePrefix, '')}" namespace="wct-middle-input-" namespace-fallback grid-column="2/5" submit-search="submit-room-name" autofocus force></wct-input>
+                  <wct-button namespace="button-primary-" request-event-name="submit-room-name">enter</wct-button>
                 </section>
               </wct-grid>
+              <hr>
+              <ul>
+                ${Object.keys(getRoomsResult.value).reduce((acc, key) => acc + (key === roomName ? '' : `<li><a route href="${getRoomsResult.value[key].locationHref}">${key}</a></li>`), '')}
+              </ul>
             </dialog>
           </wct-dialog>
         `
@@ -178,18 +278,22 @@ export default class Rooms extends Shadow() {
             no-backdrop-close
           >
             <dialog>
-              <h4>Enter the room name:</h4>
+              <h4>Enter room name:</h4>
               <wct-grid auto-fill="20%">
                 <section>
                   <wct-input inputId="room-name-prefix" placeholder="${this.roomNamePrefix}" namespace="wct-input-" disabled></wct-input>
-                  <wct-input inputId="room-name" placeholder="${this.randomRoom}" namespace="wct-middle-input-" namespace-fallback grid-column="2/5" submit-search autofocus force></wct-input>
-                  <wct-button namespace="button-primary-" request-event-name="room-name">enter</wct-button>
+                  <wct-input inputId="room-name" placeholder="${this.randomRoom}" namespace="wct-middle-input-" namespace-fallback grid-column="2/5" submit-search="submit-room-name" autofocus force></wct-input>
+                  <wct-button namespace="button-primary-" request-event-name="submit-room-name">enter</wct-button>
                 </section>
               </wct-grid>
+              <hr>
+              <ul>
+                ${Object.keys(getRoomsResult.value).reduce((acc, key) => `${acc}<li><a route href="${getRoomsResult.value[key].locationHref}" room-name="${key}">${key}</a></li>`, '')}
+              </ul>
             </dialog>
           </wct-dialog>
         `
-      document.title = await room
+      document.title = roomName || (await room)
     })
   }
 
