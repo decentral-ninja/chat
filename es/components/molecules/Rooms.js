@@ -376,7 +376,7 @@ export default class Rooms extends Shadow() {
     </style>
     <ul>
       ${Object.keys(rooms.value)
-        .sort((a, b) => rooms.value[b].entered.slice(-1) - rooms.value[a].entered.slice(-1))
+        .sort((a, b) => rooms.value[b].entered?.slice(-1) - rooms.value[a].entered?.slice(-1))
         .reduce((acc, key) => acc + (key === activeRoomName ? '' : `<li><a route href="${rooms.value[key].locationHref}">${key}</a><a-icon-mdx delete="${key}" icon-url="../../../../../../img/icons/eraser.svg" size="2em"></a-icon-mdx><a-icon-mdx undo icon-url="../../../../../../img/icons/arrow-back-up.svg" size="2em"></a-icon-mdx></li>`), '')
       }
     </ul>`
