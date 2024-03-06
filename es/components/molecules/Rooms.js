@@ -40,6 +40,41 @@ export default class Rooms extends Shadow() {
           }))
           this.renderHTML()
         }
+      } else if ((target = event.composedPath().find(el => el.hasAttribute?.('delete')))) {
+        new Promise(resolve => this.dispatchEvent(new CustomEvent('storage-get', {
+          detail: {
+            key: `${this.roomNamePrefix}rooms`,
+            resolve
+          },
+          bubbles: true,
+          cancelable: true,
+          composed: true
+        }))).then(getRoomsResult => {
+          delete getRoomsResult.value[target.getAttribute('delete')]
+          this.dispatchEvent(new CustomEvent('storage-set', {
+            detail: {
+              key: `${this.roomNamePrefix}rooms`,
+              value: getRoomsResult.value
+            },
+            bubbles: true,
+            cancelable: true,
+            composed: true
+          }))
+          Array.from(target.parentNode.parentNode.querySelectorAll('.deleted')).forEach(node => node.remove())
+          target.parentNode.classList.add('deleted')
+        })
+      } else if ((target = event.composedPath().find(el => el.hasAttribute?.('undo')))) {
+        new Promise(resolve => this.dispatchEvent(new CustomEvent('storage-undo', {
+          detail: {
+            key: `${this.roomNamePrefix}rooms`,
+            resolve
+          },
+          bubbles: true,
+          cancelable: true,
+          composed: true
+        }))).then(getRoomsResult => {
+          target.parentNode.classList.remove('deleted')
+        })
       }
     }
 
@@ -51,8 +86,16 @@ export default class Rooms extends Shadow() {
         cancelable: true,
         composed: true
       }))
-      const url = new URL(location.href)
       let inputField = event.composedPath()[0].inputField || event.composedPath()[0].previousElementSibling?.inputField
+      // check if url got entered as room name
+      if (inputField?.value) {
+        try {
+          const url = new URL(inputField.value)
+          const roomName = url.searchParams.get('room')
+          if (roomName) return history.pushState({ ...history.state, pageTitle: (document.title = roomName) }, roomName, url.href)
+        } catch (error) {}
+      }
+      const url = new URL(location.href)
       const roomName = `${this.roomNamePrefix}${inputField?.value || url.searchParams.get('room')?.replace(this.roomNamePrefix, '') || this.randomRoom}`
       if ((await this.roomPromise).room.done) {
         // enter new room
@@ -116,7 +159,7 @@ export default class Rooms extends Shadow() {
 
   connectedCallback () {
     if (this.shouldRenderCSS()) this.renderCSS()
-    if (this.shouldRenderHTML()) this.renderHTML()
+    this.renderHTML()
     this.addEventListener('click', this.clickEventListener)
     this.addEventListener('submit-room-name', this.roomNameEventListener)
     this.globalEventTarget.addEventListener('open-room', this.openRoomListener)
@@ -148,15 +191,6 @@ export default class Rooms extends Shadow() {
   }
 
   /**
-   * Evaluates if a render of HTML is necessary
-   *
-   * @return {boolean}
-   */
-  shouldRenderHTML () {
-    return !this.rendered
-  }
-
-  /**
    * Renders the CSS
    *
    * @return {Promise<void>}
@@ -173,6 +207,8 @@ export default class Rooms extends Shadow() {
         --wct-middle-input-height: var(--wct-middle-input-input-height);
         --wct-middle-input-border-radius: 0;
         --button-primary-border-radius: 0 var(--border-radius) var(--border-radius) 0;
+        --dialog-top-slide-in-ul-padding-left: 0;
+        --dialog-top-slide-in-ul-list-style: none;
       }
     `
     return this.fetchTemplate()
@@ -207,7 +243,6 @@ export default class Rooms extends Shadow() {
   * @return {Promise<void>}
   */
   renderHTML () {
-    this.rendered = true
     return Promise.all([
       this.roomPromise,
       new Promise(resolve => this.dispatchEvent(new CustomEvent('storage-get', {
@@ -236,6 +271,10 @@ export default class Rooms extends Shadow() {
           name: 'wct-menu-icon'
         },
         {
+          path: `${this.importMetaUrl}../../../../web-components-toolbox/src/es/components/atoms/iconMdx/IconMdx.js`,
+          name: 'a-icon-mdx'
+        },
+        {
           // @ts-ignore
           path: `${this.importMetaUrl}../../../../web-components-toolbox/src/es/components/molecules/dialog/Dialog.js?${Environment?.version || ''}`,
           name: 'wct-dialog'
@@ -256,7 +295,7 @@ export default class Rooms extends Shadow() {
           >
             <wct-menu-icon id="close" class="open" namespace="menu-icon-close-" no-click click-event-name="close-menu"></wct-menu-icon>
             <dialog>
-              <h4>Enter room name:</h4>
+              <h4>Enter room name or link:</h4>
               <wct-grid auto-fill="20%">
                 <section>
                   <wct-input inputId="room-name-prefix" placeholder="${this.roomNamePrefix}" namespace="wct-input-" disabled></wct-input>
@@ -265,9 +304,7 @@ export default class Rooms extends Shadow() {
                 </section>
               </wct-grid>
               <hr>
-              <ul>
-                ${Object.keys(getRoomsResult.value).reduce((acc, key) => acc + (key === roomName ? '' : `<li><a route href="${getRoomsResult.value[key].locationHref}">${key}</a></li>`), '')}
-              </ul>
+              ${Rooms.renderRoomList(getRoomsResult, roomName)}
             </dialog>
           </wct-dialog>
         `
@@ -278,7 +315,7 @@ export default class Rooms extends Shadow() {
             no-backdrop-close
           >
             <dialog>
-              <h4>Enter room name:</h4>
+              <h4>Enter room name or link:</h4>
               <wct-grid auto-fill="20%">
                 <section>
                   <wct-input inputId="room-name-prefix" placeholder="${this.roomNamePrefix}" namespace="wct-input-" disabled></wct-input>
@@ -287,14 +324,62 @@ export default class Rooms extends Shadow() {
                 </section>
               </wct-grid>
               <hr>
-              <ul>
-                ${Object.keys(getRoomsResult.value).reduce((acc, key) => `${acc}<li><a route href="${getRoomsResult.value[key].locationHref}" room-name="${key}">${key}</a></li>`, '')}
-              </ul>
+              ${Rooms.renderRoomList(getRoomsResult)}
             </dialog>
           </wct-dialog>
         `
       document.title = roomName || (await room)
     })
+  }
+
+  /**
+   *
+   *
+   * @param {{value: {string: any}}} rooms
+   * @param {string} [activeRoomName=undefined]
+   * @return {string}
+   */
+  static renderRoomList (rooms, activeRoomName) {
+    return /* html */`<style>
+      :host ul > li {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid var(--background-color-rgba-50);
+        padding-top: 0.5em;
+        padding-bottom: 0.5em;
+      }
+      :host ul > li:last-child {
+        border-bottom: none;
+      }
+      :host ul > li.deleted {
+        text-decoration: line-through;
+      }
+      :host ul > li [delete] {
+        display:block;
+      }
+      :host ul > li.deleted [delete] {
+        display:none;
+      }
+      :host ul > li [undo] {
+        display:none;
+      }
+      :host ul > li.deleted [undo] {
+        display:block;
+      }
+      :host ul > li > a {
+        margin: 0;
+      }
+      :host ul > li > a-icon-mdx {
+        --color: var(--color-error);
+      }
+    </style>
+    <ul>
+      ${Object.keys(rooms.value)
+        .sort((a, b) => rooms.value[b].entered.slice(-1) - rooms.value[a].entered.slice(-1))
+        .reduce((acc, key) => acc + (key === activeRoomName ? '' : `<li><a route href="${rooms.value[key].locationHref}">${key}</a><a-icon-mdx delete="${key}" icon-url="../../../../../../img/icons/eraser.svg" size="2em"></a-icon-mdx><a-icon-mdx undo icon-url="../../../../../../img/icons/arrow-back-up.svg" size="2em"></a-icon-mdx></li>`), '')
+      }
+    </ul>`
   }
 
   get randomRoom () {
