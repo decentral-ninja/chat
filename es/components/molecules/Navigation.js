@@ -165,7 +165,7 @@ export default class Navigation extends Shadow() {
         close-event-name="close-menu"
       >
         <wct-menu-icon id="close" class="open" namespace="menu-icon-close-" no-click></wct-menu-icon>
-        <a-icon-mdx id="show-modal" icon-url="../../../../../../img/icons/settings-heart.svg" size="3.75em"></a-icon-mdx>
+        <a-icon-mdx id="show-modal" icon-url="../../../../../../img/icons/settings-heart.svg" size="2em"></a-icon-mdx>
         <dialog>
           <nav>
             <wct-grid auto-fill="calc(25% - 0.75em)" auto-fill-mobile="calc(50% - 0.5em)" gap="1em" padding="1em">

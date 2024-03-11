@@ -73,11 +73,22 @@ export default class RoomName extends Shadow() {
       :host {
         --a-margin: 0;
         --a-text-decoration: underline;
+        --a-display: flex;
         --color: var(--a-color);
-        --h1-display: flex;
-        --h1-font-size: 2em;
+        --h1-font-size: 1.75em;
         --h1-margin: 0;
         --h1-padding: 0.2em 0 0 0;
+      }
+      :host > a {
+        align-items: center;
+        display: flex;
+        tap-highlight-color: transparent;
+        --webkit-tap-highlight-color: transparent;
+      }
+      :host > a > h1 {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
       @media only screen and (max-width: _max-width_) {
         :host {}
@@ -119,7 +130,10 @@ export default class RoomName extends Shadow() {
    */
   renderHTML (roomName) {
     this.html = ''
-    this.html = `<a href="#"><h1><a-icon-mdx id="show-modal" icon-url="../../../../../../img/icons/chevron-left.svg" size="1em"></a-icon-mdx>${roomName || 'Loading...'}</h1></a>`
+    this.html = `<a href="#">
+      <a-icon-mdx id="show-modal" icon-url="../../../../../../img/icons/chevron-left.svg" size="1.75em"></a-icon-mdx>
+      <h1>${roomName || 'Loading...'}</h1>
+    </a>`
     return this.fetchModules([
       {
         path: `${this.importMetaUrl}../../../../../web-components-toolbox/src/es/components/atoms/iconMdx/IconMdx.js`,

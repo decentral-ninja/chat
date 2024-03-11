@@ -155,7 +155,8 @@ export default class EmojiPicker extends Shadow() {
       background: white;
       box-shadow: 0px -5px 10px rgba(0, 0, 0, 0.1);
       display: none;
-      -webkit-tap-highlight-color: transparent;
+      tap-highlight-color: transparent;
+      --webkit-tap-highlight-color: transparent;
     }
     
     :host(.visible) {
