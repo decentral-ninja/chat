@@ -85,6 +85,9 @@ export default class RoomName extends Shadow() {
         tap-highlight-color: transparent;
         --webkit-tap-highlight-color: transparent;
       }
+      :host > a > a-icon-mdx {
+        display: flex;
+      }
       :host > a > h1 {
         white-space: nowrap;
         overflow: hidden;
