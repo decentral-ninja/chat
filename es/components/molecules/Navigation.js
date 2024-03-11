@@ -4,14 +4,14 @@ import { Shadow } from '../../../../event-driven-web-components-prototypes/src/S
 /* global self */
 
 /**
- * The chats header
+ * The chats Navigation
  * TODO: replace all buttons and move them into navigation
- * TODO: use this chat header for status information
+ * TODO: use this chat Navigation for status information
  *
  * @export
  * @class Users
  */
-export default class Header extends Shadow() {
+export default class Navigation extends Shadow() {
   constructor (options = {}, ...args) {
     super({ importMetaUrl: import.meta.url, ...options }, ...args)
 
@@ -28,12 +28,6 @@ export default class Header extends Shadow() {
       } else if (event.composedPath()[0].getAttribute('id') === 'qr') {
         if (!confirm('api.qrserver.com generates your qr code, continue?')) return
         self.open(`https://api.qrserver.com/v1/create-qr-code/?data="${self.encodeURIComponent(location.href)}"`)
-      } else if (event.composedPath()[0].getAttribute('id') === 'reload') {
-        this.dispatchEvent(new CustomEvent('open-room', {
-          bubbles: true,
-          cancelable: true,
-          composed: true
-        }))
       } else if (event.composedPath()[0].getAttribute('id') === 'jitsi') {
         self.open(`https://jitsi.mgrs.dev/${this.dialogGrid.root.querySelector('#room-name').textContent.replace(/\s+/g, '')}`)
       } else if (event.composedPath()[0].getAttribute('id') === 'nickname') {
@@ -167,30 +161,31 @@ export default class Header extends Shadow() {
   renderHTML () {
     this.html = /* html */`
       <wct-dialog
-        namespace="dialog-left-slide-in-"
+        namespace="dialog-top-slide-in-"
         close-event-name="close-menu"
       >
         <wct-menu-icon id="close" class="open" namespace="menu-icon-close-" no-click></wct-menu-icon>
-        <wct-menu-icon id="show-modal" namespace="menu-icon-open-" no-click></wct-menu-icon>
+        <a-icon-mdx id="show-modal" icon-url="../../../../../../img/icons/settings-heart.svg" size="3.75em"></a-icon-mdx>
         <dialog>
-          <wct-grid auto-fill="calc(25% - 0.75em)" auto-fill-mobile="calc(50% - 0.5em)" gap="1em" padding="1em">
-            <section>
-              <style protected=true>
-                :host >section > button {
-                  cursor: pointer;
-                  word-break: break-all;
-                }
-              </style>
-              <button id=jitsi>&#9743;<br>start video meeting</button>
-              <button id=reload>&#9842;<br>change room</button>
-              <button id=nickname>&#9731;<br>change nickname</button>
-              <button id=server>&#9741;<br>adjust connections</button>
-              <button id=share>💌<br>${this.textContent} [<span id=room-name></span>]</button>
-              <button id=qr>&#9783;<br>generate a qr code</button>
-            </section>
-          </wct-grid>
-        </dialog>
-      </wct-dialog>
+          <nav>
+            <wct-grid auto-fill="calc(25% - 0.75em)" auto-fill-mobile="calc(50% - 0.5em)" gap="1em" padding="1em">
+              <section>
+                <style protected=true>
+                  :host > section > button {
+                    cursor: pointer;
+                    word-break: break-all;
+                  }
+                </style>
+                <button id=jitsi>&#9743;<br>start video meeting</button>
+                <button id=nickname>&#9731;<br>change nickname</button>
+                <button id=server>&#9741;<br>adjust connections</button>
+                <button id=share>💌<br>${this.textContent} [<span id=room-name></span>]</button>
+                <button id=qr>&#9783;<br>generate a qr code</button>
+              </section>
+            </wct-grid>
+          </dialog>
+        </wct-dialog>
+      </nav>
     `
     return this.fetchModules([
       {
@@ -213,6 +208,10 @@ export default class Header extends Shadow() {
         // @ts-ignore
         path: `${this.importMetaUrl}../../../../web-components-toolbox/src/es/components/organisms/grid/Grid.js?${Environment?.version || ''}`,
         name: 'wct-grid'
+      },
+      {
+        path: `${this.importMetaUrl}../../../../web-components-toolbox/src/es/components/atoms/iconMdx/IconMdx.js`,
+        name: 'a-icon-mdx'
       }
     ])
   }

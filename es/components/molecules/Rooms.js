@@ -207,8 +207,10 @@ export default class Rooms extends Shadow() {
         --wct-middle-input-height: var(--wct-middle-input-input-height);
         --wct-middle-input-border-radius: 0;
         --button-primary-border-radius: 0 var(--border-radius) var(--border-radius) 0;
-        --dialog-top-slide-in-ul-padding-left: 0;
-        --dialog-top-slide-in-ul-list-style: none;
+        --dialog-left-slide-in-ul-padding-left: 0;
+        --dialog-left-slide-in-ul-margin: 0;
+        --dialog-left-slide-in-ul-list-style: none;
+        --dialog-left-slide-in-hr-margin: 0.5em 0 -0.5em;
       }
     `
     return this.fetchTemplate()
@@ -291,7 +293,7 @@ export default class Rooms extends Shadow() {
       this.html = room.done
         ? /* html */`
           <wct-dialog
-            namespace="dialog-top-slide-in-"
+            namespace="dialog-left-slide-in-"
           >
             <wct-menu-icon id="close" class="open" namespace="menu-icon-close-" no-click click-event-name="close-menu"></wct-menu-icon>
             <dialog>
@@ -341,6 +343,9 @@ export default class Rooms extends Shadow() {
    */
   static renderRoomList (rooms, activeRoomName) {
     return /* html */`<style>
+      :host hr {
+        width: 100%;
+      }
       :host ul > li {
         display: flex;
         align-items: center;
