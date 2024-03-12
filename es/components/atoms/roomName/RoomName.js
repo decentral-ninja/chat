@@ -134,7 +134,7 @@ export default class RoomName extends Shadow() {
   renderHTML (roomName) {
     this.html = ''
     this.html = `<a href="#">
-      <a-icon-mdx id="show-modal" icon-url="../../../../../../img/icons/chevron-left.svg" size="1.75em"></a-icon-mdx>
+      <a-icon-mdx hover-on-parent-element id="show-modal" rotate="180deg" icon-url="../../../../../../img/icons/chevron-left.svg" size="1.75em"></a-icon-mdx>
       <h1>${roomName || 'Loading...'}</h1>
     </a>`
     return this.fetchModules([

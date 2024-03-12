@@ -215,7 +215,7 @@ export default class Users extends Shadow() {
           >
             <wct-menu-icon id="close" class="open" namespace="menu-icon-close-" no-click click-event-name="close-menu"></wct-menu-icon>
             <dialog>
-              <h4>Enter the nickname:</h4>
+              <h4>Change your nickname:</h4>
               <wct-grid auto-fill="20%">
                 <section>
                   <wct-input inputId="nickname" placeholder="${nickname}" namespace="wct-input-" namespace-fallback grid-column="1/5" submit-search autofocus force></wct-input>

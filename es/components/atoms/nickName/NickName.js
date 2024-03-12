@@ -27,11 +27,6 @@ export default class NickName extends Shadow() {
     if (this.shouldRenderHTML()) this.renderHTML()
     this.addEventListener('click', this.clickEventListener)
     this.globalEventTarget.addEventListener('yjs-nickname', this.nicknameEventListener)
-    this.dispatchEvent(new CustomEvent('yjs-get-nickname', {
-      bubbles: true,
-      cancelable: true,
-      composed: true
-    }))
   }
 
   disconnectedCallback () {
@@ -66,8 +61,7 @@ export default class NickName extends Shadow() {
         --a-margin: 0;
         --a-text-decoration: underline;
         --a-display: flex;
-        --color: var(--color-disabled);
-        --a-color: var(--color-disabled);
+        --color: var(--a-color);
         --h6-font-size: 1.75em;
         --h6-margin: 0;
         --h6-padding: 0.2em 0 0 0;
@@ -124,11 +118,11 @@ export default class NickName extends Shadow() {
    * @prop {string} nickname
    * @returns Promise<void>
    */
-  renderHTML (nickname) {
+  renderHTML (nickname = this.getAttribute('nickname')) {
     this.html = ''
     this.html = `<a href="#">
-      <a-icon-mdx id="show-modal" icon-url="../../../../../../img/icons/tool.svg" size="1.75em"></a-icon-mdx>
       <h6>${nickname || 'Loading...'}</h6>
+      <a-icon-mdx hover-on-parent-element id="show-modal" rotate="-45deg" icon-url="../../../../../../img/icons/tool.svg" size="1.75em"></a-icon-mdx>
     </a>`
     return this.fetchModules([
       {

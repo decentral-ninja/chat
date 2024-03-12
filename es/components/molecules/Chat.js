@@ -27,7 +27,7 @@ export default class Chat extends Shadow() {
         // make aTags with href when first link is detected https://stackoverflow.com/questions/1500260/detect-urls-in-text-with-javascript
         entry.text = entry.text.replace(/(https?:\/\/[^\s]+)/g, url => `<a href="${url}" target="_blank">${url}</a>`)
         li.innerHTML = `${entry.isSelf
-          ? '<chat-a-nick-name class="user">${entry.updatedNickname}: </chat-a-nick-name>'
+          ? `<chat-a-nick-name class="user" nickname="${entry.updatedNickname}"></chat-a-nick-name>`
           : `<span class="user">${entry.updatedNickname}: </span><br>`
         }<span class="text">${entry.text}</span><br><span class="timestamp">${(new Date(entry.timestamp)).toLocaleString(navigator.language)}</span>`
 
