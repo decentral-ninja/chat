@@ -62,9 +62,9 @@ export default class NickName extends Shadow() {
         --a-text-decoration: underline;
         --a-display: flex;
         --color: var(--a-color);
-        --h6-font-size: 1.75em;
-        --h6-margin: 0;
-        --h6-padding: 0.2em 0 0 0;
+        --h4-font-size: 1em;
+        --h4-margin: 0;
+        --h4-padding: 0.2em 0 0 0;
       }
       :host > a {
         align-items: center;
@@ -75,7 +75,7 @@ export default class NickName extends Shadow() {
       :host > a > a-icon-mdx {
         display: flex;
       }
-      :host > a > h6 {
+      :host > a > h4 {
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -121,8 +121,8 @@ export default class NickName extends Shadow() {
   renderHTML (nickname = this.getAttribute('nickname')) {
     this.html = ''
     this.html = `<a href="#">
-      <h6>${nickname || 'Loading...'}</h6>
-      <a-icon-mdx hover-on-parent-element id="show-modal" rotate="-45deg" icon-url="../../../../../../img/icons/tool.svg" size="1.75em"></a-icon-mdx>
+      <h4>${nickname || 'Loading...'}</h4>
+      <a-icon-mdx hover-on-parent-element id="show-modal" rotate="-45deg" icon-url="../../../../../../img/icons/tool.svg" size="1em"></a-icon-mdx>
     </a>`
     return this.fetchModules([
       {
@@ -133,7 +133,7 @@ export default class NickName extends Shadow() {
   }
 
   get hTag () {
-    return this.root.querySelector('h6')
+    return this.root.querySelector('h4')
   }
 
   get globalEventTarget () {
