@@ -26,7 +26,10 @@ export default class Chat extends Shadow() {
         if (entry.isSelf) li.classList.add('self')
         // make aTags with href when first link is detected https://stackoverflow.com/questions/1500260/detect-urls-in-text-with-javascript
         entry.text = entry.text.replace(/(https?:\/\/[^\s]+)/g, url => `<a href="${url}" target="_blank">${url}</a>`)
-        li.innerHTML = `<span class="user">${entry.updatedNickname}: </span><br><span class="text">${entry.text}</span><br><span class="timestamp">${(new Date(entry.timestamp)).toLocaleString(navigator.language)}</span>`
+        li.innerHTML = `${entry.isSelf
+          ? '<chat-a-nick-name class="user">${entry.updatedNickname}: </chat-a-nick-name>'
+          : `<span class="user">${entry.updatedNickname}: </span><br>`
+        }<span class="text">${entry.text}</span><br><span class="timestamp">${(new Date(entry.timestamp)).toLocaleString(navigator.language)}</span>`
 
         /**
  * TODO: Create own atom components for toggle button and the optionsContainer
@@ -275,7 +278,7 @@ smallerList.appendChild(smallerListLi2) */
   /**
   * renders the html
   *
-  * @return {void}
+  * @return {Promise<void>}
   */
   renderHTML () {
     this.html = /* html */`
@@ -283,6 +286,13 @@ smallerList.appendChild(smallerListLi2) */
         <li>loading...</li>
       </ul>
     `
+    return this.fetchModules([
+      {
+        // @ts-ignore
+        path: `${this.importMetaUrl}../../components/atoms/nickName/NickName.js?${Environment?.version || ''}`,
+        name: 'chat-a-nick-name'
+      }
+    ])
   }
 
   get ul () {
