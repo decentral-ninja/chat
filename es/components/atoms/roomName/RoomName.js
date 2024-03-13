@@ -79,6 +79,9 @@ export default class RoomName extends Shadow() {
         --h1-margin: 0;
         --h1-padding: 0.2em 0 0 0;
       }
+      *:focus {
+        outline: none;
+      }
       :host > a {
         align-items: center;
         display: flex;

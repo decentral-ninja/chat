@@ -66,9 +66,13 @@ export default class NickName extends Shadow() {
         --h4-margin: 0;
         --h4-padding: 0.2em 0 0 0;
       }
+      *:focus {
+        outline: none;
+      }
       :host > a {
         align-items: center;
         display: flex;
+        padding-bottom: var(--spacing);
         tap-highlight-color: transparent;
         --webkit-tap-highlight-color: transparent;
       }
