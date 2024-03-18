@@ -130,25 +130,6 @@ smallerList.appendChild(smallerListLi2) */
           composed: true
         })), 800)
       }
-      // notification
-      if (lastMessage && !lastEntryIsSelf) {
-        this.dispatchEvent(new CustomEvent('yjs-send-notification', {
-          detail: {
-            data: {
-              // @ts-ignore
-              nickname: lastMessage.updatedNickname,
-              // @ts-ignore
-              text: lastMessage.text
-            },
-            resolve: result => console.log('notification sent', result)
-          },
-          bubbles: true,
-          cancelable: true,
-          composed: true
-        }))
-      }
-
-      // Event Listener Closing
     }
 
     // function to handle the button click

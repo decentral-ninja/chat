@@ -117,7 +117,7 @@ export default class Rooms extends Shadow() {
     }
 
     this.openRoomListener = event => {
-      this.dialog.show('show-modal')
+      this.renderHTML().then(() => self.requestAnimationFrame(timeStamp => this.dialog.show('show-modal')))
     }
 
     // save room name to local storage
@@ -245,6 +245,7 @@ export default class Rooms extends Shadow() {
   * @return {Promise<void>}
   */
   renderHTML () {
+    this.hidden = true
     return Promise.all([
       this.roomPromise,
       new Promise(resolve => this.dispatchEvent(new CustomEvent('storage-get', {
@@ -331,6 +332,7 @@ export default class Rooms extends Shadow() {
           </wct-dialog>
         `
       document.title = roomName || (await room)
+      this.hidden = false
     })
   }
 
