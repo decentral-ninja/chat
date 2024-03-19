@@ -46,23 +46,10 @@ export default class Navigation extends Shadow() {
           composed: true
         }))).then(async ({ websocketUrl, webrtcUrl }) => {
           const newWebsocketUrls = prompt('websocketUrls separated with a "," and no spaces in between', websocketUrl || '')
-          let resolveProviders
-          (new Promise(resolve => (resolveProviders = resolve))).then(providers => {
-            // TODO: when changing the providers this has to be dispatched newly
-            this.dispatchEvent(new CustomEvent('yjs-subscribe-notifications', {
-              detail: {
-                resolve: result => console.log('subscribed', result)
-              },
-              bubbles: true,
-              cancelable: true,
-              composed: true
-            }))
-          })
           if (newWebsocketUrls !== null && newWebsocketUrls !== websocketUrl) {
             this.dispatchEvent(new CustomEvent('yjs-update-providers', {
               detail: {
-                websocketUrl: newWebsocketUrls,
-                resolve: resolveProviders
+                websocketUrl: newWebsocketUrls
               },
               bubbles: true,
               cancelable: true,

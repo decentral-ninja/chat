@@ -16,20 +16,6 @@ export default class Notifications extends Shadow() {
   connectedCallback () {
     // if (this.shouldRenderCSS()) this.renderCSS()
     // if (this.shouldRenderHTML()) this.renderHTML()
-    this.connectedCallbackOnce()
-  }
-
-  connectedCallbackOnce () {
-    // TODO: when changing the providers this has to be dispatched newly
-    document.body.addEventListener('click', event => this.dispatchEvent(new CustomEvent('yjs-subscribe-notifications', {
-      detail: {
-        resolve: result => console.log('subscribed', result)
-      },
-      bubbles: true,
-      cancelable: true,
-      composed: true
-    })), { once: true })
-    this.connectedCallbackOnce = () => {}
   }
 
   /**
