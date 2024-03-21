@@ -3,7 +3,6 @@ import { Shadow } from '../../../../event-driven-web-components-prototypes/src/S
 
 /**
  * The notifications view
- * TODO: the controller is the MasterService worker... write a Notification queue in the SW and consume it here, to allow to switch to the rooms according the notifications
  *
  * @export
  * @class Providers
