@@ -79,6 +79,10 @@ export default class RoomName extends Shadow() {
         --h1-margin: 0;
         --h1-padding: 0.2em 0 0 0;
       }
+      :host > a:hover {
+        --a-color-hover: var(--color-yellow);
+        --color-hover: var(--a-color-hover);
+      }
       *:focus {
         outline: none;
       }

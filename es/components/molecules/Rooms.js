@@ -60,6 +60,19 @@ export default class Rooms extends Shadow() {
             cancelable: true,
             composed: true
           }))
+          this.dispatchEvent(new CustomEvent(`yjs-unsubscribe-notifications`, {
+            detail: {
+              room: target.getAttribute('delete')
+            },
+            bubbles: true,
+            cancelable: true,
+            composed: true
+          }))
+          this.dispatchEvent(new CustomEvent('yjs-request-notifications', {
+            bubbles: true,
+            cancelable: true,
+            composed: true
+          }))
           Array.from(target.parentNode.parentNode.querySelectorAll('.deleted')).forEach(node => node.remove())
           target.parentNode.classList.add('deleted')
         })
@@ -74,6 +87,20 @@ export default class Rooms extends Shadow() {
           composed: true
         }))).then(getRoomsResult => {
           target.parentNode.classList.remove('deleted')
+          this.dispatchEvent(new CustomEvent(`yjs-subscribe-notifications`, {
+            detail: {
+              room: target.getAttribute('undo'),
+              resolve: () => {}
+            },
+            bubbles: true,
+            cancelable: true,
+            composed: true
+          }))
+          this.dispatchEvent(new CustomEvent('yjs-request-notifications', {
+            bubbles: true,
+            cancelable: true,
+            composed: true
+          }))
         })
       }
     }
@@ -139,22 +166,6 @@ export default class Rooms extends Shadow() {
     this.roomResolve = map => map
     /** @type {Promise<{ locationHref: string, room: Promise<string> & {done: boolean} }>} */
     this.roomPromise = new Promise(resolve => (this.roomResolve = resolve))
-
-    // save room name to local storage
-    this.roomPromise.then(async ({locationHref, room}) => this.dispatchEvent(new CustomEvent('storage-merge', {
-      detail: {
-        key: `${this.roomNamePrefix}rooms`,
-        value: {
-          [await room]: {
-            locationHref,
-            entered: [Date.now()]
-          }
-        }
-      },
-      bubbles: true,
-      cancelable: true,
-      composed: true
-    })))
   }
 
   connectedCallback () {
@@ -172,6 +183,21 @@ export default class Rooms extends Shadow() {
       cancelable: true,
       composed: true
     }))
+    // save room name to local storage
+    this.roomPromise.then(async ({locationHref, room}) => this.dispatchEvent(new CustomEvent('storage-merge', {
+      detail: {
+        key: `${this.roomNamePrefix}rooms`,
+        value: {
+          [await room]: {
+            locationHref,
+            entered: [Date.now()]
+          }
+        }
+      },
+      bubbles: true,
+      cancelable: true,
+      composed: true
+    })))
   }
 
   disconnectedCallback () {
@@ -286,6 +312,11 @@ export default class Rooms extends Shadow() {
           // @ts-ignore
           path: `${this.importMetaUrl}../../../../web-components-toolbox/src/es/components/organisms/grid/Grid.js?${Environment?.version || ''}`,
           name: 'wct-grid'
+        },
+        {
+          // @ts-ignore
+          path: `${this.importMetaUrl}./Notifications.js?${Environment?.version || ''}`,
+          name: 'chat-m-notifications'
         }
       ])
     ]).then(async ([{ room }, getRoomsResult]) => {
@@ -345,46 +376,77 @@ export default class Rooms extends Shadow() {
    */
   static renderRoomList (rooms, activeRoomName) {
     return /* html */`<style>
+      :host {
+        --color-hover: var(--color-yellow);
+      }
       :host hr {
         width: 100%;
       }
       :host ul > li {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
         border-bottom: 1px solid var(--background-color-rgba-50);
         padding-top: 0.5em;
         padding-bottom: 0.5em;
       }
+      :host ul > li > div {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      :host ul > li[disabled] > div > a-icon-mdx {
+        visibility: hidden;
+      }
+      :host ul > li[disabled] > div > a {
+        color: var(--color-disabled);
+        cursor: not-allowed;
+      }
       :host ul > li:last-child {
         border-bottom: none;
       }
-      :host ul > li.deleted {
+      :host ul > li > div.deleted {
         text-decoration: line-through;
       }
       :host ul > li [delete] {
-        display:block;
+        display: contents;
       }
-      :host ul > li.deleted [delete] {
-        display:none;
+      :host ul > li > div.deleted [delete] {
+        display: none;
       }
       :host ul > li [undo] {
-        display:none;
+        display: none;
       }
-      :host ul > li.deleted [undo] {
-        display:block;
+      :host ul > li > div.deleted [undo] {
+        display: contents;
       }
-      :host ul > li > a {
+      :host ul > li > div > a {
+        display: flex;
+        flex-direction: column;
+        flex-shrink: 10;
         margin: 0;
+        max-width: calc(100% - 3em);
       }
-      :host ul > li > a-icon-mdx {
+      :host ul > li > div > a-icon-mdx {
         --color: var(--color-error);
+      }
+      :host ul > li > div > a > chat-m-notifications {
+        font-size: 0.75em;
+      }
+      :host ul > li > div > a > chat-m-notifications[hidden] {
+        display: none;
       }
     </style>
     <ul>
       ${Object.keys(rooms.value)
         .sort((a, b) => rooms.value[b].entered?.slice(-1)[0] - rooms.value[a].entered?.slice(-1)[0])
-        .reduce((acc, key) => acc + (key === activeRoomName ? '' : `<li><a route href="${rooms.value[key].locationHref}">${key}</a><a-icon-mdx delete="${key}" icon-url="../../../../../../img/icons/eraser.svg" size="2em"></a-icon-mdx><a-icon-mdx undo icon-url="../../../../../../img/icons/arrow-back-up.svg" size="2em"></a-icon-mdx></li>`), '')
+        .reduce((acc, key, i, arr) => acc + `<li${key === activeRoomName ? ' disabled' : ''}>
+          <div>
+            <a route href="${rooms.value[key].locationHref}">
+              <div>${key}</div>
+              <chat-m-notifications room="${key}" no-click${i + 1 === arr.length ? ' on-connected-request-notifications' : ''} hover-on-parent-element></chat-m-notifications>
+            </a>
+            <a-icon-mdx delete="${key}" icon-url="../../../../../../img/icons/eraser.svg" size="2em"></a-icon-mdx>
+            <a-icon-mdx undo="${key}" icon-url="../../../../../../img/icons/arrow-back-up.svg" size="2em"></a-icon-mdx>
+          </div>
+        </li$>`, '')
       }
     </ul>`
   }
