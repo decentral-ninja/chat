@@ -19,7 +19,7 @@ export default class Notifications extends Hover() {
         let notifications
         if ((notifications = event.detail.notifications[this.getAttribute('room')]) && !(this.hidden = !notifications.length)) {
           this.counterEl.textContent = notifications.length > 99 ? '99+' : notifications.length
-          this.messageEl.textContent = `${notifications.slice(-1)[0].nickname}: ${notifications.slice(-1)[0].text}`
+          this.messageEl.textContent = `${notifications[0].nickname}: ${notifications[0].text}`
         }
       }
     } else {

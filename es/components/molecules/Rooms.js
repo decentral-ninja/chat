@@ -41,15 +41,7 @@ export default class Rooms extends Shadow() {
           this.renderHTML()
         }
       } else if ((target = event.composedPath().find(el => el.hasAttribute?.('delete')))) {
-        new Promise(resolve => this.dispatchEvent(new CustomEvent('storage-get', {
-          detail: {
-            key: `${this.roomNamePrefix}rooms`,
-            resolve
-          },
-          bubbles: true,
-          cancelable: true,
-          composed: true
-        }))).then(getRoomsResult => {
+        this.getRooms().then(getRoomsResult => {
           delete getRoomsResult.value[target.getAttribute('delete')]
           this.dispatchEvent(new CustomEvent('storage-set', {
             detail: {
@@ -162,6 +154,37 @@ export default class Rooms extends Shadow() {
       composed: true
     }))
 
+    // save room name and last focused timestamp to local storage
+    // dispatch from self.Environment?.router that it also works on disconnect, since the storage controller is above the router
+    // @ts-ignore
+    this.focusEventListener = event => this.roomPromise.then(async ({locationHref, room}) => (self.Environment?.router || this).dispatchEvent(new CustomEvent('storage-merge', {
+      detail: {
+        key: `${this.roomNamePrefix}rooms`,
+        value: {
+          [await room]: {
+            locationHref,
+            entered: [Date.now()]
+          }
+        },
+        concat: 'unshift',
+        maxLength: 100
+      },
+      bubbles: true,
+      cancelable: true,
+      composed: true
+    })))
+
+    // TODO: This should be separated into a rooms controller
+    this.getRoomsEventListener = async event => {
+      if (event && event.detail && event.detail.resolve) return event.detail.resolve(await this.getRooms())
+      this.dispatchEvent(new CustomEvent('yjs-rooms', {
+        detail: await this.getRooms(),
+        bubbles: true,
+        cancelable: true,
+        composed: true
+      }))
+    }
+
     /** @type {(any)=>void} */
     this.roomResolve = map => map
     /** @type {Promise<{ locationHref: string, room: Promise<string> & {done: boolean} }>} */
@@ -175,6 +198,8 @@ export default class Rooms extends Shadow() {
     this.addEventListener('submit-room-name', this.roomNameEventListener)
     this.globalEventTarget.addEventListener('open-room', this.openRoomListener)
     this.globalEventTarget.addEventListener('yjs-providers-update', this.providersUpdateEventListener)
+    this.globalEventTarget.addEventListener('yjs-get-rooms', this.getRoomsEventListener)
+    self.addEventListener('focus', this.focusEventListener)
     this.dispatchEvent(new CustomEvent('yjs-get-room', {
       detail: {
         resolve: this.roomResolve
@@ -183,21 +208,7 @@ export default class Rooms extends Shadow() {
       cancelable: true,
       composed: true
     }))
-    // save room name to local storage
-    this.roomPromise.then(async ({locationHref, room}) => this.dispatchEvent(new CustomEvent('storage-merge', {
-      detail: {
-        key: `${this.roomNamePrefix}rooms`,
-        value: {
-          [await room]: {
-            locationHref,
-            entered: [Date.now()]
-          }
-        }
-      },
-      bubbles: true,
-      cancelable: true,
-      composed: true
-    })))
+    this.focusEventListener()
   }
 
   disconnectedCallback () {
@@ -205,6 +216,9 @@ export default class Rooms extends Shadow() {
     this.removeEventListener('submit-room-name', this.roomNameEventListener)
     this.globalEventTarget.removeEventListener('open-room', this.openRoomListener)
     this.globalEventTarget.removeEventListener('yjs-providers-update', this.providersUpdateEventListener)
+    this.globalEventTarget.removeEventListener('yjs-get-rooms', this.getRoomsEventListener)
+    self.removeEventListener('focus', this.focusEventListener)
+    this.focusEventListener()
   }
 
   /**
@@ -274,15 +288,7 @@ export default class Rooms extends Shadow() {
     this.hidden = true
     return Promise.all([
       this.roomPromise,
-      new Promise(resolve => this.dispatchEvent(new CustomEvent('storage-get', {
-        detail: {
-          key: `${this.roomNamePrefix}rooms`,
-          resolve
-        },
-        bubbles: true,
-        cancelable: true,
-        composed: true
-      }))),
+      this.getRooms(),
       this.fetchModules([
         {
           // @ts-ignore
@@ -436,7 +442,7 @@ export default class Rooms extends Shadow() {
     </style>
     <ul>
       ${Object.keys(rooms.value)
-        .sort((a, b) => rooms.value[b].entered?.slice(-1)[0] - rooms.value[a].entered?.slice(-1)[0])
+        .sort((a, b) => rooms.value[b].entered?.[0] - rooms.value[a].entered?.[0])
         .reduce((acc, key, i, arr) => acc + `<li${key === activeRoomName ? ' disabled' : ''}>
           <div>
             <a route href="${rooms.value[key].locationHref}">
@@ -449,6 +455,18 @@ export default class Rooms extends Shadow() {
         </li$>`, '')
       }
     </ul>`
+  }
+
+  getRooms () {
+    return new Promise(resolve => this.dispatchEvent(new CustomEvent('storage-get', {
+      detail: {
+        key: `${this.roomNamePrefix}rooms`,
+        resolve
+      },
+      bubbles: true,
+      cancelable: true,
+      composed: true
+    })))
   }
 
   get randomRoom () {
