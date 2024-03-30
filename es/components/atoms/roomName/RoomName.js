@@ -33,6 +33,10 @@ export default class RoomName extends Shadow() {
     if (this.shouldRenderCSS()) this.renderCSS()
     if (this.shouldRenderHTML()) this.renderHTML()
     this.addEventListener('click', this.clickEventListener)
+    this.connectedCallbackOnce()
+  }
+
+  connectedCallbackOnce () {
     this.dispatchEvent(new CustomEvent('yjs-get-room', {
       detail: {
         resolve: this.roomResolve
@@ -41,6 +45,7 @@ export default class RoomName extends Shadow() {
       cancelable: true,
       composed: true
     }))
+    this.connectedCallbackOnce = () => {}
   }
 
   disconnectedCallback () {

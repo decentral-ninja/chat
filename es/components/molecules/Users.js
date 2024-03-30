@@ -17,12 +17,12 @@ export default class Users extends Shadow() {
     let timeoutId = null
     this.usersEventListener = async event => {
       clearTimeout(timeoutId)
-      timeoutId = setTimeout(() => {
+      timeoutId = setTimeout(async () => {
         console.log('users', {
-          data: event.detail.getData(),
+          data: await event.detail.getData(),
           selfUser: event.detail.selfUser
         })
-        this.renderHTML(event.detail.getData(), event.detail.selfUser)
+        this.renderHTML(await event.detail.getData(), event.detail.selfUser)
       }, 2000)
     }
     this.nicknameEventListener = event => (this.nickname = Promise.resolve(event.detail.nickname))
@@ -63,6 +63,10 @@ export default class Users extends Shadow() {
     this.addEventListener('nickname', this.setNicknameEventListener)
     this.addEventListener('submit-search', this.setNicknameEventListener)
     this.globalEventTarget.addEventListener('open-nickname', this.openUserListener)
+    this.connectedCallbackOnce()
+  }
+
+  connectedCallbackOnce () {
     this.dispatchEvent(new CustomEvent('yjs-get-nickname', {
       detail: {
         resolve: this.nicknameResolve
@@ -71,6 +75,7 @@ export default class Users extends Shadow() {
       cancelable: true,
       composed: true
     }))
+    this.connectedCallbackOnce = () => {}
   }
 
   disconnectedCallback () {

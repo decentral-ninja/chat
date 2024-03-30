@@ -48,7 +48,7 @@ export const Chat = (ChosenHTMLElement = HTMLElement) => class Chat extends Chos
     }
 
     this.chatObserveEventListener = async event => {
-      const allUsers = (await this.usersData)().allUsers
+      const allUsers = (await (await this.usersData)()).allUsers
       this.dispatchEvent(new CustomEvent('yjs-chat-update', {
         detail: {
           // enrich the chat object with the info if it has been self
@@ -95,6 +95,11 @@ export const Chat = (ChosenHTMLElement = HTMLElement) => class Chat extends Chos
     this.globalEventTarget.addEventListener('yjs-users', this.usersEventListener)
     this.addEventListener('yjs-input', this.inputEventListener)
     this.globalEventTarget.addEventListener('yjs-chat-observe', this.chatObserveEventListener)
+    this.globalEventTarget.addEventListener('yjs-nickname', this.nicknameEventListener)
+    this.connectedCallbackOnce()
+  }
+
+  connectedCallbackOnce () {
     this.dispatchEvent(new CustomEvent('yjs-doc', {
       detail: {
         command: 'getArray',
@@ -106,7 +111,6 @@ export const Chat = (ChosenHTMLElement = HTMLElement) => class Chat extends Chos
       cancelable: true,
       composed: true
     }))
-    this.globalEventTarget.addEventListener('yjs-nickname', this.nicknameEventListener)
     this.dispatchEvent(new CustomEvent('yjs-get-nickname', {
       detail: {
         resolve: this.nicknameResolve
@@ -115,6 +119,7 @@ export const Chat = (ChosenHTMLElement = HTMLElement) => class Chat extends Chos
       cancelable: true,
       composed: true
     }))
+    this.connectedCallbackOnce = () => {}
   }
 
   disconnectedCallback () {

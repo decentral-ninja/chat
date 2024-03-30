@@ -20,7 +20,7 @@ export default class Rooms extends Shadow() {
       if ((target = event.composedPath()[0]).hasAttribute('route')) {
         if ((await this.roomPromise).room.done) {
           // enter new room
-          this.dialog.close()
+          this.dialog?.close()
           this.dispatchEvent(new CustomEvent('close-menu', {
             bubbles: true,
             cancelable: true,
@@ -61,6 +61,7 @@ export default class Rooms extends Shadow() {
             composed: true
           }))
           this.dispatchEvent(new CustomEvent('yjs-request-notifications', {
+            detail: {force: true},
             bubbles: true,
             cancelable: true,
             composed: true
@@ -89,6 +90,7 @@ export default class Rooms extends Shadow() {
             composed: true
           }))
           this.dispatchEvent(new CustomEvent('yjs-request-notifications', {
+            detail: {force: true},
             bubbles: true,
             cancelable: true,
             composed: true
@@ -99,7 +101,7 @@ export default class Rooms extends Shadow() {
 
     this.roomNameEventListener = async (event) => {
       event.stopPropagation()
-      this.dialog.close()
+      this.dialog?.close()
       this.dispatchEvent(new CustomEvent('close-menu', {
         bubbles: true,
         cancelable: true,
@@ -136,7 +138,11 @@ export default class Rooms extends Shadow() {
     }
 
     this.openRoomListener = event => {
-      this.renderHTML().then(() => self.requestAnimationFrame(timeStamp => this.dialog.show('show-modal')))
+      this.renderHTML().then(() => {
+        // initial rendering has dialog box appear bug without timeout
+        setTimeout(() => this.dialog?.show('show-modal'), this._openRoomTimeout !== undefined ? this._openRoomTimeout : 100)
+        this._openRoomTimeout = 0
+      })
     }
 
     // save room name to local storage
@@ -193,13 +199,16 @@ export default class Rooms extends Shadow() {
 
   connectedCallback () {
     if (this.shouldRenderCSS()) this.renderCSS()
-    this.renderHTML()
     this.addEventListener('click', this.clickEventListener)
     this.addEventListener('submit-room-name', this.roomNameEventListener)
     this.globalEventTarget.addEventListener('open-room', this.openRoomListener)
     this.globalEventTarget.addEventListener('yjs-providers-update', this.providersUpdateEventListener)
     this.globalEventTarget.addEventListener('yjs-get-rooms', this.getRoomsEventListener)
     self.addEventListener('focus', this.focusEventListener)
+    this.connectedCallbackOnce()
+  }
+
+  async connectedCallbackOnce () {
     this.dispatchEvent(new CustomEvent('yjs-get-room', {
       detail: {
         resolve: this.roomResolve
@@ -208,7 +217,9 @@ export default class Rooms extends Shadow() {
       cancelable: true,
       composed: true
     }))
-    this.focusEventListener()
+    if (!(await this.roomPromise).room.done) this.renderHTML()
+    // @ts-ignore
+    this.connectedCallbackOnce = () => {}
   }
 
   disconnectedCallback () {
@@ -219,6 +230,7 @@ export default class Rooms extends Shadow() {
     this.globalEventTarget.removeEventListener('yjs-get-rooms', this.getRoomsEventListener)
     self.removeEventListener('focus', this.focusEventListener)
     this.focusEventListener()
+    this.dialog?.close()
   }
 
   /**
@@ -251,6 +263,12 @@ export default class Rooms extends Shadow() {
         --dialog-left-slide-in-ul-margin: 0;
         --dialog-left-slide-in-ul-list-style: none;
         --dialog-left-slide-in-hr-margin: 0.5em 0 -0.5em;
+        --dialog-left-slide-in-ul-display: flex;
+        --dialog-top-slide-in-ul-padding-left: 0;
+        --dialog-top-slide-in-ul-margin: 0;
+        --dialog-top-slide-in-ul-list-style: none;
+        --dialog-top-slide-in-hr-margin: 0.5em 0 -0.5em;
+        --dialog-top-slide-in-ul-display: flex;
       }
     `
     return this.fetchTemplate()
@@ -285,7 +303,6 @@ export default class Rooms extends Shadow() {
   * @return {Promise<void>}
   */
   renderHTML () {
-    this.hidden = true
     return Promise.all([
       this.roomPromise,
       this.getRooms(),
@@ -369,7 +386,6 @@ export default class Rooms extends Shadow() {
           </wct-dialog>
         `
       document.title = roomName || (await room)
-      this.hidden = false
     })
   }
 
@@ -397,6 +413,9 @@ export default class Rooms extends Shadow() {
         display: flex;
         align-items: center;
         justify-content: space-between;
+      }
+      :host ul > li[disabled] {
+        order: -1;
       }
       :host ul > li[disabled] > div > a-icon-mdx {
         visibility: hidden;

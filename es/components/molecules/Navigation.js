@@ -76,6 +76,10 @@ export default class Navigation extends Shadow() {
     this.hidden = true
     if (this.shouldRenderCSS()) this.renderCSS()
     this.addEventListener('click', this.eventListener)
+    this.connectedCallbackOnce()
+  }
+
+  connectedCallbackOnce () {
     Promise.all([
       new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-room', {
         detail: {
@@ -95,6 +99,7 @@ export default class Navigation extends Shadow() {
       if (this.dialogGrid) this.dialogGrid.root.querySelector('#room-name').textContent = await room
       this.hidden = false
     })
+    this.connectedCallbackOnce = () => {}
   }
 
   disconnectedCallback () {

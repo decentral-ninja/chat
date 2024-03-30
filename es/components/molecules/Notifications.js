@@ -26,23 +26,13 @@ export default class Notifications extends Hover() {
       this.notificationsEventListener = event => {
         let keys
         if (!(this.hidden = !(keys = Object.keys(event.detail.notifications)).length)) {
-          new Promise(resolve => this.dispatchEvent(new CustomEvent('storage-get', {
-            detail: {
-              key: `${this.roomNamePrefix}rooms`,
-              resolve
-            },
-            bubbles: true,
-            cancelable: true,
-            composed: true
-          }))).then(getRoomsResult => {
-            const notificationsCounter = keys.reduce((acc, key) => acc + (getRoomsResult.value[key]
-              ? event.detail.notifications[key].length
-              : 0
-            ), 0)
-            this.counterEl.textContent = notificationsCounter > 99 ? '99+' : notificationsCounter
-            if (typeof navigator.setAppBadge === 'function') navigator.setAppBadge(notificationsCounter)
-            if (!notificationsCounter) this.hidden = true
-          })
+          const notificationsCounter = keys.reduce((acc, key) => acc + (event.detail.rooms.value[key]
+            ? event.detail.notifications[key].length
+            : 0
+          ), 0)
+          this.counterEl.textContent = notificationsCounter > 99 ? '99+' : notificationsCounter
+          if (typeof navigator.setAppBadge === 'function') navigator.setAppBadge(notificationsCounter)
+          if (!notificationsCounter) this.hidden = true
         } else if (typeof navigator.clearAppBadge === 'function') {
           navigator.clearAppBadge()
         }
@@ -66,11 +56,16 @@ export default class Notifications extends Hover() {
     if (this.shouldRenderHTML()) this.renderHTML()
     this.globalEventTarget.addEventListener('yjs-notifications', this.notificationsEventListener)
     if (!this.hasAttribute('no-click')) this.addEventListener('click', this.clickEventListener)
+    this.connectedCallbackOnce()
+  }
+
+  connectedCallbackOnce () {
     if (this.hasAttribute('on-connected-request-notifications')) this.dispatchEvent(new CustomEvent('yjs-request-notifications', {
       bubbles: true,
       cancelable: true,
       composed: true
     }))
+    this.connectedCallbackOnce = () => {}
   }
 
   disconnectedCallback () {
