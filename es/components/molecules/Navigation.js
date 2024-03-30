@@ -73,13 +73,13 @@ export default class Navigation extends Shadow() {
   }
 
   connectedCallback () {
-    this.hidden = true
     if (this.shouldRenderCSS()) this.renderCSS()
     this.addEventListener('click', this.eventListener)
     this.connectedCallbackOnce()
   }
 
   connectedCallbackOnce () {
+    this.hidden = true
     Promise.all([
       new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-room', {
         detail: {
