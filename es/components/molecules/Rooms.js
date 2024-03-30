@@ -66,7 +66,7 @@ export default class Rooms extends Shadow() {
             cancelable: true,
             composed: true
           }))
-          Array.from(target.parentNode.parentNode.querySelectorAll('.deleted')).forEach(node => node.remove())
+          this.clearAllDeleted()
           target.parentNode.classList.add('deleted')
         })
       } else if ((target = event.composedPath().find(el => el.hasAttribute?.('undo')))) {
@@ -96,6 +96,8 @@ export default class Rooms extends Shadow() {
             composed: true
           }))
         })
+      } else if ((target = event.composedPath().find(el => el.matches?.('[disabled]')))) {
+        this.dialog?.close()
       }
     }
 
@@ -146,39 +148,45 @@ export default class Rooms extends Shadow() {
     }
 
     // save room name to local storage
-    this.providersUpdateEventListener = async event => this.dispatchEvent(new CustomEvent('storage-merge', {
-      detail: {
-        key: `${this.roomNamePrefix}rooms`,
-        value: {
-          [await (await this.roomPromise).room]: {
-            locationHref: event.detail.locationHref,
+    this.providersUpdateEventListener = async event => {
+      this.clearAllDeleted()
+      this.dispatchEvent(new CustomEvent('storage-merge', {
+        detail: {
+          key: `${this.roomNamePrefix}rooms`,
+          value: {
+            [await (await this.roomPromise).room]: {
+              locationHref: event.detail.locationHref,
+            }
           }
-        }
-      },
-      bubbles: true,
-      cancelable: true,
-      composed: true
-    }))
+        },
+        bubbles: true,
+        cancelable: true,
+        composed: true
+      }))
+    }
 
     // save room name and last focused timestamp to local storage
     // dispatch from self.Environment?.router that it also works on disconnect, since the storage controller is above the router
-    // @ts-ignore
-    this.focusEventListener = event => this.roomPromise.then(async ({locationHref, room}) => (self.Environment?.router || this).dispatchEvent(new CustomEvent('storage-merge', {
-      detail: {
-        key: `${this.roomNamePrefix}rooms`,
-        value: {
-          [await room]: {
-            locationHref,
-            entered: [Date.now()]
-          }
+    this.focusEventListener = event => {
+      this.clearAllDeleted()
+      // @ts-ignore
+      this.roomPromise.then(async ({locationHref, room}) => (self.Environment?.router || this).dispatchEvent(new CustomEvent('storage-merge', {
+        detail: {
+          key: `${this.roomNamePrefix}rooms`,
+          value: {
+            [await room]: {
+              locationHref,
+              entered: [Date.now()]
+            }
+          },
+          concat: 'unshift',
+          maxLength: 100
         },
-        concat: 'unshift',
-        maxLength: 100
-      },
-      bubbles: true,
-      cancelable: true,
-      composed: true
-    })))
+        bubbles: true,
+        cancelable: true,
+        composed: true
+      })))
+    }
 
     // TODO: This should be separated into a rooms controller
     this.getRoomsEventListener = async event => {
@@ -424,7 +432,7 @@ export default class Rooms extends Shadow() {
         color: var(--color-disabled);
         cursor: not-allowed;
       }
-      :host ul > li:last-child {
+      :host ul > li:not([disabled]):last-child {
         border-bottom: none;
       }
       :host ul > li > div.deleted {
@@ -486,6 +494,10 @@ export default class Rooms extends Shadow() {
       cancelable: true,
       composed: true
     })))
+  }
+
+  clearAllDeleted () {
+    if (this.dialog) Array.from(this.dialog.root.querySelectorAll('.deleted')).forEach(node => node.parentNode.remove())
   }
 
   get randomRoom () {
