@@ -13,12 +13,13 @@ export default class Notifications extends Hover() {
     super({ importMetaUrl: import.meta.url, ...options }, ...args)
 
     this.roomNamePrefix = 'chat-'
+    this.notificationsMax = 9
     
     if (this.hasAttribute('room')) {
       this.notificationsEventListener = event => {
         let notifications
         if ((notifications = event.detail.notifications[this.getAttribute('room')]) && !(this.hidden = !notifications.length)) {
-          this.counterEl.textContent = notifications.length > 99 ? '99+' : notifications.length
+          this.counterEl.textContent = notifications.length > this.notificationsMax ? `${this.notificationsMax}+` : notifications.length
           this.messageEl.textContent = `${notifications[0].nickname}: ${notifications[0].text}`
         }
       }
@@ -30,7 +31,7 @@ export default class Notifications extends Hover() {
             ? event.detail.notifications[key].length
             : 0
           ), 0)
-          this.counterEl.textContent = notificationsCounter > 99 ? '99+' : notificationsCounter
+          this.counterEl.textContent = notificationsCounter > this.notificationsMax ? `${this.notificationsMax}+` : notificationsCounter
           if (typeof navigator.setAppBadge === 'function') navigator.setAppBadge(notificationsCounter)
           if (!notificationsCounter) this.hidden = true
         } else if (typeof navigator.clearAppBadge === 'function') {
