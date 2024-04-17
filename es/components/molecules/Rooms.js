@@ -142,7 +142,7 @@ export default class Rooms extends Shadow() {
     this.openRoomListener = event => {
       this.renderHTML().then(() => {
         // initial rendering has dialog box appear bug without timeout
-        setTimeout(() => this.dialog?.show('show-modal'), this._openRoomTimeout !== undefined ? this._openRoomTimeout : 100)
+        setTimeout(() => self.requestAnimationFrame(timeStamp => this.dialog?.show('show-modal')), this._openRoomTimeout !== undefined ? this._openRoomTimeout : 200)
         this._openRoomTimeout = 0
       })
     }
