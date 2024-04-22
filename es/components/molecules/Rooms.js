@@ -42,7 +42,13 @@ export default class Rooms extends Shadow() {
         }
       } else if ((target = event.composedPath().find(el => el.hasAttribute?.('delete')))) {
         this.getRooms().then(getRoomsResult => {
-          delete getRoomsResult.value[target.getAttribute('delete')]
+          // bug fix, it was possible to add rooms with double quotes " which escaped the attribute, see Line 481 (delete="${key.replace(/"/g, "'")}")
+          // this fix can be removed after a while
+          if (getRoomsResult.value[target.getAttribute('delete')]) {
+            delete getRoomsResult.value[target.getAttribute('delete')]
+          } else {
+            delete getRoomsResult.value[target.getAttribute('delete').replace(/'/g, '"')]
+          }
           this.dispatchEvent(new CustomEvent('storage-set', {
             detail: {
               key: `${this.roomNamePrefix}rooms`,
@@ -113,13 +119,13 @@ export default class Rooms extends Shadow() {
       // check if url got entered as room name
       if (inputField?.value) {
         try {
-          const url = new URL(inputField.value)
+          const url = new URL(inputField.value.replace(/"/g, ''))
           const roomName = url.searchParams.get('room')
           if (roomName) return history.pushState({ ...history.state, pageTitle: (document.title = roomName) }, roomName, url.href)
         } catch (error) {}
       }
       const url = new URL(location.href)
-      const roomName = `${this.roomNamePrefix}${inputField?.value || url.searchParams.get('room')?.replace(this.roomNamePrefix, '') || this.randomRoom}`
+      const roomName = `${this.roomNamePrefix}${inputField?.value?.replace(/"/g, '') || url.searchParams.get('room')?.replace(this.roomNamePrefix, '') || this.randomRoom}`
       if ((await this.roomPromise).room.done) {
         // enter new room
         if (inputField) inputField.value = ''
@@ -476,7 +482,7 @@ export default class Rooms extends Shadow() {
               <div>${key}</div>
               <chat-m-notifications room="${key}" no-click${i + 1 === arr.length ? ' on-connected-request-notifications' : ''} hover-on-parent-element></chat-m-notifications>
             </a>
-            <a-icon-mdx delete="${key}" icon-url="../../../../../../img/icons/eraser.svg" size="2em"></a-icon-mdx>
+            <a-icon-mdx delete="${key.replace(/"/g, "'")}" icon-url="../../../../../../img/icons/eraser.svg" size="2em"></a-icon-mdx>
             <a-icon-mdx undo="${key}" icon-url="../../../../../../img/icons/arrow-back-up.svg" size="2em"></a-icon-mdx>
           </div>
         </li$>`, '')
