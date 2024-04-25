@@ -169,7 +169,7 @@ export default class Notifications extends Hover() {
   /**
   * renders the html
   *
-  * @return {void}
+  * @return {Promise<void>}
   */
   renderHTML () {
     this.html = /* html */`
@@ -179,6 +179,12 @@ export default class Notifications extends Hover() {
       </div>
       <p><span id="message"></span></p>
     `
+    return this.fetchModules([
+      {
+        path: `${this.importMetaUrl}../../../../web-components-toolbox/src/es/components/atoms/iconMdx/IconMdx.js`,
+        name: 'a-icon-mdx'
+      }
+    ])
   }
 
   get counterEl () {
