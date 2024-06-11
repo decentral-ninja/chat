@@ -146,11 +146,7 @@ export default class Rooms extends Shadow() {
     }
 
     this.openRoomListener = event => {
-      this.renderHTML().then(() => {
-        // initial rendering has dialog box appear bug without timeout
-        setTimeout(() => self.requestAnimationFrame(timeStamp => this.dialog?.show('show-modal')), this._openRoomTimeout !== undefined ? this._openRoomTimeout : 250)
-        this._openRoomTimeout = 50
-      })
+      this.renderHTML().then(() =>  this.dialog?.show('show-modal'))
     }
 
     // save room name to local storage
