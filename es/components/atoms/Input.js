@@ -55,7 +55,7 @@ export default class Input extends Shadow() {
     /* Put cursor into input on click of chat area */
     this.windowClickEventListener = event => {
       const target = event.composedPath()[0]
-      if (target.classList.contains('pattern') || target.nodeName === 'YJS-CHAT-UPDATE') this.textarea.focus()
+      if (target.classList.contains('pattern')) this.textarea.focus()
     }
 
     this.emojiClickedEventListener = event => (this.textarea.value += event.detail?.clickedEmoji || '')

@@ -1,4 +1,5 @@
 // @ts-check
+import { WebWorker } from '../../../../event-driven-web-components-prototypes/src/WebWorker.js'
 
 /* global HTMLElement */
 /* global CustomEvent */
@@ -12,7 +13,7 @@
  * @param {CustomElementConstructor} [ChosenHTMLElement = HTMLElement]
  * @return {CustomElementConstructor | *}
  */
-export const Chat = (ChosenHTMLElement = HTMLElement) => class Chat extends ChosenHTMLElement {
+export const Chat = (ChosenHTMLElement = WebWorker()) => class Chat extends ChosenHTMLElement {
   /**
    * Creates an instance of yjs chats. The constructor will be called for every custom element using this class when initially created.
    *
@@ -48,16 +49,30 @@ export const Chat = (ChosenHTMLElement = HTMLElement) => class Chat extends Chos
     }
 
     this.chatObserveEventListener = async event => {
-      const allUsers = (await (await this.usersData)()).allUsers
+      console.log('****chat update*****', event.detail.yjsEvent?.changes)
+      let getAllResult = null
+      const getAll = async () => {
+        if (getAllResult) return getAllResult
+        // @ts-ignore
+        return (getAllResult =  await this.webWorker(Chat.enrichTextObj, event.detail.type.toArray(), await this.uid, (await (await this.usersData)()).allUsers))
+      }
+      let getAddedResult = null
+      const getAdded = async () => {
+        if (getAddedResult) return getAddedResult
+        // @ts-ignore
+        const addedItems = Array.from(event.detail.yjsEvent?.changes?.added || []).map(item => Object.assign(...item.content?.arr))
+        return (getAddedResult =  addedItems.length
+          // @ts-ignore
+          ? await this.webWorker(Chat.enrichTextObj, addedItems, await this.uid, (await (await this.usersData)()).allUsers)
+          : Promise.resolve([])
+        )
+      }
+
       this.dispatchEvent(new CustomEvent('yjs-chat-update', {
         detail: {
           // enrich the chat object with the info if it has been self
-          chat: await Promise.all(event.detail.type.toArray().map(async textObj => ({
-            ...textObj,
-            isSelf: textObj.uid === await this.uid,
-            // @ts-ignore
-            updatedNickname: allUsers.get(textObj.uid)?.nickname || textObj.nickname
-          })))
+          getAll,
+          getAdded
         },
         bubbles: true,
         cancelable: true,
@@ -127,6 +142,15 @@ export const Chat = (ChosenHTMLElement = HTMLElement) => class Chat extends Chos
     this.removeEventListener('yjs-input', this.inputEventListener)
     this.globalEventTarget.removeEventListener('yjs-chat-observe', this.chatObserveEventListener)
     this.globalEventTarget.removeEventListener('yjs-nickname', this.nicknameEventListener)
+  }
+
+  static enrichTextObj (type, uid, allUsers) {
+    return type.map(textObj => ({
+      ...textObj,
+      isSelf: textObj.uid === uid,
+      // @ts-ignore
+      updatedNickname: allUsers.get(textObj.uid)?.nickname || textObj.nickname
+    }))
   }
 
   get globalEventTarget () {

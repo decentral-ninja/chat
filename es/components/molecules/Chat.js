@@ -12,15 +12,23 @@ export default class Chat extends Shadow() {
   constructor (options = {}, ...args) {
     super({ importMetaUrl: import.meta.url, ...options }, ...args)
 
+    let firstRender = true
     this.timeoutID = null
     // chat update
-    this.eventListener = event => {
+    this.eventListener = async event => {
+      // https://docs.yjs.dev/api/y.event
       const isScrolledBottom = this.scrollHeight < this.scrollTop + this.offsetHeight + 200 /* tollerance */
       let lastEntryIsSelf = false
       let lastMessage = null
+      let dataName = 'getAdded'
+      if (firstRender) {
+        this.ul.innerHTML = '';
+        dataName = 'getAll'
+        firstRender = false
+      }
 
-      this.ul.innerHTML = ''
-      event.detail.chat.sort((a, b) => a.timestamp - b.timestamp).forEach((entry, i, chat) => {
+      console.log('****event.detail*****', event.detail);
+      (await event.detail[dataName]()).sort((a, b) => a.timestamp - b.timestamp).forEach((entry, i, chat) => {
         const li = document.createElement('li')
 
         if (entry.isSelf) li.classList.add('self')
