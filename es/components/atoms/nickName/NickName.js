@@ -142,6 +142,8 @@ export default class NickName extends Shadow() {
    * @returns Promise<void>
    */
   renderHTML (nickname = this.getAttribute('nickname')) {
+    if (this.lastNickname === nickname) return Promise.resolve()
+    this.lastNickname = nickname
     this.html = ''
     this.html = this.hasAttribute('self')
       ? `<a href="#">
