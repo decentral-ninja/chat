@@ -20,18 +20,37 @@ export default class NickName extends Shadow() {
     }
 
     this.nicknameEventListener = event => this.renderHTML(event.detail.nickname)
+
+    this.keysChanged = []
+    let timeoutId = null
+    this.usersEventListener = async event => {
+      this.keysChanged = this.keysChanged.concat(event.detail.keysChanged)
+      clearTimeout(timeoutId)
+      timeoutId = setTimeout(async () => {
+        if (this.keysChanged.includes(this.getAttribute('uid'))) {
+          this.keysChanged = []
+          this.renderHTML((await event.detail.getData()).allUsers.get(this.getAttribute('uid'))?.nickname)
+        }
+      }, 2000)
+    }
   }
 
   connectedCallback () {
     if (this.shouldRenderCSS()) this.renderCSS()
     if (this.shouldRenderHTML()) this.renderHTML()
-    this.addEventListener('click', this.clickEventListener)
-    this.globalEventTarget.addEventListener('yjs-nickname', this.nicknameEventListener)
+    if (this.hasAttribute('self')) {
+      this.addEventListener('click', this.clickEventListener)
+      this.globalEventTarget.addEventListener('yjs-nickname', this.nicknameEventListener)
+    }
+    this.globalEventTarget.addEventListener('yjs-users', this.usersEventListener)
   }
 
   disconnectedCallback () {
-    this.removeEventListener('click', this.clickEventListener)
-    this.globalEventTarget.removeEventListener('yjs-nickname', this.nicknameEventListener)
+    if (this.hasAttribute('self')) {
+      this.removeEventListener('click', this.clickEventListener)
+      this.globalEventTarget.removeEventListener('yjs-nickname', this.nicknameEventListener)
+    }
+    this.globalEventTarget.removeEventListener('yjs-users', this.usersEventListener)
   }
 
   /**
@@ -69,7 +88,7 @@ export default class NickName extends Shadow() {
       *:focus {
         outline: none;
       }
-      :host > a {
+      :host > a, :host > span {
         align-items: center;
         display: flex;
         padding-bottom: var(--spacing);
@@ -79,7 +98,7 @@ export default class NickName extends Shadow() {
       :host > a > a-icon-mdx {
         display: flex;
       }
-      :host > a > h4 {
+      :host > a > h4, :host > span {
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -124,10 +143,12 @@ export default class NickName extends Shadow() {
    */
   renderHTML (nickname = this.getAttribute('nickname')) {
     this.html = ''
-    this.html = `<a href="#">
-      <h4>${nickname || 'Loading...'}</h4>
-      <a-icon-mdx hover-on-parent-element id="show-modal" rotate="-45deg" icon-url="../../../../../../img/icons/tool.svg" size="1em"></a-icon-mdx>
-    </a>`
+    this.html = this.hasAttribute('self')
+      ? `<a href="#">
+          <h4>${nickname || 'Loading...'}</h4>
+          <a-icon-mdx hover-on-parent-element id="show-modal" rotate="-45deg" icon-url="../../../../../../img/icons/tool.svg" size="1em"></a-icon-mdx>
+        </a>`
+      : `<span><h4>${nickname || 'Loading...'}</h4></span>`
     return this.fetchModules([
       {
         path: `${this.importMetaUrl}../../../../../web-components-toolbox/src/es/components/atoms/iconMdx/IconMdx.js`,

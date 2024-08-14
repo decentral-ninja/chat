@@ -186,7 +186,6 @@ export default class Users extends Shadow() {
         }
       ])
     ]).then(async ([nickname]) => {
-      console.log('nicknames:', {thisNickname: nickname, selfUserNickname: selfUser?.nickname})
       if (data) {
         if (data.users.size) {
           this.connectedUsers.textContent = data.users.size ? data.users.size - 1 : 'You are alone!'

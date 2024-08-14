@@ -49,19 +49,18 @@ export const Chat = (ChosenHTMLElement = WebWorker()) => class Chat extends Chos
     }
 
     this.chatObserveEventListener = async event => {
-      console.log('****chat update*****', event.detail.yjsEvent?.changes)
       let getAllResult = null
       const getAll = async () => {
         if (getAllResult) return getAllResult
         // @ts-ignore
-        return (getAllResult =  await this.webWorker(Chat.enrichTextObj, event.detail.type.toArray(), await this.uid, (await (await this.usersData)()).allUsers))
+        return (getAllResult = await this.webWorker(Chat.enrichTextObj, event.detail.type.toArray(), await this.uid, (await (await this.usersData)()).allUsers))
       }
       let getAddedResult = null
       const getAdded = async () => {
         if (getAddedResult) return getAddedResult
         // @ts-ignore
         const addedItems = Array.from(event.detail.yjsEvent?.changes?.added || []).map(item => Object.assign(...item.content?.arr))
-        return (getAddedResult =  addedItems.length
+        return (getAddedResult = addedItems.length
           // @ts-ignore
           ? await this.webWorker(Chat.enrichTextObj, addedItems, await this.uid, (await (await this.usersData)()).allUsers)
           : Promise.resolve([])
