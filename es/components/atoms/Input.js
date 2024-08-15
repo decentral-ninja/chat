@@ -46,12 +46,6 @@ export default class Input extends Shadow() {
       }
     }
 
-    this.focusEventListener = event => setTimeout(() => this.dispatchEvent(new CustomEvent('main-scroll', {
-      bubbles: true,
-      cancelable: true,
-      composed: true
-    })), 300)
-
     /* Put cursor into input on click of chat area */
     this.windowClickEventListener = event => {
       const target = event.composedPath()[0]
@@ -66,7 +60,6 @@ export default class Input extends Shadow() {
     if (this.shouldRenderHTML()) this.renderHTML()
     this.root.addEventListener('click', this.keyupEventListener)
     this.root.addEventListener('keyup', this.keyupEventListener)
-    this.textarea.addEventListener('focus', this.focusEventListener)
     this.textarea.addEventListener('input', this.inputEventListener)
     this.addEventListener('emoji-clicked', this.emojiClickedEventListener)
     self.addEventListener('click', this.windowClickEventListener)
@@ -75,7 +68,6 @@ export default class Input extends Shadow() {
   disconnectedCallback () {
     this.root.removeEventListener('click', this.keyupEventListener)
     this.root.removeEventListener('keyup', this.keyupEventListener)
-    this.textarea.removeEventListener('focus', this.focusEventListener)
     this.textarea.removeEventListener('input', this.inputEventListener)
     this.removeEventListener('emoji-clicked', this.emojiClickedEventListener)
     self.removeEventListener('click', this.windowClickEventListener)
