@@ -48,6 +48,14 @@ export default class Chat extends Shadow() {
     if (this.shouldRenderCSS()) this.renderCSS()
     if (this.shouldRenderHTML()) this.renderHTML()
     this.globalEventTarget.addEventListener('yjs-chat-update', this.eventListener)
+    this.dispatchEvent(new CustomEvent('main-scroll', {
+      detail: {
+        behavior: 'instant'
+      },
+      bubbles: true,
+      cancelable: true,
+      composed: true
+    }))
   }
 
   disconnectedCallback () {
