@@ -3,7 +3,7 @@ import { Shadow } from '../../../../event-driven-web-components-prototypes/src/S
 
 /**
  * The chat view
- * TODO: cleanup the whole eventListener and make the chat message list creation simpler, more efficient and do not always destroy all the innerHTML
+ * TODO: forward multiple messages
  *
  * @export
  * @class Providers

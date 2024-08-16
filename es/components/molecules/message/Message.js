@@ -3,8 +3,7 @@ import { Shadow } from '../../../../../event-driven-web-components-prototypes/sr
 /**
 * @export
 * @class Message
-* TODO: edit, delete, replyTo, emoji
-* TODO: was-last-message but not first-render and not self then show a scroll to bottom icon which disappears once scrolled to bottom (dispatch event from here and control scroll btn at src/es/chat/es/components/molecules/Chat.js)
+* TODO: edit, delete, replyTo, emoji all in one dialog overlay per message, forward multiple messages
 * @type {CustomElementConstructor}
 */
 export default class Message extends Shadow() {
@@ -19,7 +18,17 @@ export default class Message extends Shadow() {
   }
 
   connectedCallbackOnce (renderHTMLPromise) {
-    if (this.hasAttribute('was-last-message') && (this.hasAttribute('first-render') || this.hasAttribute('self'))) renderHTMLPromise.then(() => this.scrollIntoView())
+    if (this.hasAttribute('was-last-message')) {
+      if (this.hasAttribute('first-render') || this.hasAttribute('self')) {
+        renderHTMLPromise.then(() => this.li.scrollIntoView())
+      } else {
+        this.dispatchEvent(new CustomEvent('scroll-icon-show-event', {
+          bubbles: true,
+          cancelable: true,
+          composed: true
+        }))
+      }
+    } 
     this.connectedCallbackOnce = () => {}
   }
 
@@ -48,6 +57,9 @@ export default class Message extends Shadow() {
    */
   renderCSS () {
     this.css = /* css */`
+      :host {
+        display: contents;
+      }
       :host > li {
         background-color: lightgray;
         border-radius: 0.5em;

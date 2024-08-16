@@ -379,6 +379,7 @@ export default class Rooms extends Shadow() {
           <wct-dialog
             namespace="dialog-top-slide-in-"
             open=show-modal
+            open-on-every-connect
             no-backdrop-close
           >
             <dialog>
