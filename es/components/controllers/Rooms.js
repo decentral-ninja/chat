@@ -63,7 +63,7 @@ export const Rooms = (ChosenHTMLElement = HTMLElement) => class Rooms extends Ch
 
     this.getRoomsEventListener = async event => {
       if (event && event.detail && event.detail.resolve) return event.detail.resolve(await this.getRooms())
-      this.dispatchEvent(new CustomEvent('yjs-rooms', {
+      this.dispatchEvent(new CustomEvent('storage-rooms', {
         detail: await this.getRooms(),
         bubbles: true,
         cancelable: true,
