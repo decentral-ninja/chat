@@ -71,6 +71,30 @@ export const Rooms = (ChosenHTMLElement = HTMLElement) => class Rooms extends Ch
       }))
     }
 
+    this.getActiveRoomEventListener = async event => {
+      if (event && event.detail && event.detail.resolve) return event.detail.resolve((await this.getRooms()).value[await (await this.roomPromise).room])
+      this.dispatchEvent(new CustomEvent('storage-active-room', {
+        detail: (await this.getRooms()).value[await (await this.roomPromise).room],
+        bubbles: true,
+        cancelable: true,
+        composed: true
+      }))
+    }
+
+    this.mergeActiveRoomEventListener = async event => {
+      this.dispatchEvent(new CustomEvent('storage-merge', {
+        detail: {
+          key: `${this.roomNamePrefix}rooms`,
+          value: {
+            [await (await this.roomPromise).room]: event.detail
+          }
+        },
+        bubbles: true,
+        cancelable: true,
+        composed: true
+      }))
+    }
+
     /** @type {(any)=>void} */
     this.roomResolve = map => map
     /** @type {Promise<{ locationHref: string, room: Promise<string> & {done: boolean} }>} */
@@ -81,6 +105,8 @@ export const Rooms = (ChosenHTMLElement = HTMLElement) => class Rooms extends Ch
     self.addEventListener('focus', this.focusEventListener)
     this.globalEventTarget.addEventListener('yjs-providers-update', this.providersUpdateEventListener)
     this.globalEventTarget.addEventListener('storage-get-rooms', this.getRoomsEventListener)
+    this.globalEventTarget.addEventListener('storage-get-active-room', this.getActiveRoomEventListener)
+    this.globalEventTarget.addEventListener('merge-active-room', this.mergeActiveRoomEventListener)
     this.connectedCallbackOnce()
   }
 
@@ -101,6 +127,8 @@ export const Rooms = (ChosenHTMLElement = HTMLElement) => class Rooms extends Ch
     self.removeEventListener('focus', this.focusEventListener)
     this.globalEventTarget.removeEventListener('yjs-providers-update', this.providersUpdateEventListener)
     this.globalEventTarget.removeEventListener('storage-get-rooms', this.getRoomsEventListener)
+    this.globalEventTarget.removeEventListener('storage-get-active-room', this.getActiveRoomEventListener)
+    this.globalEventTarget.removeEventListener('merge-active-room', this.mergeActiveRoomEventListener)
     this.focusEventListener()
   }
 

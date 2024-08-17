@@ -19,15 +19,57 @@ export default class Message extends Shadow() {
 
   connectedCallbackOnce (renderHTMLPromise) {
     if (this.hasAttribute('was-last-message')) {
-      if (this.hasAttribute('first-render') || this.hasAttribute('self')) {
-        renderHTMLPromise.then(() => this.li.scrollIntoView())
-      } else {
-        this.dispatchEvent(new CustomEvent('scroll-icon-show-event', {
+      if (this.hasAttribute('first-render')) {
+        // scroll to the last memorized scroll pos
+        renderHTMLPromise.then(() => new Promise(resolve => this.dispatchEvent(new CustomEvent('storage-get-active-room', {
+          detail: {
+            resolve
+          },
           bubbles: true,
           cancelable: true,
           composed: true
+        }))).then(room => {
+          this.dispatchEvent(new CustomEvent('main-scroll', {
+            detail: {
+              behavior: 'instant',
+              y: room.scrollTop
+            },
+            bubbles: true,
+            cancelable: true,
+            composed: true
+          }))
+          setTimeout(() => {
+            this.dispatchEvent(new CustomEvent('main-scroll', {
+              detail: {
+                behavior: 'smooth',
+                y: room.scrollTop
+              },
+              bubbles: true,
+              cancelable: true,
+              composed: true
+            }))
+          }, 200)
         }))
+        if (!this.hasAttribute('self')) {
+          this.dispatchEvent(new CustomEvent('scroll-icon-show-event', {
+            bubbles: true,
+            cancelable: true,
+            composed: true
+          }))
+        }
+      } else {
+        if (this.hasAttribute('self')) {
+          renderHTMLPromise.then(() => this.li.scrollIntoView())
+        }else {
+          this.dispatchEvent(new CustomEvent('scroll-icon-show-event', {
+            bubbles: true,
+            cancelable: true,
+            composed: true
+          }))
+        }
       }
+
+       
     } 
     this.connectedCallbackOnce = () => {}
   }
