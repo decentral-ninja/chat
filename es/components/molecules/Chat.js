@@ -48,6 +48,7 @@ export default class Chat extends Shadow() {
     if (this.shouldRenderCSS()) this.renderCSS()
     if (this.shouldRenderHTML()) this.renderHTML()
     this.globalEventTarget.addEventListener('yjs-chat-update', this.eventListener)
+  // todo: scroll to last saved room scroll pos at session strg + room controller to handle save to strg
     this.dispatchEvent(new CustomEvent('main-scroll', {
       detail: {
         behavior: 'instant'
