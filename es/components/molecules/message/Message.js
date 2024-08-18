@@ -9,72 +9,36 @@ import { Shadow } from '../../../../../event-driven-web-components-prototypes/sr
 export default class Message extends Shadow() {
   constructor (textObj, options = {}, ...args) {
     super({ importMetaUrl: import.meta.url, ...options }, ...args)
-    this.textObj = textObj
+    this.textObj = textObj || JSON.parse(this.getAttribute('text-obj'))
+
+    this.clickEventListener = event => {
+      if (!this.dialog) {
+        this.html = /* html */`
+          <wct-dialog
+            namespace="dialog-top-slide-in-"
+            open=show-modal
+          >
+            <wct-menu-icon id="close" class="open" namespace="menu-icon-close-" no-click click-event-name="close-menu"></wct-menu-icon>
+            <dialog>
+              <h4>Message:</h4>
+            </dialog>
+          </wct-dialog>
+        `
+      } else {
+        this.dialog.show('show-modal')
+      }
+    }
   }
 
   connectedCallback () {
     if (this.shouldRenderCSS()) this.renderCSS()
-    if (this.shouldRenderHTML()) this.connectedCallbackOnce(this.renderHTML())
+    if (this.shouldRenderHTML()) this.renderHTML()
+    this.aIconMdx.addEventListener('click', this.clickEventListener)
   }
 
-  connectedCallbackOnce (renderHTMLPromise) {
-    if (this.hasAttribute('was-last-message')) {
-      if (this.hasAttribute('first-render')) {
-        // scroll to the last memorized scroll pos
-        renderHTMLPromise.then(() => new Promise(resolve => this.dispatchEvent(new CustomEvent('storage-get-active-room', {
-          detail: {
-            resolve
-          },
-          bubbles: true,
-          cancelable: true,
-          composed: true
-        }))).then(room => {
-          this.dispatchEvent(new CustomEvent('main-scroll', {
-            detail: {
-              behavior: 'instant',
-              y: room.scrollTop
-            },
-            bubbles: true,
-            cancelable: true,
-            composed: true
-          }))
-          setTimeout(() => {
-            this.dispatchEvent(new CustomEvent('main-scroll', {
-              detail: {
-                behavior: 'smooth',
-                y: room.scrollTop
-              },
-              bubbles: true,
-              cancelable: true,
-              composed: true
-            }))
-          }, 200)
-        }))
-        if (!this.hasAttribute('self')) {
-          this.dispatchEvent(new CustomEvent('scroll-icon-show-event', {
-            bubbles: true,
-            cancelable: true,
-            composed: true
-          }))
-        }
-      } else {
-        if (this.hasAttribute('self')) {
-          renderHTMLPromise.then(() => this.li.scrollIntoView())
-        }else {
-          this.dispatchEvent(new CustomEvent('scroll-icon-show-event', {
-            bubbles: true,
-            cancelable: true,
-            composed: true
-          }))
-        }
-      }
-
-       
-    } 
-    this.connectedCallbackOnce = () => {}
+  disconnectedCallback () {
+    this.aIconMdx.removeEventListener('click', this.clickEventListener)
   }
-
-  disconnectedCallback () {}
 
   /**
    * evaluates if a render is necessary
@@ -102,6 +66,9 @@ export default class Message extends Shadow() {
       :host {
         display: contents;
       }
+      :host > wct-dialog {
+        font-size: 1rem;
+      }
       :host > li {
         background-color: lightgray;
         border-radius: 0.5em;
@@ -115,6 +82,14 @@ export default class Message extends Shadow() {
       :host([self]) > li {
         background-color: lightgreen;
         float: right;
+      }
+      :host > li > div {
+        display: flex;
+        justify-content: space-between;
+      }
+      :host > li > div > a-icon-mdx {
+        /* TODO: continue here */
+        display: none;
       }
       :host > li > .user, :host > li > .timestamp {
         color: gray;
@@ -167,7 +142,13 @@ export default class Message extends Shadow() {
     // make aTags with href when first link is detected https://stackoverflow.com/questions/1500260/detect-urls-in-text-with-javascript
     this.html = `
       <li>
-        <chat-a-nick-name class="user" uid='${textObj.uid}' nickname="${textObj.updatedNickname}"${textObj.isSelf ? ' self' : ''}></chat-a-nick-name>
+        <div>
+          <chat-a-nick-name class="user" uid='${textObj.uid}' nickname="${textObj.updatedNickname}"${textObj.isSelf ? ' self' : ''}></chat-a-nick-name>
+          ${this.hasAttribute('self')
+            ? '<a-icon-mdx id="show-modal" rotate="-45deg" icon-url="../../../../../../img/icons/tool.svg" size="1.5em"></a-icon-mdx>'
+            : '<a-icon-mdx id="show-modal" icon-url="../../../../../../img/icons/info-circle.svg" size="1.5em"></a-icon-mdx>'
+          }
+        </div>
         <span class="text">${textObj.text.replace(/(https?:\/\/[^\s]+)/g, url => `<a href="${url}" target="_blank">${url}</a>`)}</span><br><span class="timestamp">${(new Date(textObj.timestamp)).toLocaleString(navigator.language)}</span>
       </li>  
     `
@@ -176,11 +157,28 @@ export default class Message extends Shadow() {
         // @ts-ignore
         path: `${this.importMetaUrl}../../atoms/nickName/NickName.js?${Environment?.version || ''}`,
         name: 'chat-a-nick-name'
+      },
+      {
+        // @ts-ignore
+        path: `${this.importMetaUrl}../../../../../web-components-toolbox/src/es/components/molecules/dialog/Dialog.js?${Environment?.version || ''}`,
+        name: 'wct-dialog'
+      },
+      {
+        path: `${this.importMetaUrl}../../../../../web-components-toolbox/src/es/components/atoms/iconMdx/IconMdx.js`,
+        name: 'a-icon-mdx'
       }
     ])
   }
 
   get li () {
     return this.root.querySelector('li')
+  }
+
+  get aIconMdx () {
+    return this.root.querySelector('a-icon-mdx')
+  }
+
+  get dialog () {
+    return this.root.querySelector('wct-dialog')
   }
 }
