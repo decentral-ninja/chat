@@ -20,6 +20,7 @@ export default class Notifications extends Hover() {
         let notifications
         if ((notifications = event.detail.notifications[this.getAttribute('room')]) && !(this.hidden = !notifications.length)) {
           this.counterEl.textContent = notifications.length > this.notificationsMax ? `${this.notificationsMax}+` : notifications.length
+          // nickname can not be updated, since we would have to fetch the room of this notification and get user data
           this.messageEl.textContent = `${notifications[0].nickname}: ${notifications[0].text}`
         }
       }

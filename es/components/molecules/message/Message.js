@@ -1,15 +1,15 @@
 // @ts-check
-import { Shadow } from '../../../../../event-driven-web-components-prototypes/src/Shadow.js'
+import { Intersection } from '../../../../../event-driven-web-components-prototypes/src/Intersection.js'
 /**
 * @export
 * @class Message
 * TODO: edit, delete, replyTo, emoji all in one dialog overlay per message, forward multiple messages
 * @type {CustomElementConstructor}
 */
-export default class Message extends Shadow() {
+export default class Message extends Intersection() {
   constructor (textObj, options = {}, ...args) {
-    super({ importMetaUrl: import.meta.url, ...options }, ...args)
-    this.textObj = textObj || JSON.parse(this.getAttribute('text-obj'))
+    super({ importMetaUrl: import.meta.url, intersectionObserverInit: { rootMargin: '0px 0px -50% 0px'}, ...options }, ...args)
+    this.textObj = textObj || JSON.parse(this.code.textContent)
 
     this.clickEventListener = event => {
       if (!this.dialog) {
@@ -18,12 +18,42 @@ export default class Message extends Shadow() {
             namespace="dialog-top-slide-in-"
             open=show-modal
           >
+            <style protected="true">
+              :host > dialog [delete] {
+                display: contents;
+              }
+              :host(.deleted) > dialog [delete] {
+                display: none;
+              }
+              :host > dialog [undo] {
+                display: none;
+              }
+              :host(.deleted) > dialog [undo] {
+                display: contents;
+              }
+            </style>
             <wct-menu-icon id="close" class="open" namespace="menu-icon-close-" no-click click-event-name="close-menu"></wct-menu-icon>
             <dialog>
               <h4>Message:</h4>
+              ${this.hasAttribute('self')
+                ? /* html */`
+                  <a-icon-mdx delete icon-url="../../../../../../img/icons/trash.svg" size="2em"></a-icon-mdx>
+                  <a-icon-mdx undo icon-url="../../../../../../img/icons/trash-off.svg" size="2em"></a-icon-mdx>
+                `
+                : ''
+              }
             </dialog>
           </wct-dialog>
         `
+        // @ts-ignore
+        const dialogClone = new this.constructor(this.textObj)
+        dialogClone.setAttribute('timestamp', this.getAttribute('timestamp'))
+        if (this.hasAttribute('self')) dialogClone.setAttribute('self', '')
+        if (this.hasAttribute('was-last-message')) dialogClone.setAttribute('was-last-message', '')
+        if (this.hasAttribute('first-render')) dialogClone.setAttribute('first-render', '')
+        dialogClone.setAttribute('no-dialog', '')
+        dialogClone.setAttribute('width', '100%')
+        this.dialog.dialogPromise.then(dialog => dialog.appendChild(dialogClone))
       } else {
         this.dialog.show('show-modal')
       }
@@ -31,13 +61,26 @@ export default class Message extends Shadow() {
   }
 
   connectedCallback () {
+    super.connectedCallback()
     if (this.shouldRenderCSS()) this.renderCSS()
     if (this.shouldRenderHTML()) this.renderHTML()
-    this.aIconMdx.addEventListener('click', this.clickEventListener)
+    if (this.aIconMdx) this.aIconMdx.addEventListener('click', this.clickEventListener)
   }
 
   disconnectedCallback () {
-    this.aIconMdx.removeEventListener('click', this.clickEventListener)
+    super.disconnectedCallback()
+    if (this.aIconMdx) this.aIconMdx.removeEventListener('click', this.clickEventListener)
+  }
+
+  intersectionCallback (entries, observer) {
+    if (entries && entries[0] && entries[0].isIntersecting) this.dispatchEvent(new CustomEvent(this.getAttribute('intersection-event-name') || 'message-intersection', {
+      detail: {
+        scrollEl: `${this.getAttribute('timestamp')}`
+      },
+      bubbles: true,
+      cancelable: true,
+      composed: true
+    }))
   }
 
   /**
@@ -63,9 +106,6 @@ export default class Message extends Shadow() {
    */
   renderCSS () {
     this.css = /* css */`
-      :host {
-        display: contents;
-      }
       :host > wct-dialog {
         font-size: 1rem;
       }
@@ -76,8 +116,7 @@ export default class Message extends Shadow() {
         list-style: none;
         padding: var(--spacing);
         margin: 0.25em 0.1em 0.25em 0;
-        width: 80%;          
-        
+        width: ${this.getAttribute('width') ? this.getAttribute('width') : '80%'};          
       }
       :host([self]) > li {
         background-color: lightgreen;
@@ -144,9 +183,11 @@ export default class Message extends Shadow() {
       <li>
         <div>
           <chat-a-nick-name class="user" uid='${textObj.uid}' nickname="${textObj.updatedNickname}"${textObj.isSelf ? ' self' : ''}></chat-a-nick-name>
-          ${this.hasAttribute('self')
-            ? '<a-icon-mdx id="show-modal" rotate="-45deg" icon-url="../../../../../../img/icons/tool.svg" size="1.5em"></a-icon-mdx>'
-            : '<a-icon-mdx id="show-modal" icon-url="../../../../../../img/icons/info-circle.svg" size="1.5em"></a-icon-mdx>'
+          ${this.hasAttribute('no-dialog')
+              ? ''
+              : this.hasAttribute('self')
+                ? '<a-icon-mdx id="show-modal" rotate="-45deg" icon-url="../../../../../../img/icons/tool.svg" size="1.5em"></a-icon-mdx>'
+                : '<a-icon-mdx id="show-modal" icon-url="../../../../../../img/icons/info-circle.svg" size="1.5em"></a-icon-mdx>'
           }
         </div>
         <span class="text">${textObj.text.replace(/(https?:\/\/[^\s]+)/g, url => `<a href="${url}" target="_blank">${url}</a>`)}</span><br><span class="timestamp">${(new Date(textObj.timestamp)).toLocaleString(navigator.language)}</span>
@@ -180,5 +221,9 @@ export default class Message extends Shadow() {
 
   get dialog () {
     return this.root.querySelector('wct-dialog')
+  }
+
+  get code () {
+    return this.root.querySelector('code')
   }
 }

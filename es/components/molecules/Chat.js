@@ -41,13 +41,16 @@ export default class Chat extends Shadow() {
         textObjs.sort((a, b) => a.timestamp - b.timestamp).forEach((textObj, i, textObjs) => {
           const div = document.createElement('div')
           div.innerHTML = /* html */`
-            <m-load-template-tag mode=false>
+            <m-load-template-tag timestamp="t_${textObj.timestamp}" mode=false no-css>
               <template>
-                <chat-m-message text-obj='${JSON.stringify(textObj)}'${textObj.isSelf ? ' self' : ''}${(wasLastMessage = textObjs.length === i + 1) ? ' was-last-message' : ''}${isUlEmpty ? ' first-render' : ''}></chat-m-message>
+                <chat-m-message timestamp="t_${textObj.timestamp}"${textObj.isSelf ? ' self' : ''}${(wasLastMessage = textObjs.length === i + 1) ? ' was-last-message' : ''}${isUlEmpty ? ' first-render' : ''}>
+                  <code hidden>${JSON.stringify(textObj)}</code>
+                </chat-m-message>
               </template>
             </m-load-template-tag>
           `
           this.ul.appendChild(div.children[0])
+          // scroll behavior
           if (wasLastMessage) {
             // firstRender
             if (isUlEmpty) {
@@ -60,24 +63,30 @@ export default class Chat extends Shadow() {
                 cancelable: true,
                 composed: true
               }))).then(room => {
-                this.dispatchEvent(new CustomEvent('main-scroll', {
-                  detail: {
-                    behavior: 'instant',
-                    y: room.scrollTop
-                  },
-                  bubbles: true,
-                  cancelable: true,
-                  composed: true
-                }))
-                setTimeout(() => this.dispatchEvent(new CustomEvent('main-scroll', {
-                  detail: {
-                    behavior: 'smooth',
-                    y: room.scrollTop
-                  },
-                  bubbles: true,
-                  cancelable: true,
-                  composed: true
-                })), 200)
+                let scrollEl = null
+                if (room.scrollEl && (scrollEl = this.ul.querySelector(`[timestamp=${room.scrollEl}]`))) {
+                  scrollEl.scrollIntoView({behavior: 'instant'})
+                  setTimeout(() => scrollEl.scrollIntoView({behavior: 'smooth'}), 200)
+                } else {
+                  this.dispatchEvent(new CustomEvent('main-scroll', {
+                    detail: {
+                      behavior: 'instant',
+                      y: room?.scrollTop
+                    },
+                    bubbles: true,
+                    cancelable: true,
+                    composed: true
+                  }))
+                  setTimeout(() => this.dispatchEvent(new CustomEvent('main-scroll', {
+                    detail: {
+                      behavior: 'smooth',
+                      y: room?.scrollTop
+                    },
+                    bubbles: true,
+                    cancelable: true,
+                    composed: true
+                  })), 200)
+                }
               })
               if (!textObj.isSelf) {
                 this.dispatchEvent(new CustomEvent('scroll-icon-show-event', {
@@ -88,8 +97,8 @@ export default class Chat extends Shadow() {
               }
             } else {
               if (textObj.isSelf) {
-                this.ul.lastChild.scrollIntoView()
-                setTimeout(() => this.ul.lastChild.scrollIntoView(), 200)
+                this.ul.lastChild.scrollIntoView({behavior: 'instant'})
+                setTimeout(() => this.ul.lastChild.scrollIntoView({behavior: 'smooth'}), 200)
               }else {
                 this.dispatchEvent(new CustomEvent('scroll-icon-show-event', {
                   bubbles: true,
@@ -102,9 +111,28 @@ export default class Chat extends Shadow() {
         })
       })
     }
+
+    let timeout = null
+    this.messageIntersectionEventListener = event => {
+      clearTimeout(timeout)
+      timeout = setTimeout(() => {
+        // avoid saving scrollEl on first time intersection of message after connect, since the initial event does not grab the most top message
+        if (this.firstTimeIntersectionSinceConnected) {
+          this.firstTimeIntersectionSinceConnected = false
+        } else {
+          this.dispatchEvent(new CustomEvent('merge-active-room', {
+            detail: event.detail,
+            bubbles: true,
+            cancelable: true,
+            composed: true
+          }))
+        }
+      }, 200)
+    }
   }
 
   connectedCallback () {
+    this.firstTimeIntersectionSinceConnected = true
     if (this.shouldRenderCSS()) this.renderCSS()
     if (this.shouldRenderHTML()) {
       this.renderHTML()
@@ -117,21 +145,30 @@ export default class Chat extends Shadow() {
         bubbles: true,
         cancelable: true,
         composed: true
-      }))).then(room => this.dispatchEvent(new CustomEvent('main-scroll', {
-        detail: {
-          behavior: 'instant',
-          y: room.scrollTop
-        },
-        bubbles: true,
-        cancelable: true,
-        composed: true
-      })))
+      }))).then(room => {
+        let scrollEl = null
+        if (room.scrollEl && (scrollEl = this.ul.querySelector(`[timestamp=${room.scrollEl}]`))) {
+          scrollEl.scrollIntoView({behavior: 'instant'})
+        } else {
+          this.dispatchEvent(new CustomEvent('main-scroll', {
+            detail: {
+              behavior: 'instant',
+              y: room?.scrollTop
+            },
+            bubbles: true,
+            cancelable: true,
+            composed: true
+          }))
+        }
+      })
     }
     this.globalEventTarget.addEventListener('yjs-chat-update', this.eventListener)
+    this.addEventListener('message-intersection', this.messageIntersectionEventListener)
   }
 
   disconnectedCallback () {
     this.globalEventTarget.removeEventListener('yjs-chat-update', this.eventListener)
+    this.removeEventListener('message-intersection', this.messageIntersectionEventListener)
   }
 
   /**

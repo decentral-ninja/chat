@@ -363,7 +363,7 @@ export default class Rooms extends Shadow() {
    * @return {string}
    */
   static renderRoomList (rooms, activeRoomName) {
-    return /* html */`<style>
+    return /* html */`<style protected="true">
       :host {
         --color-hover: var(--color-yellow);
       }
@@ -434,8 +434,8 @@ export default class Rooms extends Shadow() {
               <div>${key}</div>
               <chat-m-notifications room="${key}" no-click${i + 1 === arr.length ? ' on-connected-request-notifications' : ''} hover-on-parent-element></chat-m-notifications>
             </a>
-            <a-icon-mdx delete="${key.replace(/"/g, "'")}" icon-url="../../../../../../img/icons/eraser.svg" size="2em"></a-icon-mdx>
-            <a-icon-mdx undo="${key}" icon-url="../../../../../../img/icons/arrow-back-up.svg" size="2em"></a-icon-mdx>
+            <a-icon-mdx delete="${key.replace(/"/g, "'")}" icon-url="../../../../../../img/icons/trash.svg" size="2em"></a-icon-mdx>
+            <a-icon-mdx undo="${key}" icon-url="../../../../../../img/icons/trash-off.svg" size="2em"></a-icon-mdx>
           </div>
         </li$>`, '')
       }

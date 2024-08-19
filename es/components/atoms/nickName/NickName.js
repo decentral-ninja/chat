@@ -102,6 +102,7 @@ export default class NickName extends Shadow() {
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+        text-decoration: underline;
       }
       @media only screen and (max-width: _max-width_) {
         :host {}
@@ -148,7 +149,7 @@ export default class NickName extends Shadow() {
     this.html = this.hasAttribute('self')
       ? `<a href="#">
           <h4>${nickname || 'Loading...'}</h4>
-          <a-icon-mdx hover-on-parent-element id="show-modal" rotate="-45deg" icon-url="../../../../../../img/icons/tool.svg" size="1em"></a-icon-mdx>
+          <a-icon-mdx hover-on-parent-element id="show-modal" icon-url="../../../../../../img/icons/pencil.svg" size="1em"></a-icon-mdx>
         </a>`
       : `<span><h4>${nickname || 'Loading...'}</h4></span>`
     return this.fetchModules([
