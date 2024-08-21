@@ -10,7 +10,7 @@ export default class Input extends Shadow() {
     super({ importMetaUrl: import.meta.url, ...options }, ...args)
 
     this.sendEventListener = (event, input) => {
-      this.dispatchEvent(new CustomEvent('yjs-input', {
+      this.dispatchEvent(new CustomEvent('yjs-chat-add', {
         detail: {
           input: input || event.composedPath()[0]
         },

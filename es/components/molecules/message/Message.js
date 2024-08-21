@@ -3,33 +3,49 @@ import { Intersection } from '../../../../../event-driven-web-components-prototy
 /**
 * @export
 * @class Message
-* TODO: edit, delete, replyTo, emoji all in one dialog overlay per message, forward multiple messages
+* TODO: edit, replyTo, emoji all in one dialog overlay per message, forward multiple messages
 * @type {CustomElementConstructor}
 */
 export default class Message extends Intersection() {
   constructor (textObj, options = {}, ...args) {
     super({ importMetaUrl: import.meta.url, intersectionObserverInit: { rootMargin: '0px 0px -50% 0px'}, ...options }, ...args)
-    this.textObj = textObj || JSON.parse(this.code.textContent)
+    this.textObj = textObj || JSON.parse(this.template.content.textContent)
 
     this.clickEventListener = event => {
       if (!this.dialog) {
         this.html = /* html */`
           <wct-dialog
             namespace="dialog-top-slide-in-"
-            open=show-modal
+            open="show-modal"
+            closed-event-name="dialog-closed-event"
           >
             <style protected="true">
               :host > dialog [delete] {
                 display: contents;
               }
-              :host(.deleted) > dialog [delete] {
+              :host([deleted]) > dialog [delete] {
                 display: none;
               }
               :host > dialog [undo] {
                 display: none;
               }
-              :host(.deleted) > dialog [undo] {
+              :host([deleted]) > dialog [undo] {
                 display: contents;
+              }
+              :host > dialog #controls {
+                display: flex;
+                justify-content: flex-end;
+                padding: 0.5em;
+                border: 1px solid lightgray;
+                border-top: 0;
+                border-radius: 0 0 0.5em 0.5em;
+              }
+              :host > dialog #controls > * {
+                --color: var(--color-secondary);
+                --color-hover: var(--color-yellow);
+              }
+              :host > dialog #controls > #delete {
+                display: flex;
               }
             </style>
             <wct-menu-icon id="close" class="open" namespace="menu-icon-close-" no-click click-event-name="close-menu"></wct-menu-icon>
@@ -37,25 +53,59 @@ export default class Message extends Intersection() {
               <h4>Message:</h4>
               ${this.hasAttribute('self')
                 ? /* html */`
-                  <a-icon-mdx delete icon-url="../../../../../../img/icons/trash.svg" size="2em"></a-icon-mdx>
-                  <a-icon-mdx undo icon-url="../../../../../../img/icons/trash-off.svg" size="2em"></a-icon-mdx>
+                  <div id="controls">
+                    <div id="delete">
+                      <a-icon-mdx delete icon-url="../../../../../../img/icons/trash.svg" size="2em"></a-icon-mdx>
+                      <a-icon-mdx undo icon-url="../../../../../../img/icons/trash-off.svg" size="2em"></a-icon-mdx>
+                    </div>
+                  </div>
                 `
                 : ''
               }
             </dialog>
           </wct-dialog>
         `
+        // clone message into dialog
         // @ts-ignore
-        const dialogClone = new this.constructor(this.textObj)
-        dialogClone.setAttribute('timestamp', this.getAttribute('timestamp'))
-        if (this.hasAttribute('self')) dialogClone.setAttribute('self', '')
-        if (this.hasAttribute('was-last-message')) dialogClone.setAttribute('was-last-message', '')
-        if (this.hasAttribute('first-render')) dialogClone.setAttribute('first-render', '')
-        dialogClone.setAttribute('no-dialog', '')
-        dialogClone.setAttribute('width', '100%')
-        this.dialog.dialogPromise.then(dialog => dialog.appendChild(dialogClone))
+        this.messageClone = new this.constructor(this.textObj)
+        this.messageClone.setAttribute('timestamp', this.getAttribute('timestamp'))
+        if (this.hasAttribute('self')) this.messageClone.setAttribute('self', '')
+        if (this.hasAttribute('was-last-message')) this.messageClone.setAttribute('was-last-message', '')
+        if (this.hasAttribute('first-render')) this.messageClone.setAttribute('first-render', '')
+        this.messageClone.setAttribute('no-dialog', '')
+        this.messageClone.setAttribute('width', '100%')
+        if (this.hasAttribute('self')) this.messageClone.setAttribute('border-radius', `${this.borderRadius} ${this.borderRadius} 0 0`)
+        this.messageClone.setAttribute('margin', '0')
+        this.dialog.dialogPromise.then(dialog => {
+          dialog.querySelector('h4').after(this.messageClone)
+          // setup delete event listeners
+          if (this.deleteEl) this.deleteEl.addEventListener('click', this.clickDeleteEventListener)
+        })
       } else {
         this.dialog.show('show-modal')
+      }
+    }
+
+    this.clickDeleteEventListener = event => {
+      this.toggleAttribute('deleted')
+      if (this.hasAttribute('deleted')) {
+        this.dialog.setAttribute('deleted', '')
+        this.messageClone.setAttribute('deleted', '')
+      } else {
+        this.dialog.removeAttribute('deleted')
+        this.messageClone.removeAttribute('deleted')
+      }
+    }
+
+    this.dialogCloseEventListener = event => {
+      if (this.hasAttribute('deleted')) {
+        this.dispatchEvent(new CustomEvent('yjs-chat-delete', {
+          detail: this.textObj,
+          bubbles: true,
+          cancelable: true,
+          composed: true
+        }))
+        this.clickDeleteEventListener()
       }
     }
   }
@@ -64,14 +114,19 @@ export default class Message extends Intersection() {
     super.connectedCallback()
     if (this.shouldRenderCSS()) this.renderCSS()
     if (this.shouldRenderHTML()) this.renderHTML()
-    if (this.aIconMdx) this.aIconMdx.addEventListener('click', this.clickEventListener)
+    this.addEventListener('dialog-closed-event', this.dialogCloseEventListener)      
+    if (this.openDialogIcon) this.openDialogIcon.addEventListener('click', this.clickEventListener)
+    if (this.deleteEl) this.deleteEl.addEventListener('click', this.clickDeleteEventListener)
   }
 
   disconnectedCallback () {
     super.disconnectedCallback()
-    if (this.aIconMdx) this.aIconMdx.removeEventListener('click', this.clickEventListener)
+    this.removeEventListener('dialog-closed-event', this.dialogCloseEventListener)    
+    if (this.openDialogIcon) this.openDialogIcon.removeEventListener('click', this.clickEventListener)
+    if (this.deleteEl) this.deleteEl.removeEventListener('click', this.clickDeleteEventListener)
   }
 
+  // inform molecules/chat that message is intersecting and can be used as scroll hook plus being saved to storage room
   intersectionCallback (entries, observer) {
     if (entries && entries[0] && entries[0].isIntersecting) this.dispatchEvent(new CustomEvent(this.getAttribute('intersection-event-name') || 'message-intersection', {
       detail: {
@@ -105,18 +160,22 @@ export default class Message extends Intersection() {
    * renders the css
    */
   renderCSS () {
+    this.borderRadius = '0.5em'
     this.css = /* css */`
       :host > wct-dialog {
         font-size: 1rem;
       }
       :host > li {
         background-color: lightgray;
-        border-radius: 0.5em;
+        border-radius: ${this.hasAttribute('border-radius') ? this.getAttribute('border-radius') : this.borderRadius};
         float: left;
         list-style: none;
         padding: var(--spacing);
-        margin: 0.25em 0.1em 0.25em 0;
+        margin: ${this.hasAttribute('margin') ? this.getAttribute('margin') : '0.25em 0.1em 0.25em 0'};
         width: ${this.getAttribute('width') ? this.getAttribute('width') : '80%'};          
+      }
+      :host([deleted]) > li {
+        text-decoration: line-through;
       }
       :host([self]) > li {
         background-color: lightgreen;
@@ -125,10 +184,6 @@ export default class Message extends Intersection() {
       :host > li > div {
         display: flex;
         justify-content: space-between;
-      }
-      :host > li > div > a-icon-mdx {
-        /* TODO: continue here */
-        display: none;
       }
       :host > li > .user, :host > li > .timestamp {
         color: gray;
@@ -215,7 +270,7 @@ export default class Message extends Intersection() {
     return this.root.querySelector('li')
   }
 
-  get aIconMdx () {
+  get openDialogIcon () {
     return this.root.querySelector('a-icon-mdx')
   }
 
@@ -223,7 +278,11 @@ export default class Message extends Intersection() {
     return this.root.querySelector('wct-dialog')
   }
 
-  get code () {
-    return this.root.querySelector('code')
+  get template () {
+    return this.root.querySelector('template')
+  }
+
+  get deleteEl () {
+    return this.dialog?.root?.querySelector('#delete')
   }
 }

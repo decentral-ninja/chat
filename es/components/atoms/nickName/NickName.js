@@ -81,6 +81,7 @@ export default class NickName extends Shadow() {
         --a-text-decoration: underline;
         --a-display: flex;
         --color: var(--a-color);
+        --color-hover: var(--color-yellow);
         --h4-font-size: 1em;
         --h4-margin: 0;
         --h4-padding: 0.2em 0 0 0;

@@ -33,10 +33,9 @@ export const Chat = (ChosenHTMLElement = WebWorker()) => class Chat extends Chos
       this.usersData = Promise.resolve(event.detail.getData)
     }
 
-    this.inputEventListener = async event => {
+    this.chatAddEventListener = async event => {
       const input = event.detail.input
       if (input.value) {
-        // @ts-ignore
         (await this.array).push([{
           uid: await this.uid,
           nickname: await this.nickname,
@@ -46,6 +45,12 @@ export const Chat = (ChosenHTMLElement = WebWorker()) => class Chat extends Chos
         }])
         input.value = ''
       }
+    }
+
+    this.chatDeleteEventListener = async event => {
+      let index = -1
+      // check that the uid of the message to delete is the same as this local users uid
+      if (event.detail.uid === await this.uid && (index = (await this.array).toArray().findIndex(message => message.timestamp === event.detail.timestamp && message.uid === event.detail.uid)) !== -1) (await this.array).delete(index, 1)
     }
 
     this.chatObserveEventListener = async event => {
@@ -66,12 +71,25 @@ export const Chat = (ChosenHTMLElement = WebWorker()) => class Chat extends Chos
           : Promise.resolve([])
         )
       }
-
+      let getDeletedResult = null
+      const getDeleted = async () => {
+        if (getDeletedResult) return getDeletedResult
+        // @ts-ignore
+        const deletedItems = Array.from(event.detail.yjsEvent?.changes?.deleted || []).map(item => Object.assign(...item.content?.arr))
+        return (getDeletedResult = deletedItems.length
+          // @ts-ignore
+          ? await this.webWorker(Chat.enrichTextObj, deletedItems, await this.uid, (await (await this.usersData)()).allUsers)
+          : Promise.resolve([])
+        )
+      }
       this.dispatchEvent(new CustomEvent('yjs-chat-update', {
         detail: {
           // enrich the chat object with the info if it has been self
           getAll,
-          getAdded
+          getAdded,
+          added: event.detail.yjsEvent?.changes?.added?.size,
+          getDeleted,
+          deleted: event.detail.yjsEvent?.changes?.deleted?.size,
         },
         bubbles: true,
         cancelable: true,
@@ -98,7 +116,7 @@ export const Chat = (ChosenHTMLElement = WebWorker()) => class Chat extends Chos
 
     /** @type {(any)=>void} */
     this.arrayResolve = map => map
-    /** @type {Promise<string>} */
+    /** @type {Promise<any>} */
     this.array = new Promise(resolve => (this.arrayResolve = resolve)).then(result => {
       this.chatObserveEventListener({ detail: { type: result.type } })
       return result.type
@@ -107,7 +125,8 @@ export const Chat = (ChosenHTMLElement = WebWorker()) => class Chat extends Chos
 
   connectedCallback () {
     this.globalEventTarget.addEventListener('yjs-users', this.usersEventListener)
-    this.addEventListener('yjs-input', this.inputEventListener)
+    this.addEventListener('yjs-chat-add', this.chatAddEventListener)
+    this.addEventListener('yjs-chat-delete', this.chatDeleteEventListener)
     this.globalEventTarget.addEventListener('yjs-chat-observe', this.chatObserveEventListener)
     this.globalEventTarget.addEventListener('yjs-nickname', this.nicknameEventListener)
     this.connectedCallbackOnce()
@@ -138,7 +157,8 @@ export const Chat = (ChosenHTMLElement = WebWorker()) => class Chat extends Chos
 
   disconnectedCallback () {
     this.globalEventTarget.removeEventListener('yjs-users', this.usersEventListener)
-    this.removeEventListener('yjs-input', this.inputEventListener)
+    this.removeEventListener('yjs-chat-add', this.chatAddEventListener)
+    this.removeEventListener('yjs-chat-delete', this.chatDeleteEventListener)
     this.globalEventTarget.removeEventListener('yjs-chat-observe', this.chatObserveEventListener)
     this.globalEventTarget.removeEventListener('yjs-nickname', this.nicknameEventListener)
   }
