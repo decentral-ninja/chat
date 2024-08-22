@@ -71,6 +71,7 @@ export default class Chat extends Shadow() {
                     scrollEl.scrollIntoView({behavior: 'instant'})
                     setTimeout(() => scrollEl.scrollIntoView({behavior: 'smooth'}), 200)
                   } else {
+                    // backwards compatible behavior and if no scrollTop scrolls to bottom
                     this.dispatchEvent(new CustomEvent('main-scroll', {
                       detail: {
                         behavior: 'instant',
@@ -117,8 +118,13 @@ export default class Chat extends Shadow() {
       // delete messages
       if (event.detail.deleted > 0) {
         (await event.detail.getDeleted()).forEach(textObj => {
-          let message
-          if ((message = this.ul.querySelector(`[timestamp="t_${textObj.timestamp}"]`))) message.remove()
+          const selector = `[timestamp="t_${textObj.timestamp}"]`
+          let messageWrappers, messageWrapper
+          if ((messageWrappers = Array.from(this.ul.querySelectorAll(selector))) && (messageWrapper = messageWrappers.find(messageWrapper => messageWrapper.querySelector('chat-m-message')?.textObj?.uid === textObj.uid))) {
+            messageWrapper.remove()
+          } else {
+            console.warn('could not find corresponding node marked for deletion:', {selector, textObj})
+          }
         })
       }
     }

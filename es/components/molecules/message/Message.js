@@ -13,6 +13,7 @@ export default class Message extends Intersection() {
 
     this.clickEventListener = event => {
       if (!this.dialog) {
+        // todo: separate message settings dialog
         this.html = /* html */`
           <wct-dialog
             namespace="dialog-top-slide-in-"
