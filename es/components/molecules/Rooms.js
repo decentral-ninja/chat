@@ -370,6 +370,11 @@ export default class Rooms extends Shadow() {
       :host hr {
         width: 100%;
       }
+      :host ul {
+        overflow: auto;
+        scrollbar-color: var(--color) var(--background-color);
+        scrollbar-width: thin;
+      }
       :host ul > li {
         border-bottom: 1px solid var(--background-color-rgba-50);
         padding-top: 0.5em;
