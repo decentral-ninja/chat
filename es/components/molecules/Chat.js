@@ -121,7 +121,8 @@ export default class Chat extends Shadow() {
           const selector = `[timestamp="t_${textObj.timestamp}"]`
           let messageWrappers, messageWrapper
           if ((messageWrappers = Array.from(this.ul.querySelectorAll(selector))) && (messageWrapper = messageWrappers.find(messageWrapper => messageWrapper.querySelector('chat-m-message')?.textObj?.uid === textObj.uid))) {
-            messageWrapper.remove()
+            messageWrapper.addEventListener('animationend', event => messageWrapper.remove(), {once: true})
+            messageWrapper.classList.add('deleted')
           } else {
             console.warn('could not find corresponding node marked for deletion:', {selector, textObj})
           }
@@ -221,6 +222,20 @@ export default class Chat extends Shadow() {
       }
       :host > ul > m-load-template-tag {
         min-height: 6em;
+      }
+      :host > ul > .deleted {
+        animation: delete 3s ease-out;
+        overflow: hidden;
+        min-height: 0;
+      }
+      @keyframes delete {
+        0% {
+          height: 6em;
+        }
+        100% {
+          height: 0;
+          opacity: 0;
+        }
       }
     `
   }

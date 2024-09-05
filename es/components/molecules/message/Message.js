@@ -3,7 +3,6 @@ import { Intersection } from '../../../../../event-driven-web-components-prototy
 /**
 * @export
 * @class Message
-* TODO: edit, replyTo, emoji all in one dialog overlay per message, forward multiple messages
 * @type {CustomElementConstructor}
 */
 export default class Message extends Intersection() {
@@ -70,14 +69,14 @@ export default class Message extends Intersection() {
     super.connectedCallback()
     if (this.shouldRenderCSS()) this.renderCSS()
     if (this.shouldRenderHTML()) this.renderHTML()
-    this.addEventListener('message-dialog-closed-event', this.dialogCloseEventListener)      
+    this.addEventListener('message-dialog-closed-event', this.dialogCloseEventListener)
     if (this.openDialogIcon) this.openDialogIcon.addEventListener('click', this.clickEventListener)
     if (this.deleteEl) this.deleteEl.addEventListener('click', this.clickDeleteEventListener)
   }
 
   disconnectedCallback () {
     super.disconnectedCallback()
-    this.removeEventListener('message-dialog-closed-event', this.dialogCloseEventListener)    
+    this.removeEventListener('message-dialog-closed-event', this.dialogCloseEventListener)
     if (this.openDialogIcon) this.openDialogIcon.removeEventListener('click', this.clickEventListener)
     if (this.deleteEl) this.deleteEl.removeEventListener('click', this.clickDeleteEventListener)
   }

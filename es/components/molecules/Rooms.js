@@ -116,39 +116,45 @@ export default class Rooms extends Shadow() {
 
     this.roomNameEventListener = async (event) => {
       event.stopPropagation()
-      this.dialog?.close()
-      this.dispatchEvent(new CustomEvent('close-menu', {
-        bubbles: true,
-        cancelable: true,
-        composed: true
-      }))
-      let inputField = event.composedPath()[0].inputField || event.composedPath()[0].previousElementSibling?.inputField
-      // check if url got entered as room name
-      if (inputField?.value) {
-        try {
-          const url = new URL(inputField.value.replace(/"/g, ''))
-          const roomName = url.searchParams.get('room')
-          if (roomName) return history.pushState({ ...history.state, pageTitle: (document.title = roomName) }, roomName, url.href)
-        } catch (error) {}
-      }
-      const url = new URL(location.href)
-      const roomName = `${this.roomNamePrefix}${inputField?.value?.replace(/"/g, '') || url.searchParams.get('room')?.replace(this.roomNamePrefix, '') || this.randomRoom}`
-      if ((await this.roomPromise).room.done) {
-        // enter new room
-        if (inputField) inputField.value = ''
-        url.searchParams.set('room', roomName)
-        history.pushState({ ...history.state, pageTitle: (document.title = roomName) }, roomName, url.href)
+      if (event?.detail?.type === 'key') {
+        // filter rooms
+        Rooms.filterFunction(event.detail.value, Array.from(this.ul.children))
       } else {
-        // open first room
-        this.dispatchEvent(new CustomEvent('yjs-set-room', {
-          detail: {
-            room: roomName
-          },
+        // go to room
+        this.dialog?.close()
+        this.dispatchEvent(new CustomEvent('close-menu', {
           bubbles: true,
           cancelable: true,
           composed: true
         }))
-        this.renderHTML()
+        let inputField = event.composedPath()[0].inputField || event.composedPath()[0].previousElementSibling?.inputField
+        // check if url got entered as room name
+        if (inputField?.value) {
+          try {
+            const url = new URL(inputField.value.replace(/"/g, ''))
+            const roomName = url.searchParams.get('room')
+            if (roomName) return history.pushState({ ...history.state, pageTitle: (document.title = roomName) }, roomName, url.href)
+          } catch (error) {}
+        }
+        const url = new URL(location.href)
+        const roomName = `${this.roomNamePrefix}${inputField?.value?.replace(/"/g, '') || url.searchParams.get('room')?.replace(this.roomNamePrefix, '') || this.randomRoom}`
+        if ((await this.roomPromise).room.done) {
+          // enter new room
+          if (inputField) inputField.value = ''
+          url.searchParams.set('room', roomName)
+          history.pushState({ ...history.state, pageTitle: (document.title = roomName) }, roomName, url.href)
+        } else {
+          // open first room
+          this.dispatchEvent(new CustomEvent('yjs-set-room', {
+            detail: {
+              room: roomName
+            },
+            bubbles: true,
+            cancelable: true,
+            composed: true
+          }))
+          this.renderHTML()
+        }
       }
     }
 
@@ -321,8 +327,8 @@ export default class Rooms extends Shadow() {
               <wct-grid auto-fill="20%">
                 <section>
                   <wct-input inputId="room-name-prefix" placeholder="${this.roomNamePrefix}" namespace="wct-input-" disabled></wct-input>
-                  <wct-input inputId="room-name" placeholder="${(roomName = await room).replace(this.roomNamePrefix, '')}" namespace="wct-middle-input-" namespace-fallback grid-column="2/5" submit-search="submit-room-name" autofocus force></wct-input>
-                  <wct-button namespace="button-primary-" request-event-name="submit-room-name">enter</wct-button>
+                  <wct-input inputId="room-name" placeholder="${(roomName = await room).replace(this.roomNamePrefix, '')}" namespace="wct-middle-input-" namespace-fallback grid-column="2/5" submit-search="submit-room-name" any-key-listener autofocus force></wct-input>
+                  <wct-button namespace="button-primary-" request-event-name="submit-room-name" click-no-toggle-active>enter</wct-button>
                 </section>
               </wct-grid>
               <hr>
@@ -343,7 +349,7 @@ export default class Rooms extends Shadow() {
                 <section>
                   <wct-input inputId="room-name-prefix" placeholder="${this.roomNamePrefix}" namespace="wct-input-" disabled></wct-input>
                   <wct-input inputId="room-name" placeholder="${this.randomRoom}" namespace="wct-middle-input-" namespace-fallback grid-column="2/5" submit-search="submit-room-name" autofocus force></wct-input>
-                  <wct-button namespace="button-primary-" request-event-name="submit-room-name">enter</wct-button>
+                  <wct-button namespace="button-primary-" request-event-name="submit-room-name" click-no-toggle-active>enter</wct-button>
                 </section>
               </wct-grid>
               <hr>
@@ -379,6 +385,9 @@ export default class Rooms extends Shadow() {
         border-bottom: 1px solid var(--background-color-rgba-50);
         padding-top: 0.5em;
         padding-bottom: 0.5em;
+      }
+      :host ul > li.hidden {
+        display: none;
       }
       :host ul > li > div {
         display: flex;
@@ -451,12 +460,34 @@ export default class Rooms extends Shadow() {
     if (this.dialog) Array.from(this.dialog.root.querySelectorAll('.deleted')).forEach(node => node.parentNode.remove())
   }
 
+  /**
+   * add remove hidden class regarding if filter string is included in the node
+   * 
+   * @method
+   * @name filterFunction
+   * @kind method
+   * @memberof Rooms
+   * @static
+   * @param {string} filter
+   * @param {HTMLElement[]} nodes
+   * @return {void}
+   */
+  static filterFunction (filter, nodes) {
+    filter = filter.toUpperCase()
+    // @ts-ignore
+    nodes.forEach(node => node.classList[!filter || (node.innerText || node.textContent).toUpperCase().includes(filter) ? 'remove' : 'add']('hidden'))
+  }
+
   get randomRoom () {
     return this._randomRoom || (this._randomRoom = `random-room-${Date.now()}`)
   }
 
   get dialog () {
     return this.root.querySelector('wct-dialog')
+  }
+
+  get ul () {
+    return this.dialog.root.querySelector('ul')
   }
 
   get globalEventTarget () {
