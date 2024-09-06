@@ -156,7 +156,7 @@ export default class Navigation extends Shadow() {
         namespace="dialog-top-slide-in-"
         close-event-name="close-menu"
       >
-        <wct-menu-icon id="close" class="open" namespace="menu-icon-close-" no-click></wct-menu-icon>
+        <wct-menu-icon id="close" no-aria class="open" namespace="menu-icon-close-" no-click></wct-menu-icon>
         <a-icon-mdx id="show-modal" icon-url="../../../../../../img/icons/settings-heart.svg" size="2em"></a-icon-mdx>
         <dialog>
           <nav>
@@ -168,8 +168,6 @@ export default class Navigation extends Shadow() {
                     word-break: break-all;
                   }
                 </style>
-                <button id=jitsi>&#9743;<br>start video meeting</button>
-                <button id=nickname>&#9731;<br>change nickname</button>
                 <button id=server>&#9741;<br>adjust connections</button>
                 <button id=share>💌<br>${this.textContent} [<span id=room-name></span>]</button>
                 <button id=qr>&#9783;<br>generate a qr code</button>

@@ -70,6 +70,7 @@ export default class Chat extends Shadow() {
                   if (room?.scrollEl && (scrollEl = this.ul.querySelector(`[timestamp=${room.scrollEl}]`))) {
                     scrollEl.scrollIntoView({behavior: 'instant'})
                     setTimeout(() => scrollEl.scrollIntoView({behavior: 'smooth'}), 200)
+                    setTimeout(() => scrollEl.scrollIntoView({behavior: 'smooth'}), 300)
                   } else {
                     // backwards compatible behavior and if no scrollTop scrolls to bottom
                     this.dispatchEvent(new CustomEvent('main-scroll', {
@@ -100,16 +101,19 @@ export default class Chat extends Shadow() {
                   }))
                 }
               } else {
-                if (textObj.isSelf) {
-                  this.ul.lastChild.scrollIntoView({behavior: 'instant'})
-                  setTimeout(() => this.ul.lastChild.scrollIntoView({behavior: 'smooth'}), 200)
-                }else {
-                  this.dispatchEvent(new CustomEvent('scroll-icon-show-event', {
-                    bubbles: true,
-                    cancelable: true,
-                    composed: true
-                  }))
-                }
+                // wait for intersection to happen before we can decide to scroll or not
+                setTimeout(() => {
+                  if (textObj.isSelf || this.ul.lastChild.querySelector('chat-m-message[intersecting]')) {
+                    this.ul.lastChild.scrollIntoView({behavior: 'instant'})
+                    setTimeout(() => this.ul.lastChild.scrollIntoView({behavior: 'smooth'}), 200)
+                  } else {
+                    this.dispatchEvent(new CustomEvent('scroll-icon-show-event', {
+                      bubbles: true,
+                      cancelable: true,
+                      composed: true
+                    }))
+                  }
+                }, 200)
               }
             } 
           })

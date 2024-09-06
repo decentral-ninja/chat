@@ -70,7 +70,7 @@ export default class MessageDialog extends Dialog {
    */
   renderCustomHTML() {
     this.html = /* html */`
-      <wct-menu-icon id="close" class="open" namespace="menu-icon-close-" no-click></wct-menu-icon>
+      <wct-menu-icon id="close" no-aria class="open" namespace="menu-icon-close-" no-click></wct-menu-icon>
       <dialog>
         <h4>Message:</h4>
         ${this.hasAttribute('self')

@@ -34,16 +34,33 @@ export const Chat = (ChosenHTMLElement = WebWorker()) => class Chat extends Chos
     }
 
     this.chatAddEventListener = async event => {
-      const input = event.detail.input
-      if (input.value) {
-        (await this.array).push([{
-          uid: await this.uid,
-          nickname: await this.nickname,
-          text: input.value,
-          timestamp: Date.now(),
-          sendNotifications: true // servers websocket utils.js has this check
-        }])
-        input.value = ''
+      const mandatoryData = {
+        uid: await this.uid,
+        nickname: await this.nickname,
+        timestamp: Date.now(),
+        sendNotifications: true, // servers websocket utils.js has this check,
+        text: '' // must always include the text property
+      }
+      switch (event.detail.type) {
+        case 'jitsi-video-started':
+        case 'jitsi-video-stopped':
+          (await this.array).push([{
+            ...mandatoryData,
+            type: event.detail.type,
+            src: event.detail.iframeSrc,
+            text: event.detail.type
+          }])
+          return
+        default:
+          const input = event.detail.input
+          if (input.value) {
+            (await this.array).push([{
+              ...mandatoryData,
+              text: input.value
+            }])
+            input.value = ''
+          }
+          return
       }
     }
 

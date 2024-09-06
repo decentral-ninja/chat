@@ -7,7 +7,7 @@ import { Intersection } from '../../../../../event-driven-web-components-prototy
 */
 export default class Message extends Intersection() {
   constructor (textObj, options = {}, ...args) {
-    super({ importMetaUrl: import.meta.url, intersectionObserverInit: { rootMargin: '0px 0px -50% 0px'}, ...options }, ...args)
+    super({ importMetaUrl: import.meta.url, intersectionObserverInit: {}, ...options }, ...args)
     this.textObj = textObj || JSON.parse(this.template.content.textContent)
 
     this.clickEventListener = event => {
@@ -83,14 +83,19 @@ export default class Message extends Intersection() {
 
   // inform molecules/chat that message is intersecting and can be used as scroll hook plus being saved to storage room
   intersectionCallback (entries, observer) {
-    if (entries && entries[0] && entries[0].isIntersecting) this.dispatchEvent(new CustomEvent(this.getAttribute('intersection-event-name') || 'message-intersection', {
-      detail: {
-        scrollEl: `${this.getAttribute('timestamp')}`
-      },
-      bubbles: true,
-      cancelable: true,
-      composed: true
-    }))
+    if (entries && entries[0] && entries[0].isIntersecting) {
+      this.setAttribute('intersecting', '')
+      this.dispatchEvent(new CustomEvent(this.getAttribute('intersection-event-name') || 'message-intersection', {
+        detail: {
+          scrollEl: `${this.getAttribute('timestamp')}`
+        },
+        bubbles: true,
+        cancelable: true,
+        composed: true
+      }))
+    } else {
+      this.removeAttribute('intersecting')
+    }
   }
 
   /**
@@ -150,6 +155,18 @@ export default class Message extends Intersection() {
       :host > li > span.text {
         white-space: pre-line;
       }
+      :host > li > span.text > wct-button, :host > li > span.text > a-icon-mdx {
+        display: block;
+      }
+      :host > li > span.text > wct-button{
+        --button-primary-background-color: var(--color-jitsi);
+        --button-primary-border-color: var(--color-jitsi);
+      }
+      :host > li > span.text > a-icon-mdx {
+        text-align: center;
+        margin: 2em auto;
+        cursor: auto;
+      }
       :host > li > .timestamp {
         font-size: 0.6em;
       }
@@ -189,7 +206,7 @@ export default class Message extends Intersection() {
    */
   renderHTML (textObj = this.textObj) {
     // make aTags with href when first link is detected https://stackoverflow.com/questions/1500260/detect-urls-in-text-with-javascript
-    this.html = `
+    this.html = /* html */`
       <li>
         <div>
           <chat-a-nick-name class="user" uid='${textObj.uid}' nickname="${textObj.updatedNickname}"${textObj.isSelf ? ' self' : ''}></chat-a-nick-name>
@@ -200,7 +217,7 @@ export default class Message extends Intersection() {
                 : '<a-icon-mdx id="show-modal" icon-url="../../../../../../img/icons/info-circle.svg" size="1.5em"></a-icon-mdx>'
           }
         </div>
-        <span class="text">${textObj.text.replace(/(https?:\/\/[^\s]+)/g, url => `<a href="${url}" target="_blank">${url}</a>`)}</span><br><span class="timestamp">${(new Date(textObj.timestamp)).toLocaleString(navigator.language)}</span>
+        <span class="text">${this.processText(textObj).text}</span><br><span class="timestamp">${(new Date(textObj.timestamp)).toLocaleString(navigator.language)}</span>
       </li>  
     `
     return this.fetchModules([
@@ -217,8 +234,30 @@ export default class Message extends Intersection() {
       {
         path: `${this.importMetaUrl}../../../../../web-components-toolbox/src/es/components/atoms/iconMdx/IconMdx.js`,
         name: 'a-icon-mdx'
+      },
+      {
+        // @ts-ignore
+        path: `${this.importMetaUrl}../../../../../web-components-toolbox/src/es/components/atoms/button/Button.js?${Environment?.version || ''}`,
+        name: 'wct-button'
       }
     ])
+  }
+
+  processText (textObj) {
+    switch (textObj.type) {
+      case 'jitsi-video-started':
+        textObj.text = /* html */`<span>just entered the video conference room: ${textObj.src}</span><wct-button id=send src="${textObj.src}" namespace="button-primary-" request-event-name="jitsi-dialog-show-event" click-no-toggle-active>
+            <a-icon-mdx title="Join voice call" icon-url="../../../../../../img/icons/video-plus.svg" size="3em"></a-icon-mdx>
+          </wct-button>`
+        break
+      case 'jitsi-video-stopped':
+        textObj.text = /* html */`<span>just left the video conference room: ${textObj.src}</span><a-icon-mdx title="Left voice call" icon-url="../../../../../../img/icons/video-off.svg" size="3em"></a-icon-mdx>`
+        break
+      default:
+        textObj.text = textObj.text.replace(/(https?:\/\/[^\s]+)/g, url => /* html */`<a href="${url}" target="_blank">${url}</a>`)
+        break
+    }
+    return textObj
   }
 
   get li () {

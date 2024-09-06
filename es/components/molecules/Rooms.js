@@ -321,7 +321,7 @@ export default class Rooms extends Shadow() {
           <wct-dialog
             namespace="dialog-left-slide-in-"
           >
-            <wct-menu-icon id="close" class="open" namespace="menu-icon-close-" no-click click-event-name="close-menu"></wct-menu-icon>
+            <wct-menu-icon id="close" no-aria class="open" namespace="menu-icon-close-" no-click></wct-menu-icon>
             <dialog>
               <h4>Enter room name or link:</h4>
               <wct-grid auto-fill="20%">
