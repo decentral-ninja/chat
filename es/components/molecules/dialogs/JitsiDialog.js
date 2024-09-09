@@ -121,7 +121,7 @@ export default class JitsiDialog extends Dialog {
       this.root.querySelector('dialog').insertAdjacentHTML('beforeend', /* html */`
         <wct-iframe>
           <template>
-            <iframe width="${self.innerWidth}" height="${self.innerHeight}" src="${this.iframeSrc || (this.iframeSrc = `https://jitsi.mgrs.dev/${await room}`)}" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; fullscreen; allow-top-navigation; screen-wake-lock; microphone; camera"></iframe>
+            <iframe width="${self.innerWidth}" height="${self.innerHeight}" src="${this.iframeSrc || (this.iframeSrc = `https://jitsi.mgrs.dev/${await room}`)}" frameborder="0" allow="autoplay; encrypted-media; picture-in-picture; fullscreen; allow-top-navigation; screen-wake-lock; microphone; camera; window-management;"></iframe>
           </template>
         </wct-iframe>
       `)
