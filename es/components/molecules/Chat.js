@@ -127,6 +127,7 @@ export default class Chat extends Shadow() {
           if ((messageWrappers = Array.from(this.ul.querySelectorAll(selector))) && (messageWrapper = messageWrappers.find(messageWrapper => messageWrapper.querySelector('chat-m-message')?.textObj?.uid === textObj.uid))) {
             messageWrapper.addEventListener('animationend', event => messageWrapper.remove(), {once: true})
             messageWrapper.classList.add('deleted')
+            messageWrapper.querySelector('chat-m-message')?.setAttribute('deleted', '')
           } else {
             console.warn('could not find corresponding node marked for deletion:', {selector, textObj})
           }

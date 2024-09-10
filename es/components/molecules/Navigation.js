@@ -156,7 +156,7 @@ export default class Navigation extends Shadow() {
         namespace="dialog-top-slide-in-"
         close-event-name="close-menu"
       >
-        <wct-menu-icon id="close" no-aria class="open" namespace="menu-icon-close-" no-click></wct-menu-icon>
+        <wct-menu-icon id="close" no-aria class="open sticky" namespace="menu-icon-close-" no-click></wct-menu-icon>
         <a-icon-mdx id="show-modal" icon-url="../../../../../../img/icons/settings-heart.svg" size="2em"></a-icon-mdx>
         <dialog>
           <nav>

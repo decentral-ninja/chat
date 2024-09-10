@@ -16,7 +16,6 @@ export default class Message extends Intersection() {
           <chat-m-message-dialog
             namespace="dialog-top-slide-in-"
             open="show-modal"
-            closed-event-name="message-dialog-closed-event"
             ${this.hasAttribute('self') ? 'self' : ''}
           ></chat-m-message-dialog>
         `
@@ -28,39 +27,9 @@ export default class Message extends Intersection() {
         if (this.hasAttribute('was-last-message')) this.messageClone.setAttribute('was-last-message', '')
         if (this.hasAttribute('first-render')) this.messageClone.setAttribute('first-render', '')
         this.messageClone.setAttribute('no-dialog', '')
-        this.messageClone.setAttribute('width', '100%')
-        if (this.hasAttribute('self')) this.messageClone.setAttribute('border-radius', `${this.borderRadius} ${this.borderRadius} 0 0`)
-        this.messageClone.setAttribute('margin', '0')
-        this.dialog.dialogPromise.then(dialog => {
-          dialog.querySelector('h4').after(this.messageClone)
-          // setup delete event listeners
-          if (this.deleteEl) this.deleteEl.addEventListener('click', this.clickDeleteEventListener)
-        })
+        this.dialog.dialogPromise.then(dialog => dialog.querySelector('h4').after(this.messageClone))
       } else {
         this.dialog.show('show-modal')
-      }
-    }
-
-    this.clickDeleteEventListener = event => {
-      this.toggleAttribute('deleted')
-      if (this.hasAttribute('deleted')) {
-        this.dialog.setAttribute('deleted', '')
-        this.messageClone.setAttribute('deleted', '')
-      } else {
-        this.dialog.removeAttribute('deleted')
-        this.messageClone.removeAttribute('deleted')
-      }
-    }
-
-    this.dialogCloseEventListener = event => {
-      if (this.hasAttribute('deleted')) {
-        this.dispatchEvent(new CustomEvent('yjs-chat-delete', {
-          detail: this.textObj,
-          bubbles: true,
-          cancelable: true,
-          composed: true
-        }))
-        this.clickDeleteEventListener()
       }
     }
   }
@@ -69,16 +38,16 @@ export default class Message extends Intersection() {
     super.connectedCallback()
     if (this.shouldRenderCSS()) this.renderCSS()
     if (this.shouldRenderHTML()) this.renderHTML()
-    this.addEventListener('message-dialog-closed-event', this.dialogCloseEventListener)
+    
     if (this.openDialogIcon) this.openDialogIcon.addEventListener('click', this.clickEventListener)
-    if (this.deleteEl) this.deleteEl.addEventListener('click', this.clickDeleteEventListener)
+    
   }
 
   disconnectedCallback () {
     super.disconnectedCallback()
-    this.removeEventListener('message-dialog-closed-event', this.dialogCloseEventListener)
+    
     if (this.openDialogIcon) this.openDialogIcon.removeEventListener('click', this.clickEventListener)
-    if (this.deleteEl) this.deleteEl.removeEventListener('click', this.clickDeleteEventListener)
+    
   }
 
   // inform molecules/chat that message is intersecting and can be used as scroll hook plus being saved to storage room
@@ -120,19 +89,18 @@ export default class Message extends Intersection() {
    * renders the css
    */
   renderCSS () {
-    this.borderRadius = '0.5em'
     this.css = /* css */`
       :host > chat-m-message-dialog {
         font-size: 1rem;
       }
       :host > li {
         background-color: lightgray;
-        border-radius: ${this.hasAttribute('border-radius') ? this.getAttribute('border-radius') : this.borderRadius};
+        border-radius: 0.5em;
         float: left;
         list-style: none;
         padding: var(--spacing);
-        margin: ${this.hasAttribute('margin') ? this.getAttribute('margin') : '0.25em 0.1em 0.25em 0'};
-        width: ${this.getAttribute('width') ? this.getAttribute('width') : '80%'};          
+        margin: 0.25em 0.1em 0.25em 0;
+        width: 80%;          
       }
       :host([deleted]) > li {
         text-decoration: line-through;
@@ -207,7 +175,7 @@ export default class Message extends Intersection() {
   renderHTML (textObj = this.textObj) {
     // make aTags with href when first link is detected https://stackoverflow.com/questions/1500260/detect-urls-in-text-with-javascript
     this.html = /* html */`
-      <li>
+      <li part="li">
         <div>
           <chat-a-nick-name class="user" uid='${textObj.uid}' nickname="${textObj.updatedNickname}"${textObj.isSelf ? ' self' : ''}></chat-a-nick-name>
           ${this.hasAttribute('no-dialog')
@@ -274,9 +242,5 @@ export default class Message extends Intersection() {
 
   get template () {
     return this.root.querySelector('template')
-  }
-
-  get deleteEl () {
-    return this.dialog?.root?.querySelector('#delete')
   }
 }

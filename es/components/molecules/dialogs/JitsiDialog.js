@@ -12,16 +12,17 @@ export default class JitsiDialog extends Dialog {
     super({...options }, ...args)
 
     const superShow = this.show
-    this.show = async command => {
+    this.show = command => {
       this.start()
       this.show = superShow
       return superShow(command)
     }
 
     const superShowEventListener = this.showEventListener
-    this.showEventListener = async event => {
+    this.showEventListener = event => {
       if (event.detail?.this && event.detail?.this.hasAttribute('src')) {
         this.iframeSrc = event.detail?.this.getAttribute('src')
+        this.link.setAttribute('href', this.iframeSrc)
         if (this.iframe && this.iframe.getAttribute('src') !== this.iframeSrc) {
           this.iframe.setAttribute('src', this.iframeSrc)
           this.start()
@@ -32,6 +33,7 @@ export default class JitsiDialog extends Dialog {
 
     this.startClickEventListener = event => this.start()
     this.stopClickEventListener = event => this.stop()
+    this.linkClickEventListener = event => this.stop(false)
 
     /** @type {(any)=>void} */
     this.roomResolve = map => map
@@ -45,6 +47,7 @@ export default class JitsiDialog extends Dialog {
     this.connectedCallbackOnce()
     this.startIcon.addEventListener('click', this.startClickEventListener)
     this.stopIcon.addEventListener('click', this.stopClickEventListener)
+    this.link.addEventListener('click', this.linkClickEventListener)
   }
 
   connectedCallbackOnce () {
@@ -63,6 +66,7 @@ export default class JitsiDialog extends Dialog {
     super.disconnectedCallback()
     this.startIcon.removeEventListener('click', this.startClickEventListener)
     this.stopIcon.removeEventListener('click', this.stopClickEventListener)
+    this.link.removeEventListener('click', this.linkClickEventListener)
     this.stop()
   }
 
@@ -82,6 +86,7 @@ export default class JitsiDialog extends Dialog {
     const result = super.renderCSS()
     this.setCss(/* css */`
       :host > dialog {
+        --dialog-top-slide-in-a-text-decoration: underline;
         scrollbar-color: var(--color) var(--background-color);
         scrollbar-width: thin;
         transition: height 0.3s ease-out;
@@ -108,12 +113,13 @@ export default class JitsiDialog extends Dialog {
    */
   renderCustomHTML() {
     this.html = /* html */`
-      <wct-menu-icon id="close" no-aria class="open" namespace="menu-icon-close-" no-click></wct-menu-icon>
+      <wct-menu-icon id="close" no-aria class="open sticky" namespace="menu-icon-close-" no-click></wct-menu-icon>
       <dialog>
         <h4>Video conference:</h4>
-        <p>("click: Join in browser")</p>
+        <p class=font-size-tiny>("click: Join in browser")</p>
         <a-icon-mdx id="start" title="Restart voice call" icon-url="../../../../../../img/icons/video-plus.svg" size="3em"></a-icon-mdx>
         <a-icon-mdx id="stop" title="Stop voice call" icon-url="../../../../../../img/icons/video-off.svg" size="3em"></a-icon-mdx>
+        <a href="${this.iframeSrc}" target="_blank">If the video call does not work 100%, click this link!</a>
       </dialog>
     `
     // alternative: https://meet.hostpoint.ch/
@@ -125,6 +131,7 @@ export default class JitsiDialog extends Dialog {
           </template>
         </wct-iframe>
       `)
+      this.link.setAttribute('href', this.iframeSrc)
     })
     return this.fetchModules([
       {
@@ -140,8 +147,8 @@ export default class JitsiDialog extends Dialog {
     ])
   }
 
-  start () {
-    this.dispatchEvent(new CustomEvent('jitsi-video-started', {
+  start (dispatchEvent = true) {
+    if (dispatchEvent) this.dispatchEvent(new CustomEvent('jitsi-video-started', {
       detail: {
         iframe: this.iframe,
         iframeSrc: this.iframeSrc
@@ -155,8 +162,8 @@ export default class JitsiDialog extends Dialog {
     if (this.dialog) this.dialog.appendChild(this.iframeWrapper)
   }
 
-  stop () {
-    this.dispatchEvent(new CustomEvent('jitsi-video-stopped', {
+  stop (dispatchEvent = true) {
+    if (dispatchEvent) this.dispatchEvent(new CustomEvent('jitsi-video-stopped', {
       detail: {
         iframe: this.iframe,
         iframeSrc: this.iframeSrc
@@ -184,5 +191,9 @@ export default class JitsiDialog extends Dialog {
 
   get stopIcon () {
     return this.root.querySelector('#stop')
+  }
+
+  get link () {
+    return this.root.querySelector('a')
   }
 }

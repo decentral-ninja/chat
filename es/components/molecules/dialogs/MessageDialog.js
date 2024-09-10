@@ -9,9 +9,52 @@ import Dialog from '../../../../../web-components-toolbox/src/es/components/mole
 * @type {CustomElementConstructor}
 */
 export default class MessageDialog extends Dialog {
+  constructor (options = {}, ...args) {
+    super({...options }, ...args)
+
+    const superClose = this.close
+    this.close = () => {
+      if (this.hasAttribute('deleted')) {
+        this.dispatchEvent(new CustomEvent('yjs-chat-delete', {
+          detail: this.messageClone.textObj,
+          bubbles: true,
+          cancelable: true,
+          composed: true
+        }))
+        this.controlsEl.remove()
+      }
+      return superClose()
+    }
+
+    this.clickDeleteEventListener = event => {
+      this.toggleAttribute('deleted')
+      if (this.hasAttribute('deleted')) {
+        this.messageClone.setAttribute('deleted', '')
+      } else {
+        this.messageClone.removeAttribute('deleted')
+      }
+    }
+
+    this.keyupEventListener = event => {
+      if (this.hasAttribute('self')) {
+        if (event.key === 'd') {
+          return this.root.querySelector('#delete')?.click()
+        }
+      }
+    }
+  }
+
   connectedCallback () {
     if (this.shouldRenderCustomHTML()) this.renderCustomHTML()
     super.connectedCallback()
+    if (this.hasAttribute('self')) this.deleteEl.addEventListener('click', this.clickDeleteEventListener)
+    this.root.addEventListener('keyup', this.keyupEventListener)
+  }
+
+  disconnectedCallback () {
+    super.disconnectedCallback()
+    if (this.hasAttribute('self')) this.deleteEl.removeEventListener('click', this.clickDeleteEventListener)
+    this.root.removeEventListener('keyup', this.keyupEventListener)
   }
 
   /**
@@ -52,13 +95,22 @@ export default class MessageDialog extends Dialog {
         border: 1px solid lightgray;
         border-top: 0;
         border-radius: 0 0 0.5em 0.5em;
+        gap: 1em;
       }
       :host > dialog #controls > * {
         --color: var(--color-secondary);
         --color-hover: var(--color-yellow);
       }
       :host > dialog #controls > #delete {
+        display: none;
+      }
+      :host([self]) > dialog #controls > #delete {
         display: flex;
+      }
+      :host > dialog chat-m-message::part(li) {
+        width: 100%;
+        margin: 0;
+        border-radius: 0.5em 0.5em 0 0;
       }
     `, undefined, false)
     return result
@@ -70,20 +122,16 @@ export default class MessageDialog extends Dialog {
    */
   renderCustomHTML() {
     this.html = /* html */`
-      <wct-menu-icon id="close" no-aria class="open" namespace="menu-icon-close-" no-click></wct-menu-icon>
+      <wct-menu-icon id="close" no-aria class="open sticky" namespace="menu-icon-close-" no-click></wct-menu-icon>
       <dialog>
         <h4>Message:</h4>
-        ${this.hasAttribute('self')
-          ? /* html */`
-            <div id="controls">
-              <div id="delete">
-                <a-icon-mdx delete icon-url="../../../../../../img/icons/trash.svg" size="2em"></a-icon-mdx>
-                <a-icon-mdx undo icon-url="../../../../../../img/icons/trash-off.svg" size="2em"></a-icon-mdx>
-              </div>
-            </div>
-          `
-          : ''
-        }
+        <div id="controls">
+          <div id="reply"><a-icon-mdx reply title="reply to message" icon-url="../../../../../../img/icons/arrow-back-up.svg" size="2em"></a-icon-mdx></div>
+          <div id="delete" title="delete message!">
+            <a-icon-mdx delete icon-url="../../../../../../img/icons/trash.svg" size="2em"></a-icon-mdx>
+            <a-icon-mdx undo icon-url="../../../../../../img/icons/trash-off.svg" size="2em"></a-icon-mdx>
+          </div>
+        </div>
       </dialog>
     `
     return this.fetchModules([
@@ -97,5 +145,17 @@ export default class MessageDialog extends Dialog {
         name: 'a-icon-mdx'
       }
     ])
+  }
+
+  get controlsEl () {
+    return this.root.querySelector('#controls')
+  }
+
+  get deleteEl () {
+    return this.root.querySelector('#delete')
+  }
+
+  get messageClone () {
+    return this.root.querySelector('chat-m-message')
   }
 }
