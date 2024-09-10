@@ -12,22 +12,28 @@ export default class Message extends Intersection() {
 
     this.clickEventListener = event => {
       if (!this.dialog) {
-        this.html = /* html */`
-          <chat-m-message-dialog
-            namespace="dialog-top-slide-in-"
-            open="show-modal"
-            ${this.hasAttribute('self') ? 'self' : ''}
-          ></chat-m-message-dialog>
-        `
-        // clone message into dialog
-        // @ts-ignore
-        this.messageClone = new this.constructor(this.textObj)
-        this.messageClone.setAttribute('timestamp', this.getAttribute('timestamp'))
-        if (this.hasAttribute('self')) this.messageClone.setAttribute('self', '')
-        if (this.hasAttribute('was-last-message')) this.messageClone.setAttribute('was-last-message', '')
-        if (this.hasAttribute('first-render')) this.messageClone.setAttribute('first-render', '')
-        this.messageClone.setAttribute('no-dialog', '')
-        this.dialog.dialogPromise.then(dialog => dialog.querySelector('h4').after(this.messageClone))
+        this.fetchModules([{
+          // @ts-ignore
+          path: `${this.importMetaUrl}../../molecules/dialogs/MessageDialog.js?${Environment?.version || ''}`,
+          name: 'chat-m-message-dialog'
+        }]).then(() => {
+          this.html = /* html */`
+            <chat-m-message-dialog
+              namespace="dialog-top-slide-in-"
+              open="show-modal"
+              ${this.hasAttribute('self') ? 'self' : ''}
+            ></chat-m-message-dialog>
+          `
+          // clone message into dialog
+          // @ts-ignore
+          this.messageClone = new this.constructor(this.textObj)
+          this.messageClone.setAttribute('timestamp', this.getAttribute('timestamp'))
+          if (this.hasAttribute('self')) this.messageClone.setAttribute('self', '')
+          if (this.hasAttribute('was-last-message')) this.messageClone.setAttribute('was-last-message', '')
+          if (this.hasAttribute('first-render')) this.messageClone.setAttribute('first-render', '')
+          this.messageClone.setAttribute('no-dialog', '')
+          this.dialog.dialogPromise.then(dialog => dialog.querySelector('h4').after(this.messageClone))
+        })
       } else {
         this.dialog.show('show-modal')
       }
@@ -185,7 +191,7 @@ export default class Message extends Intersection() {
                 : '<a-icon-mdx id="show-modal" icon-url="../../../../../../img/icons/info-circle.svg" size="1.5em"></a-icon-mdx>'
           }
         </div>
-        <span class="text">${this.processText(textObj).text}</span><br><span class="timestamp">${(new Date(textObj.timestamp)).toLocaleString(navigator.language)}</span>
+        <span class="text">${Message.processText(textObj).text}</span><br><span class="timestamp">${(new Date(textObj.timestamp)).toLocaleString(navigator.language)}</span>
       </li>  
     `
     return this.fetchModules([
@@ -193,11 +199,6 @@ export default class Message extends Intersection() {
         // @ts-ignore
         path: `${this.importMetaUrl}../../atoms/nickName/NickName.js?${Environment?.version || ''}`,
         name: 'chat-a-nick-name'
-      },
-      {
-        // @ts-ignore
-        path: `${this.importMetaUrl}../../molecules/dialogs/MessageDialog.js?${Environment?.version || ''}`,
-        name: 'chat-m-message-dialog'
       },
       {
         path: `${this.importMetaUrl}../../../../../web-components-toolbox/src/es/components/atoms/iconMdx/IconMdx.js`,
@@ -211,7 +212,8 @@ export default class Message extends Intersection() {
     ])
   }
 
-  processText (textObj) {
+  static processText (textObj) {
+    textObj = structuredClone(textObj)
     switch (textObj.type) {
       case 'jitsi-video-started':
         textObj.text = /* html */`<span>just entered the video conference room: ${textObj.src}</span><wct-button id=send src="${textObj.src}" namespace="button-primary-" request-event-name="jitsi-dialog-show-event" click-no-toggle-active>
@@ -233,7 +235,7 @@ export default class Message extends Intersection() {
   }
 
   get openDialogIcon () {
-    return this.root.querySelector('a-icon-mdx')
+    return this.root.querySelector('a-icon-mdx#show-modal')
   }
 
   get dialog () {

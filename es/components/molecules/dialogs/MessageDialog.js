@@ -42,18 +42,30 @@ export default class MessageDialog extends Dialog {
         }
       }
     }
+
+    this.clickReplyEventListener = event => this.dispatchEvent(new CustomEvent('reply-to-message', {
+      detail: {
+        textObj: this.messageClone.textObj,
+        messageClone: this.messageClone
+      },
+      bubbles: true,
+      cancelable: true,
+      composed: true
+    }))
   }
 
   connectedCallback () {
     if (this.shouldRenderCustomHTML()) this.renderCustomHTML()
     super.connectedCallback()
-    if (this.hasAttribute('self')) this.deleteEl.addEventListener('click', this.clickDeleteEventListener)
+    if (this.replyEl) this.replyEl.addEventListener('click', this.clickReplyEventListener)
+    if (this.hasAttribute('self') && this.deleteEl) this.deleteEl.addEventListener('click', this.clickDeleteEventListener)
     this.root.addEventListener('keyup', this.keyupEventListener)
   }
 
   disconnectedCallback () {
     super.disconnectedCallback()
-    if (this.hasAttribute('self')) this.deleteEl.removeEventListener('click', this.clickDeleteEventListener)
+    if (this.replyEl) this.replyEl.removeEventListener('click', this.clickReplyEventListener)
+    if (this.hasAttribute('self') && this.deleteEl) this.deleteEl.removeEventListener('click', this.clickDeleteEventListener)
     this.root.removeEventListener('keyup', this.keyupEventListener)
   }
 
@@ -104,6 +116,10 @@ export default class MessageDialog extends Dialog {
       :host > dialog #controls > #delete {
         display: none;
       }
+      /* TODO: remove below statement */
+      :host > dialog #controls > #reply {
+        display: none;
+      }
       :host([self]) > dialog #controls > #delete {
         display: flex;
       }
@@ -149,6 +165,10 @@ export default class MessageDialog extends Dialog {
 
   get controlsEl () {
     return this.root.querySelector('#controls')
+  }
+
+  get replyEl () {
+    return this.root.querySelector('#reply')
   }
 
   get deleteEl () {

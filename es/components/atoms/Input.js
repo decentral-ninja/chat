@@ -89,7 +89,7 @@ export default class Input extends Shadow() {
       }
     }
 
-    this.jitsiVideoStartedEvent = event => {
+    this.jitsiVideoStartedEventListener = event => {
       this.jitsiButton.setAttribute('custom-notification', '')
       this.dispatchEvent(new CustomEvent('yjs-chat-add', {
         detail: {
@@ -101,7 +101,7 @@ export default class Input extends Shadow() {
         composed: true
       }))
     }
-    this.jitsiVideoStoppedEvent = event => {
+    this.jitsiVideoStoppedEventListener = event => {
       this.jitsiButton.removeAttribute('custom-notification')
       this.dispatchEvent(new CustomEvent('yjs-chat-add', {
         detail: {
@@ -112,6 +112,32 @@ export default class Input extends Shadow() {
         cancelable: true,
         composed: true
       }))
+    }
+
+    this.replyToMessageEventListener = event => {
+      this.fetchModules([{
+        // @ts-ignore
+        path: `${this.importMetaUrl}../../components/molecules/message/Message.js?${Environment?.version || ''}`,
+        name: 'chat-m-message'
+      },
+      {
+        // @ts-ignore
+        path: `${this.importMetaUrl}../../../../web-components-toolbox/src/es/components/atoms/menuIcon/MenuIcon.js?${Environment?.version || ''}`,
+        name: 'wct-menu-icon'
+      }]).then(() => {
+        this.replyToSection.innerHTML = /* html */`
+          <div id="reply-controls"><h4>Reply to:</h4><wct-menu-icon id="reply-close" no-aria class="open" namespace="menu-icon-close-" no-click></wct-menu-icon></div>
+          <chat-m-message timestamp="${event.detail.messageClone.timestamp}"${event.detail.textObj.isSelf ? ' self' : ''} no-dialog>
+            <template>${JSON.stringify(event.detail.textObj)}</template>
+          </chat-m-message>
+        `
+        this.replyClose.addEventListener('click', event => (this.replyToSection.innerHTML = ''), {once: true})
+        this.replyToSection.scroll(0, 0)
+        // TODO:
+        // add gradient effect scroll reply message on bottom
+        // click on message, scroll into view at chat molecules
+      })
+      
     }
   }
 
@@ -124,8 +150,9 @@ export default class Input extends Shadow() {
     this.addEventListener('emoji-clicked', this.emojiClickedEventListener)
     self.addEventListener('click', this.windowClickEventListener)
     this.textarea.addEventListener('focus', this.focusEventListener)
-    this.globalEventTarget.addEventListener('jitsi-video-started', this.jitsiVideoStartedEvent)
-    this.globalEventTarget.addEventListener('jitsi-video-stopped', this.jitsiVideoStoppedEvent)
+    this.globalEventTarget.addEventListener('jitsi-video-started', this.jitsiVideoStartedEventListener)
+    this.globalEventTarget.addEventListener('jitsi-video-stopped', this.jitsiVideoStoppedEventListener)
+    this.globalEventTarget.addEventListener('reply-to-message', this.replyToMessageEventListener)
   }
 
   disconnectedCallback () {
@@ -135,8 +162,9 @@ export default class Input extends Shadow() {
     this.removeEventListener('emoji-clicked', this.emojiClickedEventListener)
     self.removeEventListener('click', this.windowClickEventListener)
     this.textarea.removeEventListener('focus', this.focusEventListener)
-    this.globalEventTarget.removeEventListener('jitsi-video-started', this.jitsiVideoStartedEvent)
-    this.globalEventTarget.removeEventListener('jitsi-video-stopped', this.jitsiVideoStoppedEvent)
+    this.globalEventTarget.removeEventListener('jitsi-video-started', this.jitsiVideoStartedEventListener)
+    this.globalEventTarget.removeEventListener('jitsi-video-stopped', this.jitsiVideoStoppedEventListener)
+    this.globalEventTarget.removeEventListener('reply-to-message', this.replyToMessageEventListener)
   }
 
   /**
@@ -160,11 +188,14 @@ export default class Input extends Shadow() {
   /**
    * Renders the CSS
    *
-   * @return {void}
+   * @return {Promise<void>}
    */
   renderCSS () {
     this.css = /* css */`
       :host {
+        width: 100%;
+      }
+      :host > div {
         --button-primary-width: 100%;
         --button-primary-height: 100%;
         --button-primary-font-size: 1rem;
@@ -172,10 +203,10 @@ export default class Input extends Shadow() {
         display: flex;
         width: 100%;
       }
-      :host > * {
+      :host > div > * {
         flex-grow: 0; 
       }
-      :host > textarea {
+      :host > div > textarea {
         flex-grow: 100;        
         font-size: max(16px, 1em); /* 16px ios mobile focus zoom fix */
         transition: height 0.3s ease-out;
@@ -188,36 +219,60 @@ export default class Input extends Shadow() {
         scrollbar-width: thin;
         /*field-sizing: content; Coming soon: https://toot.cafe/@seaotta/111812940330557783*/
       }
-      :host > wct-button {
+      :host > div > wct-button {
         min-height: 100%;
       }
-      :host > wct-button, :host > a-icon-mdx {
+      :host > div > wct-button, :host > div > a-icon-mdx {
         cursor: pointer;
         word-break: break-all;
         padding-right: 1em;
         
       }
-      :host > wct-button:last-child, :host > a-icon-mdx:last-child {
+      :host > div > wct-button:last-child, :host > div > a-icon-mdx:last-child {
         padding-right: 0;
       }
-      :host > wct-button:first-of-type {
+      :host > div > wct-button:first-of-type {
         --button-primary-border-radius: 0 var(--border-radius) var(--border-radius) 0;
       }
-      :host > a-icon-mdx {
+      :host > div > a-icon-mdx {
         align-self: center;
         display: flex;
       }
-      :host > textarea ~ a-icon-mdx {
+      :host > div > textarea ~ a-icon-mdx {
         transition: all 0.3s ease-out;
       }
-      :host(:focus) > textarea:hover ~ a-icon-mdx, :host(:focus) > textarea:has(~ wct-button:hover) ~ a-icon-mdx {
+      :host(:focus) > div > textarea:hover ~ a-icon-mdx, :host(:focus) > div > textarea:has(~ wct-button:hover) ~ a-icon-mdx {
         width: 0;
         padding: 0;
         opacity: 0;
         transition: all 0.3s ease-out;
       }
-      :host(:focus) > textarea:hover ~ wct-button, :host(:focus) > textarea ~ wct-button:hover {
+      :host(:focus) > div > textarea:hover ~ wct-button, :host(:focus) > div > textarea ~ wct-button:hover {
         padding: 0;
+      }
+      :host > section {
+        max-height: 15dvh;
+        overflow-y: auto;
+        scrollbar-color: var(--color) var(--background-color);
+        scrollbar-width: thin;
+      }
+      :host > section chat-m-message::part(li) {
+        width: 100%;
+        margin: 0;
+        border-radius: 0.5em 0.5em 0 0;
+      }
+      :host > section > #reply-controls {
+        --h4-margin: 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 1rem;
+      }
+      :host > section > #reply-controls {
+        position: sticky;
+        top: 0;
+        background-color: var(--background-color);
+        z-index: 1;
       }
       /* width */
       ::-webkit-scrollbar {
@@ -236,6 +291,25 @@ export default class Input extends Shadow() {
         background: #555; 
       }
     `
+    return this.fetchTemplate()
+  }
+
+  /**
+   * fetches the template
+   */
+  fetchTemplate () {
+    /** @type {import("../../../../event-driven-web-components-prototypes/src/Shadow.js").fetchCSSParams[]} */
+    const styles = [
+      {
+        path: `${this.importMetaUrl}../../../../web-components-toolbox/src/css/reset.css`, // no variables for this reason no namespace
+        namespace: false
+      },
+      {
+        path: `${this.importMetaUrl}../../../../web-components-toolbox/src/css/style.css`, // apply namespace and fallback to allow overwriting on deeper level
+        namespaceFallback: true
+      }
+    ]
+    return this.fetchCSS(styles)
   }
 
   /**
@@ -245,13 +319,16 @@ export default class Input extends Shadow() {
   */
   renderHTML () {
     this.html = /* html */`
-      <emoji-button></emoji-button>
-      <textarea enterkeyhint="enter" placeholder="type your message..." rows="2"></textarea>
-      <wct-button id=send namespace="button-primary-" request-event-name="submit-room-name" click-no-toggle-active>
-        <a-icon-mdx icon-url="../../../../../../img/icons/send-2.svg" size="1.5em"></a-icon-mdx>
-      </wct-button>
-      <a-icon-mdx id=wormhole title="Upload your files at wormhole and copy/paste the link into the chat to share..." icon-url="../../../../../../img/icons/file-upload.svg" size="3em"></a-icon-mdx>
-      <a-icon-mdx id=jitsi title="Open voice call conversation" icon-url="../../../../../../img/icons/video.svg" size="3em"></a-icon-mdx>
+      <section id="reply-to"></section>
+      <div>
+        <emoji-button></emoji-button>
+        <textarea enterkeyhint="enter" placeholder="type your message..." rows="2"></textarea>
+        <wct-button id=send namespace="button-primary-" request-event-name="submit-room-name" click-no-toggle-active>
+          <a-icon-mdx icon-url="../../../../../../img/icons/send-2.svg" size="1.5em"></a-icon-mdx>
+        </wct-button>
+        <a-icon-mdx id=wormhole title="Upload your files at wormhole and copy/paste the link into the chat to share..." icon-url="../../../../../../img/icons/file-upload.svg" size="3em"></a-icon-mdx>
+        <a-icon-mdx id=jitsi title="Open voice call conversation" icon-url="../../../../../../img/icons/video.svg" size="3em"></a-icon-mdx>
+      </div>
     `
     return this.fetchModules([
       {
@@ -281,11 +358,19 @@ export default class Input extends Shadow() {
   }
 
   get buttons () {
-    return this.root.querySelectorAll(':host > wct-button, :host > a-icon-mdx')
+    return this.root.querySelectorAll(':host > div > wct-button, :host > div > a-icon-mdx')
   }
 
   get jitsiButton () {
     return this.root.querySelector('#jitsi')
+  }
+
+  get replyToSection () {
+    return this.root.querySelector('#reply-to')
+  }
+
+  get replyClose () {
+    return this.root. querySelector('#reply-close')
   }
 
   get globalEventTarget () {
