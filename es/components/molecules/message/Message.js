@@ -179,6 +179,9 @@ export default class Message extends Intersection() {
         scrollbar-color: var(--color) var(--background-color);
         scrollbar-width: thin;
       }
+      :host li[part=reply-to-li][deleted] {
+        cursor: auto;
+      }
     `
     return this.fetchTemplate()
   }
@@ -237,7 +240,7 @@ export default class Message extends Intersection() {
 
   static renderList (textObj, hasAttributeNoDialog, hasAttributeSelf, part = 'li') {
     return /* html */`
-      <li part="${part}">
+      <li part="${part}"${textObj.deleted ? ' deleted' : ''}>
         <div>
           ${textObj.deleted ? '' : /* html */`<chat-a-nick-name class="user" uid='${textObj.uid}' nickname="${textObj.updatedNickname}"${textObj.isSelf ? ' self' : ''}></chat-a-nick-name>`}
           ${hasAttributeNoDialog
