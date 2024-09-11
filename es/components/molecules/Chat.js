@@ -36,16 +36,18 @@ export default class Chat extends Shadow() {
               name: 'm-load-template-tag'
             }
           ]),
-          event.detail[funcName]()
-        ]).then(([[{constructorClass}], textObjs]) => {
+          event.detail[funcName](),
+          event.detail.getAll()
+        ]).then(([[{constructorClass}], textObjs, allTextObjs]) => {
           const isUlEmpty = !this.ul.children.length
           let wasLastMessage = false
-          textObjs.sort((a, b) => a.timestamp - b.timestamp).forEach(async (textObj, i, textObjs) => {
+          // Attention: NO async here when appending to the dom!
+          textObjs.sort((a, b) => a.timestamp - b.timestamp).forEach((textObj, i, textObjs) => {
             const timestamp = `t_${textObj.timestamp}`
             const div = document.createElement('div')
             let replyToTemplate = ''
             let replyToTextObj
-            if (textObj.replyTo && (replyToTextObj = (await event.detail.getAll()).find(searchTextObj => (searchTextObj.timestamp === textObj.replyTo.timestamp && searchTextObj.uid === textObj.replyTo.uid)))) replyToTemplate = /* html */`<template id="reply-to">${JSON.stringify(replyToTextObj)}</template>`
+            if (textObj.replyTo && (replyToTextObj = allTextObjs.find(searchTextObj => (searchTextObj.timestamp === textObj.replyTo.timestamp && searchTextObj.uid === textObj.replyTo.uid)))) replyToTemplate = /* html */`<template id="reply-to">${JSON.stringify(replyToTextObj)}</template>`
             div.innerHTML = /* html */`
               <m-load-template-tag timestamp="${timestamp}" mode=false no-css>
                 <template>
