@@ -12,6 +12,7 @@ export default class NickName extends Shadow() {
 
     this.clickEventListener = event => {
       event.preventDefault()
+      event.stopPropagation()
       this.dispatchEvent(new CustomEvent('open-nickname', {
         bubbles: true,
         cancelable: true,
