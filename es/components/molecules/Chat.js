@@ -36,33 +36,29 @@ export default class Chat extends Shadow() {
               name: 'm-load-template-tag'
             }
           ]),
-          event.detail[funcName](),
-          event.detail.getAll()
-        ]).then(([[{constructorClass}], textObjs, allTextObjs]) => {
+          event.detail[funcName]()
+        ]).then(([[{constructorClass}], textObjs]) => {
           const isUlEmpty = !this.ul.children.length
           let wasLastMessage = false
           // Attention: NO async here when appending to the dom!
           textObjs.sort((a, b) => a.timestamp - b.timestamp).forEach((textObj, i, textObjs) => {
+            wasLastMessage = textObjs.length === i + 1
             const timestamp = `t_${textObj.timestamp}`
             const div = document.createElement('div')
-            let replyToTemplate = ''
-            let replyToTextObj
-            if (textObj.replyTo && (replyToTextObj = allTextObjs.find(searchTextObj => (searchTextObj.timestamp === textObj.replyTo.timestamp && searchTextObj.uid === textObj.replyTo.uid)))) replyToTemplate = /* html */`<template id="reply-to">${JSON.stringify(replyToTextObj)}</template>`
-            div.innerHTML = /* html */`
-              <m-load-template-tag timestamp="${timestamp}" mode=false no-css>
-                <template>
-                  <chat-m-message timestamp="${timestamp}"${textObj.isSelf ? ' self' : ''}${(wasLastMessage = textObjs.length === i + 1) ? ' was-last-message' : ''}${isUlEmpty ? ' first-render' : ''}>
-                    <template>${JSON.stringify(textObj)}</template>
-                    ${replyToTemplate
-                      ? replyToTemplate
-                      : textObj.replyTo
-                        ? /* html */`<template id="reply-to">${JSON.stringify({text: 'Message got deleted!', deleted: true})}</template>`
-                        : ''
-                    }
-                  </chat-m-message>
-                </template>
-              </m-load-template-tag>
-            `
+            div.innerHTML = this.getMessageHTML(textObj, timestamp, wasLastMessage, isUlEmpty)
+            if (textObj.replyTo) {
+              const mLoadTemplateTag = div.children[0]
+              event.detail.getAll().then(allTextObjs => {
+                const replyToTemplate = document.createElement('div')
+                let replyToTextObj 
+                if ((replyToTextObj = allTextObjs.find(allTextObj => (allTextObj.timestamp === textObj.replyTo.timestamp && allTextObj.uid === textObj.replyTo.uid)))) {
+                  replyToTemplate.innerHTML  = this.getMessageHTML(textObj, timestamp, wasLastMessage, isUlEmpty, /* html */`<template id="reply-to">${JSON.stringify(replyToTextObj)}</template>`)
+                } else {
+                  replyToTemplate.innerHTML  = this.getMessageHTML(textObj, timestamp, wasLastMessage, isUlEmpty, /* html */`<template id="reply-to">${JSON.stringify({text: 'Message got deleted!', deleted: true})}</template>`)
+                }
+                mLoadTemplateTag.replaceWith(replyToTemplate.children[0])
+              })
+            }
             this.ul.appendChild(div.children[0])
             // scroll behavior
             if (wasLastMessage) {
@@ -279,6 +275,19 @@ export default class Chat extends Shadow() {
         <li>loading...</li>
       </ul>
     `
+  }
+
+  getMessageHTML (textObj, timestamp, wasLastMessage, isUlEmpty, slot = '') {
+    return /* html */`
+    <m-load-template-tag timestamp="${timestamp}" mode=false no-css>
+      <template>
+        <chat-m-message timestamp="${timestamp}"${textObj.isSelf ? ' self' : ''}${wasLastMessage ? ' was-last-message' : ''}${isUlEmpty ? ' first-render' : ''}>
+          <template>${JSON.stringify(textObj)}</template>
+          ${slot}
+        </chat-m-message>
+      </template>
+    </m-load-template-tag>
+  `
   }
 
   scrollIntoView (scrollEl, smooth = false) {
