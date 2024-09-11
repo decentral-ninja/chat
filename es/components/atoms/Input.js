@@ -12,9 +12,15 @@ export default class Input extends Shadow() {
     const wormholeUrl = 'https://wormhole.app/'
 
     this.sendEventListener = (event, input) => {
+      let replyToTextObj = null
+      if(this.replyToSection.innerHTML) {
+        replyToTextObj = this.chatMessageEl.textObj
+        this.replyToSection.innerHTML = ''
+      }
       this.dispatchEvent(new CustomEvent('yjs-chat-add', {
         detail: {
-          input: input || event.composedPath()[0]
+          input: input || event.composedPath()[0],
+          replyToTextObj
         },
         bubbles: true,
         cancelable: true,
@@ -26,11 +32,11 @@ export default class Input extends Shadow() {
     this.inputEventListener = event => {
       this.textarea.style.height = 'auto'
       const emValue = this.textarea.scrollHeight / parseFloat(self.getComputedStyle(this.textarea).fontSize)
-      this.textarea.style.height = emValue + 'em'
+      this.textarea.style.height = `max(3em, ${emValue}em)`
     }
 
     this.keyupEventListener = event => {
-      if (!this.isTouchScreen() && event.key === 'Enter' && event.shiftKey === false) {
+      if ((!this.isTouchScreen() || !this.isMobile) && event.key === 'Enter' && event.shiftKey === false) {
         this.textarea.value = this.textarea.value.substring(0, this.textarea.value.length - 1) // cut the last character of enter = \n off
         return this.sendEventListener(undefined, this.textarea)
       }
@@ -126,18 +132,26 @@ export default class Input extends Shadow() {
         name: 'wct-menu-icon'
       }]).then(() => {
         this.replyToSection.innerHTML = /* html */`
-          <div id="reply-controls"><h4>Reply to:</h4><wct-menu-icon id="reply-close" no-aria class="open" namespace="menu-icon-close-" no-click></wct-menu-icon></div>
-          <chat-m-message timestamp="${event.detail.messageClone.timestamp}"${event.detail.textObj.isSelf ? ' self' : ''} no-dialog>
+          <div id="reply-controls">
+            <h4>Reply to:</h4>
+            <wct-menu-icon id="reply-close" no-aria class="open" namespace="menu-icon-close-" no-click></wct-menu-icon>
+          </div>
+          <chat-m-message timestamp="${event.detail.messageClone.getAttribute('timestamp')}"${event.detail.textObj.isSelf ? ' self' : ''} no-dialog>
             <template>${JSON.stringify(event.detail.textObj)}</template>
           </chat-m-message>
         `
         this.replyClose.addEventListener('click', event => (this.replyToSection.innerHTML = ''), {once: true})
+        this.chatMessageEl.addEventListener('click', event => this.dispatchEvent(new CustomEvent('chat-scroll', {
+          detail: {
+            scrollEl: this.chatMessageEl.getAttribute('timestamp')
+          },
+          bubbles: true,
+          cancelable: true,
+          composed: true
+        })))
         this.replyToSection.scroll(0, 0)
-        // TODO:
-        // add gradient effect scroll reply message on bottom
-        // click on message, scroll into view at chat molecules
+        this.textarea.focus()
       })
-      
     }
   }
 
@@ -213,8 +227,10 @@ export default class Input extends Shadow() {
         resize: none;
         padding-left: 2em;
         min-height: auto;
-        max-height: 10em;
+        max-height: 15dvh;
         overflow-y: auto;
+        outline: none;
+        border-radius: 0;
         scrollbar-color: var(--color) var(--background-color);
         scrollbar-width: thin;
         /*field-sizing: content; Coming soon: https://toot.cafe/@seaotta/111812940330557783*/
@@ -255,6 +271,10 @@ export default class Input extends Shadow() {
         overflow-y: auto;
         scrollbar-color: var(--color) var(--background-color);
         scrollbar-width: thin;
+        mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 90%, rgba(0, 0, 0, 0) 100%);
+      }
+      :host > section chat-m-message {
+        cursor: pointer;
       }
       :host > section chat-m-message::part(li) {
         width: 100%;
@@ -267,11 +287,10 @@ export default class Input extends Shadow() {
         justify-content: space-between;
         align-items: center;
         font-size: 1rem;
-      }
-      :host > section > #reply-controls {
         position: sticky;
         top: 0;
         background-color: var(--background-color);
+        mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1) 80%, rgba(0, 0, 0, 0) 100%);
         z-index: 1;
       }
       /* width */
@@ -353,6 +372,10 @@ export default class Input extends Shadow() {
     return ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (navigator.msMaxTouchPoints > 0)
   }
 
+  get isMobile () {
+    return self.matchMedia(`(max-width: ${this.mobileBreakpoint})`).matches
+  }
+
   get textarea () {
     return this.root.querySelector('textarea')
   }
@@ -367,6 +390,10 @@ export default class Input extends Shadow() {
 
   get replyToSection () {
     return this.root.querySelector('#reply-to')
+  }
+
+  get chatMessageEl () {
+    return this.replyToSection.querySelector('chat-m-message')
   }
 
   get replyClose () {

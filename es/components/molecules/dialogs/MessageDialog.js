@@ -43,15 +43,18 @@ export default class MessageDialog extends Dialog {
       }
     }
 
-    this.clickReplyEventListener = event => this.dispatchEvent(new CustomEvent('reply-to-message', {
-      detail: {
-        textObj: this.messageClone.textObj,
-        messageClone: this.messageClone
-      },
-      bubbles: true,
-      cancelable: true,
-      composed: true
-    }))
+    this.clickReplyEventListener = event => {
+      this.dispatchEvent(new CustomEvent('reply-to-message', {
+        detail: {
+          textObj: this.messageClone.textObj,
+          messageClone: this.messageClone
+        },
+        bubbles: true,
+        cancelable: true,
+        composed: true
+      }))
+      this.close()
+    }
   }
 
   connectedCallback () {
@@ -114,10 +117,6 @@ export default class MessageDialog extends Dialog {
         --color-hover: var(--color-yellow);
       }
       :host > dialog #controls > #delete {
-        display: none;
-      }
-      /* TODO: remove below statement */
-      :host > dialog #controls > #reply {
         display: none;
       }
       :host([self]) > dialog #controls > #delete {

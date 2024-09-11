@@ -54,10 +54,16 @@ export const Chat = (ChosenHTMLElement = WebWorker()) => class Chat extends Chos
         default:
           const input = event.detail.input
           if (input.value) {
-            (await this.array).push([{
+            const textObj = {
               ...mandatoryData,
               text: input.value
-            }])
+            }
+            // @ts-ignore
+            if (event.detail.replyToTextObj) textObj.replyTo = {
+              timestamp: event.detail.replyToTextObj.timestamp,
+              uid: event.detail.replyToTextObj.uid
+            };
+            (await this.array).push([textObj])
             input.value = ''
           }
           return

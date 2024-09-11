@@ -40,14 +40,23 @@ export default class Chat extends Shadow() {
         ]).then(([[{constructorClass}], textObjs]) => {
           const isUlEmpty = !this.ul.children.length
           let wasLastMessage = false
-          textObjs.sort((a, b) => a.timestamp - b.timestamp).forEach((textObj, i, textObjs) => {
+          textObjs.sort((a, b) => a.timestamp - b.timestamp).forEach(async (textObj, i, textObjs) => {
             const timestamp = `t_${textObj.timestamp}`
             const div = document.createElement('div')
+            let replyToTemplate = ''
+            let replyToTextObj
+            if (textObj.replyTo && (replyToTextObj = (await event.detail.getAll()).find(searchTextObj => (searchTextObj.timestamp === textObj.replyTo.timestamp && searchTextObj.uid === textObj.replyTo.uid)))) replyToTemplate = /* html */`<template id="reply-to">${JSON.stringify(replyToTextObj)}</template>`
             div.innerHTML = /* html */`
               <m-load-template-tag timestamp="${timestamp}" mode=false no-css>
                 <template>
                   <chat-m-message timestamp="${timestamp}"${textObj.isSelf ? ' self' : ''}${(wasLastMessage = textObjs.length === i + 1) ? ' was-last-message' : ''}${isUlEmpty ? ' first-render' : ''}>
                     <template>${JSON.stringify(textObj)}</template>
+                    ${replyToTemplate
+                      ? replyToTemplate
+                      : textObj.replyTo
+                        ? /* html */`<template id="reply-to">${JSON.stringify({text: 'Message got deleted!', deleted: true})}</template>`
+                        : ''
+                    }
                   </chat-m-message>
                 </template>
               </m-load-template-tag>
@@ -68,9 +77,7 @@ export default class Chat extends Shadow() {
                 }))).then(room => {
                   let scrollEl = null
                   if (room?.scrollEl && (scrollEl = this.ul.querySelector(`[timestamp=${room.scrollEl}]`))) {
-                    scrollEl.scrollIntoView({behavior: 'instant'})
-                    setTimeout(() => scrollEl.scrollIntoView({behavior: 'smooth'}), 200)
-                    setTimeout(() => scrollEl.scrollIntoView({behavior: 'smooth'}), 300)
+                    this.scrollIntoView(scrollEl)
                   } else {
                     // backwards compatible behavior and if no scrollTop scrolls to bottom
                     this.dispatchEvent(new CustomEvent('main-scroll', {
@@ -104,8 +111,7 @@ export default class Chat extends Shadow() {
                 // wait for intersection to happen before we can decide to scroll or not
                 setTimeout(() => {
                   if (textObj.isSelf || this.ul.lastChild.querySelector('chat-m-message[intersecting]')) {
-                    this.ul.lastChild.scrollIntoView({behavior: 'instant'})
-                    setTimeout(() => this.ul.lastChild.scrollIntoView({behavior: 'smooth'}), 200)
+                    this.scrollIntoView(this.ul.lastChild, true)
                   } else {
                     this.dispatchEvent(new CustomEvent('scroll-icon-show-event', {
                       bubbles: true,
@@ -128,6 +134,14 @@ export default class Chat extends Shadow() {
             messageWrapper.addEventListener('animationend', event => messageWrapper.remove(), {once: true})
             messageWrapper.classList.add('deleted')
             messageWrapper.querySelector('chat-m-message')?.setAttribute('deleted', '')
+            this.dispatchEvent(new CustomEvent('yjs-chat-remove', {
+              detail: {
+                textObj
+              },
+              bubbles: true,
+              cancelable: true,
+              composed: true
+            }))
           } else {
             console.warn('could not find corresponding node marked for deletion:', {selector, textObj})
           }
@@ -152,6 +166,11 @@ export default class Chat extends Shadow() {
         }
       }, 200)
     }
+
+    this.chatScrollEventListener = event => {
+      let scrollEl = null
+      if (event?.detail?.scrollEl && (scrollEl = this.ul.querySelector(`[timestamp=${event.detail.scrollEl}]`))) this.scrollIntoView(scrollEl, true)
+    }
   }
 
   connectedCallback () {
@@ -171,7 +190,7 @@ export default class Chat extends Shadow() {
       }))).then(room => {
         let scrollEl = null
         if (room?.scrollEl && (scrollEl = this.ul.querySelector(`[timestamp=${room.scrollEl}]`))) {
-          scrollEl.scrollIntoView({behavior: 'instant'})
+          this.scrollIntoView(scrollEl)
         } else {
           this.dispatchEvent(new CustomEvent('main-scroll', {
             detail: {
@@ -185,11 +204,13 @@ export default class Chat extends Shadow() {
         }
       })
     }
+    this.globalEventTarget.addEventListener('chat-scroll', this.chatScrollEventListener)
     this.globalEventTarget.addEventListener('yjs-chat-update', this.eventListener)
     this.addEventListener('message-intersection', this.messageIntersectionEventListener)
   }
 
   disconnectedCallback () {
+    this.globalEventTarget.removeEventListener('chat-scroll', this.chatScrollEventListener)
     this.globalEventTarget.removeEventListener('yjs-chat-update', this.eventListener)
     this.removeEventListener('message-intersection', this.messageIntersectionEventListener)
   }
@@ -256,6 +277,17 @@ export default class Chat extends Shadow() {
         <li>loading...</li>
       </ul>
     `
+  }
+
+  scrollIntoView (scrollEl, smooth = false) {
+    if (smooth) {
+      scrollEl.scrollIntoView({behavior: 'smooth'})
+    } else {
+      scrollEl.scrollIntoView({behavior: 'instant'})
+      scrollEl.scrollIntoView({behavior: 'smooth'})
+    }
+    setTimeout(() => scrollEl.scrollIntoView({behavior: 'smooth'}), 200)
+    setTimeout(() => scrollEl.scrollIntoView({behavior: 'smooth'}), 400)
   }
 
   get ul () {

@@ -6,9 +6,10 @@ import { Intersection } from '../../../../../event-driven-web-components-prototy
 * @type {CustomElementConstructor}
 */
 export default class Message extends Intersection() {
-  constructor (textObj, options = {}, ...args) {
+  constructor (textObj, replyToTextObj, options = {}, ...args) {
     super({ importMetaUrl: import.meta.url, intersectionObserverInit: {}, ...options }, ...args)
     this.textObj = textObj || JSON.parse(this.template.content.textContent)
+    this.replyToTextObj = replyToTextObj || this.replyToTemplate ? JSON.parse(this.replyToTemplate.content.textContent) : null
 
     this.clickEventListener = event => {
       if (!this.dialog) {
@@ -24,18 +25,32 @@ export default class Message extends Intersection() {
               ${this.hasAttribute('self') ? 'self' : ''}
             ></chat-m-message-dialog>
           `
-          // clone message into dialog
-          // @ts-ignore
-          this.messageClone = new this.constructor(this.textObj)
-          this.messageClone.setAttribute('timestamp', this.getAttribute('timestamp'))
-          if (this.hasAttribute('self')) this.messageClone.setAttribute('self', '')
-          if (this.hasAttribute('was-last-message')) this.messageClone.setAttribute('was-last-message', '')
-          if (this.hasAttribute('first-render')) this.messageClone.setAttribute('first-render', '')
-          this.messageClone.setAttribute('no-dialog', '')
-          this.dialog.dialogPromise.then(dialog => dialog.querySelector('h4').after(this.messageClone))
+          this.dialog.dialogPromise.then(dialog => dialog.querySelector('h4').insertAdjacentHTML('afterend', /* html */`<chat-m-message timestamp="${this.getAttribute('timestamp')}"${this.hasAttribute('self') ? ' self' : ''} no-dialog>
+            <template>${JSON.stringify(this.textObj)}</template>
+            <template id="reply-to">${JSON.stringify(this.replyToTextObj)}</template>
+          </chat-m-message>`))
         })
       } else {
         this.dialog.show('show-modal')
+      }
+    }
+
+    this.clickReplyToEventListener = event => this.dispatchEvent(new CustomEvent('chat-scroll', {
+      detail: {
+        scrollEl: `t_${this.replyToTextObj.timestamp}`
+      },
+      bubbles: true,
+      cancelable: true,
+      composed: true
+    }))
+
+    this.chatRemoveEventListener = event => {
+      if (this.replyToTextObj && event.detail.textObj.timestamp === this.replyToTextObj.timestamp && event.detail.textObj.uid === this.replyToTextObj.uid) {
+        this.replyToTextObj = {text: 'Message got deleted!', deleted: true}
+        this.removeEventListeners()
+        this.html = ''
+        this.renderHTML()
+        this.addEventListeners()
       }
     }
   }
@@ -44,16 +59,24 @@ export default class Message extends Intersection() {
     super.connectedCallback()
     if (this.shouldRenderCSS()) this.renderCSS()
     if (this.shouldRenderHTML()) this.renderHTML()
-    
+    this.addEventListeners()
+  }
+  
+  addEventListeners() {
     if (this.openDialogIcon) this.openDialogIcon.addEventListener('click', this.clickEventListener)
-    
+    if (this.replyToLi) this.replyToLi.addEventListener('click', this.clickReplyToEventListener)
+    this.globalEventTarget.addEventListener('yjs-chat-remove', this.chatRemoveEventListener)
   }
 
   disconnectedCallback () {
     super.disconnectedCallback()
-    
+    this.removeEventListeners()
+  }
+  
+  removeEventListeners() {
     if (this.openDialogIcon) this.openDialogIcon.removeEventListener('click', this.clickEventListener)
-    
+    if (this.replyToLi) this.replyToLi.removeEventListener('click', this.clickReplyToEventListener)
+    this.globalEventTarget.removeEventListener('yjs-chat-remove', this.chatRemoveEventListener)
   }
 
   // inform molecules/chat that message is intersecting and can be used as scroll hook plus being saved to storage room
@@ -99,8 +122,8 @@ export default class Message extends Intersection() {
       :host > chat-m-message-dialog {
         font-size: 1rem;
       }
-      :host > li {
-        background-color: lightgray;
+      :host li {
+        background-color: var(--color-gray);
         border-radius: 0.5em;
         float: left;
         list-style: none;
@@ -108,41 +131,53 @@ export default class Message extends Intersection() {
         margin: 0.25em 0.1em 0.25em 0;
         width: 80%;          
       }
-      :host([deleted]) > li {
+      :host([deleted]) li {
         text-decoration: line-through;
       }
-      :host([self]) > li {
-        background-color: lightgreen;
+      :host([self]) li {
+        background-color: var(--color-green);
         float: right;
       }
-      :host > li > div {
+      :host li > div {
         display: flex;
         justify-content: space-between;
       }
-      :host > li > .user, :host > li > .timestamp {
+      :host li > .user, :host li > .timestamp {
         color: gray;
         font-size: 0.8em;
       }
-      :host > li > span {
+      :host li > span {
         word-break: break-word;
       }
-      :host > li > span.text {
+      :host li > span.text {
         white-space: pre-line;
       }
-      :host > li > span.text > wct-button, :host > li > span.text > a-icon-mdx {
+      :host li > span.text > wct-button, :host li > span.text > a-icon-mdx {
         display: block;
       }
-      :host > li > span.text > wct-button{
+      :host li > span.text > wct-button{
         --button-primary-background-color: var(--color-jitsi);
         --button-primary-border-color: var(--color-jitsi);
       }
-      :host > li > span.text > a-icon-mdx {
+      :host li > span.text > a-icon-mdx {
         text-align: center;
         margin: 2em auto;
         cursor: auto;
       }
-      :host > li > .timestamp {
+      :host li > .timestamp {
         font-size: 0.6em;
+      }
+      :host li[part=reply-to-li] {
+        background-color: var(--color-gray-lighter);
+        box-shadow: 2px 2px 5px var(--color-black);
+        cursor: pointer;
+        float: none;
+        width: 100%;
+        max-height: 15dvh;
+        margin-bottom: 1em;
+        overflow-y: auto;
+        scrollbar-color: var(--color) var(--background-color);
+        scrollbar-width: thin;
       }
     `
     return this.fetchTemplate()
@@ -178,22 +213,10 @@ export default class Message extends Intersection() {
    * Render HTML
    * @return {Promise<void>}
    */
-  renderHTML (textObj = this.textObj) {
+  renderHTML (textObj = this.textObj, replyToTextObj = this.replyToTextObj) {
     // make aTags with href when first link is detected https://stackoverflow.com/questions/1500260/detect-urls-in-text-with-javascript
-    this.html = /* html */`
-      <li part="li">
-        <div>
-          <chat-a-nick-name class="user" uid='${textObj.uid}' nickname="${textObj.updatedNickname}"${textObj.isSelf ? ' self' : ''}></chat-a-nick-name>
-          ${this.hasAttribute('no-dialog')
-              ? ''
-              : this.hasAttribute('self')
-                ? '<a-icon-mdx id="show-modal" rotate="-45deg" icon-url="../../../../../../img/icons/tool.svg" size="1.5em"></a-icon-mdx>'
-                : '<a-icon-mdx id="show-modal" icon-url="../../../../../../img/icons/info-circle.svg" size="1.5em"></a-icon-mdx>'
-          }
-        </div>
-        <span class="text">${Message.processText(textObj).text}</span><br><span class="timestamp">${(new Date(textObj.timestamp)).toLocaleString(navigator.language)}</span>
-      </li>  
-    `
+    this.html = Message.renderList(textObj, this.hasAttribute('no-dialog'), this.hasAttribute('self'))
+    if (replyToTextObj) this.li.insertAdjacentHTML('afterbegin', Message.renderList(replyToTextObj, true, this.hasAttribute('self'), 'reply-to-li'))
     return this.fetchModules([
       {
         // @ts-ignore
@@ -210,6 +233,23 @@ export default class Message extends Intersection() {
         name: 'wct-button'
       }
     ])
+  }
+
+  static renderList (textObj, hasAttributeNoDialog, hasAttributeSelf, part = 'li') {
+    return /* html */`
+      <li part="${part}">
+        <div>
+          ${textObj.deleted ? '' : /* html */`<chat-a-nick-name class="user" uid='${textObj.uid}' nickname="${textObj.updatedNickname}"${textObj.isSelf ? ' self' : ''}></chat-a-nick-name>`}
+          ${hasAttributeNoDialog
+            ? ''
+            : hasAttributeSelf
+              ? '<a-icon-mdx id="show-modal" rotate="-45deg" icon-url="../../../../../../img/icons/tool.svg" size="1.5em"></a-icon-mdx>'
+              : '<a-icon-mdx id="show-modal" icon-url="../../../../../../img/icons/info-circle.svg" size="1.5em"></a-icon-mdx>'
+          }
+        </div>
+        <span class="text${textObj.deleted ? ' italic' : ''}">${Message.processText(textObj).text}</span>${textObj.deleted ? '' : /* html */`<br><span class="timestamp">${(new Date(textObj.timestamp)).toLocaleString(navigator.language)}</span>`}
+      </li>
+    `
   }
 
   static processText (textObj) {
@@ -234,6 +274,10 @@ export default class Message extends Intersection() {
     return this.root.querySelector('li')
   }
 
+  get replyToLi () {
+    return this.root.querySelector('li[part=reply-to-li]')
+  }
+
   get openDialogIcon () {
     return this.root.querySelector('a-icon-mdx#show-modal')
   }
@@ -243,6 +287,15 @@ export default class Message extends Intersection() {
   }
 
   get template () {
-    return this.root.querySelector('template')
+    return this.root.querySelector('template:first-of-type')
+  }
+
+  get replyToTemplate () {
+    return this.root.querySelector('template#reply-to')
+  }
+
+  get globalEventTarget () {
+    // @ts-ignore
+    return this._globalEventTarget || (this._globalEventTarget = self.Environment?.activeRoute || document.body)
   }
 }
