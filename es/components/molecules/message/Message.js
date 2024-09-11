@@ -45,7 +45,7 @@ export default class Message extends Intersection() {
     }))
 
     this.chatRemoveEventListener = event => {
-      if (this.replyToTextObj && event.detail.textObj.timestamp === this.replyToTextObj.timestamp && event.detail.textObj.uid === this.replyToTextObj.uid) {
+      if (event.detail.textObj.timestamp === this.replyToTextObj.timestamp && event.detail.textObj.uid === this.replyToTextObj.uid) {
         this.replyToTextObj = {text: 'Message got deleted!', deleted: true}
         this.removeEventListeners()
         this.html = ''
@@ -65,7 +65,7 @@ export default class Message extends Intersection() {
   addEventListeners() {
     if (this.openDialogIcon) this.openDialogIcon.addEventListener('click', this.clickEventListener)
     if (this.replyToLi) this.replyToLi.addEventListener('click', this.clickReplyToEventListener)
-    this.globalEventTarget.addEventListener('yjs-chat-remove', this.chatRemoveEventListener)
+    if (this.replyToTextObj) this.globalEventTarget.addEventListener('chat-remove', this.chatRemoveEventListener)
   }
 
   disconnectedCallback () {
@@ -76,7 +76,7 @@ export default class Message extends Intersection() {
   removeEventListeners() {
     if (this.openDialogIcon) this.openDialogIcon.removeEventListener('click', this.clickEventListener)
     if (this.replyToLi) this.replyToLi.removeEventListener('click', this.clickReplyToEventListener)
-    this.globalEventTarget.removeEventListener('yjs-chat-remove', this.chatRemoveEventListener)
+    if (this.replyToTextObj) this.globalEventTarget.removeEventListener('chat-remove', this.chatRemoveEventListener)
   }
 
   // inform molecules/chat that message is intersecting and can be used as scroll hook plus being saved to storage room

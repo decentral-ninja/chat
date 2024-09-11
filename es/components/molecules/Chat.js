@@ -134,7 +134,7 @@ export default class Chat extends Shadow() {
             messageWrapper.addEventListener('animationend', event => messageWrapper.remove(), {once: true})
             messageWrapper.classList.add('deleted')
             messageWrapper.querySelector('chat-m-message')?.setAttribute('deleted', '')
-            this.dispatchEvent(new CustomEvent('yjs-chat-remove', {
+            this.dispatchEvent(new CustomEvent('chat-remove', {
               detail: {
                 textObj
               },
