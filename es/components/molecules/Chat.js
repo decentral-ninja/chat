@@ -73,9 +73,8 @@ export default class Chat extends Shadow() {
                   cancelable: true,
                   composed: true
                 }))).then(room => {
-                  let scrollEl = null
-                  if (room?.scrollEl && (scrollEl = this.ul.querySelector(`[timestamp=${room.scrollEl}]`))) {
-                    this.scrollIntoView(scrollEl)
+                  if (room?.scrollEl && this.ulGetScrollElFunc(room.scrollEl)()) {
+                    this.scrollIntoView(this.ulGetScrollElFunc(room.scrollEl))
                   } else {
                     // backwards compatible behavior and if no scrollTop scrolls to bottom
                     this.dispatchEvent(new CustomEvent('main-scroll', {
@@ -108,8 +107,8 @@ export default class Chat extends Shadow() {
               } else {
                 // wait for intersection to happen before we can decide to scroll or not
                 setTimeout(() => {
-                  if (textObj.isSelf || this.ul.lastChild.querySelector('chat-m-message[intersecting]')) {
-                    this.scrollIntoView(this.ul.lastChild, true)
+                  if (textObj.isSelf || this.ul.lastElementChild.matches('chat-m-message[intersecting]')) {
+                    this.scrollIntoView(() => this.ul.lastElementChild, true)
                   } else {
                     this.dispatchEvent(new CustomEvent('scroll-icon-show-event', {
                       bubbles: true,
@@ -162,12 +161,11 @@ export default class Chat extends Shadow() {
             composed: true
           }))
         }
-      }, 200)
+      }, 1000)
     }
 
     this.chatScrollEventListener = event => {
-      let scrollEl = null
-      if (event?.detail?.scrollEl && (scrollEl = this.ul.querySelector(`[timestamp=${event.detail.scrollEl}]`))) this.scrollIntoView(scrollEl, true)
+      if (event?.detail?.scrollEl && this.ulGetScrollElFunc(event.detail.scrollEl)()) this.scrollIntoView(this.ulGetScrollElFunc(event.detail.scrollEl), true)
     }
   }
 
@@ -186,9 +184,8 @@ export default class Chat extends Shadow() {
         cancelable: true,
         composed: true
       }))).then(room => {
-        let scrollEl = null
-        if (room?.scrollEl && (scrollEl = this.ul.querySelector(`[timestamp=${room.scrollEl}]`))) {
-          this.scrollIntoView(scrollEl)
+        if (room?.scrollEl && this.ulGetScrollElFunc(room.scrollEl)()) {
+          this.scrollIntoView(this.ulGetScrollElFunc(room.scrollEl))
         } else {
           this.dispatchEvent(new CustomEvent('main-scroll', {
             detail: {
@@ -279,26 +276,42 @@ export default class Chat extends Shadow() {
 
   getMessageHTML (textObj, timestamp, wasLastMessage, isUlEmpty, slot = '') {
     return /* html */`
-    <m-load-template-tag timestamp="${timestamp}" mode=false no-css>
-      <template>
-        <chat-m-message timestamp="${timestamp}"${textObj.isSelf ? ' self' : ''}${wasLastMessage ? ' was-last-message' : ''}${isUlEmpty ? ' first-render' : ''}>
-          <template>${JSON.stringify(textObj)}</template>
-          ${slot}
-        </chat-m-message>
-      </template>
-    </m-load-template-tag>
-  `
+      <m-load-template-tag timestamp="${timestamp}" mode=false no-css>
+        <template>
+          <chat-m-message timestamp="${timestamp}"${textObj.isSelf ? ' self' : ''}${wasLastMessage ? ' was-last-message' : ''}${isUlEmpty ? ' first-render' : ''}>
+            <template>${JSON.stringify(textObj)}</template>
+            ${slot}
+          </chat-m-message>
+        </template>
+      </m-load-template-tag>
+    `
   }
 
-  scrollIntoView (scrollEl, smooth = false) {
-    if (smooth) {
-      scrollEl.scrollIntoView({behavior: 'smooth'})
-    } else {
-      scrollEl.scrollIntoView({behavior: 'instant'})
-      scrollEl.scrollIntoView({behavior: 'smooth'})
-    }
-    setTimeout(() => scrollEl.scrollIntoView({behavior: 'smooth'}), 200)
-    setTimeout(() => scrollEl.scrollIntoView({behavior: 'smooth'}), 400)
+  /**
+   * Query Select for attribute timestamp on ul
+   * This element has to be requested by scrollIntoView at timeout in realtime, since the m-load-template-tag unpacks the template and replaces all with it's content
+   * 
+   * @param {string} timestamp
+   * @return {()=>null | HTMLElement}
+   */
+  ulGetScrollElFunc (timestamp) {
+    return () => this.ul.querySelector(`[timestamp=${timestamp}]`)
+  }
+
+  scrollIntoView (getScrollElFunc, smooth = false, counter = 0) {
+    counter ++
+    const scrollEl = getScrollElFunc()
+    if (!scrollEl) return
+    scrollEl.scrollIntoView({behavior: smooth ? 'smooth' : 'instant'})
+    setTimeout(() => {
+      const scrollEl = getScrollElFunc()
+      if (!scrollEl) return
+      if (scrollEl.matches(':not([intersecting])')) {
+        this.scrollIntoView(getScrollElFunc, counter > 2 ? false : smooth, counter)
+      } else {
+        scrollEl.scrollIntoView({behavior: 'smooth'})
+      }
+    }, 200)
   }
 
   get ul () {
