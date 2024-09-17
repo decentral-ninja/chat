@@ -38,8 +38,11 @@ export default class MessageDialog extends Dialog {
     this.keyupEventListener = event => {
       if (this.hasAttribute('self')) {
         if (event.key === 'd') {
-          return this.root.querySelector('#delete')?.click()
+          return this.deleteEl?.click()
         }
+      }
+      if (event.key === 'c') {
+        return this.clipboardEl?.click()
       }
     }
 
@@ -59,10 +62,11 @@ export default class MessageDialog extends Dialog {
 
   connectedCallback () {
     if (this.shouldRenderCustomHTML()) this.renderCustomHTML()
-    super.connectedCallback()
+    const result = super.connectedCallback()
     if (this.replyEl) this.replyEl.addEventListener('click', this.clickReplyEventListener)
     if (this.hasAttribute('self') && this.deleteEl) this.deleteEl.addEventListener('click', this.clickDeleteEventListener)
     this.root.addEventListener('keyup', this.keyupEventListener)
+    return result
   }
 
   disconnectedCallback () {
@@ -136,11 +140,17 @@ export default class MessageDialog extends Dialog {
    * @returns Promise<void>
    */
   renderCustomHTML() {
+    const templateTextContent = this.template.content.textContent
+    this.template.remove()
     this.html = /* html */`
       <wct-menu-icon id="close" no-aria class="open sticky" namespace="menu-icon-close-" no-click></wct-menu-icon>
       <dialog>
         <h4>Message:</h4>
         <div id="controls">
+          <wct-dialog-clipboard id=clipboard namespace="dialog-clipboard-default-">
+            <a-icon-mdx id="show-modal" icon-url="../../../../../../img/icons/copy.svg" size="2em"></a-icon-mdx>
+            <template>${JSON.parse(templateTextContent).text}</template>
+          </wct-dialog-clipboard>
           <div id="reply"><a-icon-mdx reply title="reply to message" icon-url="../../../../../../img/icons/arrow-back-up.svg" size="2em"></a-icon-mdx></div>
           <div id="delete" title="delete message!">
             <a-icon-mdx delete icon-url="../../../../../../img/icons/trash.svg" size="2em"></a-icon-mdx>
@@ -156,6 +166,10 @@ export default class MessageDialog extends Dialog {
         name: 'wct-menu-icon'
       },
       {
+        path: `${this.importMetaUrl}../../molecules/dialogClipboard/DialogClipboard.js`,
+        name: 'wct-dialog-clipboard'
+      },
+      {
         path: `${this.importMetaUrl}../../atoms/iconMdx/IconMdx.js`,
         name: 'a-icon-mdx'
       }
@@ -164,6 +178,10 @@ export default class MessageDialog extends Dialog {
 
   get controlsEl () {
     return this.root.querySelector('#controls')
+  }
+
+  get clipboardEl () {
+    return this.root.querySelector('#clipboard')?.root.querySelector('#show-modal')
   }
 
   get replyEl () {
@@ -176,5 +194,9 @@ export default class MessageDialog extends Dialog {
 
   get messageClone () {
     return this.root.querySelector('chat-m-message')
+  }
+
+  get template () {
+    return this.root.querySelector('template')
   }
 }

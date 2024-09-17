@@ -23,7 +23,7 @@ export default class Message extends Intersection() {
               namespace="dialog-top-slide-in-"
               open="show-modal"
               ${this.hasAttribute('self') ? 'self' : ''}
-            ></chat-m-message-dialog>
+            ><template>${JSON.stringify(this.textObj)}</template></chat-m-message-dialog>
           `
           this.dialog.dialogPromise.then(dialog => dialog.querySelector('h4').insertAdjacentHTML('afterend', /* html */`<chat-m-message timestamp="${this.getAttribute('timestamp')}"${this.hasAttribute('self') ? ' self' : ''} no-dialog>
             <template>${JSON.stringify(this.textObj)}</template>
