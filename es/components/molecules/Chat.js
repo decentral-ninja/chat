@@ -127,7 +127,7 @@ export default class Chat extends Shadow() {
         (await event.detail.getDeleted()).forEach(textObj => {
           const selector = `[timestamp="t_${textObj.timestamp}"]`
           let messages, message
-          if ((messages = Array.from(this.ul.querySelectorAll(selector))) && (message = messages.find(message => message?.textObj?.uid === textObj.uid))) {
+          if ((messages = Array.from(this.ul.querySelectorAll(selector))) && (message = messages.find(message => message.getAttribute('uid') === textObj.uid))) {
             message.addEventListener('animationend', event => message.remove(), {once: true})
             message.classList.add('deleted')
             message.querySelector('chat-m-message')?.setAttribute('deleted', '')
@@ -276,9 +276,9 @@ export default class Chat extends Shadow() {
 
   getMessageHTML (textObj, timestamp, wasLastMessage, isUlEmpty, slot = '') {
     return /* html */`
-      <m-load-template-tag timestamp="${timestamp}" mode=false no-css>
+      <m-load-template-tag timestamp="${timestamp}" uid='${textObj.uid}' mode=false no-css>
         <template>
-          <chat-m-message timestamp="${timestamp}"${textObj.isSelf ? ' self' : ''}${wasLastMessage ? ' was-last-message' : ''}${isUlEmpty ? ' first-render' : ''}>
+          <chat-m-message timestamp="${timestamp}" uid='${textObj.uid}'${textObj.isSelf ? ' self' : ''}${wasLastMessage ? ' was-last-message' : ''}${isUlEmpty ? ' first-render' : ''}>
             <template>${JSON.stringify(textObj)}</template>
             ${slot}
           </chat-m-message>
