@@ -229,6 +229,7 @@ export default class Users extends Shadow() {
                     display: flex;
                     gap: 0.5em;
                     padding: 0.5em 0 0;
+                    justify-content: end;
                   }
                 </style>
                 <section>
