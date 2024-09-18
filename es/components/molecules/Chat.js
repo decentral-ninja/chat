@@ -126,11 +126,11 @@ export default class Chat extends Shadow() {
       if (event.detail.deleted > 0) {
         (await event.detail.getDeleted()).forEach(textObj => {
           const selector = `[timestamp="t_${textObj.timestamp}"]`
-          let messageWrappers, messageWrapper
-          if ((messageWrappers = Array.from(this.ul.querySelectorAll(selector))) && (messageWrapper = messageWrappers.find(messageWrapper => messageWrapper.querySelector('chat-m-message')?.textObj?.uid === textObj.uid))) {
-            messageWrapper.addEventListener('animationend', event => messageWrapper.remove(), {once: true})
-            messageWrapper.classList.add('deleted')
-            messageWrapper.querySelector('chat-m-message')?.setAttribute('deleted', '')
+          let messages, message
+          if ((messages = Array.from(this.ul.querySelectorAll(selector))) && (message = messages.find(message => message?.textObj?.uid === textObj.uid))) {
+            message.addEventListener('animationend', event => message.remove(), {once: true})
+            message.classList.add('deleted')
+            message.querySelector('chat-m-message')?.setAttribute('deleted', '')
             this.dispatchEvent(new CustomEvent('chat-remove', {
               detail: {
                 textObj
