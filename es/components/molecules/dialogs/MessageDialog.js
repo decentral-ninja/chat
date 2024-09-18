@@ -21,7 +21,7 @@ export default class MessageDialog extends Dialog {
           cancelable: true,
           composed: true
         }))
-        this.controlsEl.remove()
+        this.controlsEl?.remove()
       }
       return superClose()
     }

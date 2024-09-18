@@ -14,6 +14,8 @@ export default class Users extends Shadow() {
   constructor (options = {}, ...args) {
     super({ importMetaUrl: import.meta.url, ...options }, ...args)
 
+    this.roomNamePrefix = 'chat-'
+
     let timeoutId = null
     this.usersEventListener = async event => {
       clearTimeout(timeoutId)
@@ -44,6 +46,7 @@ export default class Users extends Shadow() {
         cancelable: true,
         composed: true
       }))
+      if (this.getSetDefaultNickname.checked) localStorage.setItem(`${this.roomNamePrefix}default-nickname`, inputField?.value)
     }
     this.openUserListener = event => {
       this.dialog.show('show-modal')
@@ -221,9 +224,19 @@ export default class Users extends Shadow() {
             <dialog>
               <h4>Change your nickname:</h4>
               <wct-grid auto-fill="20%">
+                <style protected>
+                  #set-default-nickname-wrapper {
+                    display: flex;
+                    gap: 0.5em;
+                    padding: 0.5em 0 0;
+                  }
+                </style>
                 <section>
-                  <wct-input inputId="nickname" placeholder="${nickname}" namespace="wct-input-" namespace-fallback grid-column="1/5" submit-search autofocus force></wct-input>
+                  <wct-input inputId="nickname" placeholder="${nickname}" namespace="wct-input-" namespace-fallback grid-column="1/5" value="${localStorage.getItem(`${this.roomNamePrefix}default-nickname`) || ''}" submit-search autofocus force></wct-input>
                   <wct-button namespace="button-primary-" request-event-name="nickname">enter</wct-button>
+                  <div id=set-default-nickname-wrapper grid-column="1/6">
+                    <input id=set-default-nickname type=checkbox checked/><label for="set-default-nickname" class=italic>Set as default proposed nickname?</label>
+                  </div>
                 </section>
               </wct-grid>
             </dialog>
@@ -268,6 +281,10 @@ export default class Users extends Shadow() {
 
   get dialog () {
     return this.root.querySelector('wct-dialog')
+  }
+
+  get getSetDefaultNickname () {
+    return this.dialog?.root.querySelector('wct-grid')?.root.querySelector('#set-default-nickname')
   }
 
   get globalEventTarget () {
