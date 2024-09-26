@@ -43,22 +43,8 @@ export default class Chat extends Shadow() {
           // Attention: NO async here when appending to the dom!
           textObjs.sort((a, b) => a.timestamp - b.timestamp).forEach((textObj, i, textObjs) => {
             wasLastMessage = textObjs.length === i + 1
-            const timestamp = `t_${textObj.timestamp}`
             const div = document.createElement('div')
-            div.innerHTML = this.getMessageHTML(textObj, timestamp, wasLastMessage, isUlEmpty)
-            if (textObj.replyTo) {
-              const mLoadTemplateTag = div.children[0]
-              event.detail.getAll().then(allTextObjs => {
-                const replyToTemplate = document.createElement('div')
-                let replyToTextObj 
-                if ((replyToTextObj = allTextObjs.find(allTextObj => (allTextObj.timestamp === textObj.replyTo.timestamp && allTextObj.uid === textObj.replyTo.uid)))) {
-                  replyToTemplate.innerHTML  = this.getMessageHTML(textObj, timestamp, wasLastMessage, isUlEmpty, /* html */`<template id="reply-to">${JSON.stringify(replyToTextObj)}</template>`)
-                } else {
-                  replyToTemplate.innerHTML  = this.getMessageHTML(textObj, timestamp, wasLastMessage, isUlEmpty, /* html */`<template id="reply-to">${JSON.stringify({text: 'Message got deleted!', deleted: true})}</template>`)
-                }
-                mLoadTemplateTag.replaceWith(replyToTemplate.children[0])
-              })
-            }
+            div.innerHTML = this.getMessageHTML(textObj, `t_${textObj.timestamp}`, wasLastMessage, isUlEmpty)
             this.ul.appendChild(div.children[0])
             // scroll behavior
             if (wasLastMessage) {
@@ -125,9 +111,8 @@ export default class Chat extends Shadow() {
       // delete messages
       if (event.detail.deleted > 0) {
         (await event.detail.getDeleted()).forEach(textObj => {
-          const selector = `[timestamp="t_${textObj.timestamp}"]`
-          let messages, message
-          if ((messages = Array.from(this.ul.querySelectorAll(selector))) && (message = messages.find(message => message.getAttribute('uid') === textObj.uid))) {
+          let message
+          if ((message = this.ulGetMessageFunc(textObj))) {
             message.addEventListener('animationend', event => message.remove(), {once: true})
             message.classList.add('deleted')
             message.querySelector('chat-m-message')?.setAttribute('deleted', '')
@@ -140,7 +125,7 @@ export default class Chat extends Shadow() {
               composed: true
             }))
           } else {
-            console.warn('could not find corresponding node marked for deletion:', {selector, textObj})
+            console.warn('could not find corresponding node marked for deletion:', textObj)
           }
         })
       }
@@ -274,13 +259,13 @@ export default class Chat extends Shadow() {
     `
   }
 
-  getMessageHTML (textObj, timestamp, wasLastMessage, isUlEmpty, slot = '') {
+  getMessageHTML (textObj, timestamp, wasLastMessage, isUlEmpty) {
+    // attribute update-on-connected-callback is on purpose not used here, since this molecules/chat updates by, modified and delete, the element in the ul, which means, message does not need to update by itself.
     return /* html */`
       <m-load-template-tag timestamp="${timestamp}" uid='${textObj.uid}' mode=false no-css>
         <template>
           <chat-m-message timestamp="${timestamp}" uid='${textObj.uid}'${textObj.isSelf ? ' self' : ''}${wasLastMessage ? ' was-last-message' : ''}${isUlEmpty ? ' first-render' : ''}>
             <template>${JSON.stringify(textObj)}</template>
-            ${slot}
           </chat-m-message>
         </template>
       </m-load-template-tag>
@@ -292,10 +277,16 @@ export default class Chat extends Shadow() {
    * This element has to be requested by scrollIntoView at timeout in realtime, since the m-load-template-tag unpacks the template and replaces all with it's content
    * 
    * @param {string} timestamp
-   * @return {()=>null | HTMLElement}
+   * @return {()=>null | HTMLElement | HTMLCollection | any}
    */
-  ulGetScrollElFunc (timestamp) {
-    return () => this.ul.querySelector(`[timestamp=${timestamp}]`)
+  ulGetScrollElFunc (timestamp, funcName = 'querySelector') {
+    return () => this.ul[funcName](`[timestamp="${timestamp.includes('t_') ? '' : 't_'}${timestamp}"]`)
+  }
+
+  ulGetMessageFunc (textObj) {
+    let messages, message
+    if ((messages = Array.from(this.ulGetScrollElFunc(textObj.timestamp, 'querySelectorAll')())) && (message = messages.find(message => message.getAttribute('uid') === textObj.uid))) return message
+    return null
   }
 
   scrollIntoView (getScrollElFunc, smooth = false, counter = 0) {

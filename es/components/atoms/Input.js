@@ -17,7 +17,7 @@ export default class Input extends Shadow() {
         replyToTextObj = this.chatMessageEl.textObj
         this.replyToSection.innerHTML = ''
       }
-      this.dispatchEvent(new CustomEvent('yjs-chat-add', {
+      this.dispatchEvent(new CustomEvent('chat-add', {
         detail: {
           input: input || event.composedPath()[0],
           replyToTextObj
@@ -97,7 +97,7 @@ export default class Input extends Shadow() {
 
     this.jitsiVideoStartedEventListener = event => {
       this.jitsiButton.setAttribute('custom-notification', '')
-      this.dispatchEvent(new CustomEvent('yjs-chat-add', {
+      this.dispatchEvent(new CustomEvent('chat-add', {
         detail: {
           type: 'jitsi-video-started',
           iframeSrc: event.detail.iframeSrc
@@ -109,7 +109,7 @@ export default class Input extends Shadow() {
     }
     this.jitsiVideoStoppedEventListener = event => {
       this.jitsiButton.removeAttribute('custom-notification')
-      this.dispatchEvent(new CustomEvent('yjs-chat-add', {
+      this.dispatchEvent(new CustomEvent('chat-add', {
         detail: {
           type: 'jitsi-video-stopped',
           iframeSrc: event.detail.iframeSrc

@@ -15,7 +15,7 @@ export default class MessageDialog extends Dialog {
     const superClose = this.close
     this.close = () => {
       if (this.hasAttribute('deleted')) {
-        this.dispatchEvent(new CustomEvent('yjs-chat-delete', {
+        this.dispatchEvent(new CustomEvent('chat-delete', {
           detail: this.messageClone.textObj,
           bubbles: true,
           cancelable: true,

@@ -1,11 +1,31 @@
 // @ts-check
 import { WebWorker } from '../../../../event-driven-web-components-prototypes/src/WebWorker.js'
 
+/**
+ * textObj aka. Message container
+ * the chat controller and molecules delete/remove messages but when as replyTo message it can show as deleted
+ @typedef {{
+    isSelf?: boolean,
+    nickname?: string,
+    sendNotifications?: boolean,
+    text?: string,
+    timestamp: number,
+    uid: string,
+    updatedNickname?: string,
+    replyTo?: {
+      timestamp: number,
+      uid: string
+    },
+    deleted?: boolean
+  }} TextObj
+*/
+
 /* global HTMLElement */
 /* global CustomEvent */
 
 /**
  * Chat is a helper to keep all chat object in a yjs map and forwarding the proper events helping having an overview of all participants
+ * NOTE: textObj === Message.js data
  * TODO: view component for controllers/Chat.js with https://github.com/feross/p2p-graph
  *
  * @export
@@ -81,17 +101,17 @@ export const Chat = (ChosenHTMLElement = WebWorker()) => class Chat extends Chos
       const getAll = async () => {
         if (getAllResult) return getAllResult
         // @ts-ignore
-        return (getAllResult = await this.webWorker(Chat.enrichTextObj, event.detail.type.toArray(), await this.uid, (await (await this.usersData)()).allUsers))
+        return this.storeTextObjs((getAllResult = await this.webWorker(Chat.enrichTextObj, event.detail.type.toArray(), await this.uid, (await (await this.usersData)()).allUsers)))
       }
       let getAddedResult = null
       const getAdded = async () => {
         if (getAddedResult) return getAddedResult
         // @ts-ignore
         const addedItems = Array.from(event.detail.yjsEvent?.changes?.added || []).map(item => Object.assign(...item.content?.arr))
-        return (getAddedResult = addedItems.length
+        return this.storeTextObjs((getAddedResult = addedItems.length
           // @ts-ignore
           ? await this.webWorker(Chat.enrichTextObj, addedItems, await this.uid, (await (await this.usersData)()).allUsers)
-          : Promise.resolve([])
+          : Promise.resolve([]))
         )
       }
       let getDeletedResult = null
@@ -99,11 +119,11 @@ export const Chat = (ChosenHTMLElement = WebWorker()) => class Chat extends Chos
         if (getDeletedResult) return getDeletedResult
         // @ts-ignore
         const deletedItems = Array.from(event.detail.yjsEvent?.changes?.deleted || []).map(item => Object.assign(...item.content?.arr))
-        return (getDeletedResult = deletedItems.length
+        return this.storeTextObjs((getDeletedResult = deletedItems.length
           // @ts-ignore
           ? await this.webWorker(Chat.enrichTextObj, deletedItems, await this.uid, (await (await this.usersData)()).allUsers)
           : Promise.resolve([])
-        )
+        ))
       }
       this.dispatchEvent(new CustomEvent('yjs-chat-update', {
         detail: {
@@ -119,6 +139,16 @@ export const Chat = (ChosenHTMLElement = WebWorker()) => class Chat extends Chos
         composed: true
       }))
     }
+
+    this.getTextObjEventListener = event => event.detail.resolve(this.allTextObjsInSync.get(Chat.getTextObjKey(event.detail.textObj)))
+
+    /**
+     * Keeps all chatObserveEventListener received textObj (aka. Message.js data) in the runtime with the most recent UNPACKED (function getAll, etc. executed) representation
+     * Short: Represents all textObj by last unpacked state in sync
+     * 
+     * @type {Map<string, TextObj>}
+     */
+    this.allTextObjsInSync = new Map()
 
     this.nicknameEventListener = event => (this.nickname = Promise.resolve(event.detail.nickname))
 
@@ -147,9 +177,10 @@ export const Chat = (ChosenHTMLElement = WebWorker()) => class Chat extends Chos
   }
 
   connectedCallback () {
+    this.addEventListener('chat-add', this.chatAddEventListener)
+    this.addEventListener('chat-delete', this.chatDeleteEventListener)
+    this.addEventListener('chat-get-text-obj', this.getTextObjEventListener)
     this.globalEventTarget.addEventListener('yjs-users', this.usersEventListener)
-    this.addEventListener('yjs-chat-add', this.chatAddEventListener)
-    this.addEventListener('yjs-chat-delete', this.chatDeleteEventListener)
     this.globalEventTarget.addEventListener('yjs-chat-observe', this.chatObserveEventListener)
     this.globalEventTarget.addEventListener('yjs-nickname', this.nicknameEventListener)
     this.connectedCallbackOnce()
@@ -179,13 +210,45 @@ export const Chat = (ChosenHTMLElement = WebWorker()) => class Chat extends Chos
   }
 
   disconnectedCallback () {
+    this.removeEventListener('chat-add', this.chatAddEventListener)
+    this.removeEventListener('chat-delete', this.chatDeleteEventListener)
+    this.removeEventListener('chat-get-text-obj', this.getTextObjEventListener)
     this.globalEventTarget.removeEventListener('yjs-users', this.usersEventListener)
-    this.removeEventListener('yjs-chat-add', this.chatAddEventListener)
-    this.removeEventListener('yjs-chat-delete', this.chatDeleteEventListener)
     this.globalEventTarget.removeEventListener('yjs-chat-observe', this.chatObserveEventListener)
     this.globalEventTarget.removeEventListener('yjs-nickname', this.nicknameEventListener)
   }
 
+  /**
+   *
+   *
+   * @param {TextObj[]} textObjs
+   * @return {TextObj[]}
+   */
+  storeTextObjs (textObjs) {
+    textObjs.forEach(textObj => this.allTextObjsInSync.set(Chat.getTextObjKey(textObj), textObj))
+    return textObjs
+  }
+
+  /**
+   *
+   *
+   * @static
+   * @param {TextObj} textObj
+   * @return {string}
+   */
+  static getTextObjKey (textObj) {
+    return `${textObj.timestamp}_${textObj.uid}`
+  }
+
+  /**
+   *
+   *
+   * @static
+   * @param {TextObj[]} type
+   * @param {string} uid
+   * @param {import("../../../../event-driven-web-components-yjs/src/es/controllers/Users.js").UsersContainer} allUsers
+   * @return {TextObj[]}
+   */
   static enrichTextObj (type, uid, allUsers) {
     return type.map(textObj => ({
       ...textObj,
