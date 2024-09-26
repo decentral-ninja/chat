@@ -13,10 +13,10 @@ export default class MessageDialog extends Dialog {
     super({...options }, ...args)
 
     const superClose = this.close
-    this.close = () => {
+    this.close = async () => {
       if (this.hasAttribute('deleted')) {
         this.dispatchEvent(new CustomEvent('chat-delete', {
-          detail: this.messageClone.textObj,
+          detail: await this.messageClone.textObj,
           bubbles: true,
           cancelable: true,
           composed: true
@@ -46,10 +46,10 @@ export default class MessageDialog extends Dialog {
       }
     }
 
-    this.clickReplyEventListener = event => {
+    this.clickReplyEventListener = async event => {
       this.dispatchEvent(new CustomEvent('reply-to-message', {
         detail: {
-          textObj: this.messageClone.textObj,
+          textObj: await this.messageClone.textObj,
           messageClone: this.messageClone
         },
         bubbles: true,

@@ -11,10 +11,10 @@ export default class Input extends Shadow() {
 
     const wormholeUrl = 'https://wormhole.app/'
 
-    this.sendEventListener = (event, input) => {
+    this.sendEventListener = async (event, input) => {
       let replyToTextObj = null
       if(this.replyToSection.innerHTML) {
-        replyToTextObj = this.chatMessageEl.textObj
+        replyToTextObj = await this.chatMessageEl.textObj
         this.replyToSection.innerHTML = ''
       }
       this.dispatchEvent(new CustomEvent('chat-add', {
@@ -26,7 +26,7 @@ export default class Input extends Shadow() {
         cancelable: true,
         composed: true
       }))
-      this.blur()
+      //this.blur()
     }
 
     this.inputEventListener = event => {

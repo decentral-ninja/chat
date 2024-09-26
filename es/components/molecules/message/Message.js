@@ -20,10 +20,13 @@ import { Intersection } from '../../../../../event-driven-web-components-prototy
 */
 
 /**
-* @export
-* @class Message
-* @type {CustomElementConstructor}
-*/
+ * Message is the visual representation from chat[textObj]
+ * Data is fed through 1) templateTag 2) dynamically through getUpdatedTextObj
+ * 
+ * @export
+ * @class Message
+ * @type {CustomElementConstructor}
+ */
 export default class Message extends Intersection() {
   /** @type {Promise<import("../../controllers/Chat.js").TextObj | TextObjDeleted>} */
   #textObj
@@ -65,11 +68,9 @@ export default class Message extends Intersection() {
 
     this.chatRemoveEventListener = async event => {
       if (event.detail.textObj.timestamp === (await this.textObj).replyTo?.timestamp && event.detail.textObj.uid === (await this.textObj).replyTo?.uid) {
-        this.textObj = Promise.resolve({deleted: true})
         this.removeEventListeners()
         this.html = ''
-        this.renderHTML()
-        this.addEventListeners()
+        this.renderHTML().then(() => this.addEventListeners())
       }
     }
   }
@@ -197,7 +198,8 @@ export default class Message extends Intersection() {
       :host li > .timestamp {
         font-size: 0.6em;
       }
-      :host li[part=reply-to-li] {
+      :host *[part=reply-to-li] {
+        display: block;
         background-color: var(--color-gray-lighter);
         box-shadow: 2px 2px 5px var(--color-black);
         cursor: pointer;
@@ -209,7 +211,7 @@ export default class Message extends Intersection() {
         scrollbar-color: var(--color) var(--background-color);
         scrollbar-width: thin;
       }
-      :host li[part=reply-to-li][deleted] {
+      :host *[part=reply-to-li][deleted] {
         cursor: auto;
       }
     `
@@ -251,14 +253,13 @@ export default class Message extends Intersection() {
   async renderHTML (textObj = this.textObj) {
     const textObjSync = await textObj
     this.html = Message.renderList(textObjSync, this.hasAttribute('no-dialog'), this.hasAttribute('self'))
-    if (textObjSync.replyTo) {
-      this.getUpdatedTextObj(Promise.resolve(textObjSync.replyTo)).then(updatedTextObj => {
-      if (updatedTextObj) {
-        this.li.insertAdjacentHTML('afterbegin', Message.renderList(updatedTextObj, true, this.hasAttribute('self'), 'reply-to-li'))
-      } else {
-        console.error('ReplyTo chat message is missing!', { this: this, textObj: this.textObj, updatedTextObj })
-      }
-    })}
+    if (textObjSync.replyTo) this.getUpdatedTextObj(Promise.resolve(textObjSync.replyTo)).then(updatedTextObj => {
+      this.li.insertAdjacentHTML('afterbegin', /* html */`
+        <chat-m-message part="reply-to-li" timestamp="${textObjSync.replyTo?.timestamp}"${updatedTextObj?.isSelf ? ' self' : ''} no-dialog>
+          <template>${JSON.stringify(updatedTextObj ? updatedTextObj : {deleted: true})}</template>
+        </chat-m-message>
+      `)
+    })
     return this.fetchModules([
       {
         // @ts-ignore
@@ -278,13 +279,13 @@ export default class Message extends Intersection() {
   }
 
   update () {
+    console.log('update', this);
     this.getUpdatedTextObj().then(updatedTextObj => {
       if (!updatedTextObj || JSON.stringify(this.textObj) === JSON.stringify(updatedTextObj)) return
       this.textObj = Promise.resolve(updatedTextObj)
       this.removeEventListeners()
       this.html = ''
-      this.renderHTML()
-      this.addEventListeners()
+      this.renderHTML().then(() => this.addEventListeners())
     })
   }
 
@@ -337,7 +338,7 @@ export default class Message extends Intersection() {
    *
    *
    * @param {Promise<import("../../controllers/Chat.js").TextObj | TextObjDeleted>} [textObj=this.textObj]
-   * @return {Promise<import("../../controllers/Chat.js").TextObj | TextObjDeleted>}
+   * @return {Promise<import("../../controllers/Chat.js").TextObj | TextObjDeleted | null>}
    */
   async getUpdatedTextObj (textObj = this.textObj) {
     if (!(await textObj)) {
@@ -358,7 +359,7 @@ export default class Message extends Intersection() {
       composed: true
     }))).then(updatedTextObj => {
       // updatedTextObj could be theoretically undefined
-      if (!updatedTextObj) return textObj
+      if (!updatedTextObj) return null
       return updatedTextObj
     })
   }
@@ -392,7 +393,7 @@ export default class Message extends Intersection() {
   }
 
   get replyToLi () {
-    return this.root.querySelector('li[part=reply-to-li]')
+    return this.root.querySelector('*[part=reply-to-li]')
   }
 
   get openDialogIcon () {

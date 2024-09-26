@@ -123,7 +123,7 @@ export const Chat = (ChosenHTMLElement = WebWorker()) => class Chat extends Chos
           // @ts-ignore
           ? await this.webWorker(Chat.enrichTextObj, deletedItems, await this.uid, (await (await this.usersData)()).allUsers)
           : Promise.resolve([])
-        ))
+        ), true)
       }
       this.dispatchEvent(new CustomEvent('yjs-chat-update', {
         detail: {
@@ -222,10 +222,11 @@ export const Chat = (ChosenHTMLElement = WebWorker()) => class Chat extends Chos
    *
    *
    * @param {TextObj[]} textObjs
+   * @param {boolean} [remove=false]
    * @return {TextObj[]}
    */
-  storeTextObjs (textObjs) {
-    textObjs.forEach(textObj => this.allTextObjsInSync.set(Chat.getTextObjKey(textObj), textObj))
+  storeTextObjs (textObjs, remove = false) {
+    textObjs.forEach(textObj => this.allTextObjsInSync[remove ? 'delete' : 'set'](Chat.getTextObjKey(textObj), textObj))
     return textObjs
   }
 

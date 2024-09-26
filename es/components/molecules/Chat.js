@@ -280,7 +280,7 @@ export default class Chat extends Shadow() {
    * @return {()=>null | HTMLElement | HTMLCollection | any}
    */
   ulGetScrollElFunc (timestamp, funcName = 'querySelector') {
-    return () => this.ul[funcName](`[timestamp="${timestamp.includes('t_') ? '' : 't_'}${timestamp}"]`)
+    return () => this.ul[funcName](`[timestamp="${String(timestamp).includes('t_') ? '' : 't_'}${timestamp}"]`)
   }
 
   ulGetMessageFunc (textObj) {
