@@ -69,8 +69,9 @@ export default class Message extends Intersection() {
     this.chatRemoveEventListener = async event => {
       if (event.detail.textObj.timestamp === (await this.textObj).replyTo?.timestamp && event.detail.textObj.uid === (await this.textObj).replyTo?.uid) {
         this.removeEventListeners()
-        this.html = ''
-        this.renderHTML().then(() => this.addEventListeners())
+        if (this.replyToEl) this.replyToEl.remove()
+        this.renderReplyTo(await this.textObj)
+        this.addEventListeners()
       }
     }
   }
@@ -254,13 +255,7 @@ export default class Message extends Intersection() {
   async renderHTML (textObj = this.textObj) {
     const textObjSync = await textObj
     this.html = Message.renderList(textObjSync, this.hasAttribute('no-dialog'), this.hasAttribute('self'))
-    if (textObjSync.replyTo && this.hasAttribute('show-reply-to')) this.getUpdatedTextObj(Promise.resolve(textObjSync.replyTo)).then(updatedTextObj => {
-      this.li.insertAdjacentHTML('afterbegin', /* html */`
-        <chat-m-message part="reply-to-li" timestamp="${textObjSync.replyTo?.timestamp}"${updatedTextObj?.isSelf ? ' self' : ''} no-dialog width="calc(100% - 0.2em)" box-shadow="2px 2px 5px var(--color-black)"${this.getAttribute('next-show-reply-to') === "true" ? ' show-reply-to next-show-reply-to="true"': ''}${this.hasAttribute('scroll-reply-to') ? ' scroll-reply-to' : ''}>
-          <template>${JSON.stringify(updatedTextObj ? updatedTextObj : {deleted: true})}</template>
-        </chat-m-message>
-      `)
-    })
+    if (textObjSync.replyTo && this.hasAttribute('show-reply-to')) this.renderReplyTo (textObjSync)
     return this.fetchModules([
       {
         // @ts-ignore
@@ -277,6 +272,16 @@ export default class Message extends Intersection() {
         name: 'wct-button'
       }
     ])
+  }
+
+  renderReplyTo (textObj) {
+    this.getUpdatedTextObj(Promise.resolve(textObj.replyTo)).then(updatedTextObj => {
+      this.li.insertAdjacentHTML('afterbegin', /* html */`
+        <chat-m-message part="reply-to-li" timestamp="${textObj.replyTo?.timestamp}"${updatedTextObj?.isSelf ? ' self' : ''} no-dialog width="calc(100% - 0.2em)" box-shadow="2px 2px 5px var(--color-black)"${this.getAttribute('next-show-reply-to') === "true" ? ' show-reply-to next-show-reply-to="true"': ''}${this.hasAttribute('scroll-reply-to') ? ' scroll-reply-to' : ''}>
+          <template>${JSON.stringify(updatedTextObj ? updatedTextObj : {deleted: true})}</template>
+        </chat-m-message>
+      `)
+    })
   }
 
   update () {
@@ -408,8 +413,8 @@ export default class Message extends Intersection() {
     return this.root.querySelector('template:first-of-type')
   }
 
-  get replyToTemplate () {
-    return this.root.querySelector('template#reply-to')
+  get replyToEl () {
+    return this.root.querySelector('[part=reply-to-li]')
   }
 
   get globalEventTarget () {
