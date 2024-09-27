@@ -11,13 +11,13 @@ export default class Input extends Shadow() {
 
     const wormholeUrl = 'https://wormhole.app/'
 
-    this.sendEventListener = (event, input) => {
+    this.sendEventListener = async (event, input) => {
       let replyToTextObj = null
       if(this.replyToSection.innerHTML) {
-        replyToTextObj = this.chatMessageEl.textObj
+        replyToTextObj = await this.chatMessageEl.textObj
         this.replyToSection.innerHTML = ''
       }
-      this.dispatchEvent(new CustomEvent('yjs-chat-add', {
+      this.dispatchEvent(new CustomEvent('chat-add', {
         detail: {
           input: input || event.composedPath()[0],
           replyToTextObj
@@ -26,7 +26,7 @@ export default class Input extends Shadow() {
         cancelable: true,
         composed: true
       }))
-      this.blur()
+      this.textarea.style.height = 'auto'
     }
 
     this.inputEventListener = event => {
@@ -50,7 +50,6 @@ export default class Input extends Shadow() {
           break
         case 'send':
           this.sendEventListener(undefined, this.textarea)
-          this.textarea.style.height = 'auto'
           break
         case 'jitsi':
           this.dispatchEvent(new CustomEvent('jitsi-dialog-show-event', {
@@ -97,7 +96,7 @@ export default class Input extends Shadow() {
 
     this.jitsiVideoStartedEventListener = event => {
       this.jitsiButton.setAttribute('custom-notification', '')
-      this.dispatchEvent(new CustomEvent('yjs-chat-add', {
+      this.dispatchEvent(new CustomEvent('chat-add', {
         detail: {
           type: 'jitsi-video-started',
           iframeSrc: event.detail.iframeSrc
@@ -109,7 +108,7 @@ export default class Input extends Shadow() {
     }
     this.jitsiVideoStoppedEventListener = event => {
       this.jitsiButton.removeAttribute('custom-notification')
-      this.dispatchEvent(new CustomEvent('yjs-chat-add', {
+      this.dispatchEvent(new CustomEvent('chat-add', {
         detail: {
           type: 'jitsi-video-stopped',
           iframeSrc: event.detail.iframeSrc
