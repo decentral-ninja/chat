@@ -67,12 +67,7 @@ export default class Message extends Intersection() {
     }))
 
     this.chatRemoveEventListener = async event => {
-      if (event.detail.textObj.timestamp === (await this.textObj).replyTo?.timestamp && event.detail.textObj.uid === (await this.textObj).replyTo?.uid) {
-        this.removeEventListeners()
-        if (this.replyToEl) this.replyToEl.remove()
-        this.renderReplyTo(await this.textObj)
-        this.addEventListeners()
-      }
+      if (event.detail.textObj.timestamp === (await this.textObj).timestamp && event.detail.textObj.uid === (await this.textObj).uid) this.update()
     }
   }
 
@@ -96,7 +91,7 @@ export default class Message extends Intersection() {
   async addEventListeners () {
     if (this.openDialogIcon) this.openDialogIcon.addEventListener('click', this.clickEventListener)
     if (this.replyToLi) this.replyToLi.addEventListener('click', this.clickReplyToEventListener)
-    if ((await this.textObj).replyTo) this.globalEventTarget.addEventListener('chat-remove', this.chatRemoveEventListener)
+    this.globalEventTarget.addEventListener('chat-remove', this.chatRemoveEventListener)
   }
 
   disconnectedCallback () {
@@ -107,7 +102,7 @@ export default class Message extends Intersection() {
   async removeEventListeners() {
     if (this.openDialogIcon) this.openDialogIcon.removeEventListener('click', this.clickEventListener)
     if (this.replyToLi) this.replyToLi.removeEventListener('click', this.clickReplyToEventListener)
-    if ((await this.textObj).replyTo) this.globalEventTarget.removeEventListener('chat-remove', this.chatRemoveEventListener)
+    this.globalEventTarget.removeEventListener('chat-remove', this.chatRemoveEventListener)
   }
 
   // inform molecules/chat that message is intersecting and can be used as scroll hook plus being saved to storage room
@@ -278,7 +273,7 @@ export default class Message extends Intersection() {
     this.getUpdatedTextObj(Promise.resolve(textObj.replyTo)).then(updatedTextObj => {
       this.li.insertAdjacentHTML('afterbegin', /* html */`
         <chat-m-message part="reply-to-li" timestamp="${textObj.replyTo?.timestamp}"${updatedTextObj?.isSelf ? ' self' : ''} no-dialog width="calc(100% - 0.2em)" box-shadow="2px 2px 5px var(--color-black)"${this.getAttribute('next-show-reply-to') === "true" ? ' show-reply-to next-show-reply-to="true"': ''}${this.hasAttribute('scroll-reply-to') ? ' scroll-reply-to' : ''}>
-          <template>${JSON.stringify(updatedTextObj ? updatedTextObj : {deleted: true})}</template>
+          <template>${JSON.stringify(updatedTextObj)}</template>
         </chat-m-message>
       `)
     })
@@ -286,7 +281,7 @@ export default class Message extends Intersection() {
 
   update () {
     this.getUpdatedTextObj().then(updatedTextObj => {
-      if (!updatedTextObj || JSON.stringify(this.textObj) === JSON.stringify(updatedTextObj)) return
+      if (JSON.stringify(this.textObj) === JSON.stringify(updatedTextObj)) return
       this.textObj = Promise.resolve(updatedTextObj)
       this.removeEventListeners()
       this.html = ''
@@ -343,7 +338,7 @@ export default class Message extends Intersection() {
    *
    *
    * @param {Promise<import("../../controllers/Chat.js").TextObj | TextObjDeleted>} [textObj=this.textObj]
-   * @return {Promise<import("../../controllers/Chat.js").TextObj | TextObjDeleted | null>}
+   * @return {Promise<import("../../controllers/Chat.js").TextObj | TextObjDeleted>}
    */
   async getUpdatedTextObj (textObj = this.textObj) {
     if (!(await textObj)) {
@@ -364,7 +359,7 @@ export default class Message extends Intersection() {
       composed: true
     }))).then(updatedTextObj => {
       // updatedTextObj could be theoretically undefined
-      if (!updatedTextObj) return null
+      if (!updatedTextObj) return {deleted: true}
       return updatedTextObj
     })
   }
@@ -374,11 +369,7 @@ export default class Message extends Intersection() {
    */
   set textObj (value) {
     this.#textObj = value.then(newTextObj => {
-      if (!newTextObj) return this.getUpdatedTextObj().then(updatedTextObj => {
-        // deleted
-        if (!updatedTextObj) return {deleted: true}
-        return updatedTextObj
-      })
+      if (!newTextObj) return this.getUpdatedTextObj()
       return newTextObj
     })
   }
@@ -411,10 +402,6 @@ export default class Message extends Intersection() {
 
   get template () {
     return this.root.querySelector('template:first-of-type')
-  }
-
-  get replyToEl () {
-    return this.root.querySelector('[part=reply-to-li]')
   }
 
   get globalEventTarget () {
