@@ -140,7 +140,12 @@ export const Chat = (ChosenHTMLElement = WebWorker()) => class Chat extends Chos
       }))
     }
 
-    this.getTextObjEventListener = event => event.detail.resolve(this.allTextObjsInSync.get(Chat.getTextObjKey(event.detail.textObj)))
+    this.getTextObjEventListener = async event => {
+      let textObj = this.allTextObjsInSync.get(Chat.getTextObjKey(event.detail.textObj))
+      // @ts-ignore
+      if (textObj) textObj = (await this.webWorker(Chat.enrichTextObj, [textObj], await this.uid, (await (await this.usersData)()).allUsers))[0]
+      event.detail.resolve(textObj)
+    }
 
     /**
      * Keeps all chatObserveEventListener received textObj (aka. Message.js data) in the runtime with the most recent UNPACKED (function getAll, etc. executed) representation
@@ -219,8 +224,6 @@ export const Chat = (ChosenHTMLElement = WebWorker()) => class Chat extends Chos
   }
 
   /**
-   *
-   *
    * @param {TextObj[]} textObjs
    * @param {boolean} [remove=false]
    * @return {TextObj[]}
@@ -231,8 +234,6 @@ export const Chat = (ChosenHTMLElement = WebWorker()) => class Chat extends Chos
   }
 
   /**
-   *
-   *
    * @static
    * @param {TextObj} textObj
    * @return {string}

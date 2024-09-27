@@ -249,8 +249,9 @@ export default class Message extends Intersection() {
    */
   async renderHTML (textObj = this.textObj) {
     const textObjSync = await textObj
+    this.html = ''
     this.html = Message.renderList(textObjSync, this.hasAttribute('no-dialog'), this.hasAttribute('self'))
-    if (textObjSync.replyTo && this.hasAttribute('show-reply-to')) this.renderReplyTo (textObjSync)
+    if (textObjSync.replyTo && this.hasAttribute('show-reply-to')) this.renderReplyTo(textObjSync)
     return this.fetchModules([
       {
         // @ts-ignore
@@ -271,6 +272,7 @@ export default class Message extends Intersection() {
 
   renderReplyTo (textObj) {
     this.getUpdatedTextObj(Promise.resolve(textObj.replyTo)).then(updatedTextObj => {
+      if (this.replyToLi) this.replyToLi.remove()
       this.li.insertAdjacentHTML('afterbegin', /* html */`
         <chat-m-message part="reply-to-li" timestamp="${textObj.replyTo?.timestamp}"${updatedTextObj?.isSelf ? ' self' : ''} no-dialog width="calc(100% - 0.2em)" box-shadow="2px 2px 5px var(--color-black)"${this.getAttribute('next-show-reply-to') === "true" ? ' show-reply-to next-show-reply-to="true"': ''}${this.hasAttribute('scroll-reply-to') ? ' scroll-reply-to' : ''}>
           <template>${JSON.stringify(updatedTextObj)}</template>
@@ -280,12 +282,11 @@ export default class Message extends Intersection() {
   }
 
   update () {
-    this.getUpdatedTextObj().then(updatedTextObj => {
+    return this.getUpdatedTextObj().then(updatedTextObj => {
       if (JSON.stringify(this.textObj) === JSON.stringify(updatedTextObj)) return
       this.textObj = Promise.resolve(updatedTextObj)
       this.removeEventListeners()
-      this.html = ''
-      this.renderHTML().then(() => this.addEventListeners())
+      return this.renderHTML().then(() => this.addEventListeners())
     })
   }
 

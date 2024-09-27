@@ -161,6 +161,28 @@ export default class NickName extends Shadow() {
       }
     ])
   }
+/*
+TODO: Update nickname on connected
+  update () {
+    return new Promise(async resolve => this.dispatchEvent(new CustomEvent('chat-get-text-obj', {
+      detail: {
+        textObj: await textObj,
+        resolve
+      },
+      bubbles: true,
+      cancelable: true,
+      composed: true
+    }))).then(updatedTextObj => {
+      // updatedTextObj could be theoretically undefined
+      if (!updatedTextObj) return {deleted: true}
+      return updatedTextObj
+    }).then(updatedTextObj => {
+      if (JSON.stringify(this.textObj) === JSON.stringify(updatedTextObj)) return
+      this.textObj = Promise.resolve(updatedTextObj)
+      this.removeEventListeners()
+      return this.renderHTML().then(() => this.addEventListeners())
+    })
+  }*/
 
   get hTag () {
     return this.root.querySelector('h4')
