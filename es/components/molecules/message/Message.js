@@ -280,7 +280,6 @@ export default class Message extends Intersection() {
   }
 
   update () {
-    console.log('update', this);
     this.getUpdatedTextObj().then(updatedTextObj => {
       if (!updatedTextObj || JSON.stringify(this.textObj) === JSON.stringify(updatedTextObj)) return
       this.textObj = Promise.resolve(updatedTextObj)
