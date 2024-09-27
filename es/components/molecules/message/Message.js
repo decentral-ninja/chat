@@ -48,7 +48,7 @@ export default class Message extends Intersection() {
               ${this.hasAttribute('self') ? 'self' : ''}
             ><template>${JSON.stringify(await this.textObj)}</template></chat-m-message-dialog>
           `
-          this.dialog.dialogPromise.then(async dialog => dialog.querySelector('h4').insertAdjacentHTML('afterend', /* html */`<chat-m-message update-on-intersection timestamp="${this.getAttribute('timestamp') || ''}" uid='${this.getAttribute('uid') || ''}'${this.hasAttribute('self') ? ' self' : ''} no-dialog>
+          this.dialog.dialogPromise.then(async dialog => dialog.querySelector('h4').insertAdjacentHTML('afterend', /* html */`<chat-m-message update-on-intersection timestamp="${this.getAttribute('timestamp') || ''}" uid='${this.getAttribute('uid') || ''}'${this.hasAttribute('self') ? ' self' : ''} no-dialog show-reply-to scroll-reply-to next-show-reply-to="true" reply-to-max-height="30dvh">
             <template>${JSON.stringify(await this.textObj)}</template>
           </chat-m-message>`))
         })
@@ -113,6 +113,7 @@ export default class Message extends Intersection() {
   intersectionCallback (entries, observer) {
     if (entries && entries[0] && entries[0].isIntersecting) {
       this.setAttribute('intersecting', '')
+      if (this.hasAttribute('scroll-reply-to')) this.scroll(0, this.scrollHeight)
       this.dispatchEvent(new CustomEvent(this.getAttribute('intersection-event-name') || 'message-intersection', {
         detail: {
           scrollEl: `${this.getAttribute('timestamp')}`
@@ -155,12 +156,13 @@ export default class Message extends Intersection() {
       }
       :host li {
         background-color: var(--color-gray);
+        box-shadow: ${this.getAttribute('box-shadow') || 'none'};
         border-radius: 0.5em;
         float: left;
         list-style: none;
         padding: var(--spacing);
         margin: 0.25em 0.1em 0.25em 0;
-        width: 80%;          
+        width: ${this.getAttribute('width') || '80%'};
       }
       :host([deleted]) li {
         text-decoration: line-through;
@@ -200,14 +202,13 @@ export default class Message extends Intersection() {
       }
       :host *[part=reply-to-li] {
         display: block;
-        background-color: var(--color-gray-lighter);
-        box-shadow: 2px 2px 5px var(--color-black);
         cursor: pointer;
         float: none;
         width: 100%;
-        max-height: 15dvh;
+        max-height: ${this.getAttribute('reply-to-max-height') || '9em'};
         margin-bottom: 1em;
         overflow-y: auto;
+        scroll-behavior: smooth;
         scrollbar-color: var(--color) var(--background-color);
         scrollbar-width: thin;
       }
@@ -253,9 +254,9 @@ export default class Message extends Intersection() {
   async renderHTML (textObj = this.textObj) {
     const textObjSync = await textObj
     this.html = Message.renderList(textObjSync, this.hasAttribute('no-dialog'), this.hasAttribute('self'))
-    if (textObjSync.replyTo) this.getUpdatedTextObj(Promise.resolve(textObjSync.replyTo)).then(updatedTextObj => {
+    if (textObjSync.replyTo && this.hasAttribute('show-reply-to')) this.getUpdatedTextObj(Promise.resolve(textObjSync.replyTo)).then(updatedTextObj => {
       this.li.insertAdjacentHTML('afterbegin', /* html */`
-        <chat-m-message part="reply-to-li" timestamp="${textObjSync.replyTo?.timestamp}"${updatedTextObj?.isSelf ? ' self' : ''} no-dialog>
+        <chat-m-message part="reply-to-li" timestamp="${textObjSync.replyTo?.timestamp}"${updatedTextObj?.isSelf ? ' self' : ''} no-dialog width="calc(100% - 0.2em)" box-shadow="2px 2px 5px var(--color-black)"${this.getAttribute('next-show-reply-to') === "true" ? ' show-reply-to next-show-reply-to="true"': ''}${this.hasAttribute('scroll-reply-to') ? ' scroll-reply-to' : ''}>
           <template>${JSON.stringify(updatedTextObj ? updatedTextObj : {deleted: true})}</template>
         </chat-m-message>
       `)

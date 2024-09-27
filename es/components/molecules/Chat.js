@@ -264,7 +264,7 @@ export default class Chat extends Shadow() {
     return /* html */`
       <m-load-template-tag timestamp="${timestamp}" uid='${textObj.uid}' mode=false no-css>
         <template>
-          <chat-m-message timestamp="${timestamp}" uid='${textObj.uid}'${textObj.isSelf ? ' self' : ''}${wasLastMessage ? ' was-last-message' : ''}${isUlEmpty ? ' first-render' : ''}>
+          <chat-m-message timestamp="${timestamp}" uid='${textObj.uid}'${textObj.isSelf ? ' self' : ''}${wasLastMessage ? ' was-last-message' : ''}${isUlEmpty ? ' first-render' : ''} show-reply-to>
             <template>${JSON.stringify(textObj)}</template>
           </chat-m-message>
         </template>

@@ -26,7 +26,7 @@ export default class Input extends Shadow() {
         cancelable: true,
         composed: true
       }))
-      //this.blur()
+      this.textarea.style.height = 'auto'
     }
 
     this.inputEventListener = event => {
@@ -50,7 +50,6 @@ export default class Input extends Shadow() {
           break
         case 'send':
           this.sendEventListener(undefined, this.textarea)
-          this.textarea.style.height = 'auto'
           break
         case 'jitsi':
           this.dispatchEvent(new CustomEvent('jitsi-dialog-show-event', {
