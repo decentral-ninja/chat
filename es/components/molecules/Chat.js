@@ -220,6 +220,9 @@ export default class Chat extends Shadow() {
    */
   renderCSS () {
     this.css = /* css */`
+      :host {
+        --chat-m-message-min-height: 5em;
+      }
       :host > ul {
         display: flex;
         flex-direction: column;
@@ -227,7 +230,7 @@ export default class Chat extends Shadow() {
         padding: 0;          
       }
       :host > ul > m-load-template-tag {
-        min-height: 6em;
+        min-height: var(--chat-m-message-min-height);
       }
       :host > ul > .deleted {
         animation: delete 3s ease-out;
@@ -260,11 +263,11 @@ export default class Chat extends Shadow() {
   }
 
   getMessageHTML (textObj, timestamp, wasLastMessage, isUlEmpty) {
-    // attribute update-on-connected-callback is on purpose not used here, since this molecules/chat updates by, modified and delete, the element in the ul, which means, message does not need to update by itself.
+    // this molecules/chat updates by, modified and delete, the elements in the ul and needs timestamp and uid to pinpoint the target. This is done due to lazy loading support.
     return /* html */`
       <m-load-template-tag timestamp="${timestamp}" uid='${textObj.uid}' mode=false no-css>
         <template>
-          <chat-m-message timestamp="${timestamp}" uid='${textObj.uid}'${textObj.isSelf ? ' self' : ''}${wasLastMessage ? ' was-last-message' : ''}${isUlEmpty ? ' first-render' : ''} show-reply-to>
+          <chat-m-message update-on-connected-callback timestamp="${timestamp}" uid='${textObj.uid}'${textObj.isSelf ? ' self' : ''}${wasLastMessage ? ' was-last-message' : ''}${isUlEmpty ? ' first-render' : ''} show-reply-to>
             <template>${JSON.stringify(textObj)}</template>
           </chat-m-message>
         </template>

@@ -43,11 +43,12 @@ export default class JitsiDialog extends Dialog {
 
   connectedCallback () {
     if (this.shouldRenderCustomHTML()) this.renderCustomHTML()
-    super.connectedCallback()
+    const result = super.connectedCallback()
     this.connectedCallbackOnce()
     this.startIcon.addEventListener('click', this.startClickEventListener)
     this.stopIcon.addEventListener('click', this.stopClickEventListener)
     this.link.addEventListener('click', this.linkClickEventListener)
+    return result
   }
 
   connectedCallbackOnce () {
@@ -174,7 +175,7 @@ export default class JitsiDialog extends Dialog {
     }))
     this.setAttribute('stopped', '')
     this.removeAttribute('started')
-    this.iframeWrapper.remove()
+    if (this.iframeWrapper) this.iframeWrapper.remove()
   }
 
   get iframeWrapper () {

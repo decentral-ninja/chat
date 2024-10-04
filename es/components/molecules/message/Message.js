@@ -48,7 +48,7 @@ export default class Message extends Intersection() {
               ${this.hasAttribute('self') ? 'self' : ''}
             ><template>${JSON.stringify(await this.textObj)}</template></chat-m-message-dialog>
           `
-          this.dialog.dialogPromise.then(async dialog => dialog.querySelector('h4').insertAdjacentHTML('afterend', /* html */`<chat-m-message update-on-intersection timestamp="${this.getAttribute('timestamp') || ''}" uid='${this.getAttribute('uid') || ''}'${this.hasAttribute('self') ? ' self' : ''} no-dialog show-reply-to scroll-reply-to next-show-reply-to="true" reply-to-max-height="30dvh">
+          this.dialog.dialogPromise.then(async dialog => dialog.querySelector('h4').insertAdjacentHTML('afterend', /* html */`<chat-m-message update-on-intersection timestamp="${this.getAttribute('timestamp') || ''}" uid='${this.getAttribute('uid') || ''}'${this.hasAttribute('self') ? ' self' : ''} no-dialog show-reply-to next-show-reply-to="true" reply-to-max-height="30dvh">
             <template>${JSON.stringify(await this.textObj)}</template>
           </chat-m-message>`))
         })
@@ -76,12 +76,16 @@ export default class Message extends Intersection() {
     this.connectedCallbackOnce()
     if (this.shouldRenderCSS()) this.renderCSS()
     if (this.shouldRenderHTML()) {
-      this.renderHTML().then(() => this.addEventListeners())
+      this.renderHTML().then(() => {
+        this.addEventListeners()
+        // request most recent synced state
+        if (this.hasAttribute('update-on-connected-callback')) this.update()
+      })
     } else {
       this.addEventListeners()
+      // request most recent synced state
+      if (this.hasAttribute('update-on-connected-callback')) this.update()
     }
-    // request most recent synced state
-    if (this.hasAttribute('update-on-connected-callback')) this.update()
   }
 
   connectedCallbackOnce () {
@@ -109,8 +113,7 @@ export default class Message extends Intersection() {
   intersectionCallback (entries, observer) {
     if (entries && entries[0] && entries[0].isIntersecting) {
       this.setAttribute('intersecting', '')
-      if (this.hasAttribute('scroll-reply-to')) this.scroll(0, this.scrollHeight)
-      this.dispatchEvent(new CustomEvent(this.getAttribute('intersection-event-name') || 'message-intersection', {
+      if (this.getAttribute('part') !== 'reply-to-li') this.dispatchEvent(new CustomEvent(this.getAttribute('intersection-event-name') || 'message-intersection', {
         detail: {
           scrollEl: `${this.getAttribute('timestamp')}`
         },
@@ -151,6 +154,8 @@ export default class Message extends Intersection() {
         font-size: 1rem;
       }
       :host li {
+        display: flex;
+        flex-direction: column;
         background-color: var(--color-gray);
         box-shadow: ${this.getAttribute('box-shadow') || 'none'};
         border-radius: 0.5em;
@@ -159,6 +164,9 @@ export default class Message extends Intersection() {
         padding: var(--spacing);
         margin: 0.25em 0.1em 0.25em 0;
         width: ${this.getAttribute('width') || '80%'};
+      }
+      :host li:not([deleted]) {
+        min-height: var(--chat-m-message-min-height, 5em);
       }
       :host([deleted]) li {
         text-decoration: line-through;
@@ -172,6 +180,9 @@ export default class Message extends Intersection() {
         justify-content: space-between;
       }
       :host li > .user, :host li > .timestamp {
+        flex-grow: 1;
+        display: flex;
+        align-items: end;
         color: gray;
         font-size: 0.8em;
       }
@@ -196,17 +207,23 @@ export default class Message extends Intersection() {
       :host li > .timestamp {
         font-size: 0.6em;
       }
-      :host *[part=reply-to-li] {
+      :host([part=reply-to-li]) li > span.text {
         display: block;
-        cursor: pointer;
-        float: none;
-        width: 100%;
-        max-height: ${this.getAttribute('reply-to-max-height') || '9em'};
-        margin-bottom: 1em;
+        max-height: ${this.getAttribute('reply-to-max-height') || '6em'};
         overflow-y: auto;
         scroll-behavior: smooth;
         scrollbar-color: var(--color) var(--background-color);
         scrollbar-width: thin;
+      }
+      :host *[part=reply-to-li] {
+        display: block;
+        cursor: pointer;
+        float: none;
+        margin-bottom: 1em;
+        width: 100%;
+      }
+      :host *[part=reply-to-li] + * {
+        clear: both;
       }
       :host *[part=reply-to-li][deleted] {
         cursor: auto;
@@ -245,14 +262,16 @@ export default class Message extends Intersection() {
    * Render HTML
    * 
    * @param {Promise<import("../../controllers/Chat.js").TextObj | TextObjDeleted>} [textObj=this.textObj]
-   * @return {Promise<void>}
+   * @return {Promise<[any, any]>}
    */
   async renderHTML (textObj = this.textObj) {
     const textObjSync = await textObj
-    this.html = ''
     this.html = Message.renderList(textObjSync, this.hasAttribute('no-dialog'), this.hasAttribute('self'))
-    if (textObjSync.replyTo && this.hasAttribute('show-reply-to')) this.renderReplyTo(textObjSync)
-    return this.fetchModules([
+    return Promise.all([
+      textObjSync.replyTo && this.hasAttribute('show-reply-to') 
+        ? this.renderReplyTo(textObjSync)
+        : null,
+      this.fetchModules([
       {
         // @ts-ignore
         path: `${this.importMetaUrl}../../atoms/nickName/NickName.js?${Environment?.version || ''}`,
@@ -267,14 +286,14 @@ export default class Message extends Intersection() {
         path: `${this.importMetaUrl}../../../../../web-components-toolbox/src/es/components/atoms/button/Button.js?${Environment?.version || ''}`,
         name: 'wct-button'
       }
-    ])
+    ])])
   }
 
   renderReplyTo (textObj) {
-    this.getUpdatedTextObj(Promise.resolve(textObj.replyTo)).then(updatedTextObj => {
+    return this.getUpdatedTextObj(Promise.resolve(textObj.replyTo)).then(updatedTextObj => {
       if (this.replyToLi) this.replyToLi.remove()
       this.li.insertAdjacentHTML('afterbegin', /* html */`
-        <chat-m-message part="reply-to-li" timestamp="${textObj.replyTo?.timestamp}"${updatedTextObj?.isSelf ? ' self' : ''} no-dialog width="calc(100% - 0.2em)" box-shadow="2px 2px 5px var(--color-black)"${this.getAttribute('next-show-reply-to') === "true" ? ' show-reply-to next-show-reply-to="true"': ''}${this.hasAttribute('scroll-reply-to') ? ' scroll-reply-to' : ''}>
+        <chat-m-message part="reply-to-li" timestamp="${textObj.replyTo?.timestamp}"${updatedTextObj?.isSelf ? ' self' : ''} no-dialog width="calc(100% - 0.2em)" box-shadow="2px 2px 5px var(--color-black)"${this.getAttribute('next-show-reply-to') === "true" ? ' show-reply-to next-show-reply-to="true"': ''}>
           <template>${JSON.stringify(updatedTextObj)}</template>
         </chat-m-message>
       `)
@@ -282,10 +301,11 @@ export default class Message extends Intersection() {
   }
 
   update () {
-    return this.getUpdatedTextObj().then(updatedTextObj => {
-      if (JSON.stringify(this.textObj) === JSON.stringify(updatedTextObj)) return
+    return Promise.all([this.textObj, this.getUpdatedTextObj()]).then(([textObj, updatedTextObj]) => {
+      if (JSON.stringify(textObj) === JSON.stringify(updatedTextObj)) return
       this.textObj = Promise.resolve(updatedTextObj)
       this.removeEventListeners()
+      this.html = ''
       return this.renderHTML().then(() => this.addEventListeners())
     })
   }
@@ -311,7 +331,7 @@ export default class Message extends Intersection() {
               : '<a-icon-mdx id="show-modal" icon-url="../../../../../../img/icons/info-circle.svg" size="1.5em"></a-icon-mdx>'
           }
         </div>
-        <span class="text${textObj.deleted ? ' italic' : ''}">${textObj.deleted ? 'Message got deleted!' : Message.processText(textObj).text}</span>${textObj.deleted ? '' : /* html */`<br><span class="timestamp">${textObj.timestamp ? (new Date(textObj.timestamp)).toLocaleString(navigator.language) : ''}</span>`}
+        <span class="text${textObj.deleted ? ' italic' : ''}">${textObj.deleted ? 'Message got deleted!' : Message.processText(textObj).text}</span>${textObj.deleted ? '' : /* html */`<span class="timestamp">${textObj.timestamp ? (new Date(textObj.timestamp)).toLocaleString(navigator.language) : ''}</span>`}
       </li>
     `
   }

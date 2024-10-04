@@ -70,7 +70,15 @@ export default class Input extends Shadow() {
       if (target.classList.contains('pattern')) this.textarea.focus()
     }
 
-    this.emojiClickedEventListener = event => (this.textarea.value += event.detail?.clickedEmoji || '')
+    this.emojiClickedEventListener = event => {
+      this.textarea.focus()
+      this.textarea.setRangeText(
+        event.detail?.clickedEmoji || '',
+        this.textarea.selectionStart,
+        this.textarea.selectionEnd,
+        'end'
+      )
+    }
 
     // past wormhole url
     const wormholeUrls = []
@@ -83,7 +91,12 @@ export default class Input extends Shadow() {
               const blob = await item.getType('text/plain')
               const text = await blob.text()
               if (text.includes(wormholeUrl) && !wormholeUrls.includes(text)) {
-                this.textarea.value += (this.textarea.value ? ' ' : '') + text
+                this.textarea.setRangeText(
+                  (this.textarea.value ? ' ' : '') + text,
+                  this.textarea.selectionStart,
+                  this.textarea.selectionEnd,
+                  'end'
+                )
                 wormholeUrls.push(text)
               }
             }

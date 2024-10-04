@@ -133,7 +133,7 @@ export default class Rooms extends Shadow() {
           try {
             const url = new URL(inputField.value.replace(/"/g, ''))
             const roomName = url.searchParams.get('room')
-            if (roomName) return history.pushState({ ...history.state, pageTitle: (document.title = roomName) }, roomName, url.href)
+            if (roomName) return history.pushState({ ...history.state, pageTitle: roomName }, roomName, url.href)
           } catch (error) {}
         }
         const url = new URL(location.href)
@@ -142,7 +142,7 @@ export default class Rooms extends Shadow() {
           // enter new room
           if (inputField) inputField.value = ''
           url.searchParams.set('room', roomName)
-          history.pushState({ ...history.state, pageTitle: (document.title = roomName) }, roomName, url.href)
+          history.pushState({ ...history.state, pageTitle: roomName }, roomName, url.href)
         } else {
           // open first room
           this.dispatchEvent(new CustomEvent('yjs-set-room', {
@@ -169,6 +169,7 @@ export default class Rooms extends Shadow() {
   }
 
   connectedCallback () {
+    this.roomPromise.then(async room => (document.title = await room.room))
     if (this.shouldRenderCSS()) this.renderCSS()
     this.addEventListener('click', this.clickEventListener)
     this.addEventListener('submit-room-name', this.roomNameEventListener)
@@ -348,7 +349,7 @@ export default class Rooms extends Shadow() {
               <wct-grid auto-fill="20%">
                 <section>
                   <wct-input inputId="room-name-prefix" placeholder="${this.roomNamePrefix}" namespace="wct-input-" disabled></wct-input>
-                  <wct-input inputId="room-name" placeholder="${this.randomRoom}" namespace="wct-middle-input-" namespace-fallback grid-column="2/5" submit-search="submit-room-name" autofocus force></wct-input>
+                  <wct-input inputId="room-name" placeholder="${this.randomRoom}" namespace="wct-middle-input-" namespace-fallback grid-column="2/5" submit-search="submit-room-name" any-key-listener autofocus force></wct-input>
                   <wct-button namespace="button-primary-" request-event-name="submit-room-name" click-no-toggle-active>enter</wct-button>
                 </section>
               </wct-grid>
@@ -357,7 +358,6 @@ export default class Rooms extends Shadow() {
             </dialog>
           </wct-dialog>
         `
-      document.title = roomName || (await room)
     })
   }
 
