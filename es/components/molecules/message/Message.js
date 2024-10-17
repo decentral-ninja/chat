@@ -108,7 +108,7 @@ export default class Message extends Intersection() {
   async addEventListeners () {
     if (this.openDialogIcon) this.openDialogIcon.addEventListener('click', this.clickEventListener)
     if (this.replyToLi) this.replyToLi.addEventListener('click', this.clickReplyToEventListener)
-    this.globalEventTarget.addEventListener(`chat-remove-${this.getAttribute('timestamp') || ''}`, this.chatRemoveEventListener)
+    this.globalEventTarget.addEventListener(`chat-remove-${(await this.textObj).timestamp || ''}`, this.chatRemoveEventListener)
   }
 
   disconnectedCallback () {
@@ -119,7 +119,7 @@ export default class Message extends Intersection() {
   async removeEventListeners() {
     if (this.openDialogIcon) this.openDialogIcon.removeEventListener('click', this.clickEventListener)
     if (this.replyToLi) this.replyToLi.removeEventListener('click', this.clickReplyToEventListener)
-    this.globalEventTarget.removeEventListener(`chat-remove-${this.getAttribute('timestamp') || ''}`, this.chatRemoveEventListener)
+    this.globalEventTarget.removeEventListener(`chat-remove-${(await this.textObj).timestamp || ''}`, this.chatRemoveEventListener)
   }
 
   // inform molecules/chat that message is intersecting and can be used as scroll hook plus being saved to storage room
@@ -339,7 +339,7 @@ export default class Message extends Intersection() {
           ${textObj.deleted ? '' : /* html */`<chat-a-nick-name class="user" uid='${textObj.uid}' nickname="${textObj.updatedNickname}"${textObj.isSelf ? ' self' : ''}></chat-a-nick-name>`}
           ${hasAttributeNoDialog
             ? ''
-            : '<wct-icon-mdx id="show-modal" rotate="180deg" icon-url="../../../../../../img/icons/dots-circle-horizontal.svg" size="1.5em"></wct-icon-mdx>'
+            : '<wct-icon-mdx id="show-modal" rotate="-180deg" icon-url="../../../../../../img/icons/dots-circle-horizontal.svg" size="1.5em"></wct-icon-mdx>'
           }
         </div>
         <span class="text${textObj.deleted ? ' italic' : ''}">${textObj.deleted ? 'Message got deleted!' : Message.processText(textObj).text}</span>${textObj.deleted ? '' : /* html */`<span class="timestamp">${textObj.timestamp ? (new Date(textObj.timestamp)).toLocaleString(navigator.language) : ''}</span>`}
