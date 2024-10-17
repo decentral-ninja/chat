@@ -92,13 +92,13 @@ export default class JitsiDialog extends Dialog {
         scrollbar-width: thin;
         transition: height 0.3s ease-out;
       }
-      :host([started]) > dialog > a-icon-mdx {
+      :host([started]) > dialog > wct-icon-mdx {
         display: none;
       }
       :host([started]) > dialog > #stop {
         display: block;
       }
-      :host([stopped]) > dialog > a-icon-mdx {
+      :host([stopped]) > dialog > wct-icon-mdx {
         display: none;
       }
       :host([stopped]) > dialog > #start {
@@ -118,8 +118,8 @@ export default class JitsiDialog extends Dialog {
       <dialog>
         <h4>Video conference:</h4>
         <p class=font-size-tiny>("click: Join in browser")</p>
-        <a-icon-mdx id="start" title="Restart voice call" icon-url="../../../../../../img/icons/video-plus.svg" size="3em"></a-icon-mdx>
-        <a-icon-mdx id="stop" title="Stop voice call" icon-url="../../../../../../img/icons/video-off.svg" size="3em"></a-icon-mdx>
+        <wct-icon-mdx id="start" title="Restart voice call" icon-url="../../../../../../img/icons/video-plus.svg" size="3em"></wct-icon-mdx>
+        <wct-icon-mdx id="stop" title="Stop voice call" icon-url="../../../../../../img/icons/video-off.svg" size="3em"></wct-icon-mdx>
         <a href="${this.iframeSrc}" target="_blank">If the video call does not work 100%, click this link!</a>
       </dialog>
     `
@@ -128,7 +128,7 @@ export default class JitsiDialog extends Dialog {
       this.root.querySelector('dialog').insertAdjacentHTML('beforeend', /* html */`
         <wct-iframe>
           <template>
-            <iframe width="${self.innerWidth}" height="${self.innerHeight}" src="${this.iframeSrc || (this.iframeSrc = `https://jitsi.mgrs.dev/${await room}`)}" frameborder="0" allow="autoplay; encrypted-media; picture-in-picture; fullscreen; allow-top-navigation; screen-wake-lock; microphone; camera; window-management;"></iframe>
+            <iframe width="${self.innerWidth}" height="${self.innerHeight}" src="${this.iframeSrc || (this.iframeSrc = `https://jitsi.mgrs.dev/${await room}`)}" frameborder="0" allow="autoplay; display-capture; encrypted-media; picture-in-picture; fullscreen; allow-top-navigation; screen-wake-lock; microphone; camera; window-management;"></iframe>
           </template>
         </wct-iframe>
       `)

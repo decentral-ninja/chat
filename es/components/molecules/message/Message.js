@@ -75,16 +75,29 @@ export default class Message extends Intersection() {
     super.connectedCallback()
     this.connectedCallbackOnce()
     if (this.shouldRenderCSS()) this.renderCSS()
-    if (this.shouldRenderHTML()) {
-      this.renderHTML().then(() => {
-        this.addEventListeners()
-        // request most recent synced state
-        if (this.hasAttribute('update-on-connected-callback')) this.update()
-      })
-    } else {
+    const htmlReadyFunc = () => {
       this.addEventListeners()
+      const updateReadyFunc = () => {
+        this.dispatchEvent(new CustomEvent('message-rendered', {
+          detail: {
+            message: this
+          },
+          bubbles: true,
+          cancelable: true,
+          composed: true
+        }))
+      }
       // request most recent synced state
-      if (this.hasAttribute('update-on-connected-callback')) this.update()
+      if (this.hasAttribute('update-on-connected-callback')) {
+        this.update().then(updateReadyFunc)
+      } else {
+        updateReadyFunc()
+      }
+    }
+    if (this.shouldRenderHTML()) {
+      this.renderHTML().then(htmlReadyFunc)
+    } else {
+      htmlReadyFunc()
     }
   }
 
@@ -95,7 +108,7 @@ export default class Message extends Intersection() {
   async addEventListeners () {
     if (this.openDialogIcon) this.openDialogIcon.addEventListener('click', this.clickEventListener)
     if (this.replyToLi) this.replyToLi.addEventListener('click', this.clickReplyToEventListener)
-    this.globalEventTarget.addEventListener('chat-remove', this.chatRemoveEventListener)
+    this.globalEventTarget.addEventListener(`chat-remove-${this.getAttribute('timestamp') || ''}`, this.chatRemoveEventListener)
   }
 
   disconnectedCallback () {
@@ -106,7 +119,7 @@ export default class Message extends Intersection() {
   async removeEventListeners() {
     if (this.openDialogIcon) this.openDialogIcon.removeEventListener('click', this.clickEventListener)
     if (this.replyToLi) this.replyToLi.removeEventListener('click', this.clickReplyToEventListener)
-    this.globalEventTarget.removeEventListener('chat-remove', this.chatRemoveEventListener)
+    this.globalEventTarget.removeEventListener(`chat-remove-${this.getAttribute('timestamp') || ''}`, this.chatRemoveEventListener)
   }
 
   // inform molecules/chat that message is intersecting and can be used as scroll hook plus being saved to storage room
@@ -192,14 +205,14 @@ export default class Message extends Intersection() {
       :host li > span.text {
         white-space: pre-line;
       }
-      :host li > span.text > wct-button, :host li > span.text > a-icon-mdx {
+      :host li > span.text > wct-button, :host li > span.text > wct-icon-mdx {
         display: block;
       }
       :host li > span.text > wct-button{
         --button-primary-background-color: var(--color-jitsi);
         --button-primary-border-color: var(--color-jitsi);
       }
-      :host li > span.text > a-icon-mdx {
+      :host li > span.text > wct-icon-mdx {
         text-align: center;
         margin: 2em auto;
         cursor: auto;
@@ -279,7 +292,7 @@ export default class Message extends Intersection() {
       },
       {
         path: `${this.importMetaUrl}../../../../../web-components-toolbox/src/es/components/atoms/iconMdx/IconMdx.js`,
-        name: 'a-icon-mdx'
+        name: 'wct-icon-mdx'
       },
       {
         // @ts-ignore
@@ -293,7 +306,7 @@ export default class Message extends Intersection() {
     return this.getUpdatedTextObj(Promise.resolve(textObj.replyTo)).then(updatedTextObj => {
       if (this.replyToLi) this.replyToLi.remove()
       this.li.insertAdjacentHTML('afterbegin', /* html */`
-        <chat-m-message part="reply-to-li" timestamp="${textObj.replyTo?.timestamp}"${updatedTextObj?.isSelf ? ' self' : ''} no-dialog width="calc(100% - 0.2em)" box-shadow="2px 2px 5px var(--color-black)"${this.getAttribute('next-show-reply-to') === "true" ? ' show-reply-to next-show-reply-to="true"': ''}>
+        <chat-m-message part="reply-to-li" timestamp="t_${textObj.replyTo?.timestamp}"${updatedTextObj?.isSelf ? ' self' : ''} no-dialog width="calc(100% - 0.2em)" box-shadow="2px 2px 5px var(--color-black)"${this.getAttribute('next-show-reply-to') === "true" ? ' show-reply-to next-show-reply-to="true"': ''}>
           <template>${JSON.stringify(updatedTextObj)}</template>
         </chat-m-message>
       `)
@@ -326,9 +339,7 @@ export default class Message extends Intersection() {
           ${textObj.deleted ? '' : /* html */`<chat-a-nick-name class="user" uid='${textObj.uid}' nickname="${textObj.updatedNickname}"${textObj.isSelf ? ' self' : ''}></chat-a-nick-name>`}
           ${hasAttributeNoDialog
             ? ''
-            : hasAttributeSelf
-              ? '<a-icon-mdx id="show-modal" rotate="-45deg" icon-url="../../../../../../img/icons/tool.svg" size="1.5em"></a-icon-mdx>'
-              : '<a-icon-mdx id="show-modal" icon-url="../../../../../../img/icons/info-circle.svg" size="1.5em"></a-icon-mdx>'
+            : '<wct-icon-mdx id="show-modal" rotate="180deg" icon-url="../../../../../../img/icons/dots-circle-horizontal.svg" size="1.5em"></wct-icon-mdx>'
           }
         </div>
         <span class="text${textObj.deleted ? ' italic' : ''}">${textObj.deleted ? 'Message got deleted!' : Message.processText(textObj).text}</span>${textObj.deleted ? '' : /* html */`<span class="timestamp">${textObj.timestamp ? (new Date(textObj.timestamp)).toLocaleString(navigator.language) : ''}</span>`}
@@ -342,11 +353,11 @@ export default class Message extends Intersection() {
     switch (textObj.type) {
       case 'jitsi-video-started':
         textObj.text = /* html */`<span>just entered the video conference room: ${textObj.src}</span><wct-button id=send src="${textObj.src}" namespace="button-primary-" request-event-name="jitsi-dialog-show-event" click-no-toggle-active>
-            <a-icon-mdx title="Join voice call" icon-url="../../../../../../img/icons/video-plus.svg" size="3em"></a-icon-mdx>
+            <wct-icon-mdx title="Join voice call" icon-url="../../../../../../img/icons/video-plus.svg" size="3em"></wct-icon-mdx>
           </wct-button>`
         break
       case 'jitsi-video-stopped':
-        textObj.text = /* html */`<span>just left the video conference room: ${textObj.src}</span><a-icon-mdx title="Left voice call" icon-url="../../../../../../img/icons/video-off.svg" size="3em"></a-icon-mdx>`
+        textObj.text = /* html */`<span>just left the video conference room: ${textObj.src}</span><wct-icon-mdx title="Left voice call" icon-url="../../../../../../img/icons/video-off.svg" size="3em"></wct-icon-mdx>`
         break
       default:
         textObj.text = textObj.text?.replace(/(https?:\/\/[^\s]+)/g, url => /* html */`<a href="${url}" target="_blank">${url}</a>`)
@@ -414,7 +425,7 @@ export default class Message extends Intersection() {
   }
 
   get openDialogIcon () {
-    return this.root.querySelector('a-icon-mdx#show-modal')
+    return this.root.querySelector('wct-icon-mdx#show-modal')
   }
 
   get dialog () {

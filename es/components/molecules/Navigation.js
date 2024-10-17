@@ -157,7 +157,7 @@ export default class Navigation extends Shadow() {
         close-event-name="close-menu"
       >
         <wct-menu-icon id="close" no-aria class="open sticky" namespace="menu-icon-close-" no-click></wct-menu-icon>
-        <a-icon-mdx id="show-modal" icon-url="../../../../../../img/icons/settings-heart.svg" size="2em"></a-icon-mdx>
+        <wct-icon-mdx id="show-modal" icon-url="../../../../../../img/icons/settings-heart.svg" size="2em"></wct-icon-mdx>
         <dialog>
           <nav>
             <wct-grid auto-fill="calc(25% - 0.75em)" auto-fill-mobile="calc(50% - 0.5em)" gap="1em" padding="1em">
@@ -201,7 +201,7 @@ export default class Navigation extends Shadow() {
       },
       {
         path: `${this.importMetaUrl}../../../../web-components-toolbox/src/es/components/atoms/iconMdx/IconMdx.js`,
-        name: 'a-icon-mdx'
+        name: 'wct-icon-mdx'
       }
     ])
   }

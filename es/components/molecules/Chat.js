@@ -33,8 +33,12 @@ export default class Chat extends Shadow() {
             },
             {
               path: `${this.importMetaUrl}../../../../web-components-toolbox/src/es/components/molecules/loadTemplateTag/LoadTemplateTag.js`,
-              name: 'm-load-template-tag'
-            }
+              name: 'wct-load-template-tag'
+            }/*,
+            {
+              path: `${this.importMetaUrl}../../../../web-components-toolbox/src/es/components/organisms/intersectionScrollEffect/IntersectionScrollEffect.js`,
+              name: 'wct-intersection-scroll-effect'
+            }*/
           ]),
           event.detail[funcName]()
         ]).then(([[{constructorClass}], textObjs]) => {
@@ -116,7 +120,7 @@ export default class Chat extends Shadow() {
             message.addEventListener('animationend', event => message.remove(), {once: true})
             message.classList.add('deleted')
             message.querySelector('chat-m-message')?.setAttribute('deleted', '')
-            this.dispatchEvent(new CustomEvent('chat-remove', {
+            this.dispatchEvent(new CustomEvent(`chat-remove-${textObj.timestamp || ''}`, {
               detail: {
                 textObj
               },
@@ -229,7 +233,7 @@ export default class Chat extends Shadow() {
         margin: 0;
         padding: 0;          
       }
-      :host > ul > m-load-template-tag {
+      :host > ul > wct-load-template-tag {
         min-height: var(--chat-m-message-min-height);
       }
       :host > ul > .deleted {
@@ -264,20 +268,21 @@ export default class Chat extends Shadow() {
 
   getMessageHTML (textObj, timestamp, wasLastMessage, isUlEmpty) {
     // this molecules/chat updates by, modified and delete, the elements in the ul and needs timestamp and uid to pinpoint the target. This is done due to lazy loading support.
+    // was not looking very nice, but tried some parallax stuff: <wct-intersection-scroll-effect css-property=filter effect="sepia" max-value="100%" scroll-el-query="main" offset="-50">...message...</wct-intersection-scroll-effect>
     return /* html */`
-      <m-load-template-tag timestamp="${timestamp}" uid='${textObj.uid}' mode=false no-css>
+      <wct-load-template-tag timestamp="${timestamp}" uid='${textObj.uid}' mode=false no-css>
         <template>
           <chat-m-message update-on-connected-callback timestamp="${timestamp}" uid='${textObj.uid}'${textObj.isSelf ? ' self' : ''}${wasLastMessage ? ' was-last-message' : ''}${isUlEmpty ? ' first-render' : ''} show-reply-to>
             <template>${JSON.stringify(textObj)}</template>
           </chat-m-message>
         </template>
-      </m-load-template-tag>
+      </wct-load-template-tag>
     `
   }
 
   /**
    * Query Select for attribute timestamp on ul
-   * This element has to be requested by scrollIntoView at timeout in realtime, since the m-load-template-tag unpacks the template and replaces all with it's content
+   * This element has to be requested by scrollIntoView at timeout in realtime, since the wct-load-template-tag unpacks the template and replaces all with it's content
    * 
    * @param {string} timestamp
    * @return {()=>null | HTMLElement | HTMLCollection | any}

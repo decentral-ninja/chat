@@ -91,7 +91,7 @@ export default class Notifications extends Hover() {
    * @return {boolean}
    */
   shouldRenderHTML () {
-    return !this.root.querySelector('a-icon-mdx')
+    return !this.root.querySelector('wct-icon-mdx')
   }
 
   /**
@@ -120,7 +120,7 @@ export default class Notifications extends Hover() {
         grid-column: 1;
         grid-row: 1;
       }
-      :host > div > a-icon-mdx {
+      :host > div > wct-icon-mdx {
         display: block;
         height: 2em;
       }
@@ -175,7 +175,7 @@ export default class Notifications extends Hover() {
   renderHTML () {
     this.html = /* html */`
       <div>
-        <a-icon-mdx id="show-modal" icon-url="../../../../../../img/icons/bell.svg" size="2em" hover-on-parent-shadow-root-host></a-icon-mdx>
+        <wct-icon-mdx id="show-modal" icon-url="../../../../../../img/icons/bell.svg" size="2em" hover-on-parent-shadow-root-host></wct-icon-mdx>
         <span id="counter">10</span>
       </div>
       <p><span id="message"></span></p>
@@ -183,7 +183,7 @@ export default class Notifications extends Hover() {
     return this.fetchModules([
       {
         path: `${this.importMetaUrl}../../../../web-components-toolbox/src/es/components/atoms/iconMdx/IconMdx.js`,
-        name: 'a-icon-mdx'
+        name: 'wct-icon-mdx'
       }
     ])
   }

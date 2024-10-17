@@ -44,7 +44,7 @@ export default class Input extends Shadow() {
     }
 
     this.buttonClickEventListener = event => {
-      switch (event.composedPath().find(node => (node.tagName === 'WCT-BUTTON' || node.tagName === 'A-ICON-MDX') && node.hasAttribute('id')).getAttribute('id')) {
+      switch (event.composedPath().find(node => (node.tagName === 'WCT-BUTTON' || node.tagName === 'WCT-ICON-MDX') && node.hasAttribute('id')).getAttribute('id')) {
         case 'wormhole':
           self.open(wormholeUrl)
           break
@@ -250,32 +250,32 @@ export default class Input extends Shadow() {
       :host > div > wct-button {
         min-height: 100%;
       }
-      :host > div > wct-button, :host > div > a-icon-mdx {
+      :host > div > wct-button, :host > div > wct-icon-mdx {
         cursor: pointer;
         word-break: break-all;
         padding-right: 1em;
         
       }
-      :host > div > wct-button:last-child, :host > div > a-icon-mdx:last-child {
+      :host > div > wct-button:last-child, :host > div > wct-icon-mdx:last-child {
         padding-right: 0;
       }
       :host > div > wct-button:first-of-type {
         --button-primary-border-radius: 0 var(--border-radius) var(--border-radius) 0;
       }
-      :host > div > a-icon-mdx {
+      :host > div > wct-icon-mdx {
         align-self: center;
         display: flex;
       }
-      :host > div > textarea ~ a-icon-mdx {
+      :host > div > textarea ~ wct-icon-mdx {
         transition: all 0.3s ease-out;
       }
-      :host(:focus) > div > textarea:hover ~ a-icon-mdx, :host(:focus) > div > textarea:has(~ wct-button:hover) ~ a-icon-mdx {
+      :host(:focus) > div > textarea:hover ~ wct-icon-mdx, :host(:focus) > div > textarea:has(~ wct-button:hover) ~ wct-icon-mdx, :host(:focus) > div > emoji-button:hover ~ textarea ~ wct-icon-mdx {
         width: 0;
         padding: 0;
         opacity: 0;
         transition: all 0.3s ease-out;
       }
-      :host(:focus) > div > textarea:hover ~ wct-button, :host(:focus) > div > textarea ~ wct-button:hover {
+      :host(:focus) > div > textarea:hover ~ wct-button, :host(:focus) > div > textarea ~ wct-button:hover, :host(:focus) > div > emoji-button:hover ~ textarea ~ wct-button {
         padding: 0;
       }
       :host > section {
@@ -355,10 +355,10 @@ export default class Input extends Shadow() {
         <emoji-button></emoji-button>
         <textarea enterkeyhint="enter" placeholder="type your message..." rows="2"></textarea>
         <wct-button id=send namespace="button-primary-" request-event-name="submit-room-name" click-no-toggle-active>
-          <a-icon-mdx icon-url="../../../../../../img/icons/send-2.svg" size="1.5em"></a-icon-mdx>
+          <wct-icon-mdx icon-url="../../../../../../img/icons/send-2.svg" size="1.5em"></wct-icon-mdx>
         </wct-button>
-        <a-icon-mdx id=wormhole title="Upload your files at wormhole and copy/paste the link into the chat to share..." icon-url="../../../../../../img/icons/file-upload.svg" size="3em"></a-icon-mdx>
-        <a-icon-mdx id=jitsi title="Open voice call conversation" icon-url="../../../../../../img/icons/video.svg" size="3em"></a-icon-mdx>
+        <wct-icon-mdx id=wormhole title="Upload your files at wormhole and copy/paste the link into the chat to share..." icon-url="../../../../../../img/icons/file-upload.svg" size="3em"></wct-icon-mdx>
+        <wct-icon-mdx id=jitsi title="Open voice call conversation" icon-url="../../../../../../img/icons/video.svg" size="3em"></wct-icon-mdx>
       </div>
     `
     return this.fetchModules([
@@ -374,7 +374,7 @@ export default class Input extends Shadow() {
       },
       {
         path: `${this.importMetaUrl}../../../../web-components-toolbox/src/es/components/atoms/iconMdx/IconMdx.js`,
-        name: 'a-icon-mdx'
+        name: 'wct-icon-mdx'
       }
     ])
   }
@@ -393,7 +393,7 @@ export default class Input extends Shadow() {
   }
 
   get buttons () {
-    return this.root.querySelectorAll(':host > div > wct-button, :host > div > a-icon-mdx')
+    return this.root.querySelectorAll(':host > div > wct-button, :host > div > wct-icon-mdx')
   }
 
   get jitsiButton () {

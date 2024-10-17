@@ -97,7 +97,7 @@ export default class NickName extends Shadow() {
         tap-highlight-color: transparent;
         --webkit-tap-highlight-color: transparent;
       }
-      :host > a > a-icon-mdx {
+      :host > a > wct-icon-mdx {
         display: flex;
       }
       :host > a > h4, :host > span {
@@ -151,13 +151,13 @@ export default class NickName extends Shadow() {
     this.html = this.hasAttribute('self')
       ? `<a href="#">
           <h4>${nickname || 'Loading...'}</h4>
-          <a-icon-mdx hover-on-parent-element id="show-modal" icon-url="../../../../../../img/icons/pencil.svg" size="1em"></a-icon-mdx>
+          <wct-icon-mdx hover-on-parent-element id="show-modal" icon-url="../../../../../../img/icons/pencil.svg" size="1em"></wct-icon-mdx>
         </a>`
       : `<span><h4>${nickname || 'Loading...'}</h4></span>`
     return this.fetchModules([
       {
         path: `${this.importMetaUrl}../../../../../web-components-toolbox/src/es/components/atoms/iconMdx/IconMdx.js`,
-        name: 'a-icon-mdx'
+        name: 'wct-icon-mdx'
       }
     ])
   }

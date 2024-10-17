@@ -58,6 +58,15 @@ export default class MessageDialog extends Dialog {
       }))
       this.close()
     }
+
+    let timeout = null
+    this.messageRenderedEventListener = event => {
+      clearTimeout(timeout)
+      timeout = setTimeout(() => this.dialogPromise.then(dialog => dialog.scroll({
+        top: dialog.scrollHeight,
+        behavior: 'smooth'
+      })), 200)
+    }
   }
 
   connectedCallback () {
@@ -66,6 +75,7 @@ export default class MessageDialog extends Dialog {
     if (this.replyEl) this.replyEl.addEventListener('click', this.clickReplyEventListener)
     if (this.hasAttribute('self') && this.deleteEl) this.deleteEl.addEventListener('click', this.clickDeleteEventListener)
     this.root.addEventListener('keyup', this.keyupEventListener)
+    this.addEventListener('message-rendered', this.messageRenderedEventListener)
     return result
   }
 
@@ -74,6 +84,7 @@ export default class MessageDialog extends Dialog {
     if (this.replyEl) this.replyEl.removeEventListener('click', this.clickReplyEventListener)
     if (this.hasAttribute('self') && this.deleteEl) this.deleteEl.removeEventListener('click', this.clickDeleteEventListener)
     this.root.removeEventListener('keyup', this.keyupEventListener)
+    this.removeEventListener('message-rendered', this.messageRenderedEventListener)
   }
 
   /**
@@ -148,13 +159,13 @@ export default class MessageDialog extends Dialog {
         <h4>Message:</h4>
         <div id="controls">
           <wct-dialog-clipboard id=clipboard namespace="dialog-clipboard-default-">
-            <a-icon-mdx id="show-modal" icon-url="../../../../../../img/icons/copy.svg" size="2em"></a-icon-mdx>
+            <wct-icon-mdx id="show-modal" icon-url="../../../../../../img/icons/copy.svg" size="2em"></wct-icon-mdx>
             <template>${JSON.parse(templateTextContent).text}</template>
           </wct-dialog-clipboard>
-          <div id="reply"><a-icon-mdx reply title="reply to message" icon-url="../../../../../../img/icons/arrow-back-up.svg" size="2em"></a-icon-mdx></div>
+          <div id="reply"><wct-icon-mdx reply title="reply to message" icon-url="../../../../../../img/icons/arrow-back-up.svg" size="2em"></wct-icon-mdx></div>
           <div id="delete" title="delete message!">
-            <a-icon-mdx delete icon-url="../../../../../../img/icons/trash.svg" size="2em"></a-icon-mdx>
-            <a-icon-mdx undo icon-url="../../../../../../img/icons/trash-off.svg" size="2em"></a-icon-mdx>
+            <wct-icon-mdx delete icon-url="../../../../../../img/icons/trash.svg" size="2em"></wct-icon-mdx>
+            <wct-icon-mdx undo icon-url="../../../../../../img/icons/trash-off.svg" size="2em"></wct-icon-mdx>
           </div>
         </div>
       </dialog>
@@ -171,7 +182,7 @@ export default class MessageDialog extends Dialog {
       },
       {
         path: `${this.importMetaUrl}../../atoms/iconMdx/IconMdx.js`,
-        name: 'a-icon-mdx'
+        name: 'wct-icon-mdx'
       }
     ])
   }

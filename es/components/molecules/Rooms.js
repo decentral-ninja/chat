@@ -296,7 +296,7 @@ export default class Rooms extends Shadow() {
         },
         {
           path: `${this.importMetaUrl}../../../../web-components-toolbox/src/es/components/atoms/iconMdx/IconMdx.js`,
-          name: 'a-icon-mdx'
+          name: 'wct-icon-mdx'
         },
         {
           // @ts-ignore
@@ -397,7 +397,7 @@ export default class Rooms extends Shadow() {
       :host ul > li[disabled] {
         order: -1;
       }
-      :host ul > li[disabled] > div > a-icon-mdx {
+      :host ul > li[disabled] > div > wct-icon-mdx {
         visibility: hidden;
       }
       :host ul > li[disabled] > div > a {
@@ -429,7 +429,7 @@ export default class Rooms extends Shadow() {
         margin: 0;
         max-width: calc(100% - 3em);
       }
-      :host ul > li > div > a-icon-mdx {
+      :host ul > li > div > wct-icon-mdx {
         --color: var(--color-error);
       }
       :host ul > li > div > a > chat-m-notifications {
@@ -448,10 +448,10 @@ export default class Rooms extends Shadow() {
               <div>${key}</div>
               <chat-m-notifications room="${key}" no-click${i + 1 === arr.length ? ' on-connected-request-notifications' : ''} hover-on-parent-element></chat-m-notifications>
             </a>
-            <a-icon-mdx delete="${key.replace(/"/g, "'")}" icon-url="../../../../../../img/icons/trash.svg" size="2em"></a-icon-mdx>
-            <a-icon-mdx undo="${key}" icon-url="../../../../../../img/icons/trash-off.svg" size="2em"></a-icon-mdx>
+            <wct-icon-mdx delete="${key.replace(/"/g, "'")}" icon-url="../../../../../../img/icons/trash.svg" size="2em"></wct-icon-mdx>
+            <wct-icon-mdx undo="${key}" icon-url="../../../../../../img/icons/trash-off.svg" size="2em"></wct-icon-mdx>
           </div>
-        </li$>`, '')
+        </li>`, '')
       }
     </ul>`
   }

@@ -97,7 +97,7 @@ export default class RoomName extends Shadow() {
         tap-highlight-color: transparent;
         --webkit-tap-highlight-color: transparent;
       }
-      :host > a > a-icon-mdx {
+      :host > a > wct-icon-mdx {
         display: flex;
       }
       :host > a > h1 {
@@ -146,13 +146,13 @@ export default class RoomName extends Shadow() {
   renderHTML (roomName) {
     this.html = ''
     this.html = `<a href="#">
-      <a-icon-mdx hover-on-parent-element id="show-modal" rotate="180deg" icon-url="../../../../../../img/icons/chevron-left.svg" size="1.75em"></a-icon-mdx>
+      <wct-icon-mdx hover-on-parent-element id="show-modal" rotate="180deg" icon-url="../../../../../../img/icons/chevron-left.svg" size="1.75em"></wct-icon-mdx>
       <h1>${roomName || 'Loading...'}</h1>
     </a>`
     return this.fetchModules([
       {
         path: `${this.importMetaUrl}../../../../../web-components-toolbox/src/es/components/atoms/iconMdx/IconMdx.js`,
-        name: 'a-icon-mdx'
+        name: 'wct-icon-mdx'
       }
     ])
   }
