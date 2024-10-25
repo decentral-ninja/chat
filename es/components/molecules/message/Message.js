@@ -35,7 +35,9 @@ export default class Message extends Intersection() {
     super({ importMetaUrl: import.meta.url, intersectionObserverInit: {}, ...options }, ...args)
 
     this.clickEventListener = event => {
-      if (!this.dialog) {
+      if (this.dialog) {
+        this.dialog.show('show-modal')
+      } else {
         this.fetchModules([{
           // @ts-ignore
           path: `${this.importMetaUrl}../../molecules/dialogs/MessageDialog.js?${Environment?.version || ''}`,
@@ -52,8 +54,6 @@ export default class Message extends Intersection() {
             <template>${JSON.stringify(await this.textObj)}</template>
           </chat-m-message>`))
         })
-      } else {
-        this.dialog.show('show-modal')
       }
     }
 
@@ -377,7 +377,7 @@ export default class Message extends Intersection() {
       // @ts-ignore
       if (!this.hasAttribute('timestamp') || !this.hasAttribute('uid')) return console.error('Chat message is missing textObj and/or timestamp/ui attribute!', this) || textObj
       textObj = Promise.resolve({
-        timestamp: Number(this.getAttribute('timestamp')),
+        timestamp: Number(this.getAttribute('timestamp').replace('t_', '')),
         uid: this.getAttribute('uid')
       })
     }

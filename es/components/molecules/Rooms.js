@@ -14,6 +14,7 @@ export default class Rooms extends Shadow() {
     super({ importMetaUrl: import.meta.url, ...options }, ...args)
 
     this.roomNamePrefix = 'chat-'
+    this.shareDialogMap = new Map()
 
     this.clickEventListener = async event => {
       let target
@@ -40,6 +41,27 @@ export default class Rooms extends Shadow() {
           }))
           this.renderHTML()
         }
+      } else if ((target = event.composedPath().find(el => el.hasAttribute?.('share')))) {
+        this.fetchModules([{
+          // @ts-ignore
+          path: `${this.importMetaUrl}../molecules/dialogs/ShareDialog.js?${Environment?.version || ''}`,
+          name: 'chat-m-share-dialog'
+        }]).then(async () => {
+          if (this.shareDialogMap.has(target.getAttribute('share'))) {
+            this.shareDialogMap.get(target.getAttribute('share')).show('show-modal')
+          } else {
+            const div = document.createElement('div')
+            div.innerHTML = /* html */`
+              <chat-m-share-dialog
+                namespace="dialog-top-slide-in-"
+                open="show-modal"
+                room-name="${target.getAttribute('share')}"
+              ></chat-m-share-dialog>
+            `
+            this.shareDialogMap.set(target.getAttribute('share'), div.children[0])
+            this.root.appendChild(div.children[0])
+          }
+        })
       } else if ((target = event.composedPath().find(el => el.hasAttribute?.('delete')))) {
         new Promise(resolve => this.dispatchEvent(new CustomEvent('storage-get-rooms', {
           detail: {
@@ -317,6 +339,7 @@ export default class Rooms extends Shadow() {
     ]).then(async ([{ room }, getRoomsResult]) => {
       let roomName
       this.html = ''
+      this.shareDialogMap = new Map()
       this.html = room.done
         ? /* html */`
           <wct-dialog
@@ -391,14 +414,15 @@ export default class Rooms extends Shadow() {
       }
       :host ul > li > div {
         display: flex;
+        gap: 1em;
         align-items: center;
         justify-content: space-between;
       }
       :host ul > li[disabled] {
         order: -1;
       }
-      :host ul > li[disabled] > div > wct-icon-mdx {
-        visibility: hidden;
+      :host ul > li[disabled] > div > wct-icon-mdx:not([share]) {
+        display: none;
       }
       :host ul > li[disabled] > div > a {
         color: var(--color-disabled);
@@ -425,12 +449,18 @@ export default class Rooms extends Shadow() {
       :host ul > li > div > a {
         display: flex;
         flex-direction: column;
+        flex-grow: 1;
         flex-shrink: 10;
         margin: 0;
         max-width: calc(100% - 3em);
       }
       :host ul > li > div > wct-icon-mdx {
         --color: var(--color-error);
+      }
+      :host ul > li > div > wct-icon-mdx[share] {
+        --color: unset;
+        /* TODO: work in progress */
+        display: none;
       }
       :host ul > li > div > a > chat-m-notifications {
         font-size: 0.75em;
@@ -442,12 +472,13 @@ export default class Rooms extends Shadow() {
     <ul>
       ${Object.keys(rooms.value)
         .sort((a, b) => rooms.value[b].entered?.[0] - rooms.value[a].entered?.[0])
-        .reduce((acc, key, i, arr) => acc + `<li${key === activeRoomName ? ' disabled' : ''}>
+        .reduce((acc, key, i, arr) => acc + /* html */`<li${key === activeRoomName ? ' disabled' : ''}>
           <div>
             <a route href="${rooms.value[key].locationHref}">
               <div>${key}</div>
               <chat-m-notifications room="${key}" no-click${i + 1 === arr.length ? ' on-connected-request-notifications' : ''} hover-on-parent-element></chat-m-notifications>
             </a>
+            <wct-icon-mdx share="${key}" icon-url="../../../../../../img/icons/message-2-share.svg" size="2em"></wct-icon-mdx>
             <wct-icon-mdx delete="${key.replace(/"/g, "'")}" icon-url="../../../../../../img/icons/trash.svg" size="2em"></wct-icon-mdx>
             <wct-icon-mdx undo="${key}" icon-url="../../../../../../img/icons/trash-off.svg" size="2em"></wct-icon-mdx>
           </div>
