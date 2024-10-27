@@ -154,8 +154,8 @@ export default class MessageDialog extends Dialog {
     const templateTextContent = this.template.content.textContent
     this.template.remove()
     this.html = /* html */`
-      <wct-menu-icon id="close" no-aria class="open sticky" namespace="menu-icon-close-" no-click></wct-menu-icon>
       <dialog>
+        <wct-menu-icon id="close" no-aria class="open sticky" namespace="menu-icon-close-" no-click></wct-menu-icon>
         <h4>Message:</h4>
         <div id="controls">
           <wct-dialog-clipboard id=clipboard namespace="dialog-clipboard-default-">

@@ -114,8 +114,8 @@ export default class JitsiDialog extends Dialog {
    */
   renderCustomHTML() {
     this.html = /* html */`
-      <wct-menu-icon id="close" no-aria class="open sticky" namespace="menu-icon-close-" no-click></wct-menu-icon>
       <dialog>
+        <wct-menu-icon id="close" no-aria class="open sticky" namespace="menu-icon-close-" no-click></wct-menu-icon>
         <h4>Video conference:</h4>
         <p class=font-size-tiny>("click: Join in browser")</p>
         <wct-icon-mdx id="start" title="Restart voice call" icon-url="../../../../../../img/icons/video-plus.svg" size="3em"></wct-icon-mdx>

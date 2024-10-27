@@ -220,8 +220,8 @@ export default class Users extends Shadow() {
           <wct-dialog
             namespace="dialog-top-slide-in-"
           >
-            <wct-menu-icon id="close" no-aria class="open sticky" namespace="menu-icon-close-" no-click></wct-menu-icon>
             <dialog>
+              <wct-menu-icon id="close" no-aria class="open sticky" namespace="menu-icon-close-" no-click></wct-menu-icon>
               <h4>Change your nickname:</h4>
               <wct-grid auto-fill="20%">
                 <style protected>

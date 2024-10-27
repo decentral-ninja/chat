@@ -345,8 +345,8 @@ export default class Rooms extends Shadow() {
           <wct-dialog
             namespace="dialog-left-slide-in-"
           >
-            <wct-menu-icon id="close" no-aria class="open sticky" namespace="menu-icon-close-" no-click></wct-menu-icon>
             <dialog>
+              <wct-menu-icon id="close" no-aria class="open sticky" namespace="menu-icon-close-" no-click></wct-menu-icon>
               <h4>Enter room name or link:</h4>
               <wct-grid auto-fill="20%">
                 <section>
@@ -459,8 +459,6 @@ export default class Rooms extends Shadow() {
       }
       :host ul > li > div > wct-icon-mdx[share] {
         --color: unset;
-        /* TODO: work in progress */
-        display: none;
       }
       :host ul > li > div > a > chat-m-notifications {
         font-size: 0.75em;

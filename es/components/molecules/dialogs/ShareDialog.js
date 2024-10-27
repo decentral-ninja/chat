@@ -64,23 +64,14 @@ export default class ShareDialog extends Dialog {
   renderCSS() {
     const result = super.renderCSS()
     this.setCss(/* css */`
+      :host {
+        font-size: 1rem;
+      }
       :host > dialog {
         --dialog-top-slide-in-a-text-decoration: underline;
         scrollbar-color: var(--color) var(--background-color);
         scrollbar-width: thin;
         transition: height 0.3s ease-out;
-      }
-      :host([started]) > dialog > wct-icon-mdx {
-        display: none;
-      }
-      :host([started]) > dialog > #stop {
-        display: block;
-      }
-      :host([stopped]) > dialog > wct-icon-mdx {
-        display: none;
-      }
-      :host([stopped]) > dialog > #start {
-        display: block;
       }
     `, undefined, false)
     return result
@@ -92,15 +83,27 @@ export default class ShareDialog extends Dialog {
    */
   renderCustomHTML() {
     this.html = /* html */`
-      <wct-menu-icon id="close" no-aria class="open sticky" namespace="menu-icon-close-" no-click></wct-menu-icon>
       <dialog>
-        <h4>Video conference:</h4>
-        <p class=font-size-tiny>("click: Join in browser")</p>
-        <wct-icon-mdx id="start" title="Restart voice call" icon-url="../../../../../../img/icons/video-plus.svg" size="3em"></wct-icon-mdx>
-        <wct-icon-mdx id="stop" title="Stop voice call" icon-url="../../../../../../img/icons/video-off.svg" size="3em"></wct-icon-mdx>
-        <a href="${this.iframeSrc}" target="_blank">If the video call does not work 100%, click this link!</a>
+        <wct-menu-icon id="close" no-aria class="open sticky" namespace="menu-icon-close-" no-click></wct-menu-icon>
+        <h4>Share: "${this.getAttribute('room-name')}"</h4>
       </dialog>
     `
+    new Promise(resolve => this.dispatchEvent(new CustomEvent('storage-get-rooms', {
+      detail: {
+        resolve
+      },
+      bubbles: true,
+      cancelable: true,
+      composed: true
+    }))).then(getRoomsResult => {
+      console.log('*********', getRoomsResult)
+      this.root.querySelector('dialog').insertAdjacentHTML('beforeend', /* html */`
+        <p>${getRoomsResult.value[this.getAttribute('room-name')].locationHref}</p>
+        <wct-qr-code-svg data="${getRoomsResult.value[this.getAttribute('room-name')].locationHref}"></wct-qr-code-svg>
+      `)
+    })
+
+
     return this.fetchModules([
       {
         // @ts-ignore
@@ -109,8 +112,8 @@ export default class ShareDialog extends Dialog {
       },
       {
         // @ts-ignore
-        path: `${this.importMetaUrl}../../atoms/iframe/Iframe.js?${Environment?.version || ''}`,
-        name: 'wct-iframe'
+        path: `${this.importMetaUrl}../../atoms/qrCodeSvg/QrCodeSvg.js?${Environment?.version || ''}`,
+        name: 'wct-qr-code-svg'
       }
     ])
   }

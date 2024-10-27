@@ -156,9 +156,9 @@ export default class Navigation extends Shadow() {
         namespace="dialog-top-slide-in-"
         close-event-name="close-menu"
       >
-        <wct-menu-icon id="close" no-aria class="open sticky" namespace="menu-icon-close-" no-click></wct-menu-icon>
         <wct-icon-mdx id="show-modal" icon-url="../../../../../../img/icons/settings-heart.svg" size="2em"></wct-icon-mdx>
         <dialog>
+          <wct-menu-icon id="close" no-aria class="open sticky" namespace="menu-icon-close-" no-click></wct-menu-icon>
           <nav>
             <wct-grid auto-fill="calc(25% - 0.75em)" auto-fill-mobile="calc(50% - 0.5em)" gap="1em" padding="1em">
               <section>
