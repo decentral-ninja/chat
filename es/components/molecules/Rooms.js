@@ -459,6 +459,8 @@ export default class Rooms extends Shadow() {
       }
       :host ul > li > div > wct-icon-mdx[share] {
         --color: unset;
+        /* TODO: remove below when done */
+        display: none;
       }
       :host ul > li > div > a > chat-m-notifications {
         font-size: 0.75em;
