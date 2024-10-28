@@ -360,7 +360,7 @@ export default class Message extends Intersection() {
         textObj.text = /* html */`<span>just left the video conference room: ${textObj.src}</span><wct-icon-mdx title="Left voice call" icon-url="../../../../../../img/icons/video-off.svg" size="3em"></wct-icon-mdx>`
         break
       default:
-        textObj.text = textObj.text?.replace(/(https?:\/\/[^\s]+)/g, url => /* html */`<a href="${url}" target="_blank">${url}</a>`)
+        textObj.text = textObj.text?.replace(/(https?:\/\/[^\s]+)/g, url => /* html */`<a href="${url}" target="${url.includes(location.host) ? '_self' : '_blank'}">${url}</a>`)
         break
     }
     return textObj

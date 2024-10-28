@@ -56,6 +56,7 @@ export default class Rooms extends Shadow() {
                 namespace="dialog-top-slide-in-"
                 open="show-modal"
                 room-name="${target.getAttribute('share')}"
+                ${await (await this.roomPromise).room === target.getAttribute('share') ? 'is-active-room' : ''}
               ></chat-m-share-dialog>
             `
             this.shareDialogMap.set(target.getAttribute('share'), div.children[0])
@@ -459,8 +460,6 @@ export default class Rooms extends Shadow() {
       }
       :host ul > li > div > wct-icon-mdx[share] {
         --color: unset;
-        /* TODO: remove below when done */
-        display: none;
       }
       :host ul > li > div > a > chat-m-notifications {
         font-size: 0.75em;
@@ -478,9 +477,9 @@ export default class Rooms extends Shadow() {
               <div>${key}</div>
               <chat-m-notifications room="${key}" no-click${i + 1 === arr.length ? ' on-connected-request-notifications' : ''} hover-on-parent-element></chat-m-notifications>
             </a>
-            <wct-icon-mdx share="${key}" icon-url="../../../../../../img/icons/message-2-share.svg" size="2em"></wct-icon-mdx>
-            <wct-icon-mdx delete="${key.replace(/"/g, "'")}" icon-url="../../../../../../img/icons/trash.svg" size="2em"></wct-icon-mdx>
-            <wct-icon-mdx undo="${key}" icon-url="../../../../../../img/icons/trash-off.svg" size="2em"></wct-icon-mdx>
+            <wct-icon-mdx title="delete" delete="${key.replace(/"/g, "'")}" icon-url="../../../../../../img/icons/trash.svg" size="2em"></wct-icon-mdx>
+            <wct-icon-mdx title="undo" undo="${key}" icon-url="../../../../../../img/icons/trash-off.svg" size="2em"></wct-icon-mdx>
+            <wct-icon-mdx title="share" share="${key}" icon-url="../../../../../../img/icons/share-3.svg" size="2em"></wct-icon-mdx>
           </div>
         </li>`, '')
       }

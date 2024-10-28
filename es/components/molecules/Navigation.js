@@ -16,19 +16,7 @@ export default class Navigation extends Shadow() {
     super({ importMetaUrl: import.meta.url, ...options }, ...args)
 
     this.eventListener = async event => {
-      if (event.composedPath()[0].getAttribute('id') === 'share') {
-        try {
-          await navigator.share({
-            title: document.title,
-            url: location.href
-          })
-        } catch (err) {
-          alert(`use this link 👉 ${location.href}`)
-        }
-      } else if (event.composedPath()[0].getAttribute('id') === 'qr') {
-        if (!confirm('api.qrserver.com generates your qr code, continue?')) return
-        self.open(`https://api.qrserver.com/v1/create-qr-code/?data="${self.encodeURIComponent(location.href)}"`)
-      } else if (event.composedPath()[0].getAttribute('id') === 'jitsi') {
+      if (event.composedPath()[0].getAttribute('id') === 'jitsi') {
         self.open(`https://jitsi.mgrs.dev/${this.dialogGrid.root.querySelector('#room-name').textContent.replace(/\s+/g, '')}`)
       } else if (event.composedPath()[0].getAttribute('id') === 'nickname') {
         this.dispatchEvent(new CustomEvent('open-nickname', {
@@ -96,7 +84,6 @@ export default class Navigation extends Shadow() {
         ? this.renderHTML()
         : null
     ]).then(async ([{room}]) => {
-      if (this.dialogGrid) this.dialogGrid.root.querySelector('#room-name').textContent = await room
       this.hidden = false
     })
     this.connectedCallbackOnce = () => {}
@@ -169,8 +156,6 @@ export default class Navigation extends Shadow() {
                   }
                 </style>
                 <button id=server>&#9741;<br>adjust connections</button>
-                <button id=share>💌<br>${this.textContent} [<span id=room-name></span>]</button>
-                <button id=qr>&#9783;<br>generate a qr code</button>
               </section>
             </wct-grid>
           </dialog>

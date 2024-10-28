@@ -201,9 +201,10 @@ export default class EmojiPicker extends Shadow() {
       text-align: left;
       box-sizing: border-box;
     }
-    @media only screen and (max-width: 767px){
+    @media only screen and (max-width: _max-width_) {
       :host{
         width: 20rem;
+        bottom: 5.5em;
       }
     }
     

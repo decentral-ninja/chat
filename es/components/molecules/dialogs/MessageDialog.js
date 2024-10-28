@@ -128,6 +128,7 @@ export default class MessageDialog extends Dialog {
         gap: 1em;
       }
       :host > dialog #controls > * {
+        display: contents;
         --color: var(--color-secondary);
         --color-hover: var(--color-yellow);
       }

@@ -245,7 +245,7 @@ export default class Input extends Shadow() {
         border-radius: 0;
         scrollbar-color: var(--color) var(--background-color);
         scrollbar-width: thin;
-        /*field-sizing: content; Coming soon: https://toot.cafe/@seaotta/111812940330557783*/
+        field-sizing: content; /*Coming soon: https://toot.cafe/@seaotta/111812940330557783*/
       }
       :host > div > wct-button {
         min-height: 100%;

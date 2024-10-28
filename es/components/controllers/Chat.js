@@ -84,7 +84,7 @@ export const Chat = (ChosenHTMLElement = WebWorker()) => class Chat extends Chos
               uid: event.detail.replyToTextObj.uid
             };
             (await this.array).push([textObj])
-            input.value = ''
+            if (event.detail.clear !== false) input.value = ''
           }
           return
       }

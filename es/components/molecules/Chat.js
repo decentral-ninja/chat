@@ -308,7 +308,9 @@ export default class Chat extends Shadow() {
       if (scrollEl.matches(':not([intersecting])')) {
         this.scrollIntoView(getScrollElFunc, counter > 2 ? false : smooth, counter)
       } else {
-        scrollEl.scrollIntoView({behavior: 'smooth'})
+        scrollEl.scrollIntoView({behavior: 'instant'})
+        // trying to have scroll down button work more reliable
+        setTimeout(() => scrollEl.scrollIntoView({behavior: 'smooth'}), 50)
       }
     }, 200)
   }

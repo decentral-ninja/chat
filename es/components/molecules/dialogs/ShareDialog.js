@@ -11,42 +11,56 @@ export default class ShareDialog extends Dialog {
   constructor (options = {}, ...args) {
     super({...options }, ...args)
 
-    const superShow = this.show
-    this.show = command => {
-      // execute on show
-      this.show = superShow
-      return superShow(command)
+    this.inputEventListener = event => {
+      this.qrCodeSvg.setAttribute('data', this.textarea.value)
+      this.dialogClipboard.setAttribute('data', this.textarea.value)
     }
 
-    const superShowEventListener = this.showEventListener
-    this.showEventListener = event => {
-      // execute on show event
-      return superShowEventListener(event)
+    this.shareApiIconClickEventListener = async event => {
+      try {
+        await navigator.share({
+          title: this.getAttribute('room-name'),
+          url: this.textarea.value
+        })
+      } catch (error) {
+        this.shareApiIcon.remove()
+        this.dialogClipboard.show()
+      }
     }
 
-    /** @type {(any)=>void} */
-    this.roomResolve = map => map
-    /** @type {Promise<{ locationHref: string, room: Promise<string> & {done: boolean} }>} */
-    this.roomPromise = new Promise(resolve => (this.roomResolve = resolve))
-  }
-
-  connectedCallback () {
-    if (this.shouldRenderCustomHTML()) this.renderCustomHTML()
-    const result = super.connectedCallback()
-    this.connectedCallbackOnce()
-    return result
-  }
-
-  connectedCallbackOnce () {
-    this.dispatchEvent(new CustomEvent('yjs-get-room', {
+    this.shareChatIconClickEventListener = event => this.dispatchEvent(new CustomEvent('chat-add', {
       detail: {
-        resolve: this.roomResolve
+        input: this.textarea,
+        clear: false
       },
       bubbles: true,
       cancelable: true,
       composed: true
     }))
-    this.connectedCallbackOnce = () => {}
+  }
+
+  connectedCallback () {
+    if (this.shouldRenderCustomHTML()) {
+      this.renderCustomHTML().then(() => {
+        this.textarea.addEventListener('input', this.inputEventListener)
+        if (this.shareChatIcon) this.shareChatIcon.addEventListener('click', this.shareChatIconClickEventListener)
+        if (this.shareApiIcon) this.shareApiIcon.addEventListener('click', this.shareApiIconClickEventListener)
+      })
+    } else {
+      this.textarea.addEventListener('input', this.inputEventListener)
+      if (this.shareChatIcon) this.shareChatIcon.addEventListener('click', this.shareChatIconClickEventListener)
+      if (this.shareApiIcon) this.shareApiIcon.addEventListener('click', this.shareApiIconClickEventListener)
+    }
+    const result = super.connectedCallback()
+    return result
+  }
+
+  disconnectedCallback () {
+    const result = super.disconnectedCallback()
+    this.textarea.removeEventListener('input', this.inputEventListener)
+    if (this.shareChatIcon) this.shareChatIcon.removeEventListener('click', this.shareChatIconClickEventListener)
+    if (this.shareApiIcon) this.shareApiIcon.removeEventListener('click', this.shareApiIconClickEventListener)
+    return result
   }
 
   /**
@@ -65,6 +79,7 @@ export default class ShareDialog extends Dialog {
     const result = super.renderCSS()
     this.setCss(/* css */`
       :host {
+        --dialog-top-slide-in-hr-margin: 0 0 var(--content-spacing);
         font-size: 1rem;
       }
       :host > dialog {
@@ -72,6 +87,39 @@ export default class ShareDialog extends Dialog {
         scrollbar-color: var(--color) var(--background-color);
         scrollbar-width: thin;
         transition: height 0.3s ease-out;
+      }
+      :host > dialog > textarea {
+        color: var(--color-secondary);
+        font-size: max(16px, 1em); /* 16px ios mobile focus zoom fix */
+        resize: none;
+        min-height: auto;
+        overflow-y: auto;
+        outline: none;
+        border-radius: 0.5em 0.5em 0 0;
+        scrollbar-color: var(--color) var(--background-color);
+        scrollbar-width: thin;
+        text-align: center;
+        width: 100%;
+        field-sizing: content; /*Coming soon: https://toot.cafe/@seaotta/111812940330557783*/
+      }
+      :host > dialog #controls {
+        display: flex;
+        justify-content: flex-end;
+        padding: 0.5em;
+        border: 1px solid lightgray;
+        border-top: 0;
+        border-radius: 0 0 0.5em 0.5em;
+        gap: 1em;
+        margin-top: -0.5em;
+      }
+      :host > dialog #controls > * {
+        --color: var(--color-secondary);
+        --color-hover: var(--color-yellow);
+      }
+      @media only screen and (max-width: _max-width_) {
+        :host {
+          --dialog-top-slide-in-hr-margin: 0 0 var(--content-spacing-mobile);
+        }
       }
     `, undefined, false)
     return result
@@ -85,36 +133,71 @@ export default class ShareDialog extends Dialog {
     this.html = /* html */`
       <dialog>
         <wct-menu-icon id="close" no-aria class="open sticky" namespace="menu-icon-close-" no-click></wct-menu-icon>
-        <h4>Share: "${this.getAttribute('room-name')}"</h4>
+        <h4>Share: "<span class="bold">${this.getAttribute('room-name')}</span>"</h4>
       </dialog>
     `
-    new Promise(resolve => this.dispatchEvent(new CustomEvent('storage-get-rooms', {
-      detail: {
-        resolve
-      },
-      bubbles: true,
-      cancelable: true,
-      composed: true
-    }))).then(getRoomsResult => {
-      console.log('*********', getRoomsResult)
-      this.root.querySelector('dialog').insertAdjacentHTML('beforeend', /* html */`
-        <p>${getRoomsResult.value[this.getAttribute('room-name')].locationHref}</p>
-        <wct-qr-code-svg data="${getRoomsResult.value[this.getAttribute('room-name')].locationHref}"></wct-qr-code-svg>
-      `)
-    })
-
-
-    return this.fetchModules([
-      {
-        // @ts-ignore
-        path: `${this.importMetaUrl}../../atoms/menuIcon/MenuIcon.js?${Environment?.version || ''}`,
-        name: 'wct-menu-icon'
-      },
-      {
-        // @ts-ignore
-        path: `${this.importMetaUrl}../../atoms/qrCodeSvg/QrCodeSvg.js?${Environment?.version || ''}`,
-        name: 'wct-qr-code-svg'
-      }
+    return Promise.all([
+      new Promise(resolve => this.dispatchEvent(new CustomEvent('storage-get-rooms', {
+        detail: {
+          resolve
+        },
+        bubbles: true,
+        cancelable: true,
+        composed: true
+      }))).then(getRoomsResult => {
+        this.root.querySelector('dialog').insertAdjacentHTML('beforeend', /* html */`
+          <p><wct-qr-code-svg namespace="qr-code-svg-default-" data='${getRoomsResult.value[this.getAttribute('room-name')].locationHref}'></wct-qr-code-svg></p>
+          <textarea>${getRoomsResult.value[this.getAttribute('room-name')].locationHref}</textarea>
+          <div id="controls">
+            <wct-dialog-clipboard id=clipboard title="copy" namespace="dialog-clipboard-default-">
+              <wct-icon-mdx id="show-modal" icon-url="../../../../../../img/icons/copy.svg" size="2em"></wct-icon-mdx>
+              <template>${getRoomsResult.value[this.getAttribute('room-name')].locationHref}</template>
+            </wct-dialog-clipboard>
+            ${this.hasAttribute('is-active-room') ? '' : '<wct-icon-mdx id=share-chat title="share in this chat" icon-url="../../../../../../img/icons/message-2-share.svg" size="2em"></wct-icon-mdx>'}
+            ${typeof navigator.share === 'function' ? '<wct-icon-mdx id=share-api title="share" icon-url="../../../../../../img/icons/share-3.svg" size="2em"></wct-icon-mdx>' : ''}
+          </div>
+          <!--
+          <hr>
+          <p>Options...</p>
+          -->
+        `)
+      }),
+      this.fetchModules([
+        {
+          // @ts-ignore
+          path: `${this.importMetaUrl}../../atoms/menuIcon/MenuIcon.js?${Environment?.version || ''}`,
+          name: 'wct-menu-icon'
+        },
+        {
+          path: `${this.importMetaUrl}../../molecules/dialogClipboard/DialogClipboard.js`,
+          name: 'wct-dialog-clipboard'
+        },
+        {
+          // @ts-ignore
+          path: `${this.importMetaUrl}../../atoms/qrCodeSvg/QrCodeSvg.js?${Environment?.version || ''}`,
+          name: 'wct-qr-code-svg'
+        }
+      ])
     ])
+  }
+
+  get textarea () {
+    return this.root.querySelector('textarea')
+  }
+
+  get qrCodeSvg () {
+    return this.root.querySelector('wct-qr-code-svg')
+  }
+
+  get dialogClipboard () {
+    return this.root.querySelector('wct-dialog-clipboard')
+  }
+
+  get shareChatIcon () {
+    return this.root.querySelector('#share-chat')
+  }
+
+  get shareApiIcon () {
+    return this.root.querySelector('#share-api')
   }
 }
