@@ -12,9 +12,11 @@ export default class Chat extends Shadow() {
   constructor (options = {}, ...args) {
     super({ importMetaUrl: import.meta.url, ...options }, ...args)
 
+    this.removeEmptySectionTimeout = 300
+    let removeEmptySectionTimeoutId = null
     let firstRender = true
     // chat update
-    this.eventListener = async event => {
+    this.chatUpdateEventListener = async event => {
       // https://docs.yjs.dev/api/y.event
       let funcName = 'getAdded'
       if (firstRender || this.ul.innerHTML === '') {
@@ -44,6 +46,11 @@ export default class Chat extends Shadow() {
         ]).then(([[{constructorClass}], textObjs]) => {
           const isUlEmpty = !this.ul.children.length
           let wasLastMessage = false
+          if (this.sectionEmpty && textObjs.length) {
+            this.sectionEmpty.classList.add('not-empty')
+            clearTimeout(removeEmptySectionTimeoutId)
+            removeEmptySectionTimeoutId = setTimeout(() => this.sectionEmpty.remove(), this.removeEmptySectionTimeout)
+          }
           // Attention: NO async here when appending to the dom!
           textObjs.sort((a, b) => a.timestamp - b.timestamp).forEach((textObj, i, textObjs) => {
             wasLastMessage = textObjs.length === i + 1
@@ -189,13 +196,13 @@ export default class Chat extends Shadow() {
       })
     }
     this.globalEventTarget.addEventListener('chat-scroll', this.chatScrollEventListener)
-    this.globalEventTarget.addEventListener('yjs-chat-update', this.eventListener)
+    this.globalEventTarget.addEventListener('yjs-chat-update', this.chatUpdateEventListener)
     this.addEventListener('message-intersection', this.messageIntersectionEventListener)
   }
 
   disconnectedCallback () {
     this.globalEventTarget.removeEventListener('chat-scroll', this.chatScrollEventListener)
-    this.globalEventTarget.removeEventListener('yjs-chat-update', this.eventListener)
+    this.globalEventTarget.removeEventListener('yjs-chat-update', this.chatUpdateEventListener)
     this.removeEventListener('message-intersection', this.messageIntersectionEventListener)
   }
 
@@ -241,6 +248,42 @@ export default class Chat extends Shadow() {
         overflow: hidden;
         min-height: 0;
       }
+      :host > ul + section#empty {
+        animation: ninjaAppear 1s ease-in;
+        display: grid;
+        grid-template-columns: 1fr;
+        grid-template-rows: 1fr;
+        position: fixed;
+        left: 0;
+        top: 2%;
+        width: min(50dvw, 100%);
+        z-index: 1;
+        pointer-events: none;
+        transition: transform ${this.removeEmptySectionTimeout}ms ease-out;
+      }
+      :host > ul + section#empty > * {
+        grid-column: 1;
+        grid-row: 1;
+      }
+      :host > ul:not(:empty) + section#empty, :host > ul + section#empty.not-empty {
+        transform: translateX(-100dvw);
+      }
+      :host > ul + section#empty > img {
+        transform: rotate(45deg) translate(-33%, 23%);
+        width: inherit;
+        max-width: max-content;
+      }
+      :host > ul + section#empty > chat-m-message {
+        transform: translate(min(365px, 54%), min(228px, 27%));
+      }
+      @media only screen and (max-width: _max-width_) {
+        :host > ul + section#empty {
+          top: 5%;
+        }
+        :host > ul + section#empty > chat-m-message {
+          transform: translate(min(171px, 55%), min(55px, 13%));
+        }
+      }
       @keyframes delete {
         0% {
           height: 6em;
@@ -248,6 +291,18 @@ export default class Chat extends Shadow() {
         100% {
           height: 0;
           opacity: 0;
+        }
+      }
+      @keyframes ninjaAppear {
+        0% {
+          opacity: 0;
+          transform: translateX(-100dvw);
+        }
+        80% {
+          transform: translateX(0);
+        }
+        100% {
+          opacity: 1;
         }
       }
     `
@@ -263,6 +318,12 @@ export default class Chat extends Shadow() {
       <ul>
         <li>loading...</li>
       </ul>
+      <section id=empty>
+        <img src="./src/img/ninjaBob.png" />
+        <chat-m-message update-on-connected-callback timestamp="${Date.now()}" static no-dialog>
+          <template>{"updatedNickname":"Ninja Bob","timestamp":${Date.now()},"text":"Start a conversation by entering your message below!"}</template>
+        </chat-m-message>
+      </section>
     `
   }
 
@@ -322,5 +383,9 @@ export default class Chat extends Shadow() {
   get globalEventTarget () {
     // @ts-ignore
     return this._globalEventTarget || (this._globalEventTarget = self.Environment?.activeRoute || document.body)
+  }
+
+  get sectionEmpty () {
+    return this.root.querySelector('section#empty')
   }
 }

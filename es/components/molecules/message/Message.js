@@ -88,7 +88,7 @@ export default class Message extends Intersection() {
         }))
       }
       // request most recent synced state
-      if (this.hasAttribute('update-on-connected-callback')) {
+      if (this.hasAttribute('update-on-connected-callback') && !this.hasAttribute('static')) {
         this.update().then(updateReadyFunc)
       } else {
         updateReadyFunc()
@@ -333,6 +333,7 @@ export default class Message extends Intersection() {
    * @memberof Message
    */
   static renderList (textObj, hasAttributeNoDialog, hasAttributeSelf, part = 'li') {
+    // ATTENTION: Attribute static does not need any user nor dialog interaction!
     return /* html */`
       <li part="${part}"${textObj.deleted ? ' deleted' : ''}>
         <div>
