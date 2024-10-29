@@ -46,10 +46,14 @@ export default class Chat extends Shadow() {
         ]).then(([[{constructorClass}], textObjs]) => {
           const isUlEmpty = !this.ul.children.length
           let wasLastMessage = false
-          if (this.sectionEmpty && textObjs.length) {
-            this.sectionEmpty.classList.add('not-empty')
-            clearTimeout(removeEmptySectionTimeoutId)
-            removeEmptySectionTimeoutId = setTimeout(() => this.sectionEmpty.remove(), this.removeEmptySectionTimeout)
+          if (this.sectionEmpty) {
+            if (textObjs.length) {
+              this.sectionEmpty.classList.add('hidden')
+              clearTimeout(removeEmptySectionTimeoutId)
+              removeEmptySectionTimeoutId = setTimeout(() => this.sectionEmpty.remove(), this.removeEmptySectionTimeout)
+            } else {
+              this.sectionEmpty.classList.remove('hidden')
+            }
           }
           // Attention: NO async here when appending to the dom!
           textObjs.sort((a, b) => a.timestamp - b.timestamp).forEach((textObj, i, textObjs) => {
@@ -249,7 +253,6 @@ export default class Chat extends Shadow() {
         min-height: 0;
       }
       :host > ul + section#empty {
-        animation: ninjaAppear 1s ease-in;
         display: grid;
         grid-template-columns: 1fr;
         grid-template-rows: 1fr;
@@ -265,7 +268,7 @@ export default class Chat extends Shadow() {
         grid-column: 1;
         grid-row: 1;
       }
-      :host > ul:not(:empty) + section#empty, :host > ul + section#empty.not-empty {
+      :host > ul:not(:empty) + section#empty, :host > ul + section#empty.hidden {
         transform: translateX(-100dvw);
       }
       :host > ul + section#empty > img {
@@ -293,18 +296,6 @@ export default class Chat extends Shadow() {
           opacity: 0;
         }
       }
-      @keyframes ninjaAppear {
-        0% {
-          opacity: 0;
-          transform: translateX(-100dvw);
-        }
-        80% {
-          transform: translateX(0);
-        }
-        100% {
-          opacity: 1;
-        }
-      }
     `
   }
 
@@ -318,7 +309,7 @@ export default class Chat extends Shadow() {
       <ul>
         <li>loading...</li>
       </ul>
-      <section id=empty>
+      <section id=empty class=hidden>
         <img src="./src/img/ninjaBob.png" />
         <chat-m-message update-on-connected-callback timestamp="${Date.now()}" static no-dialog>
           <template>{"updatedNickname":"Ninja Bob","timestamp":${Date.now()},"text":"Start a conversation by entering your message below!"}</template>
