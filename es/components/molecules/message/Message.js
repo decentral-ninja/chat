@@ -1,4 +1,5 @@
 // @ts-check
+import { WebWorker } from '../../../../../event-driven-web-components-prototypes/src/WebWorker.js'
 import { Intersection } from '../../../../../event-driven-web-components-prototypes/src/Intersection.js'
 
 /**
@@ -27,7 +28,7 @@ import { Intersection } from '../../../../../event-driven-web-components-prototy
  * @class Message
  * @type {CustomElementConstructor}
  */
-export default class Message extends Intersection() {
+export default class Message extends WebWorker(Intersection()) {
   /** @type {Promise<import("../../controllers/Chat.js").TextObj | TextObjDeleted>} */
   #textObj
 
@@ -280,6 +281,7 @@ export default class Message extends Intersection() {
   async renderHTML (textObj = this.textObj) {
     const textObjSync = await textObj
     this.html = Message.renderList(textObjSync, this.hasAttribute('no-dialog'), this.hasAttribute('self'))
+    if (!textObjSync.deleted) this.webWorker(Message.processText, textObjSync).then(textObj => (this.textSpan.innerHTML = textObj.text))
     return Promise.all([
       textObjSync.replyTo && this.hasAttribute('show-reply-to') 
         ? this.renderReplyTo(textObjSync)
@@ -343,7 +345,7 @@ export default class Message extends Intersection() {
             : '<wct-icon-mdx id="show-modal" rotate="-180deg" icon-url="../../../../../../img/icons/dots-circle-horizontal.svg" size="1.5em"></wct-icon-mdx>'
           }
         </div>
-        <span class="text${textObj.deleted ? ' italic' : ''}">${textObj.deleted ? 'Message got deleted!' : Message.processText(textObj).text}</span>${textObj.deleted ? '' : /* html */`<span class="timestamp">${textObj.timestamp ? (new Date(textObj.timestamp)).toLocaleString(navigator.language) : ''}</span>`}
+        <span class="text${textObj.deleted ? ' italic' : ''}">${textObj.deleted ? 'Message got deleted!' : 'Message processing...'}</span>${textObj.deleted ? '' : /* html */`<span class="timestamp">${textObj.timestamp ? (new Date(textObj.timestamp)).toLocaleString(navigator.language) : ''}</span>`}
       </li>
     `
   }
@@ -361,7 +363,7 @@ export default class Message extends Intersection() {
         textObj.text = /* html */`<span>just left the video conference room: ${textObj.src}</span><wct-icon-mdx title="Left voice call" icon-url="../../../../../../img/icons/video-off.svg" size="3em"></wct-icon-mdx>`
         break
       default:
-        textObj.text = textObj.text?.replace(/(https?:\/\/[^\s]+)/g, url => /* html */`<a href="${url}"${url.includes(location.host) && url.includes('room=') ? ' route' : ''} target="${url.includes(location.host) ? '_self' : '_blank'}">${url}</a>`)
+        if (!textObj.text.includes('<')) textObj.text = textObj.text?.replace(/(https?:\/\/[^\s]+)/g, url => /* html */`<a href="${url}"${url.includes(location.host) && url.includes('room=') ? ' route' : ''} target="${url.includes(location.host) ? '_self' : '_blank'}">${url}</a>`)
         break
     }
     return textObj
@@ -419,6 +421,10 @@ export default class Message extends Intersection() {
 
   get li () {
     return this.root.querySelector('li')
+  }
+
+  get textSpan () {
+    return this.li.querySelector('span.text')
   }
 
   get replyToLi () {
