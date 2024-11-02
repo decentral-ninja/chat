@@ -51,7 +51,8 @@ export default class Message extends WebWorker(Intersection()) {
               ${this.hasAttribute('self') ? 'self' : ''}
             ><template>${JSON.stringify(await this.textObj)}</template></chat-m-message-dialog>
           `
-          this.dialog.dialogPromise.then(async dialog => dialog.querySelector('h4').insertAdjacentHTML('afterend', /* html */`<chat-m-message update-on-intersection timestamp="${this.getAttribute('timestamp') || ''}" uid='${this.getAttribute('uid') || ''}'${this.hasAttribute('self') ? ' self' : ''} no-dialog show-reply-to next-show-reply-to="true" reply-to-max-height="30dvh">
+          // @ts-ignore
+          this.dialog.dialogPromise.then(async dialog => dialog.querySelector('h4').insertAdjacentHTML('afterend', /* html */`<chat-m-message update-on-intersection timestamp="${this.getAttribute('timestamp') || ''}" uid='${this.getAttribute('uid') || ''}'${this.hasAttribute('self') ? ' self' : ''}${this.textObj.hasError ? ' no-update' : ''} no-dialog show-reply-to next-show-reply-to="true" reply-to-max-height="30dvh">
             <template>${JSON.stringify(await this.textObj)}</template>
           </chat-m-message>`))
         })
@@ -103,7 +104,22 @@ export default class Message extends WebWorker(Intersection()) {
   }
 
   connectedCallbackOnce () {
-    this.textObj = Promise.resolve(this.template ? JSON.parse(this.template.content.textContent) : null)
+    try {
+      this.textObj = Promise.resolve(this.template ? JSON.parse(this.template.content.textContent) : null)
+    } catch (error) {
+      // NOTE: this Error can be triggered by corrupt html. Expl.: <img src="" \"> which as object can be JSON stringified and parsed but at molecules/Chat.js breaks it after inserting the corrupt html string into the <template> tag
+      // @ts-ignore
+      this.textObj = Promise.resolve({
+        self: this.hasAttribute('self'),
+        updatedNickname: 'Error',
+        text: `Could not parse this message. ${this.hasAttribute('self') ? 'Please, delete the message and reenter it newly!' : 'The owner shall delete the message and reenter it newly!'}`,
+        timestamp: Number(this.getAttribute('timestamp').replace('t_', '')),
+        uid: this.getAttribute('uid')
+      })
+      // @ts-ignore
+      this.textObj.hasError = true
+      console.error('Could not parse message:', { message: this, error })
+    }
   }
   
   async addEventListeners () {
@@ -218,6 +234,9 @@ export default class Message extends WebWorker(Intersection()) {
         margin: 2em auto;
         cursor: auto;
       }
+      :host li > span.text > span.loading {
+        font-style: italic;
+      }
       :host li > .timestamp {
         font-size: 0.6em;
       }
@@ -316,13 +335,16 @@ export default class Message extends WebWorker(Intersection()) {
   }
 
   update () {
-    return Promise.all([this.textObj, this.getUpdatedTextObj()]).then(([textObj, updatedTextObj]) => {
-      if (JSON.stringify(textObj) === JSON.stringify(updatedTextObj)) return
-      this.textObj = Promise.resolve(updatedTextObj)
-      this.removeEventListeners()
-      this.html = ''
-      return this.renderHTML().then(() => this.addEventListeners())
-    })
+    // @ts-ignore
+    return this.textObj.hasError || this.hasAttribute('no-update')
+      ? Promise.resolve()
+      : Promise.all([this.textObj, this.getUpdatedTextObj()]).then(([textObj, updatedTextObj]) => {
+        if (JSON.stringify(textObj) === JSON.stringify(updatedTextObj)) return
+        this.textObj = Promise.resolve(updatedTextObj)
+        this.removeEventListeners()
+        this.html = ''
+        return this.renderHTML().then(() => this.addEventListeners())
+      })
   }
 
   /**
@@ -345,7 +367,7 @@ export default class Message extends WebWorker(Intersection()) {
             : '<wct-icon-mdx id="show-modal" rotate="-180deg" icon-url="../../../../../../img/icons/dots-circle-horizontal.svg" size="1.5em"></wct-icon-mdx>'
           }
         </div>
-        <span class="text${textObj.deleted ? ' italic' : ''}">${textObj.deleted ? 'Message got deleted!' : 'Message processing...'}</span>${textObj.deleted ? '' : /* html */`<span class="timestamp">${textObj.timestamp ? (new Date(textObj.timestamp)).toLocaleString(navigator.language) : ''}</span>`}
+        <span class="text${textObj.deleted ? ' italic' : ''}">${textObj.deleted ? 'Message got deleted!' : '<span class="loading">Loading...</span>'}</span>${textObj.deleted ? '' : /* html */`<span class="timestamp">${textObj.timestamp ? (new Date(textObj.timestamp)).toLocaleString(navigator.language) : ''}</span>`}
       </li>
     `
   }

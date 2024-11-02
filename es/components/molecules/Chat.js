@@ -311,7 +311,7 @@ export default class Chat extends Shadow() {
       </ul>
       <section id=empty class=hidden>
         <img src="./src/img/ninjaBob.png" />
-        <chat-m-message update-on-connected-callback timestamp="${Date.now()}" static no-dialog>
+        <chat-m-message update-on-connected-callback timestamp="${Date.now()}" static no-dialog no-update>
           <template>{"updatedNickname":"Ninja Bob","timestamp":${Date.now()},"text":"Start a conversation by entering your message below!"}</template>
         </chat-m-message>
       </section>
