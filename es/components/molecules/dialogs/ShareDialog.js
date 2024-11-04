@@ -153,7 +153,7 @@ export default class ShareDialog extends Dialog {
               <wct-icon-mdx id="show-modal" icon-url="../../../../../../img/icons/copy.svg" size="2em"></wct-icon-mdx>
               <template>${getRoomsResult.value[this.getAttribute('room-name')].locationHref}</template>
             </wct-dialog-clipboard>
-            ${this.hasAttribute('is-active-room') ? '' : '<wct-icon-mdx id=share-chat title="share in this chat" icon-url="../../../../../../img/icons/message-2-share.svg" size="2em"></wct-icon-mdx>'}
+            ${this.hasAttribute('is-active-room') || this.hasAttribute('no-share-in-chat') ? '' : '<wct-icon-mdx id=share-chat title="share in this chat" icon-url="../../../../../../img/icons/message-2-share.svg" size="2em"></wct-icon-mdx>'}
             ${typeof navigator.share === 'function' ? '<wct-icon-mdx id=share-api title="share" icon-url="../../../../../../img/icons/share-3.svg" size="2em"></wct-icon-mdx>' : ''}
           </div>
           <!--

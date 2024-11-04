@@ -56,7 +56,12 @@ export default class Rooms extends Shadow() {
                 namespace="dialog-top-slide-in-"
                 open="show-modal"
                 room-name="${target.getAttribute('share')}"
-                ${await (await this.roomPromise).room === target.getAttribute('share') ? 'is-active-room' : ''}
+                ${(await this.roomPromise).room.done
+                  ? await (await this.roomPromise).room === target.getAttribute('share')
+                    ? 'is-active-room'
+                    : ''
+                  : 'no-share-in-chat'
+                }
               ></chat-m-share-dialog>
             `
             this.shareDialogMap.set(target.getAttribute('share'), div.children[0])
