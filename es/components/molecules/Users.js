@@ -164,6 +164,11 @@ export default class Users extends Shadow() {
       this.fetchModules([
         {
           // @ts-ignore
+          path: `${this.importMetaUrl}../atoms/p2pGraph/P2pGraph.js?${Environment?.version || ''}`,
+          name: 'chat-a-p2p-graph'
+        },
+        {
+          // @ts-ignore
           path: `${this.importMetaUrl}../../../../web-components-toolbox/src/es/components/atoms/button/Button.js?${Environment?.version || ''}`,
           name: 'wct-button'
         },
@@ -197,6 +202,11 @@ export default class Users extends Shadow() {
           this.connectedUsers.textContent = 'You are alone!'
           this.connectedUsers.classList.add('warning')
         }
+        this.usersGraph.innerHTML = /* html */`
+          <chat-a-p2p-graph>
+            <template>${JSON.stringify(Array.from(data.users))}</template>
+          </chat-a-p2p-graph>
+        `
         this.usersOl.innerHTML = ''
         Users.renderUserTableList(this.usersOl, data.users, selfUser)
         this.allUsersOl.innerHTML = ''
@@ -207,6 +217,7 @@ export default class Users extends Shadow() {
           <details>
             <summary>Directly connected Users <span id="connected-users">...</span></summary>
             <div>
+              <div id="users-graph"></div>
               <div>
                 <h3>Mutually connected users</h3>
                 <ol id="users"></ol>
@@ -270,6 +281,10 @@ export default class Users extends Shadow() {
 
   get connectedUsers () {
     return this.root.querySelector('#connected-users')
+  }
+
+  get usersGraph () {
+    return this.root.querySelector('#users-graph')
   }
 
   get usersOl () {
