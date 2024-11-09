@@ -72,7 +72,7 @@ export default class P2pGraph extends Shadow() {
       <div>Content rendered from Component: P2pGraph</div>
     `
     return this.loadDependency('P2PGraph', `${this.importMetaUrl}./p2p-graph.js`).then(P2PGraph => {
-      // TODO: add interface
+      /** @type {[string, import("../../../../../event-driven-web-components-yjs/src/es/controllers/Users.js").User][]} */
       const users = JSON.parse(this.template.content.textContent)
       this.template.remove()
       // https://github.com/feross/p2p-graph?tab=readme-ov-file
@@ -81,14 +81,23 @@ export default class P2pGraph extends Shadow() {
       //console.log('*********', users)
 
       const nodes = []
+      // @ts-ignore
       users.forEach(([key, user]) => {
+        // sessionStorage timestamp
+        const epoch = JSON.parse(user.epoch).epoch
+        //console.log('epoch *********', user.nickname, epoch, (Date.now() - epoch) / 1000 / 60 /60 + ' hours')
+        const awarenessEpoch = JSON.parse(user.awarenessEpoch || user.epoch).epoch
+        //console.log('awarenessEpoch *********', user.nickname, awarenessEpoch, (Date.now() - awarenessEpoch) / 1000 / 60 / 60 + ' hours')
+        //console.log('*********************************************************')
         if (!nodes.includes(key)) graph.add({
           id: key,
           me: false,
           fixed: false,
           name: String(user.nickname)
         })
+        if (user.isSelf) graph.seed(key, true)
         nodes.push(key)
+        // only show providers with mutually connected users
         for (const providerName in user.mutuallyConnectedUsers) {
           if (!nodes.includes(providerName)) graph.add({
             id: providerName,

@@ -22,7 +22,7 @@ export default class Users extends Shadow() {
       timeoutId = setTimeout(async () => {
         console.log('users', {
           data: await event.detail.getData(),
-          selfUser: event.detail.selfUser
+          ...event.detail
         })
         this.renderHTML(await event.detail.getData(), event.detail.selfUser)
       }, 2000)
@@ -161,6 +161,15 @@ export default class Users extends Shadow() {
     this.rendered = true
     return Promise.all([
       this.nickname,
+      // TODO: the below is wrong, it must be requested from src/es/event-driven-web-components-yjs/src/es/controllers/Providers.js which has to prep data nicely at webworker
+      new Promise(resolve => this.dispatchEvent(new CustomEvent(`yjs-get-providers`, {
+        detail: {
+          resolve
+        },
+        bubbles: true,
+        cancelable: true,
+        composed: true
+      }))),
       this.fetchModules([
         {
           // @ts-ignore
@@ -193,7 +202,7 @@ export default class Users extends Shadow() {
           name: 'wct-grid'
         }
       ])
-    ]).then(async ([nickname]) => {
+    ]).then(async ([nickname, providers]) => {
       if (data) {
         if (data.users.size) {
           this.connectedUsers.textContent = data.users.size ? data.users.size - 1 : 'You are alone!'
@@ -202,9 +211,12 @@ export default class Users extends Shadow() {
           this.connectedUsers.textContent = 'You are alone!'
           this.connectedUsers.classList.add('warning')
         }
+        // TODO: add sessionProviders into the template from provider controller
+        // add self user, incase it has no connected users
+        //console.log('*********', providers)
         this.usersGraph.innerHTML = /* html */`
           <chat-a-p2p-graph>
-            <template>${JSON.stringify(Array.from(data.users))}</template>
+            <template>${JSON.stringify(Array.from(data.usersConnectedWithSelf).concat([[selfUser.uid, selfUser]]))}</template>
           </chat-a-p2p-graph>
         `
         this.usersOl.innerHTML = ''
