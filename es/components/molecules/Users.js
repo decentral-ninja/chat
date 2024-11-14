@@ -204,8 +204,8 @@ export default class Users extends Shadow() {
       ])
     ]).then(async ([nickname, providers]) => {
       if (data) {
-        if (data.users.size) {
-          this.connectedUsers.textContent = data.users.size ? data.users.size - 1 : 'You are alone!'
+        if (data.usersConnectedWithSelf.size) {
+          this.connectedUsers.textContent = data.usersConnectedWithSelf.size ? data.usersConnectedWithSelf.size - 1 : 'You are alone!'
           this.connectedUsers.classList.remove('warning')
         } else {
           this.connectedUsers.textContent = 'You are alone!'
@@ -227,7 +227,7 @@ export default class Users extends Shadow() {
       } else {
         this.html = /* html */`
           <details>
-            <summary>Directly connected Users <span id="connected-users">...</span></summary>
+            <summary>Directly connected to <span id="connected-users">...</span> User(s)</summary>
             <div>
               <div id="users-graph"></div>
               <div>
