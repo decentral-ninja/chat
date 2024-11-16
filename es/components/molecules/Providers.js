@@ -5,7 +5,6 @@ import { Shadow } from '../../../../event-driven-web-components-prototypes/src/S
  * The providers view
  * TODO: display providers and also allow provider changes
  * TODO: keepAlive time
- * TODO: view component for controllers/Providers.js with https://github.com/feross/p2p-graph
  *
  * @export
  * @class Providers
@@ -17,18 +16,22 @@ export default class Providers extends Shadow() {
     let timeoutId = null
     this.providersEventListener = event => {
       clearTimeout(timeoutId)
-      timeoutId = setTimeout(async () => console.log('providers', await event.detail.getData()), 2000) 
+      timeoutId = setTimeout(async () => console.log('providers', {
+        data: await event.detail.getData(),
+        sessionProvidersByStatus: await (await event.detail.getData()).getSessionProvidersByStatus(),
+        ...event.detail
+      }), 2000) 
     }
   }
 
   connectedCallback () {
     // if (this.shouldRenderCSS()) this.renderCSS()
     // if (this.shouldRenderHTML()) this.renderHTML()
-    this.globalEventTarget.addEventListener('yjs-providers-data', this.providersEventListener)
+    this.globalEventTarget.addEventListener('yjs-providers', this.providersEventListener)
   }
 
   disconnectedCallback () {
-    this.globalEventTarget.removeEventListener('yjs-providers-data', this.providersEventListener)
+    this.globalEventTarget.removeEventListener('yjs-providers', this.providersEventListener)
   }
 
   /**

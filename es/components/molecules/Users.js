@@ -5,7 +5,6 @@ import { Shadow } from '../../../../event-driven-web-components-prototypes/src/S
 
 /**
  * The users view
- * TODO: view component for controllers/Users.js with https://github.com/feross/p2p-graph
  *
  * @export
  * @class Users
@@ -161,8 +160,7 @@ export default class Users extends Shadow() {
     this.rendered = true
     return Promise.all([
       this.nickname,
-      // TODO: the below is wrong, it must be requested from src/es/event-driven-web-components-yjs/src/es/controllers/Providers.js which has to prep data nicely at webworker
-      new Promise(resolve => this.dispatchEvent(new CustomEvent(`yjs-get-providers`, {
+      new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-providers-event-detail', {
         detail: {
           resolve
         },
@@ -204,7 +202,7 @@ export default class Users extends Shadow() {
       ])
     ]).then(async ([nickname, providers]) => {
       if (data) {
-        if (data.usersConnectedWithSelf.size) {
+        if (data.usersConnectedWithSelf.size - 1) {
           this.connectedUsers.textContent = data.usersConnectedWithSelf.size ? data.usersConnectedWithSelf.size - 1 : 'You are alone!'
           this.connectedUsers.classList.remove('warning')
         } else {
@@ -212,7 +210,7 @@ export default class Users extends Shadow() {
           this.connectedUsers.classList.add('warning')
         }
         // TODO: add sessionProviders into the template from provider controller
-        // add self user, incase it has no connected users
+        // add self user, incase it has no connected users "_synced"
         //console.log('*********', providers)
         this.usersGraph.innerHTML = /* html */`
           <chat-a-p2p-graph>
