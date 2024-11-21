@@ -15,6 +15,7 @@ export default class Providers extends Shadow() {
 
     let timeoutId = null
     this.providersEventListener = event => {
+      if (!event.detail.getData) return
       clearTimeout(timeoutId)
       timeoutId = setTimeout(async () => console.log('providers', {
         data: await event.detail.getData(),
