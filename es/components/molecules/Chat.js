@@ -44,6 +44,7 @@ export default class Chat extends Shadow() {
           ]),
           event.detail[funcName]()
         ]).then(([[{constructorClass}], textObjs]) => {
+          // no messages and show ninja
           const isUlEmpty = !this.ul.children.length
           let wasLastMessage = false
           if (this.sectionEmpty) {
@@ -66,38 +67,7 @@ export default class Chat extends Shadow() {
               // firstRender
               if (isUlEmpty) {
                 // scroll to the last memorized scroll pos
-                new Promise(resolve => this.dispatchEvent(new CustomEvent('storage-get-active-room', {
-                  detail: {
-                    resolve
-                  },
-                  bubbles: true,
-                  cancelable: true,
-                  composed: true
-                }))).then(room => {
-                  if (room?.scrollEl && this.ulGetScrollElFunc(room.scrollEl)()) {
-                    this.scrollIntoView(this.ulGetScrollElFunc(room.scrollEl))
-                  } else {
-                    // backwards compatible behavior and if no scrollTop scrolls to bottom
-                    this.dispatchEvent(new CustomEvent('main-scroll', {
-                      detail: {
-                        behavior: 'instant',
-                        y: room?.scrollTop
-                      },
-                      bubbles: true,
-                      cancelable: true,
-                      composed: true
-                    }))
-                    setTimeout(() => this.dispatchEvent(new CustomEvent('main-scroll', {
-                      detail: {
-                        behavior: 'smooth',
-                        y: room?.scrollTop
-                      },
-                      bubbles: true,
-                      cancelable: true,
-                      composed: true
-                    })), 200)
-                  }
-                })
+                this.scrollLastMemorizedIntoView()
                 if (!textObj.isSelf) {
                   this.dispatchEvent(new CustomEvent('scroll-icon-show-event', {
                     bubbles: true,
@@ -105,6 +75,8 @@ export default class Chat extends Shadow() {
                     composed: true
                   }))
                 }
+                // don't save message locations after render some time, since all messages intersect and we may receive some message not on top
+                setTimeout(() => this.addEventListener('message-intersection', this.messageIntersectionEventListener), 1000)
               } else {
                 // wait for intersection to happen before we can decide to scroll or not
                 setTimeout(() => {
@@ -146,31 +118,44 @@ export default class Chat extends Shadow() {
       }
     }
 
+    const topBorder = Chat.walksUpDomQueryMatches(this, 'main').getBoundingClientRect().top
     let timeout = null
     this.messageIntersectionEventListener = event => {
-      clearTimeout(timeout)
-      timeout = setTimeout(() => {
-        // avoid saving scrollEl on first time intersection of message after connect, since the initial event does not grab the most top message
-        if (this.firstTimeIntersectionSinceConnected) {
-          this.firstTimeIntersectionSinceConnected = false
-        } else {
-          this.dispatchEvent(new CustomEvent('merge-active-room', {
-            detail: event.detail,
+      // messages intersecting with the upper half resp. top of the screen
+      if (event.detail.entry.boundingClientRect.top < self.innerHeight / 2) {
+        clearTimeout(timeout)
+        timeout = setTimeout(() => {
+          let ulChildrenArr = []
+          // avoid saving scrollEl on first time intersection of message after connect, since the initial event does not grab the most top message
+          if ((ulChildrenArr = Array.from(this.ul.children)) && (ulChildrenArr = ulChildrenArr.splice(ulChildrenArr.indexOf(event.detail.target)))) this.dispatchEvent(new CustomEvent('merge-active-room', {
+            detail: {
+              // topBorder + 50 is for making sure that not only the bottom of the message is seen but 50px parts of it
+              scrollEl: ulChildrenArr.find(child => child.getBoundingClientRect().bottom > topBorder + 50)?.getAttribute('timestamp') || event.detail.scrollEl
+            },
             bubbles: true,
             cancelable: true,
             composed: true
           }))
-        }
-      }, 1000)
+        }, 1000)
+      }
     }
 
     this.chatScrollEventListener = event => {
       if (event?.detail?.scrollEl && this.ulGetScrollElFunc(event.detail.scrollEl)()) this.scrollIntoView(this.ulGetScrollElFunc(event.detail.scrollEl), true)
     }
+
+    let resizeTimeout = null
+    this.resizeListener = event => {
+      clearTimeout(resizeTimeout)
+      this.removeEventListener('message-intersection', this.messageIntersectionEventListener)
+      resizeTimeout = setTimeout(() => {
+        this.scrollLastMemorizedIntoView()
+        this.addEventListener('message-intersection', this.messageIntersectionEventListener)
+      }, 200)
+    }
   }
 
   connectedCallback () {
-    this.firstTimeIntersectionSinceConnected = true
     if (this.shouldRenderCSS()) this.renderCSS()
     if (this.shouldRenderHTML()) {
       this.renderHTML()
@@ -201,13 +186,15 @@ export default class Chat extends Shadow() {
     }
     this.globalEventTarget.addEventListener('chat-scroll', this.chatScrollEventListener)
     this.globalEventTarget.addEventListener('yjs-chat-update', this.chatUpdateEventListener)
-    this.addEventListener('message-intersection', this.messageIntersectionEventListener)
+    // this.addEventListener('message-intersection', this.messageIntersectionEventListener) // add this listener after render, to avoid intersection events before all messages are loaded
+    self.addEventListener('resize', this.resizeListener)
   }
 
   disconnectedCallback () {
     this.globalEventTarget.removeEventListener('chat-scroll', this.chatScrollEventListener)
     this.globalEventTarget.removeEventListener('yjs-chat-update', this.chatUpdateEventListener)
     this.removeEventListener('message-intersection', this.messageIntersectionEventListener)
+    self.removeEventListener('resize', this.resizeListener)
   }
 
   /**
@@ -365,6 +352,41 @@ export default class Chat extends Shadow() {
         setTimeout(() => scrollEl.scrollIntoView({behavior: 'smooth'}), 50)
       }
     }, 200)
+  }
+
+  scrollLastMemorizedIntoView () {
+    new Promise(resolve => this.dispatchEvent(new CustomEvent('storage-get-active-room', {
+      detail: {
+        resolve
+      },
+      bubbles: true,
+      cancelable: true,
+      composed: true
+    }))).then(room => {
+      if (room?.scrollEl && this.ulGetScrollElFunc(room.scrollEl)()) {
+        this.scrollIntoView(this.ulGetScrollElFunc(room.scrollEl))
+      } else {
+        // backwards compatible behavior and if no scrollTop scrolls to bottom
+        this.dispatchEvent(new CustomEvent('main-scroll', {
+          detail: {
+            behavior: 'instant',
+            y: room?.scrollTop
+          },
+          bubbles: true,
+          cancelable: true,
+          composed: true
+        }))
+        setTimeout(() => this.dispatchEvent(new CustomEvent('main-scroll', {
+          detail: {
+            behavior: 'smooth',
+            y: room?.scrollTop
+          },
+          bubbles: true,
+          cancelable: true,
+          composed: true
+        })), 200)
+      }
+    })
   }
 
   get ul () {
