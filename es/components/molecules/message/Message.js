@@ -155,10 +155,10 @@ export default class Message extends WebWorker(Intersection()) {
       if (entries[0].isIntersecting) {
         this.setAttribute('intersecting', '')
         if (this.hasAttribute('update-on-intersection')) this.update()
+        return
       }
-    } else {
-      this.removeAttribute('intersecting')
     }
+    this.removeAttribute('intersecting')
   }
 
   /**

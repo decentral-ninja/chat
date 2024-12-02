@@ -130,7 +130,7 @@ export default class Chat extends Shadow() {
           if ((ulChildrenArr = Array.from(this.ul.children)) && (ulChildrenArr = ulChildrenArr.splice(ulChildrenArr.indexOf(event.detail.target)))) this.dispatchEvent(new CustomEvent('merge-active-room', {
             detail: {
               // topBorder + 50 is for making sure that not only the bottom of the message is seen but 50px parts of it
-              scrollEl: ulChildrenArr.find(child => child.getBoundingClientRect().bottom > topBorder + 50)?.getAttribute('timestamp') || event.detail.scrollEl
+              scrollEl: this.ul.lastElementChild.hasAttribute('intersecting') ? this.ul.lastElementChild.getAttribute('timestamp') : ulChildrenArr.find(child => child.getBoundingClientRect().bottom > topBorder + 50)?.getAttribute('timestamp') || event.detail.scrollEl
             },
             bubbles: true,
             cancelable: true,
