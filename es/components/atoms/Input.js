@@ -10,6 +10,7 @@ export default class Input extends Shadow() {
     super({ importMetaUrl: import.meta.url, ...options }, ...args)
 
     const wormholeUrl = 'https://wormhole.app/'
+    let wormholeOpened = false
 
     this.sendEventListener = async (event, input) => {
       let replyToTextObj = null
@@ -47,6 +48,7 @@ export default class Input extends Shadow() {
       switch (event.composedPath().find(node => (node.tagName === 'WCT-BUTTON' || node.tagName === 'WCT-ICON-MDX') && node.hasAttribute('id')).getAttribute('id')) {
         case 'wormhole':
           self.open(wormholeUrl)
+          wormholeOpened = true
           break
         case 'send':
           this.sendEventListener(undefined, this.textarea)
@@ -83,27 +85,30 @@ export default class Input extends Shadow() {
     // past wormhole url
     const wormholeUrls = []
     this.focusEventListener = async event => {
-      try {
-        const clipboardContents = await navigator.clipboard.read()
-        for (const item of clipboardContents) {
-          for (const mimeType of item.types) {
-            if (mimeType === 'text/plain') {
-              const blob = await item.getType('text/plain')
-              const text = await blob.text()
-              if (text.includes(wormholeUrl) && !wormholeUrls.includes(text)) {
-                this.textarea.setRangeText(
-                  (this.textarea.value ? ' ' : '') + text,
-                  this.textarea.selectionStart,
-                  this.textarea.selectionEnd,
-                  'end'
-                )
-                wormholeUrls.push(text)
+      if (wormholeOpened) {
+        try {
+          const clipboardContents = await navigator.clipboard.read()
+          for (const item of clipboardContents) {
+            for (const mimeType of item.types) {
+              if (mimeType === 'text/plain') {
+                const blob = await item.getType('text/plain')
+                const text = await blob.text()
+                if (text.includes(wormholeUrl) && !wormholeUrls.includes(text)) {
+                  this.textarea.setRangeText(
+                    (this.textarea.value ? ' ' : '') + text,
+                    this.textarea.selectionStart,
+                    this.textarea.selectionEnd,
+                    'end'
+                  )
+                  wormholeUrls.push(text)
+                }
               }
             }
           }
+        } catch (error) {
+          console.warn(error)
         }
-      } catch (error) {
-        console.warn(error)
+        wormholeOpened = false
       }
     }
 
