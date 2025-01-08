@@ -152,7 +152,7 @@ export default class Message extends WebWorker(Intersection()) {
         cancelable: true,
         composed: true
       }))
-      if (entries[0].isIntersecting) {
+      if (this.areEntriesIntersecting(entries)) {
         this.setAttribute('intersecting', '')
         if (this.hasAttribute('update-on-intersection')) this.update()
         return
