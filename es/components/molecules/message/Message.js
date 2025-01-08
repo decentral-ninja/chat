@@ -145,7 +145,7 @@ export default class Message extends WebWorker(Intersection()) {
       if (this.getAttribute('part') !== 'reply-to-li') this.dispatchEvent(new CustomEvent(this.getAttribute('intersection-event-name') || 'message-intersection', {
         detail: {
           scrollEl: `${this.getAttribute('timestamp')}`,
-          entry: entries.splice(-1),
+          entry: entries.splice(-1)[0],
           target: this
         },
         bubbles: true,
