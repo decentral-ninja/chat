@@ -13,7 +13,8 @@ export default class Rooms extends Shadow() {
   constructor (options = {}, ...args) {
     super({ importMetaUrl: import.meta.url, ...options }, ...args)
 
-    this.roomNamePrefix = 'chat-'
+    // @ts-ignore
+    this.roomNamePrefix = self.Environment?.roomNamePrefix || 'chat-'
     this.shareDialogMap = new Map()
 
     this.clickEventListener = async event => {

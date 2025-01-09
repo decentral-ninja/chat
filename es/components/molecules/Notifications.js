@@ -12,7 +12,8 @@ export default class Notifications extends Hover() {
     // @ts-ignore
     super({ importMetaUrl: import.meta.url, ...options }, ...args)
 
-    this.roomNamePrefix = 'chat-'
+    // @ts-ignore
+    this.roomNamePrefix = self.Environment?.roomNamePrefix || 'chat-'
     this.notificationsMax = 9
     
     if (this.hasAttribute('room')) {

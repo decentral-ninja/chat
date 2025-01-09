@@ -47,14 +47,6 @@ export default class P2pGraph extends Shadow() {
     this.css = /* css */`
       :host > div, :host > div > svg {
         overflow: visible;
-        width: 80dvw;
-        height: 100%;
-      }
-      :host > div {
-        width: 100dvw;
-      }
-      :host > div > svg {
-        margin: 10dvw;
       }
       @media only screen and (max-width: _max-width_) {
         :host {}
@@ -69,7 +61,7 @@ export default class P2pGraph extends Shadow() {
    */
   renderHTML () {
     this.html = /* html */`
-      <div>Content rendered from Component: P2pGraph</div>
+      <div></div>
     `
     return this.loadDependency('P2PGraph', `${this.importMetaUrl}./p2p-graph.js`).then(P2PGraph => {
       /** @type {[string, import("../../../../../event-driven-web-components-yjs/src/es/controllers/Users.js").User][]} */

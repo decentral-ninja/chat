@@ -14,6 +14,7 @@ export default class NickName extends Shadow() {
       event.preventDefault()
       event.stopPropagation()
       this.dispatchEvent(new CustomEvent('open-nickname', {
+        detail: {command: 'show-modal'},
         bubbles: true,
         cancelable: true,
         composed: true
