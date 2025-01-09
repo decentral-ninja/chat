@@ -154,9 +154,8 @@ export default class Users extends Shadow() {
           <chat-m-nick-name-dialog namespace="dialog-top-slide-in-" show-event-name="open-nickname"></chat-m-nick-name-dialog>
           <wct-dialog namespace="dialog-top-slide-in-">
             <style protected>
-              :host > details > div {
-                overflow-y: auto;
-                max-height: 25svh;
+              :host > dialog #users-graph {
+                padding: 5svh 10svw;
               }
               :host h5 {
                 position: sticky;
