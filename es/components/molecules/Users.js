@@ -148,10 +148,10 @@ export default class Users extends Shadow() {
         
       } else {
         this.html = /* html */`
-          <chat-m-nick-name-dialog namespace="dialog-top-slide-in-" show-event-name="open-nickname"></chat-m-nick-name-dialog>
           <details>
             <summary>Directly connected to <span id="connected-users">...</span> User(s)</summary>
           </details>
+          <chat-m-nick-name-dialog namespace="dialog-top-slide-in-" show-event-name="open-nickname"></chat-m-nick-name-dialog>
           <wct-dialog namespace="dialog-top-slide-in-">
             <style protected>
               :host > details > div {
