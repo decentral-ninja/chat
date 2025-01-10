@@ -44,12 +44,12 @@ export default class Users extends Shadow() {
     if (this.shouldRenderCSS()) this.renderCSS()
     if (this.shouldRenderHTML()) this.renderHTML()
     this.globalEventTarget.addEventListener('yjs-users', this.usersEventListener)
-    this.addEventListener('click', this.openDialog)
+    this.details.addEventListener('click', this.openDialog)
   }
 
   disconnectedCallback () {
     this.globalEventTarget.removeEventListener('yjs-users', this.usersEventListener)
-    this.removeEventListener('click', this.openDialog)
+    this.details.removeEventListener('click', this.openDialog)
   }
 
   /**
@@ -67,7 +67,7 @@ export default class Users extends Shadow() {
    * @return {boolean}
    */
   shouldRenderHTML () {
-    return !this.rendered
+    return !this.details
   }
 
   /**
@@ -92,7 +92,78 @@ export default class Users extends Shadow() {
   * @return {Promise<void>}
   */
   renderHTML (data, selfUser) {
-    this.rendered = true
+    if (data) {
+      if (data.usersConnectedWithSelf.size - 1) {
+        this.connectedUsers.textContent = data.usersConnectedWithSelf.size ? data.usersConnectedWithSelf.size - 1 : 'You are alone!'
+        this.connectedUsers.classList.remove('warning')
+      } else {
+        this.connectedUsers.textContent = 'You are alone!'
+        this.connectedUsers.classList.add('warning')
+      }
+      // TODO: add sessionProviders into the template from provider controller
+      // add self user, incase it has no connected users "_synced"
+      //console.log('*********', providers)
+      this.usersGraph.innerHTML = /* html */`
+        <chat-a-p2p-graph>
+          <template>${JSON.stringify(Array.from(data.usersConnectedWithSelf))}</template>
+        </chat-a-p2p-graph>
+      `
+      this.usersOl.innerHTML = ''
+      Users.renderUserTableList(this.usersOl, data.usersConnectedWithSelf, selfUser)
+      this.allUsersOl.innerHTML = ''
+      Users.renderUserTableList(this.allUsersOl, data.allUsers, selfUser)
+      
+    } else {
+      this.html = /* html */`
+        <details>
+          <summary>Directly connected to <span id="connected-users">...</span> User(s)</summary>
+        </details>
+        <chat-m-nick-name-dialog namespace="dialog-top-slide-in-" show-event-name="open-nickname"></chat-m-nick-name-dialog>
+        <wct-dialog namespace="dialog-top-slide-in-">
+          <style protected>
+            :host > dialog #users-graph {
+              padding: 5svh 10svw;
+            }
+            :host h5 {
+              position: sticky;
+              top: 0;
+            }
+            :host ol > li {
+              word-break: break-all;
+              margin-bottom: var(--spacing);
+            }
+            :host .nickname {
+              color: blue;
+              font-weight: bold;
+            }
+            :host .self {
+              color: green;
+              font-weight: bold;
+            }
+            :host .warning {
+              color: red;
+            }
+          </style>
+          <dialog>
+            <wct-menu-icon id="close" no-aria class="open sticky" namespace="menu-icon-close-" no-click></wct-menu-icon>
+            <h4>Connection Data:</h4>
+            <div>
+              <div id="users-graph"></div>
+              <hr>
+              <div>
+                <h5>Mutually connected users</h5>
+                <ol id="users"></ol>
+              </div>
+              <hr>
+              <div>
+                <h5>Users which once were connected</h5>
+                <ol id="all-users"></ol>
+              </div>
+            </div>
+          </dialog>
+        </wct-dialog>
+      `
+    }
     return Promise.all([
       new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-providers-event-detail', {
         detail: {
@@ -125,76 +196,7 @@ export default class Users extends Shadow() {
         }
       ])
     ]).then(async ([providers]) => {
-      if (data) {
-        if (data.usersConnectedWithSelf.size - 1) {
-          this.connectedUsers.textContent = data.usersConnectedWithSelf.size ? data.usersConnectedWithSelf.size - 1 : 'You are alone!'
-          this.connectedUsers.classList.remove('warning')
-        } else {
-          this.connectedUsers.textContent = 'You are alone!'
-          this.connectedUsers.classList.add('warning')
-        }
-        // TODO: add sessionProviders into the template from provider controller
-        // add self user, incase it has no connected users "_synced"
-        //console.log('*********', providers)
-        this.usersGraph.innerHTML = /* html */`
-          <chat-a-p2p-graph>
-            <template>${JSON.stringify(Array.from(data.usersConnectedWithSelf))}</template>
-          </chat-a-p2p-graph>
-        `
-        this.usersOl.innerHTML = ''
-        Users.renderUserTableList(this.usersOl, data.users, selfUser)
-        this.allUsersOl.innerHTML = ''
-        Users.renderUserTableList(this.allUsersOl, data.allUsers, selfUser)
-        
-      } else {
-        this.html = /* html */`
-          <details>
-            <summary>Directly connected to <span id="connected-users">...</span> User(s)</summary>
-          </details>
-          <chat-m-nick-name-dialog namespace="dialog-top-slide-in-" show-event-name="open-nickname"></chat-m-nick-name-dialog>
-          <wct-dialog namespace="dialog-top-slide-in-">
-            <style protected>
-              :host > dialog #users-graph {
-                padding: 5svh 10svw;
-              }
-              :host h5 {
-                position: sticky;
-                top: 0;
-              }
-              :host ol > li {
-                word-break: break-all;
-                margin-bottom: var(--spacing);
-              }
-              :host .nickname {
-                color: blue;
-                font-weight: bold;
-              }
-              :host .self {
-                color: green;
-                font-weight: bold;
-              }
-              :host .warning {
-                color: red;
-              }
-            </style>
-            <dialog>
-              <wct-menu-icon id="close" no-aria class="open sticky" namespace="menu-icon-close-" no-click></wct-menu-icon>
-              <h4>Connection Data:</h4>
-              <div>
-                <div id="users-graph"></div>
-                <div>
-                  <h5>Mutually connected users</h5>
-                  <ol id="users"></ol>
-                </div>
-                <div>
-                  <h5>Users which once were connected</h5>
-                  <ol id="all-users"></ol>
-                </div>
-              </div>
-            </dialog>
-          </wct-dialog>
-        `
-      }
+      // providers
     })
   }
 
@@ -217,6 +219,10 @@ export default class Users extends Shadow() {
         tr.appendChild(tdTwo)
       }
     })
+  }
+
+  get details () {
+    return this.root.querySelector('details')
   }
 
   get dialog () {
