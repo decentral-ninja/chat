@@ -112,13 +112,11 @@ export default class Users extends Shadow() {
       Users.renderUserTableList(this.usersOl, data.usersConnectedWithSelf, selfUser)
       this.allUsersOl.innerHTML = ''
       Users.renderUserTableList(this.allUsersOl, data.allUsers, selfUser)
-      
     } else {
       this.html = /* html */`
         <details>
           <summary>Directly connected to <span id="connected-users">...</span> User(s)</summary>
         </details>
-        <chat-m-nick-name-dialog namespace="dialog-top-slide-in-" show-event-name="open-nickname"></chat-m-nick-name-dialog>
         <wct-dialog namespace="dialog-top-slide-in-">
           <style protected>
             :host > dialog #users-graph {
@@ -163,6 +161,14 @@ export default class Users extends Shadow() {
           </dialog>
         </wct-dialog>
       `
+      new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-nickname', {
+        detail: {
+          resolve
+        },
+        bubbles: true,
+        cancelable: true,
+        composed: true
+      }))).then(nickname => this.html = /* html */`<chat-m-nick-name-dialog namespace="dialog-top-slide-in-" show-event-name="open-nickname" nickname="${nickname}"></chat-m-nick-name-dialog>`)
     }
     return Promise.all([
       new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-providers-event-detail', {
@@ -191,7 +197,7 @@ export default class Users extends Shadow() {
         },
         {
           // @ts-ignore
-          path: `${this.importMetaUrl}./dialogs/NickName.js?${Environment?.version || ''}`,
+          path: `${this.importMetaUrl}./dialogs/NickNameDialog.js?${Environment?.version || ''}`,
           name: 'chat-m-nick-name-dialog'
         }
       ])

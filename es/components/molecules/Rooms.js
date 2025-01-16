@@ -16,6 +16,7 @@ export default class Rooms extends Shadow() {
     // @ts-ignore
     this.roomNamePrefix = self.Environment?.roomNamePrefix || 'chat-'
     this.shareDialogMap = new Map()
+    this.roomNameAkaDialogMap = new Map()
 
     this.clickEventListener = async event => {
       let target
@@ -69,75 +70,86 @@ export default class Rooms extends Shadow() {
             this.root.appendChild(div.children[0])
           }
         })
-      } else if ((target = event.composedPath().find(el => el.hasAttribute?.('delete')))) {
-        new Promise(resolve => this.dispatchEvent(new CustomEvent('storage-get-rooms', {
-          detail: {
-            resolve
-          },
-          bubbles: true,
-          cancelable: true,
-          composed: true
-        }))).then(getRoomsResult => {
-          // bug fix, it was possible to add rooms with double quotes " which escaped the attribute, see Line 481 (delete="${key.replace(/"/g, "'")}")
-          // this fix can be removed after a while
-          if (getRoomsResult.value[target.getAttribute('delete')]) {
-            delete getRoomsResult.value[target.getAttribute('delete')]
+      } else if ((target = event.composedPath().find(el => el.hasAttribute?.('edit')))) {
+        Promise.all([
+          new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-rooms', {
+            detail: {
+              resolve
+            },
+            bubbles: true,
+            cancelable: true,
+            composed: true
+          }))),
+          this.fetchModules([{
+            // @ts-ignore
+            path: `${this.importMetaUrl}../molecules/dialogs/RoomNameAkaDialog.js?${Environment?.version || ''}`,
+            name: 'chat-m-room-name-aka-dialog'
+          }])
+        ]).then(([getRoomsResult]) => {
+          if (this.roomNameAkaDialogMap.has(target.getAttribute('edit'))) {
+            this.roomNameAkaDialogMap.get(target.getAttribute('edit')).show('show-modal')
           } else {
-            delete getRoomsResult.value[target.getAttribute('delete').replace(/'/g, '"')]
+            const div = document.createElement('div')
+            div.innerHTML = /* html */`
+              <chat-m-room-name-aka-dialog
+                namespace="dialog-top-slide-in-"
+                open="show-modal"
+                room-name="${target.getAttribute('edit')}"
+              >
+                <template>${JSON.stringify(getRoomsResult.value)}</template>
+              </chat-m-room-name-aka-dialog>
+            `
+            this.roomNameAkaDialogMap.set(target.getAttribute('edit'), div.children[0])
+            this.root.appendChild(div.children[0])
           }
-          this.dispatchEvent(new CustomEvent('storage-set', {
-            detail: {
-              key: `${this.roomNamePrefix}rooms`,
-              value: getRoomsResult.value
-            },
-            bubbles: true,
-            cancelable: true,
-            composed: true
-          }))
-          this.dispatchEvent(new CustomEvent(`yjs-unsubscribe-notifications`, {
-            detail: {
-              room: target.getAttribute('delete')
-            },
-            bubbles: true,
-            cancelable: true,
-            composed: true
-          }))
-          this.dispatchEvent(new CustomEvent('yjs-request-notifications', {
-            detail: {force: true},
-            bubbles: true,
-            cancelable: true,
-            composed: true
-          }))
-          this.clearAllDeleted()
-          target.parentNode.classList.add('deleted')
         })
-      } else if ((target = event.composedPath().find(el => el.hasAttribute?.('undo')))) {
-        new Promise(resolve => this.dispatchEvent(new CustomEvent('storage-undo', {
+      } else if ((target = event.composedPath().find(el => el.hasAttribute?.('delete')))) {
+        this.dispatchEvent(new CustomEvent('yjs-delete-room', {
           detail: {
-            key: `${this.roomNamePrefix}rooms`,
-            resolve
+            name: target.getAttribute('delete')
           },
           bubbles: true,
           cancelable: true,
           composed: true
-        }))).then(getRoomsResult => {
-          target.parentNode.classList.remove('deleted')
-          this.dispatchEvent(new CustomEvent(`yjs-subscribe-notifications`, {
-            detail: {
-              room: target.getAttribute('undo'),
-              resolve: () => {}
-            },
-            bubbles: true,
-            cancelable: true,
-            composed: true
-          }))
-          this.dispatchEvent(new CustomEvent('yjs-request-notifications', {
-            detail: {force: true},
-            bubbles: true,
-            cancelable: true,
-            composed: true
-          }))
-        })
+        }))
+        this.dispatchEvent(new CustomEvent(`yjs-unsubscribe-notifications`, {
+          detail: {
+            room: target.getAttribute('delete')
+          },
+          bubbles: true,
+          cancelable: true,
+          composed: true
+        }))
+        this.dispatchEvent(new CustomEvent('yjs-request-notifications', {
+          detail: {force: true},
+          bubbles: true,
+          cancelable: true,
+          composed: true
+        }))
+        this.clearAllDeleted()
+        target.parentNode.classList.add('deleted')
+      } else if ((target = event.composedPath().find(el => el.hasAttribute?.('undo')))) {
+        target.parentNode.classList.remove('deleted')
+        this.dispatchEvent(new CustomEvent('yjs-undo-room', {
+          bubbles: true,
+          cancelable: true,
+          composed: true
+        }))
+        this.dispatchEvent(new CustomEvent(`yjs-subscribe-notifications`, {
+          detail: {
+            room: target.getAttribute('undo'),
+            resolve: () => {}
+          },
+          bubbles: true,
+          cancelable: true,
+          composed: true
+        }))
+        this.dispatchEvent(new CustomEvent('yjs-request-notifications', {
+          detail: {force: true},
+          bubbles: true,
+          cancelable: true,
+          composed: true
+        }))
       } else if ((target = event.composedPath().find(el => el.matches?.('[disabled]')))) {
         this.dialog?.close()
       }
@@ -187,6 +199,8 @@ export default class Rooms extends Shadow() {
       }
     }
 
+    this.roomNameAkaEventListener = event => (this.ul.querySelector(`#${event.detail.key}`).querySelector('.aka').textContent = event.detail.aka ? `aka. ${event.detail.aka}` : '')
+
     this.openRoomListener = event => {
       this.renderHTML().then(() =>  this.dialog?.show('show-modal'))
     }
@@ -202,6 +216,7 @@ export default class Rooms extends Shadow() {
     if (this.shouldRenderCSS()) this.renderCSS()
     this.addEventListener('click', this.clickEventListener)
     this.addEventListener('submit-room-name', this.roomNameEventListener)
+    this.addEventListener('room-name-aka', this.roomNameAkaEventListener)
     this.globalEventTarget.addEventListener('open-room', this.openRoomListener)
     this.connectedCallbackOnce()
   }
@@ -223,6 +238,7 @@ export default class Rooms extends Shadow() {
   disconnectedCallback () {
     this.removeEventListener('click', this.clickEventListener)
     this.removeEventListener('submit-room-name', this.roomNameEventListener)
+    this.removeEventListener('room-name-aka', this.roomNameAkaEventListener)
     this.globalEventTarget.removeEventListener('open-room', this.openRoomListener)
     this.dialog?.close()
   }
@@ -299,7 +315,7 @@ export default class Rooms extends Shadow() {
   renderHTML () {
     return Promise.all([
       this.roomPromise,
-      new Promise(resolve => this.dispatchEvent(new CustomEvent('storage-get-rooms', {
+      new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-rooms', {
         detail: {
           resolve
         },
@@ -347,6 +363,7 @@ export default class Rooms extends Shadow() {
       let roomName
       this.html = ''
       this.shareDialogMap = new Map()
+      this.roomNameAkaDialogMap = new Map()
       this.html = room.done
         ? /* html */`
           <wct-dialog
@@ -428,7 +445,7 @@ export default class Rooms extends Shadow() {
       :host ul > li[disabled] {
         order: -1;
       }
-      :host ul > li[disabled] > div > wct-icon-mdx:not([share]) {
+      :host ul > li[disabled] > div > wct-icon-mdx:not([share]):not([edit]) {
         display: none;
       }
       :host ul > li[disabled] > div > a {
@@ -464,7 +481,7 @@ export default class Rooms extends Shadow() {
       :host ul > li > div > wct-icon-mdx {
         --color: var(--color-error);
       }
-      :host ul > li > div > wct-icon-mdx[share] {
+      :host ul > li > div > wct-icon-mdx[share], :host ul > li > div > wct-icon-mdx[edit] {
         --color: unset;
       }
       :host ul > li > div > a > chat-m-notifications {
@@ -473,19 +490,33 @@ export default class Rooms extends Shadow() {
       :host ul > li > div > a > chat-m-notifications[hidden] {
         display: none;
       }
+      :host ul > li > div > a > div.aka {
+        color: var(--color-disabled);
+        font-style: italic;
+        font-size: 0.75em;
+        text-decoration: underline;
+        margin-left: 2em;
+        display: list-item;
+        list-style: disc;
+      }
+      :host ul > li > div > a > div.aka:empty {
+        display: none;
+      }
     </style>
     <ul>
       ${Object.keys(rooms.value)
         .sort((a, b) => rooms.value[b].entered?.[0] - rooms.value[a].entered?.[0])
-        .reduce((acc, key, i, arr) => acc + /* html */`<li${key === activeRoomName ? ' disabled' : ''}>
+        .reduce((acc, key, i, arr) => acc + /* html */`<li id="${key}"${key === activeRoomName ? ' disabled' : ''}>
           <div>
             <a route href="${rooms.value[key].locationHref}">
               <div>${key}</div>
+              <div class=aka>${rooms.value[key].aka ? `aka. ${rooms.value[key].aka}` : ''}</div>
               <chat-m-notifications room="${key}" no-click${i + 1 === arr.length ? ' on-connected-request-notifications' : ''} hover-on-parent-element></chat-m-notifications>
             </a>
+            <wct-icon-mdx title="share" share="${key}" icon-url="../../../../../../img/icons/share-3.svg" size="2em"></wct-icon-mdx>
+            <wct-icon-mdx title="edit" edit="${key}" icon-url="../../../../../../img/icons/pencil.svg" size="2em"></wct-icon-mdx>
             <wct-icon-mdx title="delete" delete="${key.replace(/"/g, "'")}" icon-url="../../../../../../img/icons/trash.svg" size="2em"></wct-icon-mdx>
             <wct-icon-mdx title="undo" undo="${key}" icon-url="../../../../../../img/icons/trash-off.svg" size="2em"></wct-icon-mdx>
-            <wct-icon-mdx title="share" share="${key}" icon-url="../../../../../../img/icons/share-3.svg" size="2em"></wct-icon-mdx>
           </div>
         </li>`, '')
       }

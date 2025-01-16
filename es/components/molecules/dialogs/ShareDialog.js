@@ -137,7 +137,7 @@ export default class ShareDialog extends Dialog {
       </dialog>
     `
     return Promise.all([
-      new Promise(resolve => this.dispatchEvent(new CustomEvent('storage-get-rooms', {
+      new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-rooms', {
         detail: {
           resolve
         },

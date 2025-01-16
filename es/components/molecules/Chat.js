@@ -127,7 +127,7 @@ export default class Chat extends Shadow() {
         timeout = setTimeout(() => {
           let ulChildrenArr = []
           // avoid saving scrollEl on first time intersection of message after connect, since the initial event does not grab the most top message
-          if ((ulChildrenArr = Array.from(this.ul.children)) && (ulChildrenArr = ulChildrenArr.splice(ulChildrenArr.indexOf(event.detail.target)))) this.dispatchEvent(new CustomEvent('merge-active-room', {
+          if ((ulChildrenArr = Array.from(this.ul.children)) && (ulChildrenArr = ulChildrenArr.splice(ulChildrenArr.indexOf(event.detail.target)))) this.dispatchEvent(new CustomEvent('yjs-merge-active-room', {
             detail: {
               // topBorder + 50 is for making sure that not only the bottom of the message is seen but 50px parts of it
               scrollEl: this.ul.lastElementChild.hasAttribute('intersecting') ? this.ul.lastElementChild.getAttribute('timestamp') : ulChildrenArr.find(child => child.getBoundingClientRect().bottom > topBorder + 50)?.getAttribute('timestamp') || event.detail.scrollEl
@@ -161,7 +161,7 @@ export default class Chat extends Shadow() {
       this.renderHTML()
     } else {
       // on new render the event listener is going to scroll, the below is executed on room change
-      new Promise(resolve => this.dispatchEvent(new CustomEvent('storage-get-active-room', {
+      new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-active-room', {
         detail: {
           resolve
         },
@@ -355,7 +355,7 @@ export default class Chat extends Shadow() {
   }
 
   scrollLastMemorizedIntoView () {
-    new Promise(resolve => this.dispatchEvent(new CustomEvent('storage-get-active-room', {
+    new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-active-room', {
       detail: {
         resolve
       },
