@@ -344,7 +344,7 @@ export default class Chat extends Shadow() {
     setTimeout(() => {
       const scrollEl = getScrollElFunc()
       if (!scrollEl) return
-      if (scrollEl.matches(':not([intersecting])') && counter < 10) {
+      if (scrollEl.matches(':not([intersecting])') && counter < 15) {
         this.scrollIntoView(getScrollElFunc, counter > 2 ? false : smooth, counter)
       } else {
         scrollEl.scrollIntoView({behavior: 'instant'})
