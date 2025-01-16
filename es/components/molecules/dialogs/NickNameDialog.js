@@ -92,7 +92,7 @@ export default class NickNameDialog extends SetStringDialog {
   }
 
   get grid () {
-    return this.dialog.querySelector('wct-grid')
+    return this.dialog?.querySelector('wct-grid')
   }
 
   get getNicknameInput () {

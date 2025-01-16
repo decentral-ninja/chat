@@ -27,7 +27,8 @@ export default class RoomNameAkaDialog extends SetStringDialog {
       this.dispatchEvent(new CustomEvent('room-name-aka', {
         detail: {
           key: this.getAttribute('room-name'),
-          aka: inputField?.value
+          aka: inputField?.value,
+          liCount: this.getAttribute('li-count')
         },
         bubbles: true,
         cancelable: true,

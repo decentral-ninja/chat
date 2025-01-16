@@ -95,6 +95,7 @@ export default class Rooms extends Shadow() {
                 namespace="dialog-top-slide-in-"
                 open="show-modal"
                 room-name="${target.getAttribute('edit')}"
+                li-count="${target.getAttribute('li-count')}"
               >
                 <template>${JSON.stringify(getRoomsResult.value)}</template>
               </chat-m-room-name-aka-dialog>
@@ -199,7 +200,10 @@ export default class Rooms extends Shadow() {
       }
     }
 
-    this.roomNameAkaEventListener = event => (this.ul.querySelector(`#${event.detail.key}`).querySelector('.aka').textContent = event.detail.aka ? `aka. ${event.detail.aka}` : '')
+    this.roomNameAkaEventListener = event => {
+      const target = this.ul.querySelector(`#${event.detail.key}`)?.querySelector('.aka') || this.ul.children[event.detail.liCount]?.querySelector('.aka')
+      if (target) target.textContent = event.detail.aka ? `aka. ${event.detail.aka}` : ''
+    }
 
     this.openRoomListener = event => {
       this.renderHTML().then(() =>  this.dialog?.show('show-modal'))
@@ -514,7 +518,7 @@ export default class Rooms extends Shadow() {
               <chat-m-notifications room="${key}" no-click${i + 1 === arr.length ? ' on-connected-request-notifications' : ''} hover-on-parent-element></chat-m-notifications>
             </a>
             <wct-icon-mdx title="share" share="${key}" icon-url="../../../../../../img/icons/share-3.svg" size="2em"></wct-icon-mdx>
-            <wct-icon-mdx title="edit" edit="${key}" icon-url="../../../../../../img/icons/pencil.svg" size="2em"></wct-icon-mdx>
+            <wct-icon-mdx title="edit" edit="${key}" li-count=${i} icon-url="../../../../../../img/icons/pencil.svg" size="2em"></wct-icon-mdx>
             <wct-icon-mdx title="delete" delete="${key.replace(/"/g, "'")}" icon-url="../../../../../../img/icons/trash.svg" size="2em"></wct-icon-mdx>
             <wct-icon-mdx title="undo" undo="${key}" icon-url="../../../../../../img/icons/trash-off.svg" size="2em"></wct-icon-mdx>
           </div>
