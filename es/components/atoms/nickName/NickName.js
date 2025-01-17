@@ -152,7 +152,7 @@ export default class NickName extends Shadow() {
     this.html = this.hasAttribute('self')
       ? `<a href="#">
           <h4>${nickname || 'Loading...'}</h4>
-          <wct-icon-mdx hover-on-parent-element id="show-modal" icon-url="../../../../../../img/icons/pencil.svg" size="1em"></wct-icon-mdx>
+          <wct-icon-mdx hover-on-parent-element id="show-modal" title="edit nickname" icon-url="../../../../../../img/icons/pencil.svg" size="1em"></wct-icon-mdx>
         </a>`
       : `<span><h4>${nickname || 'Loading...'}</h4></span>`
     return this.fetchModules([

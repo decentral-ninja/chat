@@ -160,7 +160,7 @@ export default class MessageDialog extends Dialog {
         <h4>Message:</h4>
         <div id="controls">
           <wct-dialog-clipboard id=clipboard namespace="dialog-clipboard-default-">
-            <wct-icon-mdx id="show-modal" icon-url="../../../../../../img/icons/copy.svg" size="2em"></wct-icon-mdx>
+            <wct-icon-mdx id="show-modal" title="copy" icon-url="../../../../../../img/icons/copy.svg" size="2em"></wct-icon-mdx>
             <template>${JSON.parse(templateTextContent).text}</template>
           </wct-dialog-clipboard>
           <div id="reply"><wct-icon-mdx reply title="reply to message" icon-url="../../../../../../img/icons/arrow-back-up.svg" size="2em"></wct-icon-mdx></div>

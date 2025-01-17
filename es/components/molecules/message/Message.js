@@ -123,7 +123,10 @@ export default class Message extends WebWorker(Intersection()) {
   }
   
   async addEventListeners () {
-    if (this.openDialogIcon) this.openDialogIcon.addEventListener('click', this.clickEventListener)
+    if (this.openDialogIcon) {
+      this.openDialogIcon.addEventListener('click', this.clickEventListener)
+      this.addEventListener('dblclick', this.clickEventListener)
+    }
     if (this.replyToLi) this.replyToLi.addEventListener('click', this.clickReplyToEventListener)
     this.globalEventTarget.addEventListener(`chat-remove-${(await this.textObj).timestamp || ''}`, this.chatRemoveEventListener)
   }
@@ -134,7 +137,10 @@ export default class Message extends WebWorker(Intersection()) {
   }
   
   async removeEventListeners() {
-    if (this.openDialogIcon) this.openDialogIcon.removeEventListener('click', this.clickEventListener)
+    if (this.openDialogIcon) {
+      this.openDialogIcon.removeEventListener('click', this.clickEventListener)
+      this.removeEventListener('dblclick', this.clickEventListener)
+    }
     if (this.replyToLi) this.replyToLi.removeEventListener('click', this.clickReplyToEventListener)
     this.globalEventTarget.removeEventListener(`chat-remove-${(await this.textObj).timestamp || ''}`, this.chatRemoveEventListener)
   }
