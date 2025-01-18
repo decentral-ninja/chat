@@ -142,7 +142,7 @@ export default class Users extends Shadow() {
         <details>
           <summary>Directly connected to <span id="connected-users">...</span> User(s)</summary>
         </details>
-        <wct-dialog namespace="dialog-top-slide-in-" open="show-modal">
+        <wct-dialog namespace="dialog-top-slide-in-">
           <style protected>
             :host h5 {
               position: sticky;
