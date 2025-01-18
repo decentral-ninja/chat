@@ -48,8 +48,22 @@ export default class P2pGraph extends Shadow() {
       :host > div, :host > div > svg {
         overflow: visible;
       }
-      @media only screen and (max-width: _max-width_) {
-        :host {}
+      :host > div > svg text {
+        color: var(--color);
+        font-size: var(--font-size);
+        font-family: var(--font-family);
+      }
+      :host > div > svg .is-self text {
+        color: var(--color-user-self);
+      }
+      :host > div > svg .is-self > circle {
+        fill: var(--color-user-self) !important;
+      }
+      :host > div > svg .other > circle {
+        fill: var(--color-user) !important;
+      }
+      :host > div > svg .provider > circle {
+        fill: var(--color-provider) !important;
       }
     `
     return Promise.resolve()
@@ -60,116 +74,57 @@ export default class P2pGraph extends Shadow() {
    * @returns Promise<void>
    */
   renderHTML () {
-    this.html = /* html */`
-      <div></div>
-    `
+    this.html = /* html */`<div></div>`
     return this.loadDependency('P2PGraph', `${this.importMetaUrl}./p2p-graph.js`).then(P2PGraph => {
       /** @type {[string, import("../../../../../event-driven-web-components-yjs/src/es/controllers/Users.js").User][]} */
       const users = JSON.parse(this.template.content.textContent)
       this.template.remove()
       // https://github.com/feross/p2p-graph?tab=readme-ov-file
       var graph = new P2PGraph(this.div)
-
-      //console.log('*********', users)
-
       const nodes = []
-      // @ts-ignore
       users.forEach(([key, user]) => {
-        // sessionStorage timestamp
-        const epoch = JSON.parse(user.epoch).epoch
-        //console.log('epoch *********', user.nickname, epoch, (Date.now() - epoch) / 1000 / 60 /60 + ' hours')
-        const awarenessEpoch = JSON.parse(user.awarenessEpoch || user.epoch).epoch
-        //console.log('awarenessEpoch *********', user.nickname, awarenessEpoch, (Date.now() - awarenessEpoch) / 1000 / 60 / 60 + ' hours')
-        //console.log('*********************************************************')
-        if (!nodes.includes(key)) graph.add({
-          id: key,
-          me: false,
-          fixed: false,
-          name: String(user.nickname)
-        })
-        if (user.isSelf) graph.seed(key, true)
+        if (nodes.includes(key)) return
         nodes.push(key)
+        const graphUserObj = P2pGraph.add(graph, this.svg, {
+          id: key,
+          fixed: false,
+          name: user.nickname
+        })        
+        graphUserObj.svgNode.classList.add(user.isSelf ? 'is-self': 'other')
+        graphUserObj.svgNode.addEventListener('click', event => this.dispatchEvent(new CustomEvent('p2p-graph-click', {
+          detail: { graphUserObj },
+          bubbles: true,
+          cancelable: true,
+          composed: true
+        })))
+        // trigger click on node when the id is the same as the active attribute
+        if (this.getAttribute('active') === graphUserObj.id) setTimeout(() => graphUserObj.svgNode.querySelector('circle')?.dispatchEvent(new CustomEvent('click', { bubbles: true, cancelable: true, composed: true })))
         // only show providers with mutually connected users
         for (const providerName in user.mutuallyConnectedUsers) {
-          if (!nodes.includes(providerName)) graph.add({
-            id: providerName,
-            me: true,
-            fixed: true,
-            name: providerName
-          })
-          nodes.push(providerName)
+          const graphProviderObj = nodes.includes(providerName)
+            ? null
+            : P2pGraph.add(graph, this.svg, {
+              id: providerName,
+              fixed: true,
+              name: providerName
+            })
+          if (graphProviderObj) {
+            nodes.push(providerName)
+            graphProviderObj.svgNode.classList.add('provider')
+            graphProviderObj.svgNode.classList.add(providerName.split(this.getAttribute('separator'))[0])
+          }
           graph.connect(providerName, key)
         }
       })
-
-      /*
-      // Add Providers
-      graph.add({
-        id: 'provider1',
-        me: true,
-        fixed: true,
-        name: 'heroku'
-      })
-      graph.add({
-        id: 'provider2',
-        me: true,
-        fixed: true,
-        name: 'localhost'
-      })
-      graph.add({
-        id: 'provider3',
-        me: true,
-        fixed: true,
-        name: 'astrangehost'
-      })
-      // Add Clients
-      graph.add({
-        id: 'client1',
-        name: 'Another Client'
-      })
-      graph.add({
-        id: 'client2',
-        name: 'Another Client'
-      })
-      graph.add({
-        id: 'client3',
-        name: 'Another Client'
-      })
-      graph.add({
-        id: 'client4',
-        name: 'Another Client'
-      })
-      graph.add({
-        id: 'client5',
-        name: 'Another Client'
-      })
-      graph.add({
-        id: 'client6',
-        name: 'Another Client'
-      })
-      graph.add({
-        id: 'client7',
-        name: 'Another Client'
-      })
-      // color green by isSeeding true
-      graph.seed('client5', true)
-      // Connect them
-      graph.connect('provider1', 'client1')
-      graph.connect('provider1', 'client2')
-      graph.connect('provider1', 'client3')
-      graph.connect('provider2', 'client4')
-      graph.connect('provider2', 'client5')
-      graph.connect('client1', 'provider2')
-      graph.connect('client2', 'provider2')
-      graph.connect('client6', 'provider3')
-      graph.connect('client7', 'provider3')
-      // speed
-      graph.rate('provider1', 'client3', 5000)
-      */
-      // Click behavior
-      graph.on('select', (id, ...args) => {console.log('*********', id, args)})
-      
-      //console.log(graph.list())
+      if (!nodes.length) {
+        this.setAttribute('no-data', '')
+        this.dispatchEvent(new CustomEvent('p2p-graph-no-data', {
+          bubbles: true,
+          cancelable: true,
+          composed: true
+        }))
+        this.div.remove()
+      }
     })
   }
 
@@ -195,8 +150,28 @@ export default class P2pGraph extends Shadow() {
     }))
   }
 
+  /**
+   * Find the corresponding node in the svg created
+   * 
+   * @name add
+   * @static
+   * @param {any} graph
+   * @param {any} svg
+   * @param {any} obj
+   * @returns {any}
+   */
+  static add (graph, svg, obj) {
+    graph.add(obj)
+    obj = {...obj, ...graph.list().slice(-1)[0], svgNode: Array.from(svg.querySelectorAll('g')).slice(-1)[0] /* The following does not work until the graph stops moving, so we grab the last entry in the svg: // svg.querySelector(`[cx="${obj.x}"]`) */}
+    return obj
+  }
+
   get div () {
     return this.root.querySelector('div')
+  }
+
+  get svg () {
+    return this.div.querySelector('svg')
   }
 
   get template () {

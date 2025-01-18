@@ -14,6 +14,7 @@ export default class Users extends Shadow() {
     super({ importMetaUrl: import.meta.url, ...options }, ...args)
 
     let lastGetData = null
+    let lastSeparator = null
     let timeoutId = null
     this.usersEventListener = async event => {
       lastGetData = event.detail.getData
@@ -23,7 +24,7 @@ export default class Users extends Shadow() {
           data: await event.detail.getData(),
           ...event.detail
         })
-        this.renderHTML(await event.detail.getData(), event.detail.selfUser)
+        this.renderHTML(await event.detail.getData(), event.detail.selfUser, (lastSeparator = event.detail.separator))
       }, 2000)
     }
 
@@ -32,12 +33,27 @@ export default class Users extends Shadow() {
       this.dialog.show('show-modal')
       // TODO: Make this cleaner and render graph once opened
       if (lastGetData) this.usersGraph.innerHTML = /* html */`
-        <chat-a-p2p-graph>
+        <chat-a-p2p-graph separator="${lastSeparator}">
           <template>${JSON.stringify(Array.from((await lastGetData()).usersConnectedWithSelf))}</template>
         </chat-a-p2p-graph>
       `
     }
-    
+
+    this.p2pGraphClickEventListener = event => console.log('p2pGraphClickEventListener', event.detail)
+
+    let resizeTimeout = null
+    this.resizeListener = event => {
+      clearTimeout(resizeTimeout)
+      resizeTimeout = setTimeout(async () => {
+        // TODO: Make this cleaner and render graph once opened
+        // TODO: active attribute is the uid of a user:  active='${Array.from((await lastGetData()).usersConnectedWithSelf)[0][0]}'
+        if (lastGetData) this.usersGraph.innerHTML = /* html */`
+          <chat-a-p2p-graph separator="${lastSeparator}"}'>
+            <template>${JSON.stringify(Array.from((await lastGetData()).usersConnectedWithSelf))}</template>
+          </chat-a-p2p-graph>
+        `
+      }, 200)
+    }
   }
 
   connectedCallback () {
@@ -45,11 +61,15 @@ export default class Users extends Shadow() {
     if (this.shouldRenderHTML()) this.renderHTML()
     this.globalEventTarget.addEventListener('yjs-users', this.usersEventListener)
     this.details.addEventListener('click', this.openDialog)
+    this.addEventListener('p2p-graph-click', this.p2pGraphClickEventListener)
+    self.addEventListener('resize', this.resizeListener)
   }
 
   disconnectedCallback () {
     this.globalEventTarget.removeEventListener('yjs-users', this.usersEventListener)
     this.details.removeEventListener('click', this.openDialog)
+    this.addEventListener('p2p-graph-click', this.p2pGraphClickEventListener)
+    self.removeEventListener('resize', this.resizeListener)
   }
 
   /**
@@ -91,7 +111,7 @@ export default class Users extends Shadow() {
   *
   * @return {Promise<void>}
   */
-  renderHTML (data, selfUser) {
+  renderHTML (data, selfUser, separator) {
     if (data) {
       if (data.usersConnectedWithSelf.size - 1) {
         this.connectedUsers.textContent = data.usersConnectedWithSelf.size ? data.usersConnectedWithSelf.size - 1 : 'You are alone!'
@@ -102,9 +122,9 @@ export default class Users extends Shadow() {
       }
       // TODO: add sessionProviders into the template from provider controller
       // add self user, incase it has no connected users "_synced"
-      //console.log('*********', providers)
+      //console.log('*********', data)
       this.usersGraph.innerHTML = /* html */`
-        <chat-a-p2p-graph>
+        <chat-a-p2p-graph separator="${separator}">
           <template>${JSON.stringify(Array.from(data.usersConnectedWithSelf))}</template>
         </chat-a-p2p-graph>
       `
@@ -117,11 +137,8 @@ export default class Users extends Shadow() {
         <details>
           <summary>Directly connected to <span id="connected-users">...</span> User(s)</summary>
         </details>
-        <wct-dialog namespace="dialog-top-slide-in-">
+        <wct-dialog namespace="dialog-top-slide-in-" open="show-modal">
           <style protected>
-            :host > dialog #users-graph {
-              padding: 5svh 10svw;
-            }
             :host h5 {
               position: sticky;
               top: 0;
@@ -141,12 +158,19 @@ export default class Users extends Shadow() {
             :host .warning {
               color: red;
             }
+            :host > dialog #users-graph {
+              padding: 5svh 10svw;
+            }
+            :host > dialog #users-graph:has(> chat-a-p2p-graph[no-data]), :host > dialog #users-graph:has(> chat-a-p2p-graph:not([no-data])) + * {
+              display: none
+            }
           </style>
           <dialog>
             <wct-menu-icon id="close" no-aria class="open sticky" namespace="menu-icon-close-" no-click></wct-menu-icon>
             <h4>Connection Data:</h4>
             <div>
               <div id="users-graph"></div>
+              <p>No active connections...</p>
               <hr>
               <div>
                 <h5>Mutually connected users</h5>
