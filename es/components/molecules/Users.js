@@ -48,7 +48,7 @@ export default class Users extends Shadow() {
         // TODO: Make this cleaner and render graph once opened
         // TODO: active attribute is the uid of a user:  active='${Array.from((await lastGetData()).usersConnectedWithSelf)[0][0]}'
         if (lastGetData) this.usersGraph.innerHTML = /* html */`
-          <chat-a-p2p-graph separator="${lastSeparator}"}'>
+          <chat-a-p2p-graph separator="${lastSeparator}">
             <template>${JSON.stringify(Array.from((await lastGetData()).usersConnectedWithSelf))}</template>
           </chat-a-p2p-graph>
         `
