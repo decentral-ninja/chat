@@ -2,6 +2,9 @@
 import { Shadow } from '../../../../event-driven-web-components-prototypes/src/Shadow.js'
 
 /* global self */
+/* global Environment */
+/* global history */
+/* global location */
 
 /**
  * The rooms view
@@ -29,7 +32,7 @@ export default class Rooms extends Shadow() {
             cancelable: true,
             composed: true
           }))
-        } else if(target.hasAttribute('room-name')) {
+        } else if (target.hasAttribute('room-name')) {
           event.preventDefault()
           event.stopPropagation()
           // open first room
@@ -113,7 +116,7 @@ export default class Rooms extends Shadow() {
           cancelable: true,
           composed: true
         }))
-        this.dispatchEvent(new CustomEvent(`yjs-unsubscribe-notifications`, {
+        this.dispatchEvent(new CustomEvent('yjs-unsubscribe-notifications', {
           detail: {
             room: target.getAttribute('delete')
           },
@@ -122,7 +125,7 @@ export default class Rooms extends Shadow() {
           composed: true
         }))
         this.dispatchEvent(new CustomEvent('yjs-request-notifications', {
-          detail: {force: true},
+          detail: { force: true },
           bubbles: true,
           cancelable: true,
           composed: true
@@ -136,7 +139,7 @@ export default class Rooms extends Shadow() {
           cancelable: true,
           composed: true
         }))
-        this.dispatchEvent(new CustomEvent(`yjs-subscribe-notifications`, {
+        this.dispatchEvent(new CustomEvent('yjs-subscribe-notifications', {
           detail: {
             room: target.getAttribute('undo'),
             resolve: () => {}
@@ -146,7 +149,7 @@ export default class Rooms extends Shadow() {
           composed: true
         }))
         this.dispatchEvent(new CustomEvent('yjs-request-notifications', {
-          detail: {force: true},
+          detail: { force: true },
           bubbles: true,
           cancelable: true,
           composed: true
@@ -169,7 +172,7 @@ export default class Rooms extends Shadow() {
           cancelable: true,
           composed: true
         }))
-        let inputField = event.composedPath()[0].inputField || event.composedPath()[0].previousElementSibling?.inputField
+        const inputField = event.composedPath()[0].inputField || event.composedPath()[0].previousElementSibling?.inputField
         // check if url got entered as room name
         if (inputField?.value) {
           try {
@@ -206,7 +209,7 @@ export default class Rooms extends Shadow() {
     }
 
     this.openRoomListener = event => {
-      this.renderHTML().then(() =>  this.dialog?.show('show-modal'))
+      this.renderHTML().then(() => this.dialog?.show('show-modal'))
     }
 
     /** @type {(any)=>void} */
@@ -533,7 +536,7 @@ export default class Rooms extends Shadow() {
 
   /**
    * add remove hidden class regarding if filter string is included in the node
-   * 
+   *
    * @method
    * @name filterFunction
    * @kind method

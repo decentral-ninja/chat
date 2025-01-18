@@ -1,6 +1,8 @@
 // @ts-check
 import Dialog from '../../../../../../web-components-toolbox/src/es/components/molecules/dialog/Dialog.js'
 
+/* global Environment */
+
 /**
 * @export
 * @class Dialog
@@ -18,14 +20,14 @@ export default class SetStringDialog extends Dialog {
      *
      * @return {boolean}
      */
-  shouldRenderCustomHTML() {
+  shouldRenderCustomHTML () {
     return !this.root.querySelector(this.cssSelector + ' > dialog')
   }
 
   /**
    * renders the css
    */
-  renderCSS() {
+  renderCSS () {
     const result = super.renderCSS()
     this.setCss(/* css */`
       :host {
@@ -51,10 +53,10 @@ export default class SetStringDialog extends Dialog {
   /**
    * Render HTML
    * this function must be called in sync
-   * 
+   *
    * @returns Promise<void>
    */
-  renderCustomHTML(placeholder, value, prependDialog = '', appendDialog = '', prependGridSection = '', appendGridSection = '') {
+  renderCustomHTML (placeholder, value, prependDialog = '', appendDialog = '', prependGridSection = '', appendGridSection = '') {
     this.html = /* html */`
       <dialog>
         ${prependDialog}

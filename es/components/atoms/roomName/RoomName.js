@@ -24,7 +24,7 @@ export default class RoomName extends Shadow() {
     /** @type {Promise<{ locationHref: string, room: Promise<string> & {done: boolean} }>} */
     this.roomPromise = new Promise(resolve => (this.roomResolve = resolve))
 
-    this.roomPromise.then(async ({locationHref, room}) => {
+    this.roomPromise.then(async ({ locationHref, room }) => {
       this.renderHTML(await room)
     })
   }

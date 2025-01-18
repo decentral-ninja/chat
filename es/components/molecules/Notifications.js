@@ -1,6 +1,8 @@
 // @ts-check
 import { Hover } from '../../../../event-driven-web-components-prototypes/src/Hover.js'
 
+/* global self */
+
 /**
  * The notifications view
  *
@@ -15,7 +17,7 @@ export default class Notifications extends Hover() {
     // @ts-ignore
     this.roomNamePrefix = self.Environment?.roomNamePrefix || 'chat-'
     this.notificationsMax = 9
-    
+
     if (this.hasAttribute('room')) {
       this.notificationsEventListener = event => {
         let notifications
@@ -63,11 +65,13 @@ export default class Notifications extends Hover() {
   }
 
   connectedCallbackOnce () {
-    if (this.hasAttribute('on-connected-request-notifications')) this.dispatchEvent(new CustomEvent('yjs-request-notifications', {
-      bubbles: true,
-      cancelable: true,
-      composed: true
-    }))
+    if (this.hasAttribute('on-connected-request-notifications')) {
+      this.dispatchEvent(new CustomEvent('yjs-request-notifications', {
+        bubbles: true,
+        cancelable: true,
+        composed: true
+      }))
+    }
     this.connectedCallbackOnce = () => {}
   }
 

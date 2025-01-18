@@ -1,6 +1,8 @@
 // @ts-check
 import { Shadow } from '../../../../../web-components-toolbox/src/es/components/prototypes/Shadow.js'
 
+/* global self */
+
 /**
 * @export
 * @class P2pGraph
@@ -74,13 +76,13 @@ export default class P2pGraph extends Shadow() {
    * @returns Promise<void>
    */
   renderHTML () {
-    this.html = /* html */`<div></div>`
+    this.html = /* html */'<div></div>'
     return this.loadDependency('P2PGraph', `${this.importMetaUrl}./p2p-graph.js`).then(P2PGraph => {
       /** @type {[string, import("../../../../../event-driven-web-components-yjs/src/es/controllers/Users.js").User][]} */
       const users = JSON.parse(this.template.content.textContent)
       this.template.remove()
       // https://github.com/feross/p2p-graph?tab=readme-ov-file
-      var graph = new P2PGraph(this.div)
+      const graph = new P2PGraph(this.div)
       const nodes = []
       users.forEach(([key, user]) => {
         if (nodes.includes(key)) return
@@ -89,8 +91,8 @@ export default class P2pGraph extends Shadow() {
           id: key,
           fixed: false,
           name: user.nickname
-        })        
-        graphUserObj.svgNode.classList.add(user.isSelf ? 'is-self': 'other')
+        })
+        graphUserObj.svgNode.classList.add(user.isSelf ? 'is-self' : 'other')
         graphUserObj.svgNode.addEventListener('click', event => this.dispatchEvent(new CustomEvent('p2p-graph-click', {
           detail: { graphUserObj },
           bubbles: true,
@@ -152,7 +154,7 @@ export default class P2pGraph extends Shadow() {
 
   /**
    * Find the corresponding node in the svg created
-   * 
+   *
    * @name add
    * @static
    * @param {any} graph
@@ -162,7 +164,7 @@ export default class P2pGraph extends Shadow() {
    */
   static add (graph, svg, obj) {
     graph.add(obj)
-    obj = {...obj, ...graph.list().slice(-1)[0], svgNode: Array.from(svg.querySelectorAll('g')).slice(-1)[0] /* The following does not work until the graph stops moving, so we grab the last entry in the svg: // svg.querySelector(`[cx="${obj.x}"]`) */}
+    obj = { ...obj, ...graph.list().slice(-1)[0], svgNode: Array.from(svg.querySelectorAll('g')).slice(-1)[0] /* The following does not work until the graph stops moving, so we grab the last entry in the svg: // svg.querySelector(`[cx="${obj.x}"]`) */ }
     return obj
   }
 

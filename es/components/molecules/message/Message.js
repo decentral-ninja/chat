@@ -2,6 +2,10 @@
 import { WebWorker } from '../../../../../event-driven-web-components-prototypes/src/WebWorker.js'
 import { Intersection } from '../../../../../event-driven-web-components-prototypes/src/Intersection.js'
 
+/* global Environment */
+/* global location */
+/* global self */
+
 /**
  * textObj aka. Message container deleted
  @typedef {{
@@ -23,7 +27,7 @@ import { Intersection } from '../../../../../event-driven-web-components-prototy
 /**
  * Message is the visual representation from chat[textObj]
  * Data is fed through 1) templateTag 2) dynamically through getUpdatedTextObj
- * 
+ *
  * @export
  * @class Message
  * @type {CustomElementConstructor}
@@ -121,7 +125,7 @@ export default class Message extends WebWorker(Intersection()) {
       console.error('Could not parse message:', { message: this, error })
     }
   }
-  
+
   async addEventListeners () {
     if (this.openDialogIcon) {
       this.openDialogIcon.addEventListener('click', this.clickEventListener)
@@ -135,8 +139,8 @@ export default class Message extends WebWorker(Intersection()) {
     super.disconnectedCallback()
     this.removeEventListeners()
   }
-  
-  async removeEventListeners() {
+
+  async removeEventListeners () {
     if (this.openDialogIcon) {
       this.openDialogIcon.removeEventListener('click', this.clickEventListener)
       this.removeEventListener('dblclick', this.clickEventListener)
@@ -148,16 +152,18 @@ export default class Message extends WebWorker(Intersection()) {
   // inform molecules/chat that message is intersecting and can be used as scroll hook plus being saved to storage room
   intersectionCallback (entries, observer) {
     if (entries && entries[0]) {
-      if (this.getAttribute('part') !== 'reply-to-li') this.dispatchEvent(new CustomEvent(this.getAttribute('intersection-event-name') || 'message-intersection', {
-        detail: {
-          scrollEl: `${this.getAttribute('timestamp')}`,
-          entry: entries[0], // must be [0], tried splice(-1)[0] but had weird sideeffect's
-          target: this
-        },
-        bubbles: true,
-        cancelable: true,
-        composed: true
-      }))
+      if (this.getAttribute('part') !== 'reply-to-li') {
+        this.dispatchEvent(new CustomEvent(this.getAttribute('intersection-event-name') || 'message-intersection', {
+          detail: {
+            scrollEl: `${this.getAttribute('timestamp')}`,
+            entry: entries[0], // must be [0], tried splice(-1)[0] but had weird sideeffect's
+            target: this
+          },
+          bubbles: true,
+          cancelable: true,
+          composed: true
+        }))
+      }
       if (this.areEntriesIntersecting(entries)) {
         this.setAttribute('intersecting', '')
         if (this.hasAttribute('update-on-intersection')) this.update()
@@ -303,7 +309,7 @@ export default class Message extends WebWorker(Intersection()) {
 
   /**
    * Render HTML
-   * 
+   *
    * @param {Promise<import("../../controllers/Chat.js").TextObj | TextObjDeleted>} [textObj=this.textObj]
    * @return {Promise<[any, any]>}
    */
@@ -312,32 +318,32 @@ export default class Message extends WebWorker(Intersection()) {
     this.html = Message.renderList(textObjSync, this.hasAttribute('no-dialog'), this.hasAttribute('self'))
     if (!textObjSync.deleted) this.webWorker(Message.processText, textObjSync).then(textObj => (this.textSpan.innerHTML = textObj.text))
     return Promise.all([
-      textObjSync.replyTo && this.hasAttribute('show-reply-to') 
+      textObjSync.replyTo && this.hasAttribute('show-reply-to')
         ? this.renderReplyTo(textObjSync)
         : null,
       this.fetchModules([
-      {
+        {
         // @ts-ignore
-        path: `${this.importMetaUrl}../../atoms/nickName/NickName.js?${Environment?.version || ''}`,
-        name: 'chat-a-nick-name'
-      },
-      {
-        path: `${this.importMetaUrl}../../../../../web-components-toolbox/src/es/components/atoms/iconMdx/IconMdx.js`,
-        name: 'wct-icon-mdx'
-      },
-      {
+          path: `${this.importMetaUrl}../../atoms/nickName/NickName.js?${Environment?.version || ''}`,
+          name: 'chat-a-nick-name'
+        },
+        {
+          path: `${this.importMetaUrl}../../../../../web-components-toolbox/src/es/components/atoms/iconMdx/IconMdx.js`,
+          name: 'wct-icon-mdx'
+        },
+        {
         // @ts-ignore
-        path: `${this.importMetaUrl}../../../../../web-components-toolbox/src/es/components/atoms/button/Button.js?${Environment?.version || ''}`,
-        name: 'wct-button'
-      }
-    ])])
+          path: `${this.importMetaUrl}../../../../../web-components-toolbox/src/es/components/atoms/button/Button.js?${Environment?.version || ''}`,
+          name: 'wct-button'
+        }
+      ])])
   }
 
   renderReplyTo (textObj) {
     return this.getUpdatedTextObj(Promise.resolve(textObj.replyTo)).then(updatedTextObj => {
       if (this.replyToLi) this.replyToLi.remove()
       this.li.insertAdjacentHTML('afterbegin', /* html */`
-        <chat-m-message part="reply-to-li" timestamp="t_${textObj.replyTo?.timestamp}"${updatedTextObj?.isSelf ? ' self' : ''} no-dialog width="calc(100% - 0.2em)" box-shadow="2px 2px 5px var(--color-black)"${this.getAttribute('next-show-reply-to') === "true" ? ' show-reply-to next-show-reply-to="true"': ''}>
+        <chat-m-message part="reply-to-li" timestamp="t_${textObj.replyTo?.timestamp}"${updatedTextObj?.isSelf ? ' self' : ''} no-dialog width="calc(100% - 0.2em)" box-shadow="2px 2px 5px var(--color-black)"${this.getAttribute('next-show-reply-to') === 'true' ? ' show-reply-to next-show-reply-to="true"' : ''}>
           <template>${JSON.stringify(updatedTextObj)}</template>
         </chat-m-message>
       `)
@@ -416,7 +422,7 @@ export default class Message extends WebWorker(Intersection()) {
         uid: this.getAttribute('uid')
       })
     }
-    return new Promise(async resolve => this.dispatchEvent(new CustomEvent('chat-get-text-obj', {
+    return new Promise(async resolve => this.dispatchEvent(new CustomEvent('chat-get-text-obj', { // eslint-disable-line
       detail: {
         textObj: await textObj,
         resolve
@@ -426,7 +432,7 @@ export default class Message extends WebWorker(Intersection()) {
       composed: true
     }))).then(updatedTextObj => {
       // updatedTextObj could be theoretically undefined
-      if (!updatedTextObj) return {deleted: true}
+      if (!updatedTextObj) return { deleted: true }
       return updatedTextObj
     })
   }

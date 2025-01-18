@@ -1,6 +1,8 @@
 // @ts-check
 import { Shadow } from '../../../../event-driven-web-components-prototypes/src/Shadow.js'
 
+/* global self */
+
 /**
  * The providers view
  * TODO: display providers and also allow provider changes
@@ -21,7 +23,7 @@ export default class Providers extends Shadow() {
         data: await event.detail.getData(),
         sessionProvidersByStatus: await (await event.detail.getData()).getSessionProvidersByStatus(),
         ...event.detail
-      }), 2000) 
+      }), 2000)
     }
   }
 

@@ -20,8 +20,8 @@ import { WebWorker } from '../../../../event-driven-web-components-prototypes/sr
   }} TextObj
 */
 
-/* global HTMLElement */
 /* global CustomEvent */
+/* global self */
 
 /**
  * Chat is a helper to keep all chat object in a yjs map and forwarding the proper events helping having an overview of all participants
@@ -47,7 +47,7 @@ export const Chat = (ChosenHTMLElement = WebWorker()) => class Chat extends Chos
       this.usersDataResolve(event.detail.getData)
       /**
        * Update the user data on changes
-       * 
+       *
        * @type {Promise<() => {allUsers: import("../../../../event-driven-web-components-yjs/src/es/controllers/Users.js").UsersContainer, users: import("../../../../event-driven-web-components-yjs/src/es/controllers/Users.js").UsersContainer}>}
        */
       this.usersData = Promise.resolve(event.detail.getData)
@@ -72,21 +72,22 @@ export const Chat = (ChosenHTMLElement = WebWorker()) => class Chat extends Chos
           }])
           return
         default:
-          const input = event.detail.input
-          if (input.value) {
+          if (event.detail.input.value) {
             const textObj = {
               ...mandatoryData,
-              text: input.value
+              text: event.detail.input.value
             }
             // @ts-ignore
-            if (event.detail.replyToTextObj) textObj.replyTo = {
-              timestamp: event.detail.replyToTextObj.timestamp,
-              uid: event.detail.replyToTextObj.uid
-            };
+            if (event.detail.replyToTextObj) {
+              // @ts-ignore
+              textObj.replyTo = {
+                timestamp: event.detail.replyToTextObj.timestamp,
+                uid: event.detail.replyToTextObj.uid
+              }
+            }
             (await this.array).push([textObj])
-            if (event.detail.clear !== false) input.value = ''
+            if (event.detail.clear !== false) event.detail.input.value = ''
           }
-          return
       }
     }
 
@@ -132,7 +133,7 @@ export const Chat = (ChosenHTMLElement = WebWorker()) => class Chat extends Chos
           getAdded,
           added: event.detail.yjsEvent?.changes?.added?.size,
           getDeleted,
-          deleted: event.detail.yjsEvent?.changes?.deleted?.size,
+          deleted: event.detail.yjsEvent?.changes?.deleted?.size
         },
         bubbles: true,
         cancelable: true,
@@ -150,7 +151,7 @@ export const Chat = (ChosenHTMLElement = WebWorker()) => class Chat extends Chos
     /**
      * Keeps all chatObserveEventListener received textObj (aka. Message.js data) in the runtime with the most recent UNPACKED (function getAll, etc. executed) representation
      * Short: Represents all textObj by last unpacked state in sync
-     * 
+     *
      * @type {Map<string, TextObj>}
      */
     this.allTextObjsInSync = new Map()

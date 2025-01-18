@@ -9,7 +9,7 @@ import SetStringDialog from './prototypes/SetStringDialog.js'
 */
 export default class RoomNameAkaDialog extends SetStringDialog {
   constructor (options = {}, ...args) {
-    super({...options }, ...args)
+    super({ ...options }, ...args)
 
     this.setInputEventListener = event => {
       event.stopPropagation()
@@ -54,7 +54,7 @@ export default class RoomNameAkaDialog extends SetStringDialog {
    * Render HTML
    * @returns Promise<void>
    */
-  renderCustomHTML() {
+  renderCustomHTML () {
     const templateTextContent = this.template.content.textContent
     this.template.remove()
     return super.renderCustomHTML(`${this.getAttribute('room-name') || ''} aka. ???`, JSON.parse(templateTextContent)?.[this.getAttribute('room-name')]?.aka || '', '', /* html */`

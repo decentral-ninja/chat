@@ -2,6 +2,7 @@
 import { Shadow } from '../../../../event-driven-web-components-prototypes/src/Shadow.js'
 
 /* global self */
+/* global Environment */
 
 /**
  * The users view
@@ -32,11 +33,13 @@ export default class Users extends Shadow() {
       event.preventDefault()
       this.dialog.show('show-modal')
       // TODO: Make this cleaner and render graph once opened
-      if (lastGetData) this.usersGraph.innerHTML = /* html */`
+      if (lastGetData) {
+        this.usersGraph.innerHTML = /* html */`
         <chat-a-p2p-graph separator="${lastSeparator}">
           <template>${JSON.stringify(Array.from((await lastGetData()).usersConnectedWithSelf))}</template>
         </chat-a-p2p-graph>
       `
+      }
     }
 
     this.p2pGraphClickEventListener = event => console.log('p2pGraphClickEventListener', event.detail)
@@ -47,11 +50,13 @@ export default class Users extends Shadow() {
       resizeTimeout = setTimeout(async () => {
         // TODO: Make this cleaner and render graph once opened
         // TODO: active attribute is the uid of a user:  active='${Array.from((await lastGetData()).usersConnectedWithSelf)[0][0]}'
-        if (lastGetData) this.usersGraph.innerHTML = /* html */`
+        if (lastGetData) {
+          this.usersGraph.innerHTML = /* html */`
           <chat-a-p2p-graph separator="${lastSeparator}">
             <template>${JSON.stringify(Array.from((await lastGetData()).usersConnectedWithSelf))}</template>
           </chat-a-p2p-graph>
         `
+        }
       }, 200)
     }
   }
@@ -122,7 +127,7 @@ export default class Users extends Shadow() {
       }
       // TODO: add sessionProviders into the template from provider controller
       // add self user, incase it has no connected users "_synced"
-      //console.log('*********', data)
+      // console.log('*********', data)
       this.usersGraph.innerHTML = /* html */`
         <chat-a-p2p-graph separator="${separator}">
           <template>${JSON.stringify(Array.from(data.usersConnectedWithSelf))}</template>
@@ -192,7 +197,7 @@ export default class Users extends Shadow() {
         bubbles: true,
         cancelable: true,
         composed: true
-      }))).then(nickname => this.html = /* html */`<chat-m-nick-name-dialog namespace="dialog-top-slide-in-" show-event-name="open-nickname" nickname="${nickname}"></chat-m-nick-name-dialog>`)
+      }))).then(nickname => (this.html = /* html */`<chat-m-nick-name-dialog namespace="dialog-top-slide-in-" show-event-name="open-nickname" nickname="${nickname}"></chat-m-nick-name-dialog>`))
     }
     return Promise.all([
       new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-providers-event-detail', {

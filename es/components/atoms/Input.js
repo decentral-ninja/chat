@@ -14,7 +14,7 @@ export default class Input extends Shadow() {
 
     this.sendEventListener = async (event, input) => {
       let replyToTextObj = null
-      if(this.replyToSection.innerHTML) {
+      if (this.replyToSection.innerHTML) {
         replyToTextObj = await this.chatMessageEl.textObj
         this.replyToSection.innerHTML = ''
       }
@@ -157,7 +157,7 @@ export default class Input extends Shadow() {
             <template>${JSON.stringify(event.detail.textObj)}</template>
           </chat-m-message>
         `
-        this.replyClose.addEventListener('click', event => (this.replyToSection.innerHTML = ''), {once: true})
+        this.replyClose.addEventListener('click', event => (this.replyToSection.innerHTML = ''), { once: true })
         this.chatMessageEl.addEventListener('click', event => this.dispatchEvent(new CustomEvent('chat-scroll', {
           detail: {
             scrollEl: this.chatMessageEl.getAttribute('timestamp')
@@ -414,7 +414,7 @@ export default class Input extends Shadow() {
   }
 
   get replyClose () {
-    return this.root. querySelector('#reply-close')
+    return this.root.querySelector('#reply-close')
   }
 
   get globalEventTarget () {

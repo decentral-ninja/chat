@@ -1,6 +1,9 @@
 // @ts-check
 import { Shadow } from '../../../../event-driven-web-components-prototypes/src/Shadow.js'
 
+/* global Environment */
+/* global self */
+
 /**
  * The chat view
  * TODO: forward multiple messages
@@ -20,7 +23,7 @@ export default class Chat extends Shadow() {
       // https://docs.yjs.dev/api/y.event
       let funcName = 'getAdded'
       if (firstRender || this.ul.innerHTML === '') {
-        this.ul.innerHTML = '';
+        this.ul.innerHTML = ''
         funcName = 'getAll'
         firstRender = false
       }
@@ -40,10 +43,10 @@ export default class Chat extends Shadow() {
             {
               path: `${this.importMetaUrl}../../../../web-components-toolbox/src/es/components/organisms/intersectionScrollEffect/IntersectionScrollEffect.js`,
               name: 'wct-intersection-scroll-effect'
-            }*/
+            } */
           ]),
           event.detail[funcName]()
-        ]).then(([[{constructorClass}], textObjs]) => {
+        ]).then(([[{ constructorClass }], textObjs]) => {
           // no messages and show ninja
           const isUlEmpty = !this.ul.children.length
           let wasLastMessage = false
@@ -91,7 +94,7 @@ export default class Chat extends Shadow() {
                   }
                 }, 200)
               }
-            } 
+            }
           })
         })
       }
@@ -100,7 +103,7 @@ export default class Chat extends Shadow() {
         (await event.detail.getDeleted()).forEach(textObj => {
           let message
           if ((message = this.ulGetMessageFunc(textObj))) {
-            message.addEventListener('animationend', event => message.remove(), {once: true})
+            message.addEventListener('animationend', event => message.remove(), { once: true })
             message.classList.add('deleted')
             message.querySelector('chat-m-message')?.setAttribute('deleted', '')
             this.dispatchEvent(new CustomEvent(`chat-remove-${textObj.timestamp || ''}`, {
@@ -127,15 +130,17 @@ export default class Chat extends Shadow() {
         timeout = setTimeout(() => {
           let ulChildrenArr = []
           // avoid saving scrollEl on first time intersection of message after connect, since the initial event does not grab the most top message
-          if ((ulChildrenArr = Array.from(this.ul.children)) && (ulChildrenArr = ulChildrenArr.splice(ulChildrenArr.indexOf(event.detail.target)))) this.dispatchEvent(new CustomEvent('yjs-merge-active-room', {
-            detail: {
+          if ((ulChildrenArr = Array.from(this.ul.children)) && (ulChildrenArr = ulChildrenArr.splice(ulChildrenArr.indexOf(event.detail.target)))) {
+            this.dispatchEvent(new CustomEvent('yjs-merge-active-room', {
+              detail: {
               // topBorder + 50 is for making sure that not only the bottom of the message is seen but 50px parts of it
-              scrollEl: this.ul.lastElementChild.hasAttribute('intersecting') ? this.ul.lastElementChild.getAttribute('timestamp') : ulChildrenArr.find(child => child.getBoundingClientRect().bottom > topBorder + 50)?.getAttribute('timestamp') || event.detail.scrollEl
-            },
-            bubbles: true,
-            cancelable: true,
-            composed: true
-          }))
+                scrollEl: this.ul.lastElementChild.hasAttribute('intersecting') ? this.ul.lastElementChild.getAttribute('timestamp') : ulChildrenArr.find(child => child.getBoundingClientRect().bottom > topBorder + 50)?.getAttribute('timestamp') || event.detail.scrollEl
+              },
+              bubbles: true,
+              cancelable: true,
+              composed: true
+            }))
+          }
         }, 1000)
       }
     }
@@ -322,7 +327,7 @@ export default class Chat extends Shadow() {
   /**
    * Query Select for attribute timestamp on ul
    * This element has to be requested by scrollIntoView at timeout in realtime, since the wct-load-template-tag unpacks the template and replaces all with it's content
-   * 
+   *
    * @param {string} timestamp
    * @return {()=>null | HTMLElement | HTMLCollection | any}
    */
@@ -337,19 +342,19 @@ export default class Chat extends Shadow() {
   }
 
   scrollIntoView (getScrollElFunc, smooth = false, counter = 0) {
-    counter ++
+    counter++
     const scrollEl = getScrollElFunc()
     if (!scrollEl) return
-    scrollEl.scrollIntoView({behavior: smooth ? 'smooth' : 'instant'})
+    scrollEl.scrollIntoView({ behavior: smooth ? 'smooth' : 'instant' })
     setTimeout(() => {
       const scrollEl = getScrollElFunc()
       if (!scrollEl) return
       if (scrollEl.matches(':not([intersecting])') && counter < 15) {
         this.scrollIntoView(getScrollElFunc, counter > 2 ? false : smooth, counter)
       } else {
-        scrollEl.scrollIntoView({behavior: 'instant'})
+        scrollEl.scrollIntoView({ behavior: 'instant' })
         // trying to have scroll down button work more reliable
-        setTimeout(() => scrollEl.scrollIntoView({behavior: 'smooth'}), 50)
+        setTimeout(() => scrollEl.scrollIntoView({ behavior: 'smooth' }), 50)
       }
     }, 200)
   }

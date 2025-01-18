@@ -1,6 +1,9 @@
 // @ts-check
 import SetStringDialog from './prototypes/SetStringDialog.js'
 
+/* global self */
+/* global localStorage */
+
 /**
 * @export
 * @class Dialog
@@ -9,7 +12,7 @@ import SetStringDialog from './prototypes/SetStringDialog.js'
 */
 export default class NickNameDialog extends SetStringDialog {
   constructor (options = {}, ...args) {
-    super({...options }, ...args)
+    super({ ...options }, ...args)
 
     // @ts-ignore
     this.roomNamePrefix = self.Environment?.roomNamePrefix || 'chat-'
@@ -73,7 +76,7 @@ export default class NickNameDialog extends SetStringDialog {
    * Render HTML
    * @returns Promise<void>
    */
-  renderCustomHTML() {
+  renderCustomHTML () {
     return super.renderCustomHTML(this.getAttribute('nickname'), localStorage.getItem(`${this.roomNamePrefix}default-nickname`) || '', '', /* html */`
         <h4>Change your nickname:</h4>
       `, '', /* html */`

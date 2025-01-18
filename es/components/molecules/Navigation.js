@@ -2,6 +2,8 @@
 import { Shadow } from '../../../../event-driven-web-components-prototypes/src/Shadow.js'
 
 /* global self */
+/* global prompt */
+/* global Environment */
 
 /**
  * The chats Navigation
@@ -83,7 +85,7 @@ export default class Navigation extends Shadow() {
       this.shouldRenderHTML()
         ? this.renderHTML()
         : null
-    ]).then(async ([{room}]) => {
+    ]).then(async ([{ room }]) => {
       this.hidden = false
     })
     this.connectedCallbackOnce = () => {}
@@ -194,6 +196,7 @@ export default class Navigation extends Shadow() {
   get dialog () {
     return this.root.querySelector('wct-dialog')
   }
+
   get dialogGrid () {
     return this.dialog.root?.querySelector('wct-grid')
   }

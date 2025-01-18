@@ -1,6 +1,9 @@
 // @ts-check
 import Dialog from '../../../../../web-components-toolbox/src/es/components/molecules/dialog/Dialog.js'
 
+/* global self */
+/* global Environment */
+
 /**
 * @export
 * @class Dialog
@@ -9,7 +12,7 @@ import Dialog from '../../../../../web-components-toolbox/src/es/components/mole
 */
 export default class JitsiDialog extends Dialog {
   constructor (options = {}, ...args) {
-    super({...options }, ...args)
+    super({ ...options }, ...args)
 
     const superShow = this.show
     this.show = command => {
@@ -76,14 +79,14 @@ export default class JitsiDialog extends Dialog {
      *
      * @return {boolean}
      */
-  shouldRenderCustomHTML() {
+  shouldRenderCustomHTML () {
     return !this.root.querySelector(this.cssSelector + ' > dialog')
   }
 
   /**
    * renders the css
    */
-  renderCSS() {
+  renderCSS () {
     const result = super.renderCSS()
     this.setCss(/* css */`
       :host > dialog {
@@ -112,7 +115,7 @@ export default class JitsiDialog extends Dialog {
    * Render HTML
    * @returns Promise<void>
    */
-  renderCustomHTML() {
+  renderCustomHTML () {
     this.html = /* html */`
       <dialog>
         <wct-menu-icon id="close" no-aria class="open sticky" namespace="menu-icon-close-" no-click></wct-menu-icon>
@@ -124,7 +127,7 @@ export default class JitsiDialog extends Dialog {
       </dialog>
     `
     // alternative: https://meet.hostpoint.ch/
-    this.roomPromise.then(async ({locationHref, room}) => {
+    this.roomPromise.then(async ({ locationHref, room }) => {
       this.root.querySelector('dialog').insertAdjacentHTML('beforeend', /* html */`
         <wct-iframe>
           <template>
@@ -149,30 +152,34 @@ export default class JitsiDialog extends Dialog {
   }
 
   start (dispatchEvent = true) {
-    if (dispatchEvent) this.dispatchEvent(new CustomEvent('jitsi-video-started', {
-      detail: {
-        iframe: this.iframe,
-        iframeSrc: this.iframeSrc
-      },
-      bubbles: true,
-      cancelable: true,
-      composed: true
-    }))
+    if (dispatchEvent) {
+      this.dispatchEvent(new CustomEvent('jitsi-video-started', {
+        detail: {
+          iframe: this.iframe,
+          iframeSrc: this.iframeSrc
+        },
+        bubbles: true,
+        cancelable: true,
+        composed: true
+      }))
+    }
     this.setAttribute('started', '')
     this.removeAttribute('stopped')
     if (this.dialog) this.dialog.appendChild(this.iframeWrapper)
   }
 
   stop (dispatchEvent = true) {
-    if (dispatchEvent) this.dispatchEvent(new CustomEvent('jitsi-video-stopped', {
-      detail: {
-        iframe: this.iframe,
-        iframeSrc: this.iframeSrc
-      },
-      bubbles: true,
-      cancelable: true,
-      composed: true
-    }))
+    if (dispatchEvent) {
+      this.dispatchEvent(new CustomEvent('jitsi-video-stopped', {
+        detail: {
+          iframe: this.iframe,
+          iframeSrc: this.iframeSrc
+        },
+        bubbles: true,
+        cancelable: true,
+        composed: true
+      }))
+    }
     this.setAttribute('stopped', '')
     this.removeAttribute('started')
     if (this.iframeWrapper) this.iframeWrapper.remove()

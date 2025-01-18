@@ -1,6 +1,8 @@
 // @ts-check
 import Dialog from '../../../../../web-components-toolbox/src/es/components/molecules/dialog/Dialog.js'
 
+/* global Environment */
+
 /**
 * @export
 * @class Dialog
@@ -10,7 +12,7 @@ import Dialog from '../../../../../web-components-toolbox/src/es/components/mole
 */
 export default class MessageDialog extends Dialog {
   constructor (options = {}, ...args) {
-    super({...options }, ...args)
+    super({ ...options }, ...args)
 
     const superClose = this.close
     this.close = async () => {
@@ -92,14 +94,14 @@ export default class MessageDialog extends Dialog {
      *
      * @return {boolean}
      */
-  shouldRenderCustomHTML() {
+  shouldRenderCustomHTML () {
     return !this.root.querySelector(this.cssSelector + ' > dialog')
   }
 
   /**
    * renders the css
    */
-  renderCSS() {
+  renderCSS () {
     const result = super.renderCSS()
     this.setCss(/* css */`
       :host > dialog {
@@ -151,7 +153,7 @@ export default class MessageDialog extends Dialog {
    * Render HTML
    * @returns Promise<void>
    */
-  renderCustomHTML() {
+  renderCustomHTML () {
     const templateTextContent = this.template.content.textContent
     this.template.remove()
     this.html = /* html */`

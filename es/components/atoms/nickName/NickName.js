@@ -1,6 +1,8 @@
 // @ts-check
 import { Shadow } from '../../../../../web-components-toolbox/src/es/components/prototypes/Shadow.js'
 
+/* global self */
+
 /**
 * @export
 * @class NickName
@@ -14,7 +16,7 @@ export default class NickName extends Shadow() {
       event.preventDefault()
       event.stopPropagation()
       this.dispatchEvent(new CustomEvent('open-nickname', {
-        detail: {command: 'show-modal'},
+        detail: { command: 'show-modal' },
         bubbles: true,
         cancelable: true,
         composed: true
