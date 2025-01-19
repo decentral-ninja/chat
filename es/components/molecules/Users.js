@@ -117,6 +117,7 @@ export default class Users extends Shadow() {
   * @return {Promise<void>}
   */
   renderHTML (data, selfUser, separator) {
+    // todo: check navigator online + provider graph name
     if (data) {
       if (data.usersConnectedWithSelf.size - 1) {
         this.connectedUsers.textContent = data.usersConnectedWithSelf.size ? data.usersConnectedWithSelf.size - 1 : 'You are alone!'
@@ -126,6 +127,7 @@ export default class Users extends Shadow() {
         this.connectedUsers.classList.add('warning')
       }
       // TODO: add sessionProviders into the template from provider controller
+      // todo: add graph for data.allUsers
       // add self user, incase it has no connected users "_synced"
       // console.log('*********', data)
       this.usersGraph.innerHTML = /* html */`
