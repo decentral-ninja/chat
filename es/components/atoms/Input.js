@@ -378,7 +378,8 @@ export default class Input extends Shadow() {
         name: 'emoji-button'
       },
       {
-        path: `${this.importMetaUrl}../../../../web-components-toolbox/src/es/components/atoms/iconMdx/IconMdx.js`,
+        // @ts-ignore
+        path: `${this.importMetaUrl}../../../../web-components-toolbox/src/es/components/atoms/iconMdx/IconMdx.js?${Environment?.version || ''}`,
         name: 'wct-icon-mdx'
       }
     ])

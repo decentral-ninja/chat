@@ -15,6 +15,7 @@ export default class Providers extends Shadow() {
   constructor (options = {}, ...args) {
     super({ importMetaUrl: import.meta.url, ...options }, ...args)
 
+    // TODO: only consume user data when needed eg. dialog is open
     let timeoutId = null
     this.providersEventListener = event => {
       if (!event.detail.getData) return

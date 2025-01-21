@@ -159,7 +159,8 @@ export default class NickName extends Shadow() {
       : `<span><h4>${nickname || 'Loading...'}</h4></span>`
     return this.fetchModules([
       {
-        path: `${this.importMetaUrl}../../../../../web-components-toolbox/src/es/components/atoms/iconMdx/IconMdx.js`,
+        // @ts-ignore
+        path: `${this.importMetaUrl}../../../../../web-components-toolbox/src/es/components/atoms/iconMdx/IconMdx.js?${Environment?.version || ''}`,
         name: 'wct-icon-mdx'
       }
     ])

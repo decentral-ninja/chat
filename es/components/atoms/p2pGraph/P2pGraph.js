@@ -77,10 +77,11 @@ export default class P2pGraph extends Shadow() {
    */
   renderHTML () {
     this.html = /* html */'<div></div>'
-    return this.loadDependency('P2PGraph', `${this.importMetaUrl}./p2p-graph.js`).then(P2PGraph => {
+    // @ts-ignore
+    return this.loadDependency('P2PGraph', `${this.importMetaUrl}./p2p-graph.js?${Environment?.version || ''}`).then(P2PGraph => {
       /** @type {[string, import("../../../../../event-driven-web-components-yjs/src/es/controllers/Users.js").User][]} */
       const users = JSON.parse(this.template.content.textContent)
-      this.template.remove()
+      // this.template.remove() // Note: Don't remove the template, since it could be needed (did trigger an error by quick room navigation)
       // https://github.com/feross/p2p-graph?tab=readme-ov-file
       const graph = new P2PGraph(this.div)
       const nodes = []

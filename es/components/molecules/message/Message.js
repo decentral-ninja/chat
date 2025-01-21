@@ -52,6 +52,7 @@ export default class Message extends WebWorker(Intersection()) {
             <chat-m-message-dialog
               namespace="dialog-top-slide-in-"
               open="show-modal"
+              timestamp="${this.getAttribute('timestamp') || ''}"
               ${this.hasAttribute('self') ? 'self' : ''}
             ><template>${JSON.stringify(await this.textObj)}</template></chat-m-message-dialog>
           `
@@ -117,7 +118,8 @@ export default class Message extends WebWorker(Intersection()) {
         self: this.hasAttribute('self'),
         updatedNickname: 'Error',
         text: `Could not parse this message. ${this.hasAttribute('self') ? 'Please, delete the message and reenter it newly!' : 'The owner shall delete the message and reenter it newly!'}`,
-        timestamp: Number(this.getAttribute('timestamp').replace('t_', '')),
+        // @ts-ignore
+        timestamp: Number(this.getAttribute('timestamp').replace(self.Environment?.timestampNamespace || 't_', '')),
         uid: this.getAttribute('uid')
       })
       // @ts-ignore
@@ -328,7 +330,8 @@ export default class Message extends WebWorker(Intersection()) {
           name: 'chat-a-nick-name'
         },
         {
-          path: `${this.importMetaUrl}../../../../../web-components-toolbox/src/es/components/atoms/iconMdx/IconMdx.js`,
+          // @ts-ignore
+          path: `${this.importMetaUrl}../../../../../web-components-toolbox/src/es/components/atoms/iconMdx/IconMdx.js?${Environment?.version || ''}`,
           name: 'wct-icon-mdx'
         },
         {
@@ -343,7 +346,10 @@ export default class Message extends WebWorker(Intersection()) {
     return this.getUpdatedTextObj(Promise.resolve(textObj.replyTo)).then(updatedTextObj => {
       if (this.replyToLi) this.replyToLi.remove()
       this.li.insertAdjacentHTML('afterbegin', /* html */`
-        <chat-m-message part="reply-to-li" timestamp="t_${textObj.replyTo?.timestamp}"${updatedTextObj?.isSelf ? ' self' : ''} no-dialog width="calc(100% - 0.2em)" box-shadow="2px 2px 5px var(--color-black)"${this.getAttribute('next-show-reply-to') === 'true' ? ' show-reply-to next-show-reply-to="true"' : ''}>
+        <chat-m-message part="reply-to-li" timestamp="${
+            // @ts-ignore
+            self.Environment?.timestampNamespace || 't_'
+          }${textObj.replyTo?.timestamp}"${updatedTextObj?.isSelf ? ' self' : ''} no-dialog width="calc(100% - 0.2em)" box-shadow="2px 2px 5px var(--color-black)"${this.getAttribute('next-show-reply-to') === 'true' ? ' show-reply-to next-show-reply-to="true"' : ''}>
           <template>${JSON.stringify(updatedTextObj)}</template>
         </chat-m-message>
       `)
@@ -418,7 +424,8 @@ export default class Message extends WebWorker(Intersection()) {
       // @ts-ignore
       if (!this.hasAttribute('timestamp') || !this.hasAttribute('uid')) return console.error('Chat message is missing textObj and/or timestamp/ui attribute!', this) || textObj
       textObj = Promise.resolve({
-        timestamp: Number(this.getAttribute('timestamp').replace('t_', '')),
+        // @ts-ignore
+        timestamp: Number(this.getAttribute('timestamp').replace(self.Environment?.timestampNamespace || 't_', '')),
         uid: this.getAttribute('uid')
       })
     }

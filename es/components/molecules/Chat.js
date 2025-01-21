@@ -37,13 +37,10 @@ export default class Chat extends Shadow() {
               name: 'chat-m-message'
             },
             {
-              path: `${this.importMetaUrl}../../../../web-components-toolbox/src/es/components/molecules/loadTemplateTag/LoadTemplateTag.js`,
+              // @ts-ignore
+              path: `${this.importMetaUrl}../../../../web-components-toolbox/src/es/components/molecules/loadTemplateTag/LoadTemplateTag.js?${Environment?.version || ''}`,
               name: 'wct-load-template-tag'
-            }/*,
-            {
-              path: `${this.importMetaUrl}../../../../web-components-toolbox/src/es/components/organisms/intersectionScrollEffect/IntersectionScrollEffect.js`,
-              name: 'wct-intersection-scroll-effect'
-            } */
+            }
           ]),
           event.detail[funcName]()
         ]).then(([[{ constructorClass }], textObjs]) => {
@@ -63,7 +60,8 @@ export default class Chat extends Shadow() {
           textObjs.sort((a, b) => a.timestamp - b.timestamp).forEach((textObj, i, textObjs) => {
             wasLastMessage = textObjs.length === i + 1
             const div = document.createElement('div')
-            div.innerHTML = this.getMessageHTML(textObj, `t_${textObj.timestamp}`, wasLastMessage, isUlEmpty)
+            // @ts-ignore
+            div.innerHTML = this.getMessageHTML(textObj, `${self.Environment?.timestampNamespace || 't_'}${textObj.timestamp}`, wasLastMessage, isUlEmpty)
             this.ul.appendChild(div.children[0])
             // scroll behavior
             if (wasLastMessage) {
@@ -176,11 +174,11 @@ export default class Chat extends Shadow() {
       }))).then(room => {
         if (room?.scrollEl && this.ulGetScrollElFunc(room.scrollEl)()) {
           this.scrollIntoView(this.ulGetScrollElFunc(room.scrollEl))
-        } else {
+        } else if (room?.scrollTop) {
           this.dispatchEvent(new CustomEvent('main-scroll', {
             detail: {
               behavior: 'instant',
-              y: room?.scrollTop
+              y: room.scrollTop
             },
             bubbles: true,
             cancelable: true,
@@ -332,7 +330,8 @@ export default class Chat extends Shadow() {
    * @return {()=>null | HTMLElement | HTMLCollection | any}
    */
   ulGetScrollElFunc (timestamp, funcName = 'querySelector') {
-    return () => this.ul[funcName](`[timestamp="${String(timestamp).includes('t_') ? '' : 't_'}${timestamp}"]`)
+    // @ts-ignore
+    return () => this.ul[funcName](`[timestamp="${String(timestamp).includes(self.Environment?.timestampNamespace || 't_') ? '' : self.Environment?.timestampNamespace || 't_'}${timestamp}"]`)
   }
 
   ulGetMessageFunc (textObj) {
@@ -360,22 +359,33 @@ export default class Chat extends Shadow() {
   }
 
   scrollLastMemorizedIntoView () {
-    new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-active-room', {
-      detail: {
-        resolve
-      },
-      bubbles: true,
-      cancelable: true,
-      composed: true
-    }))).then(room => {
+    let promise = null
+    // @ts-ignore
+    if (location.hash.includes(self.Environment?.timestampNamespace || 't_')) {
+      promise = Promise.resolve({
+        scrollEl: location.hash.replace('#', '')
+      })
+      // remove the hash after scrolling
+      self.history.replaceState(history.state, document.title, location.href.replace(location.hash, ''))
+    } else {
+      promise = new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-active-room', {
+        detail: {
+          resolve
+        },
+        bubbles: true,
+        cancelable: true,
+        composed: true
+      })))
+    }
+    promise.then(room => {
       if (room?.scrollEl && this.ulGetScrollElFunc(room.scrollEl)()) {
         this.scrollIntoView(this.ulGetScrollElFunc(room.scrollEl))
-      } else {
+      } else if (room?.scrollTop) {
         // backwards compatible behavior and if no scrollTop scrolls to bottom
         this.dispatchEvent(new CustomEvent('main-scroll', {
           detail: {
             behavior: 'instant',
-            y: room?.scrollTop
+            y: room.scrollTop
           },
           bubbles: true,
           cancelable: true,
@@ -384,7 +394,7 @@ export default class Chat extends Shadow() {
         setTimeout(() => this.dispatchEvent(new CustomEvent('main-scroll', {
           detail: {
             behavior: 'smooth',
-            y: room?.scrollTop
+            y: room.scrollTop
           },
           bubbles: true,
           cancelable: true,

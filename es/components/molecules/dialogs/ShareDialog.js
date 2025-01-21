@@ -21,7 +21,7 @@ export default class ShareDialog extends Dialog {
     this.shareApiIconClickEventListener = async event => {
       try {
         await navigator.share({
-          title: this.getAttribute('room-name'),
+          title: this.getAttribute('room-name') || document.title,
           url: this.textarea.value
         })
       } catch (error) {
@@ -135,25 +135,29 @@ export default class ShareDialog extends Dialog {
     this.html = /* html */`
       <dialog>
         <wct-menu-icon id="close" no-aria class="open sticky" namespace="menu-icon-close-" no-click></wct-menu-icon>
-        <h4>Share: "<span class="bold">${this.getAttribute('room-name')}</span>"</h4>
+        <h4>Share: "<span class="bold">${this.getAttribute('room-name') || document.title}</span>"${this.getAttribute('title-append') || ''}</h4>
       </dialog>
     `
     return Promise.all([
-      new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-rooms', {
-        detail: {
-          resolve
-        },
-        bubbles: true,
-        cancelable: true,
-        composed: true
-      }))).then(getRoomsResult => {
+      (this.getAttribute('room-name')
+        ? new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-rooms', {
+          detail: {
+            resolve
+          },
+          bubbles: true,
+          cancelable: true,
+          composed: true
+        })))
+        : Promise.resolve(this.getAttribute('href'))
+      ).then(getRoomsResult => {
+        const locationHref = this.getAttribute('room-name') ? getRoomsResult.value[this.getAttribute('room-name')].locationHref : getRoomsResult
         this.root.querySelector('dialog').insertAdjacentHTML('beforeend', /* html */`
-          <p><wct-qr-code-svg namespace="qr-code-svg-default-" data='${getRoomsResult.value[this.getAttribute('room-name')].locationHref}'></wct-qr-code-svg></p>
-          <textarea>${getRoomsResult.value[this.getAttribute('room-name')].locationHref}</textarea>
+          <p><wct-qr-code-svg namespace="qr-code-svg-default-" data='${locationHref}'></wct-qr-code-svg></p>
+          <textarea>${locationHref}</textarea>
           <div id="controls">
             <wct-dialog-clipboard id=clipboard title="copy" namespace="dialog-clipboard-default-">
               <wct-icon-mdx id="show-modal" icon-url="../../../../../../img/icons/copy.svg" size="2em"></wct-icon-mdx>
-              <template>${getRoomsResult.value[this.getAttribute('room-name')].locationHref}</template>
+              <template>${locationHref}</template>
             </wct-dialog-clipboard>
             ${this.hasAttribute('is-active-room') || this.hasAttribute('no-share-in-chat') ? '' : '<wct-icon-mdx id=share-chat title="share in this chat" icon-url="../../../../../../img/icons/message-2-share.svg" size="2em"></wct-icon-mdx>'}
             ${typeof navigator.share === 'function' ? '<wct-icon-mdx id=share-api title="share" icon-url="../../../../../../img/icons/share-3.svg" size="2em"></wct-icon-mdx>' : ''}
@@ -171,7 +175,8 @@ export default class ShareDialog extends Dialog {
           name: 'wct-menu-icon'
         },
         {
-          path: `${this.importMetaUrl}../../molecules/dialogClipboard/DialogClipboard.js`,
+          // @ts-ignore
+          path: `${this.importMetaUrl}../../molecules/dialogClipboard/DialogClipboard.js?${Environment?.version || ''}`,
           name: 'wct-dialog-clipboard'
         },
         {

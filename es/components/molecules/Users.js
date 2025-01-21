@@ -14,6 +14,7 @@ export default class Users extends Shadow() {
   constructor (options = {}, ...args) {
     super({ importMetaUrl: import.meta.url, ...options }, ...args)
 
+    // TODO: only consume user data when needed eg. dialog is open
     let lastGetData = null
     let lastSeparator = null
     let timeoutId = null
@@ -252,7 +253,11 @@ export default class Users extends Shadow() {
         tdOne.textContent = key
         tr.appendChild(tdOne)
         const tdTwo = document.createElement('td')
-        tdTwo.textContent = user[key]
+        tdTwo.textContent = typeof user[key] === 'string' && user[key].includes('epoch')
+          ? new Date(JSON.parse(user[key]).epoch).toLocaleString(navigator.language)
+          : typeof user[key] === 'object'
+          ? JSON.stringify(user[key])
+          : user[key]
         tr.appendChild(tdTwo)
       }
     })

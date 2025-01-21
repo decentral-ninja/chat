@@ -151,7 +151,8 @@ export default class RoomName extends Shadow() {
     </a>`
     return this.fetchModules([
       {
-        path: `${this.importMetaUrl}../../../../../web-components-toolbox/src/es/components/atoms/iconMdx/IconMdx.js`,
+        // @ts-ignore
+        path: `${this.importMetaUrl}../../../../../web-components-toolbox/src/es/components/atoms/iconMdx/IconMdx.js?${Environment?.version || ''}`,
         name: 'wct-icon-mdx'
       }
     ])

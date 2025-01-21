@@ -161,15 +161,23 @@ export default class MessageDialog extends Dialog {
         <wct-menu-icon id="close" no-aria class="open sticky" namespace="menu-icon-close-" no-click></wct-menu-icon>
         <h4>Message:</h4>
         <div id="controls">
-          <wct-dialog-clipboard id=clipboard namespace="dialog-clipboard-default-">
-            <wct-icon-mdx id="show-modal" title="copy" icon-url="../../../../../../img/icons/copy.svg" size="2em"></wct-icon-mdx>
-            <template>${JSON.parse(templateTextContent).text}</template>
-          </wct-dialog-clipboard>
           <div id="reply"><wct-icon-mdx reply title="reply to message" icon-url="../../../../../../img/icons/arrow-back-up.svg" size="2em"></wct-icon-mdx></div>
           <div id="delete" title="delete message!">
             <wct-icon-mdx delete icon-url="../../../../../../img/icons/trash.svg" size="2em"></wct-icon-mdx>
             <wct-icon-mdx undo icon-url="../../../../../../img/icons/trash-off.svg" size="2em"></wct-icon-mdx>
           </div>
+          <wct-dialog-clipboard id=clipboard namespace="dialog-clipboard-default-">
+            <wct-icon-mdx id="show-modal" title="copy" icon-url="../../../../../../img/icons/copy.svg" size="2em"></wct-icon-mdx>
+            <template>${JSON.parse(templateTextContent).text}</template>
+          </wct-dialog-clipboard>
+          <chat-m-share-dialog
+            namespace="dialog-top-slide-in-"
+            href="${location.href + `#${this.getAttribute('timestamp')}`}"
+            title-append=" with anchor to this message"
+            no-share-in-chat
+          >
+            <wct-icon-mdx id="show-modal" title="share" icon-url="../../../../../../img/icons/share-3.svg" size="2em"></wct-icon-mdx>
+          </chat-m-share-dialog>
         </div>
       </dialog>
     `
@@ -180,12 +188,19 @@ export default class MessageDialog extends Dialog {
         name: 'wct-menu-icon'
       },
       {
-        path: `${this.importMetaUrl}../../molecules/dialogClipboard/DialogClipboard.js`,
+        // @ts-ignore
+        path: `${this.importMetaUrl}../../molecules/dialogClipboard/DialogClipboard.js?${Environment?.version || ''}`,
         name: 'wct-dialog-clipboard'
       },
       {
-        path: `${this.importMetaUrl}../../atoms/iconMdx/IconMdx.js`,
+        // @ts-ignore
+        path: `${this.importMetaUrl}../../atoms/iconMdx/IconMdx.js?${Environment?.version || ''}`,
         name: 'wct-icon-mdx'
+      },
+      {
+        // @ts-ignore
+        path: `${this.importMetaUrl}../../../../../../chat/es/components/molecules/dialogs/ShareDialog.js?${Environment?.version || ''}`,
+        name: 'chat-m-share-dialog'
       }
     ])
   }
