@@ -14,32 +14,28 @@ export default class Users extends Shadow() {
   constructor (options = {}, ...args) {
     super({ importMetaUrl: import.meta.url, ...options }, ...args)
 
-    // TODO: only consume user data when needed eg. dialog is open
-    let lastGetData = null
+    let lastUsersEventGetData = null
     let lastSeparator = null
     let timeoutId = null
     this.usersEventListener = async event => {
-      lastGetData = event.detail.getData
+      lastUsersEventGetData = event.detail.getData
       clearTimeout(timeoutId)
       timeoutId = setTimeout(async () => {
         console.log('users', {
           data: await event.detail.getData(),
           ...event.detail
         })
-        this.renderHTML(await event.detail.getData(), event.detail.selfUser, (lastSeparator = event.detail.separator))
-      }, 2000)
+        if (this.isDialogOpen()) this.renderData(await event.detail.getData(), (lastSeparator = event.detail.separator))
+        // @ts-ignore
+      }, self.Environment.awarenessEventListenerDelay)
     }
 
     this.openDialog = async event => {
       event.preventDefault()
       this.dialog.show('show-modal')
-      // TODO: Make this cleaner and render graph once opened
-      if (lastGetData) {
-        this.usersGraph.innerHTML = /* html */`
-        <chat-a-p2p-graph separator="${lastSeparator}">
-          <template>${JSON.stringify(Array.from((await lastGetData()).usersConnectedWithSelf))}</template>
-        </chat-a-p2p-graph>
-      `
+      if (lastUsersEventGetData) {
+        clearTimeout(timeoutId)
+        this.renderData(await lastUsersEventGetData(), lastSeparator)
       }
     }
 
@@ -49,15 +45,8 @@ export default class Users extends Shadow() {
     this.resizeListener = event => {
       clearTimeout(resizeTimeout)
       resizeTimeout = setTimeout(async () => {
-        // TODO: Make this cleaner and render graph once opened
-        // TODO: active attribute is the uid of a user:  active='${Array.from((await lastGetData()).usersConnectedWithSelf)[0][0]}'
-        if (lastGetData) {
-          this.usersGraph.innerHTML = /* html */`
-          <chat-a-p2p-graph separator="${lastSeparator}">
-            <template>${JSON.stringify(Array.from((await lastGetData()).usersConnectedWithSelf))}</template>
-          </chat-a-p2p-graph>
-        `
-        }
+        // the graph has to be refreshed when resize
+        if (lastUsersEventGetData) Users.renderP2pGraph(this.usersGraph, (await lastUsersEventGetData()).usersConnectedWithSelf, lastSeparator)
       }, 200)
     }
   }
@@ -117,131 +106,120 @@ export default class Users extends Shadow() {
   *
   * @return {Promise<void>}
   */
-  renderHTML (data, selfUser, separator) {
-    // todo: check navigator online + provider graph name
-    if (data) {
-      if (data.usersConnectedWithSelf.size - 1) {
-        this.connectedUsers.textContent = data.usersConnectedWithSelf.size ? data.usersConnectedWithSelf.size - 1 : 'You are alone!'
-        this.connectedUsers.classList.remove('warning')
-      } else {
-        this.connectedUsers.textContent = 'You are alone!'
-        this.connectedUsers.classList.add('warning')
-      }
-      // TODO: add sessionProviders into the template from provider controller
-      // todo: add graph for data.allUsers
-      // add self user, incase it has no connected users "_synced"
-      // console.log('*********', data)
-      this.usersGraph.innerHTML = /* html */`
-        <chat-a-p2p-graph separator="${separator}">
-          <template>${JSON.stringify(Array.from(data.usersConnectedWithSelf))}</template>
-        </chat-a-p2p-graph>
-      `
-      this.usersOl.innerHTML = ''
-      Users.renderUserTableList(this.usersOl, data.usersConnectedWithSelf, selfUser)
-      this.allUsersOl.innerHTML = ''
-      Users.renderUserTableList(this.allUsersOl, data.allUsers, selfUser)
-    } else {
-      this.html = /* html */`
-        <details>
-          <summary>Directly connected to <span id="connected-users">...</span> User(s)</summary>
-        </details>
-        <wct-dialog namespace="dialog-top-slide-in-">
-          <style protected>
-            :host h5 {
-              position: sticky;
-              top: 0;
-            }
-            :host ol > li {
-              word-break: break-all;
-              margin-bottom: var(--spacing);
-            }
-            :host .nickname {
-              color: blue;
-              font-weight: bold;
-            }
-            :host .self {
-              color: green;
-              font-weight: bold;
-            }
-            :host .warning {
-              color: red;
-            }
-            :host > dialog #users-graph {
-              padding: 5svh 10svw;
-            }
-            :host > dialog #users-graph:has(> chat-a-p2p-graph[no-data]), :host > dialog #users-graph:has(> chat-a-p2p-graph:not([no-data])) + * {
-              display: none
-            }
-          </style>
-          <dialog>
-            <wct-menu-icon id="close" no-aria class="open sticky" namespace="menu-icon-close-" no-click></wct-menu-icon>
-            <h4>Connection Data:</h4>
+  renderHTML () {
+    this.html = /* html */`
+      <details>
+        <summary>Click to see directly connected to <span id="connected-users">...</span> User(s)</summary>
+      </details>
+      <wct-dialog namespace="dialog-top-slide-in-">
+        <style protected>
+          :host h4 {
+            position: sticky;
+            top: 0;
+          }
+          :host ol > li {
+            word-break: break-all;
+            margin-bottom: var(--spacing);
+          }
+          :host .nickname {
+            color: blue;
+            font-weight: bold;
+          }
+          :host .self {
+            color: green;
+            font-weight: bold;
+          }
+          :host .warning {
+            color: red;
+          }
+          :host > dialog #users-graph {
+            padding: 5svh 10svw;
+            border: 1px dashed var(--color-secondary);
+          }
+          :host > dialog #users-graph:has(> chat-a-p2p-graph[no-data]), :host > dialog #users-graph:has(> chat-a-p2p-graph:not([no-data])) ~ #no-connections {
+            display: none
+          }
+        </style>
+        <dialog>
+          <wct-menu-icon id="close" no-aria class="open sticky" namespace="menu-icon-close-" no-click></wct-menu-icon>
+          <h4>Connection Data:</h4>
+          <div>
+            <div id="users-graph"></div>
+            <p id="no-connections">No active connections...</p>
+            <br>
             <div>
-              <div id="users-graph"></div>
-              <p>No active connections...</p>
-              <hr>
-              <div>
-                <h5>Mutually connected users</h5>
-                <ol id="users"></ol>
-              </div>
-              <hr>
-              <div>
-                <h5>Users which once were connected</h5>
-                <ol id="all-users"></ol>
-              </div>
+              <h4>Mutually connected users</h4>
+              <ol id="users"></ol>
             </div>
-          </dialog>
-        </wct-dialog>
-      `
-      new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-nickname', {
-        detail: {
-          resolve
-        },
-        bubbles: true,
-        cancelable: true,
-        composed: true
-      }))).then(nickname => (this.html = /* html */`<chat-m-nick-name-dialog namespace="dialog-top-slide-in-" show-event-name="open-nickname" nickname="${nickname}"></chat-m-nick-name-dialog>`))
-    }
-    return Promise.all([
-      new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-providers-event-detail', {
-        detail: {
-          resolve
-        },
-        bubbles: true,
-        cancelable: true,
-        composed: true
-      }))),
-      this.fetchModules([
-        {
-          // @ts-ignore
-          path: `${this.importMetaUrl}../atoms/p2pGraph/P2pGraph.js?${Environment?.version || ''}`,
-          name: 'chat-a-p2p-graph'
-        },
-        {
-          // @ts-ignore
-          path: `${this.importMetaUrl}../../../../web-components-toolbox/src/es/components/atoms/menuIcon/MenuIcon.js?${Environment?.version || ''}`,
-          name: 'wct-menu-icon'
-        },
-        {
-          // @ts-ignore
-          path: `${this.importMetaUrl}../../../../web-components-toolbox/src/es/components/molecules/dialog/Dialog.js?${Environment?.version || ''}`,
-          name: 'wct-dialog'
-        },
-        {
-          // @ts-ignore
-          path: `${this.importMetaUrl}./dialogs/NickNameDialog.js?${Environment?.version || ''}`,
-          name: 'chat-m-nick-name-dialog'
-        }
-      ])
-    ]).then(async ([providers]) => {
-      // providers
-    })
+            <div>
+              <h4>Users which once were connected</h4>
+              <ol id="all-users"></ol>
+            </div>
+          </div>
+        </dialog>
+      </wct-dialog>
+    `
+    // render the nickname dialog
+    new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-nickname', {
+      detail: {
+        resolve
+      },
+      bubbles: true,
+      cancelable: true,
+      composed: true
+    }))).then(nickname => (this.html = /* html */`<chat-m-nick-name-dialog namespace="dialog-top-slide-in-" show-event-name="open-nickname" nickname="${nickname}"></chat-m-nick-name-dialog>`))
+    return this.fetchModules([
+      {
+        // @ts-ignore
+        path: `${this.importMetaUrl}../atoms/p2pGraph/P2pGraph.js?${Environment?.version || ''}`,
+        name: 'chat-a-p2p-graph'
+      },
+      {
+        // @ts-ignore
+        path: `${this.importMetaUrl}../../../../web-components-toolbox/src/es/components/atoms/menuIcon/MenuIcon.js?${Environment?.version || ''}`,
+        name: 'wct-menu-icon'
+      },
+      {
+        // @ts-ignore
+        path: `${this.importMetaUrl}../../../../web-components-toolbox/src/es/components/molecules/dialog/Dialog.js?${Environment?.version || ''}`,
+        name: 'wct-dialog'
+      },
+      {
+        // @ts-ignore
+        path: `${this.importMetaUrl}./dialogs/NickNameDialog.js?${Environment?.version || ''}`,
+        name: 'chat-m-nick-name-dialog'
+      }
+    ])
   }
 
-  static renderUserTableList (ol, users, selfUser) {
+  renderData (data, separator) {
+    // todo: check navigator online
+    if (data.usersConnectedWithSelf.size - 1) {
+      this.connectedUsers.textContent = data.usersConnectedWithSelf.size ? data.usersConnectedWithSelf.size - 1 : 'You are alone!'
+      this.connectedUsers.classList.remove('warning')
+    } else {
+      this.connectedUsers.textContent = 'You are alone!'
+      this.connectedUsers.classList.add('warning')
+    }
+    Users.renderP2pGraph(this.usersGraph, data.usersConnectedWithSelf, separator)
+    Users.renderUserTableList(this.usersOl, data.usersConnectedWithSelf)
+    Users.renderUserTableList(this.allUsersOl, data.allUsers)
+  }
+
+  static renderP2pGraph (graph, data, separator) {
+    if (!Array.isArray(data)) data = Array.from(data)
+    graph.innerHTML = /* html */`
+      <chat-a-p2p-graph separator="${separator || ''}">
+        <template>${JSON.stringify(data)}</template>
+      </chat-a-p2p-graph>
+    `
+  }
+
+  static renderUserTableList (ol, users, clear = true) {
+    if (clear) ol.innerHTML = ''
     users.forEach(user => {
       const li = document.createElement('li')
-      if (user.uid === selfUser.uid) li.classList.add('self')
+      if (user.isSelf) li.classList.add('self')
       ol.appendChild(li)
       const table = document.createElement('table')
       li.appendChild(table)
@@ -269,6 +247,10 @@ export default class Users extends Shadow() {
 
   get dialog () {
     return this.root.querySelector('wct-dialog')
+  }
+
+  isDialogOpen () {
+    return this.dialog.root.querySelector('dialog[open]')
   }
 
   get connectedUsers () {

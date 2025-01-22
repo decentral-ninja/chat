@@ -2,6 +2,7 @@
 import { Shadow } from '../../../../event-driven-web-components-prototypes/src/Shadow.js'
 
 /* global self */
+/* global Environment */
 
 /**
  * The providers view
@@ -24,7 +25,8 @@ export default class Providers extends Shadow() {
         data: await event.detail.getData(),
         sessionProvidersByStatus: await (await event.detail.getData()).getSessionProvidersByStatus(),
         ...event.detail
-      }), 2000)
+        // @ts-ignore
+      }), self.Environment.awarenessEventListenerDelay)
     }
   }
 

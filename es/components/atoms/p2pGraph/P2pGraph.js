@@ -54,9 +54,13 @@ export default class P2pGraph extends Shadow() {
         color: var(--color);
         font-size: var(--font-size);
         font-family: var(--font-family);
+        user-select: none;
       }
       :host > div > svg .is-self text {
         color: var(--color-user-self);
+      }
+      :host > div > svg g {
+        cursor: pointer;
       }
       :host > div > svg .is-self > circle {
         fill: var(--color-user-self) !important;
@@ -103,18 +107,19 @@ export default class P2pGraph extends Shadow() {
         // trigger click on node when the id is the same as the active attribute
         if (this.getAttribute('active') === graphUserObj.id) setTimeout(() => graphUserObj.svgNode.querySelector('circle')?.dispatchEvent(new CustomEvent('click', { bubbles: true, cancelable: true, composed: true })))
         // only show providers with mutually connected users
+        const separator = this.getAttribute('separator') || '<>'
         for (const providerName in user.mutuallyConnectedUsers) {
           const graphProviderObj = nodes.includes(providerName)
             ? null
             : P2pGraph.add(graph, this.svg, {
               id: providerName,
               fixed: true,
-              name: providerName
+              name: providerName.split(separator)[1] || providerName
             })
           if (graphProviderObj) {
             nodes.push(providerName)
             graphProviderObj.svgNode.classList.add('provider')
-            graphProviderObj.svgNode.classList.add(providerName.split(this.getAttribute('separator'))[0])
+            graphProviderObj.svgNode.classList.add(providerName.split(separator)[0])
           }
           graph.connect(providerName, key)
         }
@@ -139,13 +144,12 @@ export default class P2pGraph extends Shadow() {
   loadDependency (globalNamespace, url) {
     // make it global to self so that other components can know when it has been loaded
     return this[`_loadDependency${globalNamespace}`] || (this[`_loadDependency${globalNamespace}`] = new Promise((resolve, reject) => {
-      // @ts-ignore
-      if (document.head.querySelector(`#${globalNamespace}`) || self[globalNamespace]) return resolve(self[globalNamespace])
+      if (typeof self[globalNamespace] === 'function') return resolve(self[globalNamespace])
       const script = document.createElement('script')
       script.setAttribute('id', globalNamespace)
       script.setAttribute('src', url)
       // @ts-ignore
-      script.onload = () => self[globalNamespace]
+      script.onload = () => typeof self[globalNamespace] === 'function'
         // @ts-ignore
         ? resolve(self[globalNamespace])
         : reject(new Error(`${globalNamespace} does not load into the global scope!`))
