@@ -154,7 +154,7 @@ export default class Message extends WebWorker(Intersection()) {
   // inform molecules/chat that message is intersecting and can be used as scroll hook plus being saved to storage room
   intersectionCallback (entries, observer) {
     if (entries && entries[0]) {
-      if (this.getAttribute('part') !== 'reply-to-li') {
+      if (this.hasAttribute('intersection-event-name')) {
         this.dispatchEvent(new CustomEvent(this.getAttribute('intersection-event-name') || 'message-intersection', {
           detail: {
             scrollEl: `${this.getAttribute('timestamp')}`,

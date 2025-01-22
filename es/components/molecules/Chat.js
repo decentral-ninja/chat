@@ -314,7 +314,7 @@ export default class Chat extends Shadow() {
     return /* html */`
       <wct-load-template-tag timestamp="${timestamp}" uid='${textObj.uid}' no-css>
         <template>
-          <chat-m-message update-on-connected-callback timestamp="${timestamp}" uid='${textObj.uid}'${textObj.isSelf ? ' self' : ''}${wasLastMessage ? ' was-last-message' : ''}${isUlEmpty ? ' first-render' : ''} show-reply-to>
+          <chat-m-message update-on-connected-callback intersection-event-name timestamp="${timestamp}" uid='${textObj.uid}'${textObj.isSelf ? ' self' : ''}${wasLastMessage ? ' was-last-message' : ''}${isUlEmpty ? ' first-render' : ''} show-reply-to>
             <template>${JSON.stringify(textObj)}</template>
           </chat-m-message>
         </template>
@@ -365,6 +365,14 @@ export default class Chat extends Shadow() {
       promise = Promise.resolve({
         scrollEl: location.hash.replace('#', '')
       })
+      this.dispatchEvent(new CustomEvent('yjs-merge-active-room', {
+        detail: {
+          scrollEl: location.hash.replace('#', '')
+        },
+        bubbles: true,
+        cancelable: true,
+        composed: true
+      }))
       // remove the hash after scrolling
       self.history.replaceState(history.state, document.title, location.href.replace(location.hash, ''))
     } else {
@@ -400,6 +408,8 @@ export default class Chat extends Shadow() {
           cancelable: true,
           composed: true
         })), 200)
+      } else {
+        this.scrollIntoView(this.ulGetScrollElFunc(this.ul.lastElementChild.getAttribute('timestamp')))
       }
     })
   }

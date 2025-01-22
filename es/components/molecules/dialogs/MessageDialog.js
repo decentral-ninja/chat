@@ -37,17 +37,6 @@ export default class MessageDialog extends Dialog {
       }
     }
 
-    this.keyupEventListener = event => {
-      if (this.hasAttribute('self')) {
-        if (event.key === 'd') {
-          return this.deleteEl?.click()
-        }
-      }
-      if (event.key === 'c') {
-        return this.clipboardEl?.click()
-      }
-    }
-
     this.clickReplyEventListener = async event => {
       this.dispatchEvent(new CustomEvent('reply-to-message', {
         detail: {
@@ -76,7 +65,6 @@ export default class MessageDialog extends Dialog {
     const result = super.connectedCallback()
     if (this.replyEl) this.replyEl.addEventListener('click', this.clickReplyEventListener)
     if (this.hasAttribute('self') && this.deleteEl) this.deleteEl.addEventListener('click', this.clickDeleteEventListener)
-    this.root.addEventListener('keyup', this.keyupEventListener)
     this.addEventListener('message-rendered', this.messageRenderedEventListener)
     return result
   }
@@ -85,7 +73,6 @@ export default class MessageDialog extends Dialog {
     super.disconnectedCallback()
     if (this.replyEl) this.replyEl.removeEventListener('click', this.clickReplyEventListener)
     if (this.hasAttribute('self') && this.deleteEl) this.deleteEl.removeEventListener('click', this.clickDeleteEventListener)
-    this.root.removeEventListener('keyup', this.keyupEventListener)
     this.removeEventListener('message-rendered', this.messageRenderedEventListener)
   }
 
