@@ -19,15 +19,21 @@ export default class Users extends Shadow() {
     let timeoutId = null
     this.usersEventListener = async event => {
       lastUsersEventGetData = event.detail.getData
+      this.setAttribute('updating', '')
       clearTimeout(timeoutId)
       timeoutId = setTimeout(async () => {
         console.log('users', {
           data: await event.detail.getData(),
           ...event.detail
         })
-        if (this.isDialogOpen()) this.renderData(await event.detail.getData(), (lastSeparator = event.detail.separator))
+        if (this.isDialogOpen()) {
+          this.renderData(await event.detail.getData(), (lastSeparator = event.detail.separator))
+        } else {
+          Users.renderSummaryText(this.summary, await event.detail.getData(), this.hasAttribute('online'))
+        }
+        this.removeAttribute('updating')
         // @ts-ignore
-      }, self.Environment.awarenessEventListenerDelay)
+      }, this.isDialogOpen() ? 200 : self.Environment.awarenessEventListenerDelay)
     }
 
     this.openDialog = async event => {
@@ -36,13 +42,28 @@ export default class Users extends Shadow() {
       if (lastUsersEventGetData) {
         clearTimeout(timeoutId)
         this.renderData(await lastUsersEventGetData(), lastSeparator)
+        this.removeAttribute('updating')
       }
     }
 
     this.p2pGraphClickEventListener = event => console.log('p2pGraphClickEventListener', event.detail)
 
+    this.onlineEventListener = async event => {
+      this.setAttribute('online', '')
+      if (lastUsersEventGetData) Users.renderSummaryText(this.summary, await lastUsersEventGetData(), this.hasAttribute('online'))
+    }
+    this.offlineEventListener = async event => {
+      this.removeAttribute('online')
+      if (lastUsersEventGetData) Users.renderSummaryText(this.summary, await lastUsersEventGetData(), this.hasAttribute('online'))
+    }
+    if (navigator.onLine) {
+      this.onlineEventListener()
+    } else {
+      this.offlineEventListener()
+    }
+
     let resizeTimeout = null
-    this.resizeListener = event => {
+    this.resizeEventListener = event => {
       clearTimeout(resizeTimeout)
       resizeTimeout = setTimeout(async () => {
         // the graph has to be refreshed when resize
@@ -57,14 +78,18 @@ export default class Users extends Shadow() {
     this.globalEventTarget.addEventListener('yjs-users', this.usersEventListener)
     this.details.addEventListener('click', this.openDialog)
     this.addEventListener('p2p-graph-click', this.p2pGraphClickEventListener)
-    self.addEventListener('resize', this.resizeListener)
+    self.addEventListener('online', this.onlineEventListener)
+    self.addEventListener('offline', this.offlineEventListener)
+    self.addEventListener('resize', this.resizeEventListener)
   }
 
   disconnectedCallback () {
     this.globalEventTarget.removeEventListener('yjs-users', this.usersEventListener)
     this.details.removeEventListener('click', this.openDialog)
     this.addEventListener('p2p-graph-click', this.p2pGraphClickEventListener)
-    self.removeEventListener('resize', this.resizeListener)
+    self.removeEventListener('online', this.onlineEventListener)
+    self.removeEventListener('offline', this.offlineEventListener)
+    self.removeEventListener('resize', this.resizeEventListener)
   }
 
   /**
@@ -95,6 +120,12 @@ export default class Users extends Shadow() {
       :host {
         cursor: pointer;
       }
+      :host > details > summary > a-loading {
+        display: none;
+      }
+      :host([updating]) > details > summary > a-loading {
+        display: inline-block;
+      }
       :host > wct-dialog {
         font-size: 1rem;
       }
@@ -109,7 +140,7 @@ export default class Users extends Shadow() {
   renderHTML () {
     this.html = /* html */`
       <details>
-        <summary>Click to see directly connected to <span id="connected-users">...</span> User(s)</summary>
+        <summary><a-loading namespace="loading-default-" size="0.75"></a-loading> Looking up users...</summary>
       </details>
       <wct-dialog namespace="dialog-top-slide-in-">
         <style protected>
@@ -129,14 +160,13 @@ export default class Users extends Shadow() {
             color: green;
             font-weight: bold;
           }
-          :host .warning {
-            color: red;
-          }
           :host > dialog #users-graph {
             padding: 5svh 10svw;
             border: 1px dashed var(--color-secondary);
           }
-          :host > dialog #users-graph:has(> chat-a-p2p-graph[no-data]), :host > dialog #users-graph:has(> chat-a-p2p-graph:not([no-data])) ~ #no-connections {
+          /* TODO: online is on Users and not the dialog... solve with ::part selector from Users CSS... :host(:not([online])) > dialog #users-graph:has(> chat-a-p2p-graph),*/
+          :host > dialog #users-graph:has(> chat-a-p2p-graph[no-data]),
+          :host > dialog #users-graph:has(> chat-a-p2p-graph:not([no-data])) ~ #no-connections {
             display: none
           }
         </style>
@@ -188,29 +218,38 @@ export default class Users extends Shadow() {
         // @ts-ignore
         path: `${this.importMetaUrl}./dialogs/NickNameDialog.js?${Environment?.version || ''}`,
         name: 'chat-m-nick-name-dialog'
+      },
+      {
+        // @ts-ignore
+        path: `${this.importMetaUrl}../../../../components/atoms/loading/Loading.js?${Environment?.version || ''}`,
+        name: 'a-loading'
       }
     ])
   }
 
   renderData (data, separator) {
     // todo: check navigator online
-    if (data.usersConnectedWithSelf.size - 1) {
-      this.connectedUsers.textContent = data.usersConnectedWithSelf.size ? data.usersConnectedWithSelf.size - 1 : 'You are alone!'
-      this.connectedUsers.classList.remove('warning')
-    } else {
-      this.connectedUsers.textContent = 'You are alone!'
-      this.connectedUsers.classList.add('warning')
-    }
+    Users.renderSummaryText(this.summary, data, this.hasAttribute('online'))
     Users.renderP2pGraph(this.usersGraph, data.usersConnectedWithSelf, separator)
     Users.renderUserTableList(this.usersOl, data.usersConnectedWithSelf)
     Users.renderUserTableList(this.allUsersOl, data.allUsers)
   }
 
+  static renderSummaryText (summary, data, online) {
+    summary.innerHTML = /* html */`
+      <a-loading namespace="loading-default-" size="0.75"></a-loading> ${online
+        ? data.usersConnectedWithSelf.size > 1
+          ? `You are connected to ${data.usersConnectedWithSelf.size - 1} ${data.usersConnectedWithSelf.size === 2 ? 'User' : 'Users'}`
+          : 'You are alone!'
+        : 'You are offline!'
+      }
+    `
+  }
+
   static renderP2pGraph (graph, data, separator) {
-    if (!Array.isArray(data)) data = Array.from(data)
     graph.innerHTML = /* html */`
       <chat-a-p2p-graph separator="${separator || ''}">
-        <template>${JSON.stringify(data)}</template>
+        <template>${JSON.stringify(Array.isArray(data) ? data : Array.from(data))}</template>
       </chat-a-p2p-graph>
     `
   }
@@ -245,16 +284,16 @@ export default class Users extends Shadow() {
     return this.root.querySelector('details')
   }
 
+  get summary () {
+    return this.details.querySelector('summary')
+  }
+
   get dialog () {
     return this.root.querySelector('wct-dialog')
   }
 
   isDialogOpen () {
     return this.dialog.root.querySelector('dialog[open]')
-  }
-
-  get connectedUsers () {
-    return this.root.querySelector('#connected-users')
   }
 
   get usersGraph () {

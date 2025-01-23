@@ -252,7 +252,7 @@ export default class Chat extends Shadow() {
         width: min(50dvw, 100%);
         z-index: 1;
         pointer-events: none;
-        transition: transform ${this.removeEmptySectionTimeout}ms ease-out;
+        transition: transform ${this.removeEmptySectionTimeout}ms ease-out 1s;
       }
       :host > ul + section#empty > * {
         grid-column: 1;
@@ -408,7 +408,7 @@ export default class Chat extends Shadow() {
           cancelable: true,
           composed: true
         })), 200)
-      } else {
+      } else if (this.ul?.lastElementChild) {
         this.scrollIntoView(this.ulGetScrollElFunc(this.ul.lastElementChild.getAttribute('timestamp')))
       }
     })

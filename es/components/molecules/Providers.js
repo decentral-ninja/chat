@@ -19,14 +19,25 @@ export default class Providers extends Shadow() {
     // TODO: only consume user data when needed eg. dialog is open
     let timeoutId = null
     this.providersEventListener = event => {
-      if (!event.detail.getData) return
+      this.setAttribute('updating', '')
       clearTimeout(timeoutId)
-      timeoutId = setTimeout(async () => console.log('providers', {
-        data: await event.detail.getData(),
-        sessionProvidersByStatus: await (await event.detail.getData()).getSessionProvidersByStatus(),
-        ...event.detail
+      timeoutId = setTimeout(async () => {
+        console.log('providers', {
+          data: await event.detail.getData(),
+          sessionProvidersByStatus: await (await event.detail.getData()).getSessionProvidersByStatus(),
+          ...event.detail
+        })
+        this.removeAttribute('updating')
         // @ts-ignore
-      }), self.Environment.awarenessEventListenerDelay)
+      }, self.Environment.awarenessEventListenerDelay)
+    }
+
+    this.onlineEventListener = async event => this.setAttribute('online', '')
+    this.offlineEventListener = async event => this.removeAttribute('online')
+    if (navigator.onLine) {
+      this.onlineEventListener()
+    } else {
+      this.offlineEventListener()
     }
   }
 
@@ -34,10 +45,14 @@ export default class Providers extends Shadow() {
     // if (this.shouldRenderCSS()) this.renderCSS()
     // if (this.shouldRenderHTML()) this.renderHTML()
     this.globalEventTarget.addEventListener('yjs-providers', this.providersEventListener)
+    self.addEventListener('online', this.onlineEventListener)
+    self.addEventListener('offline', this.offlineEventListener)
   }
 
   disconnectedCallback () {
     this.globalEventTarget.removeEventListener('yjs-providers', this.providersEventListener)
+    self.removeEventListener('offline', this.offlineEventListener)
+    self.removeEventListener('resize', this.resizeEventListener)
   }
 
   /**
