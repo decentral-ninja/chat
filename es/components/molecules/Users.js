@@ -273,8 +273,8 @@ export default class Users extends Shadow() {
         tdTwo.textContent = typeof user[key] === 'string' && user[key].includes('epoch')
           ? new Date(JSON.parse(user[key]).epoch).toLocaleString(navigator.language)
           : typeof user[key] === 'object'
-          ? JSON.stringify(user[key])
-          : user[key]
+            ? JSON.stringify(user[key])
+            : user[key]
         tr.appendChild(tdTwo)
       }
     })

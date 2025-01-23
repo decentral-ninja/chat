@@ -3,6 +3,8 @@ import { Shadow } from '../../../../event-driven-web-components-prototypes/src/S
 
 /* global Environment */
 /* global self */
+/* global location */
+/* global history */
 
 /**
  * The chat view

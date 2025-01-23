@@ -2,7 +2,6 @@
 import { Shadow } from '../../../../event-driven-web-components-prototypes/src/Shadow.js'
 
 /* global self */
-/* global Environment */
 
 /**
  * The providers view

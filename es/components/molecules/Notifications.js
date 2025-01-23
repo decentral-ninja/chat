@@ -2,6 +2,7 @@
 import { Hover } from '../../../../event-driven-web-components-prototypes/src/Hover.js'
 
 /* global self */
+/* global Environment */
 
 /**
  * The notifications view
