@@ -228,7 +228,6 @@ export default class Users extends Shadow() {
   }
 
   renderData (data, separator) {
-    // todo: check navigator online
     Users.renderSummaryText(this.summary, data, this.hasAttribute('online'))
     Users.renderP2pGraph(this.usersGraph, data.usersConnectedWithSelf, separator)
     Users.renderUserTableList(this.usersOl, data.usersConnectedWithSelf)

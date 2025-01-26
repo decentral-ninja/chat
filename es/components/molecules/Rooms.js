@@ -208,6 +208,14 @@ export default class Rooms extends Shadow() {
       if (target) target.textContent = event.detail.aka ? event.detail.aka : ''
     }
 
+    this.generateRoomNameLinkClickEventListener = event => {
+      event.preventDefault()
+      if (this.inputRoomName) {
+        this.inputRoomName.value = Rooms.getRandomRoom()
+        this.inputRoomName.focus()
+      }
+    }
+
     this.openRoomListener = event => {
       this.renderHTML().then(() => this.dialog?.show('show-modal'))
     }
@@ -381,10 +389,26 @@ export default class Rooms extends Shadow() {
               <wct-menu-icon id="close" no-aria class="open sticky" namespace="menu-icon-close-" no-click></wct-menu-icon>
               <h4>Enter room name or link:</h4>
               <wct-grid auto-fill="20%">
+                <style protected=true>
+                  :host #generate-room-name {
+                    --a-margin: 0;
+                    --a-text-decoration: underline;
+                    --a-display: flex;
+                    --color: var(--a-color);
+                    --color-hover: var(--color-yellow);
+                    font-style: italic;
+                    font-size: 0.75em;
+                    margin: 0;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                  }
+                </style>
                 <section>
-                  <wct-input inputId="room-name-prefix" placeholder="${this.roomNamePrefix}" namespace="wct-input-" disabled></wct-input>
-                  <wct-input inputId="room-name" placeholder="${(roomName = await room).replace(this.roomNamePrefix, '')}" namespace="wct-middle-input-" namespace-fallback grid-column="2/5" submit-search="submit-room-name" any-key-listener autofocus force></wct-input>
-                  <wct-button namespace="button-primary-" request-event-name="submit-room-name" click-no-toggle-active>enter</wct-button>
+                  <a href="#" id="generate-room-name" grid-row="1/1" grid-column="2/5"><wct-icon-mdx size="1em" hover-on-parent-element title="generate" icon-url="../../../../../../img/icons/fold-down.svg"></wct-icon-mdx> Generate a random room name <wct-icon-mdx size="1em" hover-on-parent-element title="generate" icon-url="../../../../../../img/icons/fold-down.svg"></wct-icon-mdx></a>
+                  <wct-input grid-row="2/2" inputId="room-name-prefix" placeholder="${this.roomNamePrefix}" namespace="wct-input-" disabled></wct-input>
+                  <wct-input grid-row="2/2" grid-column="2/5" inputId="room-name" placeholder="${(roomName = await room).replace(this.roomNamePrefix, '')}" namespace="wct-middle-input-" namespace-fallback submit-search="submit-room-name" any-key-listener autofocus force></wct-input>
+                  <wct-button grid-row="2/2" namespace="button-primary-" request-event-name="submit-room-name" click-no-toggle-active>enter</wct-button>
                 </section>
               </wct-grid>
               <hr>
@@ -404,7 +428,7 @@ export default class Rooms extends Shadow() {
               <wct-grid auto-fill="20%">
                 <section>
                   <wct-input inputId="room-name-prefix" placeholder="${this.roomNamePrefix}" namespace="wct-input-" disabled></wct-input>
-                  <wct-input inputId="room-name" placeholder="${this.randomRoom}" namespace="wct-middle-input-" namespace-fallback grid-column="2/5" submit-search="submit-room-name" any-key-listener autofocus force></wct-input>
+                  <wct-input grid-column="2/5" inputId="room-name" placeholder="${this.randomRoom}" namespace="wct-middle-input-" namespace-fallback submit-search="submit-room-name" any-key-listener autofocus force></wct-input>
                   <wct-button namespace="button-primary-" request-event-name="submit-room-name" click-no-toggle-active>enter</wct-button>
                 </section>
               </wct-grid>
@@ -413,6 +437,7 @@ export default class Rooms extends Shadow() {
             </dialog>
           </wct-dialog>
         `
+      if (this.generateRoomNameLink) this.generateRoomNameLink.addEventListener('click', this.generateRoomNameLinkClickEventListener)
     })
   }
 
@@ -553,12 +578,38 @@ export default class Rooms extends Shadow() {
     nodes.forEach(node => node.classList[!filter || (node.innerText || node.textContent).toUpperCase().includes(filter) ? 'remove' : 'add']('hidden'))
   }
 
+  /**
+   * generate random string
+   * 
+   * @method
+   * @name getRandomRoom
+   * @kind method
+   * @memberof Rooms
+   * @static
+   * @returns {string}
+   */
+  static getRandomRoom () {
+    return `random-room-${Date.now()}`
+  }
+
   get randomRoom () {
-    return this._randomRoom || (this._randomRoom = `random-room-${Date.now()}`)
+    return this._randomRoom || (this._randomRoom = Rooms.getRandomRoom())
   }
 
   get dialog () {
     return this.root.querySelector('wct-dialog')
+  }
+
+  get grid () {
+    return this.dialog?.root.querySelector('wct-grid')
+  }
+
+  get inputRoomName () {
+    return this.grid?.root.querySelector('[inputId="room-name"]').inputField
+  }
+
+  get generateRoomNameLink () {
+    return this.grid?.root.querySelector('#generate-room-name')
   }
 
   get ul () {
