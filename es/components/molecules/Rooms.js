@@ -182,7 +182,7 @@ export default class Rooms extends Shadow() {
           } catch (error) {}
         }
         const url = new URL(location.href)
-        const roomName = `${this.roomNamePrefix}${inputField?.value?.replace(/"/g, '') || url.searchParams.get('room')?.replace(this.roomNamePrefix, '') || this.randomRoom}`
+        const roomName = `${this.roomNamePrefix}${inputField?.value?.replace(/"/g, '')?.replace(this.roomNamePrefix, '') || url.searchParams.get('room')?.replace(this.roomNamePrefix, '') || this.randomRoom}`
         if ((await this.roomPromise).room.done) {
           // enter new room
           if (inputField) inputField.value = ''
