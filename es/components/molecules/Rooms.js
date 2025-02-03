@@ -528,9 +528,9 @@ export default class Rooms extends Shadow() {
         font-style: italic;
         font-size: 0.75em;
         text-decoration: underline;
-        margin-left: 2em;
+        margin-left: 1em;
         display: list-item;
-        list-style: disc;
+        list-style: inside;
       }
       :host ul > li > div > a > div.aka:empty {
         display: none;

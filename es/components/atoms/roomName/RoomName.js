@@ -21,13 +21,25 @@ export default class RoomName extends Shadow() {
       }))
     }
 
+    this.roomNameAkaEventListener = async event => {
+      let target
+      if ((target = this.root.querySelector('.aka')) && event.detail?.key === await (await this.roomPromise)?.room) target.textContent = event.detail.aka ? event.detail.aka : ''
+    }
+
     /** @type {(any)=>void} */
     this.roomResolve = map => map
     /** @type {Promise<{ locationHref: string, room: Promise<string> & {done: boolean} }>} */
     this.roomPromise = new Promise(resolve => (this.roomResolve = resolve))
 
     this.roomPromise.then(async ({ locationHref, room }) => {
-      this.renderHTML(await room)
+      this.renderHTML(await room, await new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-rooms', {
+        detail: {
+          resolve
+        },
+        bubbles: true,
+        cancelable: true,
+        composed: true
+      }))))
     })
   }
 
@@ -35,6 +47,7 @@ export default class RoomName extends Shadow() {
     if (this.shouldRenderCSS()) this.renderCSS()
     if (this.shouldRenderHTML()) this.renderHTML()
     this.addEventListener('click', this.clickEventListener)
+    this.globalEventTarget.addEventListener('room-name-aka', this.roomNameAkaEventListener)
     this.connectedCallbackOnce()
   }
 
@@ -52,6 +65,7 @@ export default class RoomName extends Shadow() {
 
   disconnectedCallback () {
     this.removeEventListener('click', this.clickEventListener)
+    this.globalEventTarget.removeEventListener('room-name-aka', this.roomNameAkaEventListener)
   }
 
   /**
@@ -103,9 +117,25 @@ export default class RoomName extends Shadow() {
         display: flex;
       }
       :host > a > h1 {
+        flex-shrink: 1;
+      }
+      :host > a > h1, :host > a > div.aka {
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+      }
+      :host > a > div.aka {
+        color: var(--color-disabled);
+        font-style: italic;
+        font-size: 0.75em;
+        text-decoration: underline;
+        margin-left: 1em;
+        display: list-item;
+        list-style: inside;
+        flex-shrink: 2;
+      }
+      :host > a > div.aka:empty {
+        display: none;
       }
       @media only screen and (max-width: _max-width_) {
         :host {}
@@ -143,13 +173,15 @@ export default class RoomName extends Shadow() {
   /**
    * Render HTML
    * @prop {string} roomName
+   * @prop {} getRoomsResult
    * @returns Promise<void>
    */
-  renderHTML (roomName) {
+  renderHTML (roomName, getRoomsResult) {
     this.html = ''
-    this.html = `<a href="#">
+    this.html = /* html */`<a href="#">
       <wct-icon-mdx hover-on-parent-element id="show-modal" rotate="180deg" icon-url="../../../../../../img/icons/chevron-left.svg" size="1.75em"></wct-icon-mdx>
       <h1>${roomName || 'Loading...'}</h1>
+      <div class=aka>${getRoomsResult?.value?.[roomName]?.aka ? getRoomsResult.value[roomName].aka : ''}</div>
     </a>`
     return this.fetchModules([
       {
@@ -162,5 +194,10 @@ export default class RoomName extends Shadow() {
 
   get hTag () {
     return this.root.querySelector('h1')
+  }
+
+  get globalEventTarget () {
+    // @ts-ignore
+    return this._globalEventTarget || (this._globalEventTarget = self.Environment?.activeRoute || document.body)
   }
 }

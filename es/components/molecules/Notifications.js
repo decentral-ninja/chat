@@ -117,6 +117,9 @@ export default class Notifications extends Hover() {
       :host(.hover) {
         --color: var(--color-yellow);
       }
+      :host([hidden]) {
+        display: none;
+      }
       :host > div {
         display: grid;
         grid-template-columns: 1fr;

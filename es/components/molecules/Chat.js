@@ -23,81 +23,92 @@ export default class Chat extends Shadow() {
     // chat update
     this.chatUpdateEventListener = async event => {
       // https://docs.yjs.dev/api/y.event
-      let funcName = 'getAdded'
+      // NOTE: Previous version would distinguish between getAdded and getAll but getAdded was not reliable, for that reason we always getAll
       if (firstRender || this.ul.innerHTML === '') {
         this.ul.innerHTML = ''
-        funcName = 'getAll'
         firstRender = false
       }
       // render out new messages
-      if (funcName === 'getAll' || event.detail.added > 0) {
-        Promise.all([
-          this.fetchModules([
-            {
+      Promise.all([
+        this.fetchModules([
+          {
+            // @ts-ignore
+            path: `${this.importMetaUrl}../../components/molecules/message/Message.js?${Environment?.version || ''}`,
+            name: 'chat-m-message'
+          },
+          {
+            // @ts-ignore
+            path: `${this.importMetaUrl}../../../../web-components-toolbox/src/es/components/molecules/loadTemplateTag/LoadTemplateTag.js?${Environment?.version || ''}`,
+            name: 'wct-load-template-tag'
+          }
+        ]),
+        event.detail.getAll()
+      ]).then(([[{ constructorClass }], textObjs]) => {
+        const isUlEmpty = !this.ul.children.length
+        let wasLastMessage = false
+        // no messages and show ninja
+        if (this.sectionEmpty) {
+          if (textObjs.length) {
+            this.sectionEmpty.classList.add('hidden')
+            clearTimeout(removeEmptySectionTimeoutId)
+            removeEmptySectionTimeoutId = setTimeout(() => this.sectionEmpty.remove(), this.removeEmptySectionTimeout)
+          } else {
+            this.sectionEmpty.classList.remove('hidden')
+          }
+        }
+        // Attention: NO async here when appending to the dom!
+        textObjs.sort((a, b) => a.timestamp - b.timestamp).forEach((textObj, i, textObjs) => {
+          // @ts-ignore
+          const timestamp = `${self.Environment?.timestampNamespace || 't_'}${textObj.timestamp}`
+          // if timestamp exists... assuming that messages timestamp with user uid are unique and we want to avoid double messages.
+          if (this.ul.querySelector(`[timestamp="${timestamp}"][uid='${textObj.uid}']`)) return
+          wasLastMessage = textObjs.length === i + 1
+          const div = document.createElement('div')
+          div.innerHTML = this.getMessageHTML(textObj, timestamp, wasLastMessage, isUlEmpty)
+          if (isUlEmpty) {
+            this.ul.appendChild(div.children[0])
+          } else {
+            let prevSibling
+            // @ts-ignore
+            if (Array.from(this.ul.children).reverse().some(child => Number((prevSibling = child).getAttribute('timestamp')?.replace(self.Environment?.timestampNamespace || 't_', '')) < textObj.timestamp)) {
               // @ts-ignore
-              path: `${this.importMetaUrl}../../components/molecules/message/Message.js?${Environment?.version || ''}`,
-              name: 'chat-m-message'
-            },
-            {
-              // @ts-ignore
-              path: `${this.importMetaUrl}../../../../web-components-toolbox/src/es/components/molecules/loadTemplateTag/LoadTemplateTag.js?${Environment?.version || ''}`,
-              name: 'wct-load-template-tag'
-            }
-          ]),
-          event.detail[funcName]()
-        ]).then(([[{ constructorClass }], textObjs]) => {
-          // no messages and show ninja
-          const isUlEmpty = !this.ul.children.length
-          let wasLastMessage = false
-          if (this.sectionEmpty) {
-            if (textObjs.length) {
-              this.sectionEmpty.classList.add('hidden')
-              clearTimeout(removeEmptySectionTimeoutId)
-              removeEmptySectionTimeoutId = setTimeout(() => this.sectionEmpty.remove(), this.removeEmptySectionTimeout)
+              prevSibling.after(div.children[0])
             } else {
-              this.sectionEmpty.classList.remove('hidden')
+              this.ul.prepend(div.children[0])
             }
           }
-          // Attention: NO async here when appending to the dom!
-          textObjs.sort((a, b) => a.timestamp - b.timestamp).forEach((textObj, i, textObjs) => {
-            wasLastMessage = textObjs.length === i + 1
-            const div = document.createElement('div')
-            // @ts-ignore
-            div.innerHTML = this.getMessageHTML(textObj, `${self.Environment?.timestampNamespace || 't_'}${textObj.timestamp}`, wasLastMessage, isUlEmpty)
-            this.ul.appendChild(div.children[0])
-            // scroll behavior
-            if (wasLastMessage) {
-              // firstRender
-              if (isUlEmpty) {
-                // scroll to the last memorized scroll pos
-                this.scrollLastMemorizedIntoView()
-                if (!textObj.isSelf) {
+          // scroll behavior
+          if (wasLastMessage) {
+            // firstRender
+            if (isUlEmpty) {
+              // scroll to the last memorized scroll pos
+              this.scrollLastMemorizedIntoView()
+              if (!textObj.isSelf) {
+                this.dispatchEvent(new CustomEvent('scroll-icon-show-event', {
+                  bubbles: true,
+                  cancelable: true,
+                  composed: true
+                }))
+              }
+              // don't save message locations after render some time, since all messages intersect and we may receive some message not on top
+              setTimeout(() => this.addEventListener('message-intersection', this.messageIntersectionEventListener), 1000)
+            } else {
+              // wait for intersection to happen before we can decide to scroll or not
+              setTimeout(() => {
+                if (textObj.isSelf || this.ul.lastElementChild.matches('chat-m-message[intersecting]')) {
+                  this.scrollIntoView(() => this.ul.lastElementChild, true)
+                } else {
                   this.dispatchEvent(new CustomEvent('scroll-icon-show-event', {
                     bubbles: true,
                     cancelable: true,
                     composed: true
                   }))
                 }
-                // don't save message locations after render some time, since all messages intersect and we may receive some message not on top
-                setTimeout(() => this.addEventListener('message-intersection', this.messageIntersectionEventListener), 1000)
-              } else {
-                // wait for intersection to happen before we can decide to scroll or not
-                setTimeout(() => {
-                  if (textObj.isSelf || this.ul.lastElementChild.matches('chat-m-message[intersecting]')) {
-                    this.scrollIntoView(() => this.ul.lastElementChild, true)
-                  } else {
-                    this.dispatchEvent(new CustomEvent('scroll-icon-show-event', {
-                      bubbles: true,
-                      cancelable: true,
-                      composed: true
-                    }))
-                  }
-                }, 200)
-              }
+              }, 200)
             }
-          })
+          }
         })
-      }
+      })
       // delete messages
       if (event.detail.deleted > 0) {
         (await event.detail.getDeleted()).forEach(textObj => {
