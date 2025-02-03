@@ -108,7 +108,7 @@ export default class RoomName extends Shadow() {
         outline: none;
       }
       :host > a {
-        align-items: center;
+        align-items: end;
         display: flex;
         tap-highlight-color: transparent;
         --webkit-tap-highlight-color: transparent;
