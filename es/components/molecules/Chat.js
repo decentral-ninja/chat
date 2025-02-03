@@ -60,21 +60,22 @@ export default class Chat extends Shadow() {
         textObjs.sort((a, b) => a.timestamp - b.timestamp).forEach((textObj, i, textObjs) => {
           // @ts-ignore
           const timestamp = `${self.Environment?.timestampNamespace || 't_'}${textObj.timestamp}`
-          // if timestamp exists... assuming that messages timestamp with user uid are unique and we want to avoid double messages.
-          if (this.ul.querySelector(`[timestamp="${timestamp}"][uid='${textObj.uid}']`)) return
           wasLastMessage = textObjs.length === i + 1
-          const div = document.createElement('div')
-          div.innerHTML = this.getMessageHTML(textObj, timestamp, wasLastMessage, isUlEmpty)
-          if (isUlEmpty) {
-            this.ul.appendChild(div.children[0])
-          } else {
-            let prevSibling
-            // @ts-ignore
-            if (Array.from(this.ul.children).reverse().some(child => Number((prevSibling = child).getAttribute('timestamp')?.replace(self.Environment?.timestampNamespace || 't_', '')) < textObj.timestamp)) {
-              // @ts-ignore
-              prevSibling.after(div.children[0])
+          // if timestamp does not exist... assuming that messages timestamp with user uid are unique and we want to avoid double messages.
+          if (!this.ul.querySelector(`[timestamp="${timestamp}"][uid='${textObj.uid}']`)) {
+            const div = document.createElement('div')
+            div.innerHTML = this.getMessageHTML(textObj, timestamp, wasLastMessage, isUlEmpty)
+            if (isUlEmpty) {
+              this.ul.appendChild(div.children[0])
             } else {
-              this.ul.prepend(div.children[0])
+              let prevSibling
+              // @ts-ignore
+              if (Array.from(this.ul.children).reverse().some(child => Number((prevSibling = child).getAttribute('timestamp')?.replace(self.Environment?.timestampNamespace || 't_', '')) < textObj.timestamp)) {
+                // @ts-ignore
+                prevSibling.after(div.children[0])
+              } else {
+                this.ul.prepend(div.children[0])
+              }
             }
           }
           // scroll behavior
@@ -144,7 +145,7 @@ export default class Chat extends Shadow() {
           if ((ulChildrenArr = Array.from(this.ul.children)) && (ulChildrenArr = ulChildrenArr.splice(ulChildrenArr.indexOf(event.detail.target)))) {
             this.dispatchEvent(new CustomEvent('yjs-merge-active-room', {
               detail: {
-              // topBorder + 50 is for making sure that not only the bottom of the message is seen but 50px parts of it
+                // topBorder + 50 is for making sure that not only the bottom of the message is seen but 50px parts of it
                 scrollEl: this.ul.lastElementChild.hasAttribute('intersecting') ? this.ul.lastElementChild.getAttribute('timestamp') : ulChildrenArr.find(child => child.getBoundingClientRect().bottom > topBorder + 50)?.getAttribute('timestamp') || event.detail.scrollEl
               },
               bubbles: true,
