@@ -15,19 +15,16 @@ export default class Users extends Shadow() {
     super({ importMetaUrl: import.meta.url, ...options }, ...args)
 
     let lastUsersEventGetData = null
-    let lastSeparator = null
+    let lastSeparator = this.getAttribute('separator') || '<>'
     let timeoutId = null
     this.usersEventListener = async event => {
       lastUsersEventGetData = event.detail.getData
+      lastSeparator = event.detail.separator
       this.setAttribute('updating', '')
       clearTimeout(timeoutId)
       timeoutId = setTimeout(async () => {
-        console.log('users', {
-          data: await event.detail.getData(),
-          ...event.detail
-        })
         if (this.isDialogOpen()) {
-          this.renderData(await event.detail.getData(), (lastSeparator = event.detail.separator))
+          this.renderData(await event.detail.getData(), lastSeparator)
         } else {
           Users.renderSummaryText(this.summary, await event.detail.getData(), this.hasAttribute('online'))
         }
@@ -44,9 +41,38 @@ export default class Users extends Shadow() {
         this.renderData(await lastUsersEventGetData(), lastSeparator)
         this.removeAttribute('updating')
       }
+      this.scrollActiveIntoView()
+    }
+    this.userDialogShowEventEventListener = event => {
+      this.setAttribute('active', event.detail.uid)
+      this.openDialog(event)
     }
 
-    this.p2pGraphClickEventListener = event => console.log('p2pGraphClickEventListener', event.detail)
+    // listens to the dialog node but reacts on active list elements to be deactivated
+    this.dialogClickEventListener = async event => {
+      let activeNode
+      if (event.composedPath().some(node => (activeNode = node).tagName === 'LI' && node.classList.contains('active'))) {
+        // @ts-ignore
+        this.setActive(activeNode.getAttribute('uid'), this.usersOl, false)
+        // @ts-ignore
+        this.setActive(activeNode.getAttribute('uid'), this.allUsersOl, false, false)
+        if (lastUsersEventGetData) Users.renderP2pGraph(this.usersGraph, (await lastUsersEventGetData()).usersConnectedWithSelf, lastSeparator)
+        this.usersGraph.scrollIntoView({ behavior: 'smooth' })
+      }
+    }
+
+    this.p2pGraphClickEventListener = event => {
+      if (event.detail.graphUserObj) {
+        this.setActive(event.detail.graphUserObj.id, this.usersOl, event.detail.isActive)
+        this.setActive(event.detail.graphUserObj.id, this.allUsersOl, event.detail.isActive, false)
+      }
+    }
+
+    this.nickNameClickEventListener = async event => {
+      this.setActive(event.detail.uid, this.usersOl, true)
+      this.setActive(event.detail.uid, this.allUsersOl, true, false)
+      if (lastUsersEventGetData) Users.renderP2pGraph(this.usersGraph, (await lastUsersEventGetData()).usersConnectedWithSelf, lastSeparator, this.getAttribute('active'))
+    }
 
     this.onlineEventListener = async event => {
       this.setAttribute('online', '')
@@ -76,8 +102,11 @@ export default class Users extends Shadow() {
     if (this.shouldRenderCSS()) this.renderCSS()
     if (this.shouldRenderHTML()) this.renderHTML()
     this.globalEventTarget.addEventListener('yjs-users', this.usersEventListener)
+    this.globalEventTarget.addEventListener('user-dialog-show-event', this.userDialogShowEventEventListener)
     this.details.addEventListener('click', this.openDialog)
+    this.dialog.addEventListener('click', this.dialogClickEventListener)
     this.addEventListener('p2p-graph-click', this.p2pGraphClickEventListener)
+    this.addEventListener('nickname-click', this.nickNameClickEventListener)
     self.addEventListener('online', this.onlineEventListener)
     self.addEventListener('offline', this.offlineEventListener)
     self.addEventListener('resize', this.resizeEventListener)
@@ -85,8 +114,11 @@ export default class Users extends Shadow() {
 
   disconnectedCallback () {
     this.globalEventTarget.removeEventListener('yjs-users', this.usersEventListener)
+    this.globalEventTarget.removeEventListener('user-dialog-show-event', this.userDialogShowEventEventListener)
     this.details.removeEventListener('click', this.openDialog)
-    this.addEventListener('p2p-graph-click', this.p2pGraphClickEventListener)
+    this.dialog.removeEventListener('click', this.dialogClickEventListener)
+    this.removeEventListener('p2p-graph-click', this.p2pGraphClickEventListener)
+    this.removeEventListener('nickname-click', this.nickNameClickEventListener)
     self.removeEventListener('online', this.onlineEventListener)
     self.removeEventListener('offline', this.offlineEventListener)
     self.removeEventListener('resize', this.resizeEventListener)
@@ -142,29 +174,69 @@ export default class Users extends Shadow() {
       <details>
         <summary><a-loading namespace="loading-default-" size="0.75"></a-loading> Looking up users...</summary>
       </details>
-      <wct-dialog namespace="dialog-top-slide-in-">
+      <wct-dialog namespace="dialog-top-slide-in-" open=show-modal>
         <style protected>
-          :host h4 {
-            position: sticky;
-            top: 0;
+          :host {
+            --dialog-top-slide-in-ul-padding-left: 0;
+            --dialog-top-slide-in-ol-list-style: none;
+            --dialog-top-slide-in-ul-li-padding-left: 1em;
           }
           :host ol > li {
+            --box-shadow-color: var(--color-user);
+            --box-shadow-default: var(--box-shadow-length-one) var(--box-shadow-color), var(--box-shadow-length-two) var(--box-shadow-color);
+            border: 1px solid var(--color-user);
             word-break: break-all;
             margin-bottom: var(--spacing);
+            box-shadow: var(--box-shadow-default);
+            padding: 0.25em;
+            padding-left: 0.25em !important;
+            border-radius: var(--border-radius);
+            overflow: auto;
+            scrollbar-color: var(--color) var(--background-color);
+            scrollbar-width: thin;
+            transition: padding 0.05s ease-out;
+          }
+          :host ol > li.self {
+            --box-shadow-color: var(--color-secondary);
+            --box-shadow-default: var(--box-shadow-length-one) var(--box-shadow-color), var(--box-shadow-length-two) var(--box-shadow-color);
+            border: 1px solid var(--color-secondary);
+          }
+          :host ol > li.active {
+            cursor: pointer;
+          }
+          :host ol > li:active {
+            padding: 0;
+            padding-left: 0 !important;
+          }
+          :host ol > li:active > * {
+            padding: 1em;
+          }
+          :host ol > li > * {
+            padding: 0.75em;
+            margin: 0;
+            transition: padding 0.05s ease-out;
+          }
+          :host ol > li.active > * {
+            --box-shadow-default: var(--box-shadow-length-one) var(--box-shadow-color), var(--box-shadow-length-two) var(--box-shadow-color);
+            --h4-color: var(--background-color);
+            color: var(--background-color);
+            background-color: var(--background-color-rgba-50);
+            border-radius: var(--border-radius);
           }
           :host .nickname {
             color: blue;
             font-weight: bold;
           }
-          :host .self {
-            color: green;
-            font-weight: bold;
+          :host chat-a-nick-name {
+            display: inline-block;
           }
           :host > dialog #users-graph {
+            border-radius: var(--border-radius);
             padding: 5svh 10svw;
             border: 1px dashed var(--color-secondary);
           }
           /* TODO: online is on Users and not the dialog... solve with ::part selector from Users CSS... :host(:not([online])) > dialog #users-graph:has(> chat-a-p2p-graph),*/
+          :host > dialog #users-graph:empty,
           :host > dialog #users-graph:has(> chat-a-p2p-graph[no-data]),
           :host > dialog #users-graph:has(> chat-a-p2p-graph:not([no-data])) ~ #no-connections {
             display: none
@@ -177,12 +249,17 @@ export default class Users extends Shadow() {
             <div id="users-graph"></div>
             <p id="no-connections">No active connections...</p>
             <br>
+            <hr>
+            <br>
             <div>
-              <h4>Mutually connected users</h4>
+              <h4>Connected Users</h4>
               <ol id="users"></ol>
             </div>
+            <br>
+            <hr>
+            <br>
             <div>
-              <h4>Users which once were connected</h4>
+              <h4>All Users who were once connected</h4>
               <ol id="all-users"></ol>
             </div>
           </div>
@@ -216,6 +293,11 @@ export default class Users extends Shadow() {
       },
       {
         // @ts-ignore
+        path: `${this.importMetaUrl}../atoms/nickName/NickName.js?${Environment?.version || ''}`,
+        name: 'chat-a-nick-name'
+      },
+      {
+        // @ts-ignore
         path: `${this.importMetaUrl}./dialogs/NickNameDialog.js?${Environment?.version || ''}`,
         name: 'chat-m-nick-name-dialog'
       },
@@ -229,9 +311,27 @@ export default class Users extends Shadow() {
 
   renderData (data, separator) {
     Users.renderSummaryText(this.summary, data, this.hasAttribute('online'))
-    Users.renderP2pGraph(this.usersGraph, data.usersConnectedWithSelf, separator)
-    Users.renderUserTableList(this.usersOl, data.usersConnectedWithSelf)
-    Users.renderUserTableList(this.allUsersOl, data.allUsers)
+    Users.renderP2pGraph(this.usersGraph, data.usersConnectedWithSelf, separator, this.getAttribute('active'))
+    Users.renderUserTableList(this.usersOl, data.usersConnectedWithSelf, data.allUsers, separator, this.getAttribute('active'))
+    Users.renderUserTableList(this.allUsersOl, data.allUsers, data.allUsers, separator, this.getAttribute('active'))
+  }
+
+  setActive (uid, ol, active = true, scroll = true) {
+    Array.from(ol.querySelectorAll('li.active')).forEach(li => li.classList.remove('active'))
+    let li
+    if (active && (li = ol.querySelector(`li[uid='${uid}']`))) {
+      li.classList.add('active')
+      this.setAttribute('active', uid)
+    } else {
+      this.removeAttribute('active')
+    }
+    if (active && scroll) this.scrollActiveIntoView()
+  }
+
+  scrollActiveIntoView() {
+    let liActive
+    if ((liActive = this.usersOl.querySelector('li.active'))) return liActive.scrollIntoView({ behavior: 'smooth' })
+    this.allUsersOl.querySelector('li.active')?.scrollIntoView({ behavior: 'smooth' })
   }
 
   static renderSummaryText (summary, data, online) {
@@ -245,36 +345,52 @@ export default class Users extends Shadow() {
     `
   }
 
-  static renderP2pGraph (graph, data, separator) {
+  static renderP2pGraph (graph, data, separator, activeUid) {
     graph.innerHTML = /* html */`
-      <chat-a-p2p-graph separator="${separator || ''}">
+      <chat-a-p2p-graph separator="${separator || ''}"${activeUid ? ` active='${activeUid}'` : ''}>
         <template>${JSON.stringify(Array.isArray(data) ? data : Array.from(data))}</template>
       </chat-a-p2p-graph>
     `
   }
 
-  static renderUserTableList (ol, users, clear = true) {
+  static renderUserTableList (ol, users, allUsers, separator, activeUid, clear = true) {
     if (clear) ol.innerHTML = ''
     users.forEach(user => {
       const li = document.createElement('li')
+      li.setAttribute('uid', user.uid)
+      if (activeUid === user.uid) li.classList.add('active')
       if (user.isSelf) li.classList.add('self')
       ol.appendChild(li)
       const table = document.createElement('table')
       li.appendChild(table)
       for (const key in user) {
-        const tr = document.createElement('tr')
-        if (key === 'nickname') tr.classList.add('nickname')
-        table.appendChild(tr)
-        const tdOne = document.createElement('td')
-        tdOne.textContent = key
-        tr.appendChild(tdOne)
-        const tdTwo = document.createElement('td')
-        tdTwo.textContent = typeof user[key] === 'string' && user[key].includes('epoch')
-          ? new Date(JSON.parse(user[key]).epoch).toLocaleString(navigator.language)
-          : typeof user[key] === 'object'
-            ? JSON.stringify(user[key])
-            : user[key]
-        tr.appendChild(tdTwo)
+        if (!['connectedUsers', 'connectedUsersCount', 'mutuallyConnectedUsersCount'].includes(key)) {
+          // make the table
+          const tr = document.createElement('tr')
+          if (key === 'nickname') tr.classList.add('nickname')
+          table.appendChild(tr)
+          const tdOne = document.createElement('td')
+          tdOne.textContent = key
+          tr.appendChild(tdOne)
+          const tdTwo = document.createElement('td')
+          tr.appendChild(tdTwo)
+          if (key === 'mutuallyConnectedUsers') {
+            for (const providerName in user[key]) {
+              tdTwo.innerHTML = Array.isArray(user[key][providerName])
+                ? user[key][providerName].reduce((acc, mutuallyConnectedUser) => {
+                    const fullUser = allUsers.get(mutuallyConnectedUser.uid)
+                    return `${acc ? `${acc}, ` : acc}${fullUser ? `<chat-a-nick-name uid='${fullUser.uid}' nickname="${fullUser.nickname}"${fullUser.isSelf ? ' self' : ''} click-only-on-icon></chat-a-nick-name>` : ''}`
+                  }, '')
+                : 'none'
+            }
+          } else {
+            tdTwo.textContent = typeof user[key] === 'string' && user[key].includes('epoch')
+              ? new Date(JSON.parse(user[key]).epoch).toLocaleString(navigator.language)
+              : typeof user[key] === 'object'
+                ? JSON.stringify(user[key])
+                : user[key]
+          }
+        }
       }
     })
   }

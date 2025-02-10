@@ -97,7 +97,7 @@ export default class ShareDialog extends Dialog {
         min-height: auto;
         overflow-y: auto;
         outline: none;
-        border-radius: 0.5em 0.5em 0 0;
+        border-radius: var(--border-radius) var(--border-radius) 0 0;
         scrollbar-color: var(--color) var(--background-color);
         scrollbar-width: thin;
         text-align: center;
@@ -110,7 +110,7 @@ export default class ShareDialog extends Dialog {
         padding: 0.5em;
         border: 1px solid lightgray;
         border-top: 0;
-        border-radius: 0 0 0.5em 0.5em;
+        border-radius: 0 0 var(--border-radius) var(--border-radius);
         gap: 1em;
         margin-top: -0.5em;
       }

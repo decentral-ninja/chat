@@ -26,6 +26,7 @@ export default class Notifications extends Hover() {
           this.counterEl.textContent = notifications.length > this.notificationsMax ? `${this.notificationsMax}+` : notifications.length
           // nickname can not be updated, since we would have to fetch the room of this notification and get user data
           this.messageEl.textContent = `${notifications[0].nickname}: ${notifications[0].text}`
+          setTimeout(() => this.scrollIntoView({ behavior: 'smooth' }), 200)
         }
       }
     } else {

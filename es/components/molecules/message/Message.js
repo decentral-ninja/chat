@@ -206,7 +206,7 @@ export default class Message extends WebWorker(Intersection()) {
         flex-direction: column;
         background-color: var(--color-gray);
         box-shadow: ${this.getAttribute('box-shadow') || 'none'};
-        border-radius: 0.5em;
+        border-radius: var(--border-radius);
         float: left;
         list-style: none;
         padding: var(--spacing);
@@ -383,7 +383,7 @@ export default class Message extends WebWorker(Intersection()) {
     return /* html */`
       <li part="${part}"${textObj.deleted ? ' deleted' : ''}>
         <div>
-          ${textObj.deleted ? '' : /* html */`<chat-a-nick-name class="user" uid='${textObj.uid}' nickname="${textObj.updatedNickname}"${textObj.isSelf ? ' self' : ''}></chat-a-nick-name>`}
+          ${textObj.deleted ? '' : /* html */`<chat-a-nick-name class="user" uid='${textObj.uid}' nickname="${textObj.updatedNickname}"${textObj.isSelf ? ' self' : ' user-dialog-show-event'}></chat-a-nick-name>`}
           ${hasAttributeNoDialog
             ? ''
             : '<wct-icon-mdx id="show-modal" rotate="-180deg" icon-url="../../../../../../img/icons/dots-circle-horizontal.svg" size="1.5em"></wct-icon-mdx>'

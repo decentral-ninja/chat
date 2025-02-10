@@ -149,9 +149,6 @@ export default class EmojiPicker extends Shadow() {
       width: 100%;
       height: 58vh;
       width: 30vw;
-  
-      border-radius: 2%;
-      
       background: white;
       box-shadow: 0px -5px 10px rgba(0, 0, 0, 0.1);
       display: none;

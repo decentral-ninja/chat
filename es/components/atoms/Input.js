@@ -296,7 +296,7 @@ export default class Input extends Shadow() {
       :host > section chat-m-message::part(li) {
         width: 100%;
         margin: 0;
-        border-radius: 0.5em 0.5em 0 0;
+        border-radius: var(--border-radius) var(--border-radius) 0 0;
       }
       :host > section > #reply-controls {
         --h4-margin: 0;

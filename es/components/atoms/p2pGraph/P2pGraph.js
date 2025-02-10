@@ -100,7 +100,7 @@ export default class P2pGraph extends Shadow() {
         })
         graphUserObj.svgNode.classList.add(user.isSelf ? 'is-self' : 'other')
         graphUserObj.svgNode.addEventListener('click', event => this.dispatchEvent(new CustomEvent('p2p-graph-click', {
-          detail: { graphUserObj },
+          detail: { graphUserObj, isActive: !!this.svg.querySelector('[style="opacity: 0.2;"]') },
           bubbles: true,
           cancelable: true,
           composed: true
@@ -121,6 +121,12 @@ export default class P2pGraph extends Shadow() {
             nodes.push(providerName)
             graphProviderObj.svgNode.classList.add('provider')
             graphProviderObj.svgNode.classList.add(providerName.split(separator)[0])
+            graphProviderObj.svgNode.addEventListener('click', event => this.dispatchEvent(new CustomEvent('p2p-graph-click', {
+              detail: { graphProviderObj, isActive: !!this.svg.querySelector('[style="opacity: 0.2;"]') },
+              bubbles: true,
+              cancelable: true,
+              composed: true
+            })))
           }
           graph.connect(providerName, key)
         }

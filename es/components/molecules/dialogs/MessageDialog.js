@@ -114,7 +114,7 @@ export default class MessageDialog extends Dialog {
         padding: 0.5em;
         border: 1px solid lightgray;
         border-top: 0;
-        border-radius: 0 0 0.5em 0.5em;
+        border-radius: 0 0 var(--border-radius) var(--border-radius);
         gap: 1em;
       }
       :host > dialog #controls > * {
@@ -131,7 +131,7 @@ export default class MessageDialog extends Dialog {
       :host > dialog chat-m-message::part(li) {
         width: 100%;
         margin: 0;
-        border-radius: 0.5em 0.5em 0 0;
+        border-radius: var(--border-radius) var(--border-radius) 0 0;
       }
     `, undefined, false)
     return result
