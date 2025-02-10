@@ -328,7 +328,7 @@ export default class Users extends Shadow() {
     if (active && scroll) this.scrollActiveIntoView()
   }
 
-  scrollActiveIntoView() {
+  scrollActiveIntoView () {
     let liActive
     if ((liActive = this.usersOl.querySelector('li.active'))) return liActive.scrollIntoView({ behavior: 'smooth' })
     this.allUsersOl.querySelector('li.active')?.scrollIntoView({ behavior: 'smooth' })
@@ -378,9 +378,9 @@ export default class Users extends Shadow() {
             for (const providerName in user[key]) {
               tdTwo.innerHTML = Array.isArray(user[key][providerName])
                 ? user[key][providerName].reduce((acc, mutuallyConnectedUser) => {
-                    const fullUser = allUsers.get(mutuallyConnectedUser.uid)
-                    return `${acc ? `${acc}, ` : acc}${fullUser ? `<chat-a-nick-name uid='${fullUser.uid}' nickname="${fullUser.nickname}"${fullUser.isSelf ? ' self' : ''} click-only-on-icon></chat-a-nick-name>` : ''}`
-                  }, '')
+                  const fullUser = allUsers.get(mutuallyConnectedUser.uid)
+                  return `${acc ? `${acc}, ` : acc}${fullUser ? `<chat-a-nick-name uid='${fullUser.uid}' nickname="${fullUser.nickname}"${fullUser.isSelf ? ' self' : ''} click-only-on-icon></chat-a-nick-name>` : ''}`
+                }, '')
                 : 'none'
             }
           } else {

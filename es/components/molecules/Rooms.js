@@ -580,7 +580,7 @@ export default class Rooms extends Shadow() {
 
   /**
    * generate random string
-   * 
+   *
    * @method
    * @name getRandomRoom
    * @kind method

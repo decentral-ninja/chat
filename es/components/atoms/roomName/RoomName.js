@@ -2,6 +2,7 @@
 import { Shadow } from '../../../../../web-components-toolbox/src/es/components/prototypes/Shadow.js'
 
 /* global Environment */
+/* global self */
 
 /**
 * @export

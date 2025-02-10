@@ -61,8 +61,8 @@ export default class NickName extends Shadow() {
   connectedCallback () {
     if (this.shouldRenderCSS()) this.renderCSS()
     if (this.shouldRenderHTML()) this.renderHTML()
-      this.addEventListener('click', this.clickEventListener)
-      this.globalEventTarget.addEventListener('yjs-users', this.usersEventListener)
+    this.addEventListener('click', this.clickEventListener)
+    this.globalEventTarget.addEventListener('yjs-users', this.usersEventListener)
     if (this.hasAttribute('self')) this.globalEventTarget.addEventListener('yjs-nickname', this.nicknameEventListener)
   }
 
