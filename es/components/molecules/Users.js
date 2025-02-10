@@ -174,7 +174,7 @@ export default class Users extends Shadow() {
       <details>
         <summary><a-loading namespace="loading-default-" size="0.75"></a-loading> Looking up users...</summary>
       </details>
-      <wct-dialog namespace="dialog-top-slide-in-" open=show-modal>
+      <wct-dialog namespace="dialog-top-slide-in-">
         <style protected>
           :host {
             --dialog-top-slide-in-ul-padding-left: 0;
