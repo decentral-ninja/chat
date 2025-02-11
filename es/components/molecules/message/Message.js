@@ -317,7 +317,7 @@ export default class Message extends WebWorker(Intersection()) {
    */
   async renderHTML (textObj = this.textObj) {
     const textObjSync = await textObj
-    this.html = Message.renderList(textObjSync, this.hasAttribute('no-dialog'), this.hasAttribute('self'))
+    this.html = Message.renderList(textObjSync, this.hasAttribute('no-dialog'))
     if (!textObjSync.deleted) this.webWorker(Message.processText, textObjSync).then(textObj => (this.textSpan.innerHTML = textObj.text))
     return Promise.all([
       textObjSync.replyTo && this.hasAttribute('show-reply-to')
@@ -373,12 +373,11 @@ export default class Message extends WebWorker(Intersection()) {
    * @static
    * @param {import("../../controllers/Chat.js").TextObj | TextObjDeleted} textObj
    * @param {boolean} hasAttributeNoDialog
-   * @param {boolean} hasAttributeSelf
    * @param {string} [part='li']
    * @returns
    * @memberof Message
    */
-  static renderList (textObj, hasAttributeNoDialog, hasAttributeSelf, part = 'li') {
+  static renderList (textObj, hasAttributeNoDialog, part = 'li') {
     // ATTENTION: Attribute static does not need any user nor dialog interaction!
     return /* html */`
       <li part="${part}"${textObj.deleted ? ' deleted' : ''}>

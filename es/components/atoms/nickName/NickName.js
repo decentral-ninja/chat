@@ -1,5 +1,6 @@
 // @ts-check
 import { Shadow } from '../../../../../web-components-toolbox/src/es/components/prototypes/Shadow.js'
+import { getHexColor } from '../../../../../Helpers.js'
 
 /* global self */
 /* global Environment */
@@ -44,17 +45,24 @@ export default class NickName extends Shadow() {
 
     this.nicknameEventListener = event => this.renderHTML(event.detail.nickname)
 
-    this.keysChanged = []
     let timeoutId = null
     this.usersEventListener = async event => {
-      this.keysChanged = this.keysChanged.concat(event.detail.keysChanged)
       clearTimeout(timeoutId)
       timeoutId = setTimeout(async () => {
-        if (this.keysChanged.includes(this.getAttribute('uid'))) {
-          this.keysChanged = []
-          this.renderHTML((await event.detail.getData()).allUsers.get(this.getAttribute('uid'))?.nickname || '')
+        const data = await event.detail.getData()
+        let user
+        if ((user = data.allUsers.get(this.getAttribute('uid')))) {
+          if (!user.isSelf) {
+            if (data.usersConnectedWithSelf.has(this.getAttribute('uid'))) {
+              this.setAttribute('is-connected-with-self', '')
+            } else {
+              this.removeAttribute('is-connected-with-self')
+            }
+          }
+          this.renderHTML(user.nickname || '')
         }
-      }, 2000)
+        // @ts-ignore
+      }, self.Environment.awarenessEventListenerDelay)
     }
   }
 
@@ -64,6 +72,17 @@ export default class NickName extends Shadow() {
     this.addEventListener('click', this.clickEventListener)
     this.globalEventTarget.addEventListener('yjs-users', this.usersEventListener)
     if (this.hasAttribute('self')) this.globalEventTarget.addEventListener('yjs-nickname', this.nicknameEventListener)
+      this.connectedCallbackOnce()
+  }
+
+  connectedCallbackOnce () {
+    new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-users-event-detail', {
+      detail: { resolve },
+      bubbles: true,
+      cancelable: true,
+      composed: true
+    }))).then(detail => this.usersEventListener({ detail }))
+    this.connectedCallbackOnce = () => {}
   }
 
   disconnectedCallback () {
@@ -125,6 +144,24 @@ export default class NickName extends Shadow() {
         text-overflow: ellipsis;
         text-decoration: underline;
       }
+      :host .avatar {
+        height: 1.25em;
+        width: 1.25em;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border-radius: 50%;
+        margin-right: 0.25em;
+        transform: translateY(0.1em);
+      }
+      :host .avatar > #connected {
+        display: none;
+      }
+      :host([is-connected-with-self]) .avatar > #connected {
+        --color: var(--background-color);
+        --color-hover: var(--color-secondary);
+        display: contents;
+      }
     `
     return this.fetchTemplate()
   }
@@ -154,12 +191,16 @@ export default class NickName extends Shadow() {
     if (this.lastNickname === nickname) return Promise.resolve()
     this.lastNickname = nickname
     this.html = ''
-    this.html = this.hasAttribute('self')
-      ? `<a href="#">
-          <${this.hTagName}>${nickname || 'Loading...'}</${this.hTagName}>
-          <wct-icon-mdx hover-on-parent-element id="show-modal" title="edit nickname" icon-url="../../../../../../img/icons/pencil.svg" size="1em"></wct-icon-mdx>
-        </a>`
-      : `<span><${this.hTagName}>${nickname || 'Loading...'}</${this.hTagName}></span>`
+    this.html = /* html */`
+      <a href="#">
+        <span class=avatar>
+          <wct-icon-mdx hover-on-parent-shadow-root-host id=connected title=connected icon-url="../../../../../../img/icons/mobiledata.svg" size="0.75em"></wct-icon-mdx>
+        </span>
+        <${this.hTagName}>${nickname || 'Loading...'}</${this.hTagName}>
+        ${this.hasAttribute('self') ? '<wct-icon-mdx hover-on-parent-element id="show-modal" title="edit nickname" icon-url="../../../../../../img/icons/pencil.svg" size="1em"></wct-icon-mdx>' : ''}
+      </a>
+    `
+    getHexColor(this.getAttribute('uid')).then(hex => this.avatar.setAttribute('style', `background-color: ${hex}`))
     return this.fetchModules([
       {
         // @ts-ignore
@@ -171,6 +212,10 @@ export default class NickName extends Shadow() {
 
   get hTag () {
     return this.root.querySelector(this.hTagName)
+  }
+
+  get avatar () {
+    return this.root.querySelector('.avatar')
   }
 
   get globalEventTarget () {

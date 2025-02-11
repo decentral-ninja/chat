@@ -26,7 +26,7 @@ export default class Notifications extends Hover() {
           this.counterEl.textContent = notifications.length > this.notificationsMax ? `${this.notificationsMax}+` : notifications.length
           // nickname can not be updated, since we would have to fetch the room of this notification and get user data
           this.messageEl.textContent = `${notifications[0].nickname}: ${notifications[0].text}`
-          setTimeout(() => this.scrollIntoView({ behavior: 'smooth' }), 200)
+          setTimeout(() => this.parentNode?.scrollIntoView({ behavior: 'smooth' }), 200)
         }
       }
     } else {
@@ -39,9 +39,16 @@ export default class Notifications extends Hover() {
           ), 0)
           this.counterEl.textContent = notificationsCounter > this.notificationsMax ? `${this.notificationsMax}+` : notificationsCounter
           if (typeof navigator.setAppBadge === 'function') navigator.setAppBadge(notificationsCounter)
-          if (!notificationsCounter) this.hidden = true
+          if (notificationsCounter) {
+            document.title = `(${this.counterEl.textContent}) ${document.title.replace(/\(\d+\)\s/g, '')}`
+            // TODO: Play notification sound
+          } else {
+            this.hidden = true
+            document.title = document.title.replace(/\(\d+\)\s/g, '')
+          }
         } else if (typeof navigator.clearAppBadge === 'function') {
           navigator.clearAppBadge()
+          document.title = document.title.replace(/\(\d+\)\s/g, '')
         }
       }
     }

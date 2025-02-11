@@ -1,5 +1,6 @@
 // @ts-check
 import { Shadow } from '../../../../../web-components-toolbox/src/es/components/prototypes/Shadow.js'
+import { getHexColor } from '../../../../../Helpers.js'
 
 /* global self */
 /* global Environment */
@@ -54,23 +55,11 @@ export default class P2pGraph extends Shadow() {
       :host > div > svg text {
         color: var(--color);
         font-size: var(--font-size);
-        font-family: var(--font-family);
+        font-family: var(--h-font-family, var(--font-family));
         user-select: none;
-      }
-      :host > div > svg .is-self text {
-        color: var(--color-user-self);
       }
       :host > div > svg g {
         cursor: pointer;
-      }
-      :host > div > svg .is-self > circle {
-        fill: var(--color-user-self) !important;
-      }
-      :host > div > svg .other > circle {
-        fill: var(--color-user) !important;
-      }
-      :host > div > svg .provider > circle {
-        fill: var(--color-provider) !important;
       }
     `
     return Promise.resolve()
@@ -93,7 +82,7 @@ export default class P2pGraph extends Shadow() {
       users.forEach(([key, user]) => {
         if (nodes.includes(key)) return
         nodes.push(key)
-        const graphUserObj = P2pGraph.add(graph, this.svg, {
+        const graphUserObj = this.add(graph, this.svg, {
           id: key,
           fixed: false,
           name: user.nickname
@@ -112,7 +101,7 @@ export default class P2pGraph extends Shadow() {
         for (const providerName in user.mutuallyConnectedUsers) {
           const graphProviderObj = nodes.includes(providerName)
             ? null
-            : P2pGraph.add(graph, this.svg, {
+            : this.add(graph, this.svg, {
               id: providerName,
               fixed: true,
               name: providerName.split(separator)[1] || providerName
@@ -168,15 +157,24 @@ export default class P2pGraph extends Shadow() {
    * Find the corresponding node in the svg created
    *
    * @name add
-   * @static
    * @param {any} graph
    * @param {any} svg
    * @param {any} obj
    * @returns {any}
    */
-  static add (graph, svg, obj) {
+  add (graph, svg, obj) {
     graph.add(obj)
     obj = { ...obj, ...graph.list().slice(-1)[0], svgNode: Array.from(svg.querySelectorAll('g')).slice(-1)[0] /* The following does not work until the graph stops moving, so we grab the last entry in the svg: // svg.querySelector(`[cx="${obj.x}"]`) */ }
+    let circle
+    if ((circle = obj.svgNode.querySelector('circle'))) getHexColor(obj.id).then(hex => {
+      const hexClass = `hex-${hex.substring(1)}`
+      circle.classList.add(hexClass)
+      this.css = /* css */`
+        :host > div > svg .node > circle.${hexClass} {
+          fill: ${hex} !important;
+        }
+      `
+    })
     return obj
   }
 

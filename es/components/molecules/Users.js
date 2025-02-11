@@ -1,5 +1,6 @@
 // @ts-check
 import { Shadow } from '../../../../event-driven-web-components-prototypes/src/Shadow.js'
+import { getHexColor } from '../../../../Helpers.js'
 
 /* global self */
 /* global Environment */
@@ -56,6 +57,7 @@ export default class Users extends Shadow() {
         this.setActive(activeNode.getAttribute('uid'), this.usersOl, false)
         // @ts-ignore
         this.setActive(activeNode.getAttribute('uid'), this.allUsersOl, false, false)
+        this.removeAttribute('active')
         if (lastUsersEventGetData) Users.renderP2pGraph(this.usersGraph, (await lastUsersEventGetData()).usersConnectedWithSelf, lastSeparator)
         this.usersGraph.scrollIntoView({ behavior: 'smooth' })
       }
@@ -65,21 +67,29 @@ export default class Users extends Shadow() {
       if (event.detail.graphUserObj) {
         this.setActive(event.detail.graphUserObj.id, this.usersOl, event.detail.isActive)
         this.setActive(event.detail.graphUserObj.id, this.allUsersOl, event.detail.isActive, false)
+        if (event.detail.isActive) {
+          this.setAttribute('active', event.detail.graphUserObj.id)
+        } else {
+          this.removeAttribute('active')
+        }
       }
     }
 
     this.nickNameClickEventListener = async event => {
       this.setActive(event.detail.uid, this.usersOl, true)
       this.setActive(event.detail.uid, this.allUsersOl, true, false)
+      this.setAttribute('active', event.detail.uid)
       if (lastUsersEventGetData) Users.renderP2pGraph(this.usersGraph, (await lastUsersEventGetData()).usersConnectedWithSelf, lastSeparator, this.getAttribute('active'))
     }
 
     this.onlineEventListener = async event => {
       this.setAttribute('online', '')
+      this.dialog?.setAttribute('online', '')
       if (lastUsersEventGetData) Users.renderSummaryText(this.summary, await lastUsersEventGetData(), this.hasAttribute('online'))
     }
     this.offlineEventListener = async event => {
       this.removeAttribute('online')
+      this.dialog?.removeAttribute('online')
       if (lastUsersEventGetData) Users.renderSummaryText(this.summary, await lastUsersEventGetData(), this.hasAttribute('online'))
     }
     if (navigator.onLine) {
@@ -93,7 +103,7 @@ export default class Users extends Shadow() {
       clearTimeout(resizeTimeout)
       resizeTimeout = setTimeout(async () => {
         // the graph has to be refreshed when resize
-        if (lastUsersEventGetData) Users.renderP2pGraph(this.usersGraph, (await lastUsersEventGetData()).usersConnectedWithSelf, lastSeparator)
+        if (lastUsersEventGetData) Users.renderP2pGraph(this.usersGraph, (await lastUsersEventGetData()).usersConnectedWithSelf, lastSeparator, this.getAttribute('active'))
       }, 200)
     }
   }
@@ -174,12 +184,38 @@ export default class Users extends Shadow() {
       <details>
         <summary><a-loading namespace="loading-default-" size="0.75"></a-loading> Looking up users...</summary>
       </details>
-      <wct-dialog namespace="dialog-top-slide-in-">
+      <wct-dialog namespace="dialog-top-slide-in-"${this.hasAttribute('online') ? ' online' : ''}>
         <style protected>
           :host {
             --dialog-top-slide-in-ul-padding-left: 0;
             --dialog-top-slide-in-ol-list-style: none;
             --dialog-top-slide-in-ul-li-padding-left: 1em;
+          }
+          :host h4.title {
+            position: sticky;
+            top: calc(-1em - 1px);
+            background-color: var(--background-color);
+            padding: 0.5em;
+            border: 1px solid var(--color);
+            width: fit-content;
+            z-index: 1;
+          }
+          :host h4.title.connected {
+            background-color: var(--color-green);
+            color: var(--background-color);
+          }
+          :host h4.title.not-connected {
+            background-color: var(--color-secondary);
+            color: var(--background-color);
+          }
+          :host(:not([online])) h4.title {
+            padding-bottom: 1em;
+          }
+          :host ol {
+            --dialog-top-slide-in-ul-display: flex;
+            --dialog-top-slide-in-ul-flex-direction: row;
+            flex-wrap: wrap;
+            gap: 1em;
           }
           :host ol > li {
             --box-shadow-color: var(--color-user);
@@ -195,6 +231,7 @@ export default class Users extends Shadow() {
             scrollbar-color: var(--color) var(--background-color);
             scrollbar-width: thin;
             transition: padding 0.05s ease-out;
+            width: calc(50% - 0.5em);
           }
           :host ol > li.self {
             --box-shadow-color: var(--color-secondary);
@@ -223,9 +260,33 @@ export default class Users extends Shadow() {
             background-color: var(--background-color-rgba-50);
             border-radius: var(--border-radius);
           }
-          :host .nickname {
-            color: blue;
+          :host ol > li > div {
+            height: 100%;
+          }
+          :host ol > li > div > table {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            margin: 0;
+          }
+          :host ol > li > div > table > tr {
+            display: contents;
+          }
+          :host ol > li > div > table > tr > td {
+            overflow-wrap: anywhere;
+          }
+          :host ol > li > div > table > tr.nickname {
             font-weight: bold;
+          }
+          :host ol > li.self > div > table > tr.nickname {
+            color: var(--color-secondary);
+            font-weight: bold;
+          }
+          :host ol > li > div > h2 {
+            border-bottom: 1px solid var(--color);
+            overflow-wrap: anywhere;
+          }
+          :host ol > li.active > div > h2 {
+            border-bottom: 1px solid var(--background-color);
           }
           :host chat-a-nick-name {
             display: inline-block;
@@ -235,31 +296,59 @@ export default class Users extends Shadow() {
             padding: 5svh 10svw;
             border: 1px dashed var(--color-secondary);
           }
-          /* TODO: online is on Users and not the dialog... solve with ::part selector from Users CSS... :host(:not([online])) > dialog #users-graph:has(> chat-a-p2p-graph),*/
+          :host([online]) > dialog #offline,
+          :host(:not([online])) > dialog #users-graph,
           :host > dialog #users-graph:empty,
           :host > dialog #users-graph:has(> chat-a-p2p-graph[no-data]),
           :host > dialog #users-graph:has(> chat-a-p2p-graph:not([no-data])) ~ #no-connections {
             display: none
           }
+          :host > dialog #offline {
+            --dialog-top-slide-in-p-margin: 0;
+            color: var(--color-secondary);
+            z-index: 10;
+            position: sticky;
+            top: 4px;
+          }
+          :host > dialog #no-connections {
+            --dialog-top-slide-in-p-margin: 0;
+            color: var(--color-secondary);
+          }
+          @media only screen and (max-width: ${this.mobileBreakpoint}) {
+            :host ol > li {
+              width: 100%;
+            }
+          }
+          @media only screen and (min-width: 1500px) {
+            :host ol > li {
+              width: calc(33.3% - 0.66em);
+            }
+          }
+          @media only screen and (min-width: 2500px) {
+            :host ol > li {
+              width: calc(25% - 0.75em);
+            }
+          }
         </style>
         <dialog>
           <wct-menu-icon id="close" no-aria class="open sticky" namespace="menu-icon-close-" no-click></wct-menu-icon>
           <h4>Connection Data:</h4>
+          <p id="offline">You are offline!</p>
           <div>
             <div id="users-graph"></div>
-            <p id="no-connections">No active connections...</p>
             <br>
             <hr>
             <br>
             <div>
-              <h4>Connected Users</h4>
+              <h4 class="title connected">Connected Users</h4>
               <ol id="users"></ol>
             </div>
+            <p id="no-connections">No active connections!</p>
             <br>
             <hr>
             <br>
             <div>
-              <h4>All Users who were once connected</h4>
+              <h4 class="title not-connected">Not Connected Users</h4>
               <ol id="all-users"></ol>
             </div>
           </div>
@@ -313,34 +402,44 @@ export default class Users extends Shadow() {
     Users.renderSummaryText(this.summary, data, this.hasAttribute('online'))
     Users.renderP2pGraph(this.usersGraph, data.usersConnectedWithSelf, separator, this.getAttribute('active'))
     Users.renderUserTableList(this.usersOl, data.usersConnectedWithSelf, data.allUsers, separator, this.getAttribute('active'))
-    Users.renderUserTableList(this.allUsersOl, data.allUsers, data.allUsers, separator, this.getAttribute('active'))
+    Users.renderUserTableList(this.allUsersOl, new Map(Array.from(data.allUsers).filter(([key, user]) => !data.usersConnectedWithSelf.get(key))), data.allUsers, separator, this.getAttribute('active'))
   }
 
   setActive (uid, ol, active = true, scroll = true) {
     Array.from(ol.querySelectorAll('li.active')).forEach(li => li.classList.remove('active'))
     let li
-    if (active && (li = ol.querySelector(`li[uid='${uid}']`))) {
-      li.classList.add('active')
-      this.setAttribute('active', uid)
-    } else {
-      this.removeAttribute('active')
-    }
+    if (active && (li = ol.querySelector(`li[uid='${uid}']`))) li.classList.add('active')
     if (active && scroll) this.scrollActiveIntoView()
   }
 
-  scrollActiveIntoView () {
-    let liActive
-    if ((liActive = this.usersOl.querySelector('li.active'))) return liActive.scrollIntoView({ behavior: 'smooth' })
-    this.allUsersOl.querySelector('li.active')?.scrollIntoView({ behavior: 'smooth' })
+  scrollActiveIntoView (smooth = false, counter = 0) {
+    counter++
+    const getLiActiveEl = () => this.usersOl.querySelector('li.active') || this.allUsersOl.querySelector('li.active')
+    const scrollEl = getLiActiveEl()
+    if (!scrollEl) return
+    const boundingClientRect = scrollEl.getBoundingClientRect()
+    if (boundingClientRect.y >= 0 && boundingClientRect.y + boundingClientRect.height < this.dialogEl?.clientHeight) return
+    scrollEl.scrollIntoView({ behavior: smooth ? 'smooth' : 'instant', block: 'nearest' })
+    setTimeout(() => {
+      const scrollEl = getLiActiveEl()
+      if (!scrollEl) return
+      if (scrollEl.getBoundingClientRect().y > 50 && counter < 5) {
+        this.scrollActiveIntoView(smooth, counter)
+      } else {
+        scrollEl.scrollIntoView({ behavior: 'instant', block: 'nearest' })
+        // trying to have scroll down button work more reliable
+        setTimeout(() => scrollEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50)
+      }
+    }, 200)
   }
 
   static renderSummaryText (summary, data, online) {
     summary.innerHTML = /* html */`
       <a-loading namespace="loading-default-" size="0.75"></a-loading> ${online
         ? data.usersConnectedWithSelf.size > 1
-          ? `You are connected to ${data.usersConnectedWithSelf.size - 1} ${data.usersConnectedWithSelf.size === 2 ? 'User' : 'Users'}`
+          ? `<span style="color:green">You are connected to ${data.usersConnectedWithSelf.size - 1} ${data.usersConnectedWithSelf.size === 2 ? 'User' : 'Users'}</span>`
           : 'You are alone!'
-        : 'You are offline!'
+        : '<span style="color:var(--color-secondary)">You are offline!</span>'
       }
     `
   }
@@ -357,20 +456,44 @@ export default class Users extends Shadow() {
     if (clear) ol.innerHTML = ''
     users.forEach(user => {
       const li = document.createElement('li')
+      getHexColor(user.uid).then(hex => li.setAttribute('style', `--box-shadow-color: ${hex};border-color: ${hex};`))
       li.setAttribute('uid', user.uid)
       if (activeUid === user.uid) li.classList.add('active')
       if (user.isSelf) li.classList.add('self')
       ol.appendChild(li)
+      const div = document.createElement('div')
+      li.appendChild(div)
+      const title = document.createElement('h2')
+      title.textContent = user.nickname || 'none'
+      div.appendChild(title)
       const table = document.createElement('table')
-      li.appendChild(table)
+      div.appendChild(table)
       for (const key in user) {
-        if (!['connectedUsers', 'connectedUsersCount', 'mutuallyConnectedUsersCount'].includes(key)) {
+        if (!['connectedUsers', 'connectedUsersCount', 'mutuallyConnectedUsersCount', 'sessionEpoch', 'isSelf'].includes(key)) {
           // make the table
           const tr = document.createElement('tr')
           if (key === 'nickname') tr.classList.add('nickname')
-          table.appendChild(tr)
+          if (['localEpoch', 'awarenessEpoch', 'nickname'].includes(key)) {
+            table.prepend(tr)
+          } else {
+            table.appendChild(tr)
+          }
           const tdOne = document.createElement('td')
-          tdOne.textContent = key
+          if (key === 'nickname') {
+            tdOne.textContent = user.isSelf ? 'Your nickname:' : 'User nickname:'
+          } else if (key === 'localEpoch') {
+            tdOne.textContent = 'first time visited:'
+          } else if (key === 'epoch') {
+            tdOne.textContent = 'last time visited:'
+          } else if (key === 'awarenessEpoch') {
+            tdOne.textContent = 'last time synced:'
+          } else if (key === 'mutuallyConnectedUsers') {
+            tdOne.textContent = 'connected users:'
+          } else if (key === 'uid') {
+            tdOne.textContent = 'unique id:'
+          } else {
+            tdOne.textContent = `${key}:`
+          }
           tr.appendChild(tdOne)
           const tdTwo = document.createElement('td')
           tr.appendChild(tdTwo)
@@ -383,8 +506,11 @@ export default class Users extends Shadow() {
                 }, '')
                 : 'none'
             }
+            if (!tdTwo.innerHTML) tdTwo.innerHTML = 'none'
+          } else if (key === 'nickname') {
+            tdTwo.innerHTML = `<chat-a-nick-name uid='${user.uid}' nickname="${user.nickname}"${user.isSelf ? ' self' : ''} click-only-on-icon></chat-a-nick-name>`
           } else {
-            tdTwo.textContent = typeof user[key] === 'string' && user[key].includes('epoch')
+            tdTwo.textContent = typeof user[key] === 'string' && user[key].includes('epoch') && key !== 'uid'
               ? new Date(JSON.parse(user[key]).epoch).toLocaleString(navigator.language)
               : typeof user[key] === 'object'
                 ? JSON.stringify(user[key])
@@ -405,6 +531,10 @@ export default class Users extends Shadow() {
 
   get dialog () {
     return this.root.querySelector('wct-dialog')
+  }
+
+  get dialogEl () {
+    return this.dialog?.root.querySelector('dialog')
   }
 
   isDialogOpen () {
