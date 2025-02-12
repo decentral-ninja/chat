@@ -39,10 +39,9 @@ export default class Users extends Shadow() {
       this.dialog.show('show-modal')
       if (lastUsersEventGetData) {
         clearTimeout(timeoutId)
-        this.renderData(await lastUsersEventGetData(), lastSeparator)
+        this.renderData(await lastUsersEventGetData(), lastSeparator).then(() => this.scrollActiveIntoView())
         this.removeAttribute('updating')
       }
-      this.scrollActiveIntoView()
     }
     this.userDialogShowEventEventListener = event => {
       this.setAttribute('active', event.detail.uid)
@@ -438,11 +437,11 @@ export default class Users extends Shadow() {
     ])
   }
 
-  renderData (data, separator) {
+  async renderData (data, separator) {
     Users.renderSummaryText(this.summary, data, this.hasAttribute('online'))
     Users.renderP2pGraph(this.usersGraph, data.usersConnectedWithSelf, separator, this.getAttribute('active'))
-    Users.renderUserTableList(this.usersOl, data.usersConnectedWithSelf, data.allUsers, separator, this.getAttribute('active'))
-    Users.renderUserTableList(this.allUsersOl, new Map(Array.from(data.allUsers).filter(([key, user]) => !data.usersConnectedWithSelf.get(key))), data.allUsers, separator, this.getAttribute('active'))
+    await Users.renderUserTableList(this.usersOl, data.usersConnectedWithSelf, data.allUsers, separator, this.getAttribute('active'))
+    await Users.renderUserTableList(this.allUsersOl, new Map(Array.from(data.allUsers).filter(([key, user]) => !data.usersConnectedWithSelf.get(key))), data.allUsers, separator, this.getAttribute('active'))
   }
 
   setActive (uid, ol, active = true, scroll = true) {
@@ -454,7 +453,7 @@ export default class Users extends Shadow() {
 
   scrollActiveIntoView (smooth = false, counter = 0) {
     counter++
-    const getLiActiveEl = () => this.usersOl.querySelector('li.active, wct-load-template-tag.active') || this.allUsersOl.querySelector('*.active')
+    const getLiActiveEl = () => this.usersOl.querySelector('li.active, wct-load-template-tag.active') || this.allUsersOl.querySelector('li.active, wct-load-template-tag.active')
     const scrollEl = getLiActiveEl()
     if (!scrollEl) return
     scrollEl.scrollIntoView({ behavior: smooth ? 'smooth' : 'instant', block: 'nearest' })
