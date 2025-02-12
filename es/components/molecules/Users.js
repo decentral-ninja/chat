@@ -217,6 +217,9 @@ export default class Users extends Shadow() {
             flex-wrap: wrap;
             gap: 1em;
           }
+          :host ol > wct-load-template-tag {
+            min-height: 25em;
+          }
           :host ol > li {
             --box-shadow-color: var(--color-user);
             --box-shadow-default: var(--box-shadow-length-one) var(--box-shadow-color), var(--box-shadow-length-two) var(--box-shadow-color);
@@ -231,6 +234,8 @@ export default class Users extends Shadow() {
             scrollbar-color: var(--color) var(--background-color);
             scrollbar-width: thin;
             transition: padding 0.05s ease-out;
+          }
+          :host ol > li, :host ol > wct-load-template-tag {
             width: calc(50% - 0.5em);
           }
           :host ol > li.self {
@@ -263,29 +268,54 @@ export default class Users extends Shadow() {
           :host ol > li > div {
             height: 100%;
           }
-          :host ol > li > div > table {
+          :host ol > li > div > table > tbody {
             display: grid;
             grid-template-columns: 1fr 1fr;
             margin: 0;
           }
-          :host ol > li > div > table > tr {
+          :host ol > li > div > table > tbody > tr {
             display: contents;
           }
-          :host ol > li > div > table > tr > td {
+          :host ol > li > div > table > tbody > tr > td {
             overflow-wrap: anywhere;
           }
-          :host ol > li > div > table > tr.nickname {
+          :host ol > li > div > table > tbody > tr.nickname {
             font-weight: bold;
           }
-          :host ol > li.self > div > table > tr.nickname {
+          :host ol > li.self > div > table > tbody > tr.nickname {
             color: var(--color-secondary);
             font-weight: bold;
           }
           :host ol > li > div > h2 {
+            --color-hover: var(--color);
+            --cursor-hover: auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             border-bottom: 1px solid var(--color);
             overflow-wrap: anywhere;
           }
+          :host ol > li > div > h2 > span.user-icon {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+          }
+          :host ol > li > div > h2 > span.user-icon > .tiny{
+            font-family: var(--font-family);
+            color: var(--color);
+            font-size: 0.25em;
+            line-height: 0.5em;
+            margin-bottom: 1.75em;
+          }
           :host ol > li.active > div > h2 {
+            --color: var(--background-color);
+            --color-hover: var(--color);
+          }
+          :host ol > li.active > div > h2 > span.user-icon > .tiny{
+            color: var(--background-color);
+          }
+          :host ol > li.active > div > h2 {
+            --cursor-hover: pointer;
             border-bottom: 1px solid var(--background-color);
           }
           :host chat-a-nick-name {
@@ -315,17 +345,17 @@ export default class Users extends Shadow() {
             color: var(--color-secondary);
           }
           @media only screen and (max-width: ${this.mobileBreakpoint}) {
-            :host ol > li {
+            :host ol > li, :host ol > wct-load-template-tag {
               width: 100%;
             }
           }
           @media only screen and (min-width: 1500px) {
-            :host ol > li {
+            :host ol > li, :host ol > wct-load-template-tag {
               width: calc(33.3% - 0.66em);
             }
           }
           @media only screen and (min-width: 2500px) {
-            :host ol > li {
+            :host ol > li, :host ol > wct-load-template-tag {
               width: calc(25% - 0.75em);
             }
           }
@@ -382,6 +412,16 @@ export default class Users extends Shadow() {
       },
       {
         // @ts-ignore
+        path: `${this.importMetaUrl}../../../../web-components-toolbox/src/es/components/atoms/iconMdx/IconMdx.js?${Environment?.version || ''}`,
+        name: 'wct-icon-mdx'
+      },
+      {
+        // @ts-ignore
+        path: `${this.importMetaUrl}../../../../web-components-toolbox/src/es/components/molecules/loadTemplateTag/LoadTemplateTag.js?${Environment?.version || ''}`,
+        name: 'wct-load-template-tag'
+      },
+      {
+        // @ts-ignore
         path: `${this.importMetaUrl}../atoms/nickName/NickName.js?${Environment?.version || ''}`,
         name: 'chat-a-nick-name'
       },
@@ -406,28 +446,27 @@ export default class Users extends Shadow() {
   }
 
   setActive (uid, ol, active = true, scroll = true) {
-    Array.from(ol.querySelectorAll('li.active')).forEach(li => li.classList.remove('active'))
+    Array.from(ol.querySelectorAll('li.active, wct-load-template-tag.active')).forEach(li => li.classList.remove('active'))
     let li
-    if (active && (li = ol.querySelector(`li[uid='${uid}']`))) li.classList.add('active')
+    if (active && (li = ol.querySelector(`li[uid='${uid}'], wct-load-template-tag[uid='${uid}']`))) li.classList.add('active')
     if (active && scroll) this.scrollActiveIntoView()
   }
 
   scrollActiveIntoView (smooth = false, counter = 0) {
     counter++
-    const getLiActiveEl = () => this.usersOl.querySelector('li.active') || this.allUsersOl.querySelector('li.active')
+    const getLiActiveEl = () => this.usersOl.querySelector('li.active, wct-load-template-tag.active') || this.allUsersOl.querySelector('*.active')
     const scrollEl = getLiActiveEl()
     if (!scrollEl) return
-    const boundingClientRect = scrollEl.getBoundingClientRect()
-    if (boundingClientRect.y >= 0 && boundingClientRect.y + boundingClientRect.height < this.dialogEl?.clientHeight) return
     scrollEl.scrollIntoView({ behavior: smooth ? 'smooth' : 'instant', block: 'nearest' })
     setTimeout(() => {
       const scrollEl = getLiActiveEl()
       if (!scrollEl) return
-      if (scrollEl.getBoundingClientRect().y > 50 && counter < 5) {
-        this.scrollActiveIntoView(smooth, counter)
+      const boundingClientRect = scrollEl.getBoundingClientRect()
+      if (boundingClientRect.y < 0 && boundingClientRect.y + boundingClientRect.height > this.dialogEl?.clientHeight && counter < 15) {
+        this.scrollActiveIntoView(counter > 2 ? false : smooth, counter)
       } else {
         scrollEl.scrollIntoView({ behavior: 'instant', block: 'nearest' })
-        // trying to have scroll down button work more reliable
+        // trying to have scroll down work more reliable
         setTimeout(() => scrollEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50)
       }
     }, 200)
@@ -452,73 +491,73 @@ export default class Users extends Shadow() {
     `
   }
 
-  static renderUserTableList (ol, users, allUsers, separator, activeUid, clear = true) {
-    if (clear) ol.innerHTML = ''
-    users.forEach(user => {
-      const li = document.createElement('li')
-      getHexColor(user.uid).then(hex => li.setAttribute('style', `--box-shadow-color: ${hex};border-color: ${hex};`))
-      li.setAttribute('uid', user.uid)
-      if (activeUid === user.uid) li.classList.add('active')
-      if (user.isSelf) li.classList.add('self')
-      ol.appendChild(li)
-      const div = document.createElement('div')
-      li.appendChild(div)
-      const title = document.createElement('h2')
-      title.textContent = user.nickname || 'none'
-      div.appendChild(title)
-      const table = document.createElement('table')
-      div.appendChild(table)
-      for (const key in user) {
-        if (!['connectedUsers', 'connectedUsersCount', 'mutuallyConnectedUsersCount', 'sessionEpoch', 'isSelf'].includes(key)) {
-          // make the table
-          const tr = document.createElement('tr')
-          if (key === 'nickname') tr.classList.add('nickname')
-          if (['localEpoch', 'awarenessEpoch', 'nickname'].includes(key)) {
-            table.prepend(tr)
-          } else {
-            table.appendChild(tr)
-          }
-          const tdOne = document.createElement('td')
-          if (key === 'nickname') {
-            tdOne.textContent = user.isSelf ? 'Your nickname:' : 'User nickname:'
-          } else if (key === 'localEpoch') {
-            tdOne.textContent = 'first time visited:'
-          } else if (key === 'epoch') {
-            tdOne.textContent = 'last time visited:'
-          } else if (key === 'awarenessEpoch') {
-            tdOne.textContent = 'last time synced:'
-          } else if (key === 'mutuallyConnectedUsers') {
-            tdOne.textContent = 'connected users:'
-          } else if (key === 'uid') {
-            tdOne.textContent = 'unique id:'
-          } else {
-            tdOne.textContent = `${key}:`
-          }
-          tr.appendChild(tdOne)
-          const tdTwo = document.createElement('td')
-          tr.appendChild(tdTwo)
-          if (key === 'mutuallyConnectedUsers') {
-            for (const providerName in user[key]) {
-              tdTwo.innerHTML = Array.isArray(user[key][providerName])
-                ? user[key][providerName].reduce((acc, mutuallyConnectedUser) => {
-                  const fullUser = allUsers.get(mutuallyConnectedUser.uid)
-                  return `${acc ? `${acc}, ` : acc}${fullUser ? `<chat-a-nick-name uid='${fullUser.uid}' nickname="${fullUser.nickname}"${fullUser.isSelf ? ' self' : ''} click-only-on-icon></chat-a-nick-name>` : ''}`
-                }, '')
-                : 'none'
-            }
-            if (!tdTwo.innerHTML) tdTwo.innerHTML = 'none'
-          } else if (key === 'nickname') {
-            tdTwo.innerHTML = `<chat-a-nick-name uid='${user.uid}' nickname="${user.nickname}"${user.isSelf ? ' self' : ''} click-only-on-icon></chat-a-nick-name>`
-          } else {
-            tdTwo.textContent = typeof user[key] === 'string' && user[key].includes('epoch') && key !== 'uid'
-              ? new Date(JSON.parse(user[key]).epoch).toLocaleString(navigator.language)
-              : typeof user[key] === 'object'
-                ? JSON.stringify(user[key])
-                : user[key]
-          }
-        }
-      }
-    })
+  static async renderUserTableList (ol, users, allUsers, separator, activeUid) {
+    ol.innerHTML = await Array.from(users).reduce(async (acc, [key, user]) => /* html */`
+      ${await acc}
+      <wct-load-template-tag uid='${user.uid}'${activeUid === user.uid ? ' class=active' : ''} no-css copy-class-list>
+        <template>
+          <li uid='${user.uid}'${user.isSelf ? ' self': ''} style="--box-shadow-color: ${(await getHexColor(user.uid))};border-color: ${(await getHexColor(user.uid))};">
+            <div>
+              <h2>
+                <span>${user.nickname || 'none'}</span>
+                <span class=user-icon>
+                  <wct-icon-mdx title="${user.isSelf ? 'Yourself' : 'Other user'}" icon-url="../../../../../../img/icons/${user.isSelf ? 'user-self' : 'user-other'}.svg" size="0.75em"></wct-icon-mdx>
+                  <span class=tiny>${user.isSelf ? 'Yourself' : 'Other user'}</span>
+                </span>
+              </h2>
+              <table>
+                <tbody>
+                  ${Object.keys(user).reduce((acc, key) => {
+                    if (['connectedUsers', 'connectedUsersCount', 'mutuallyConnectedUsersCount', 'sessionEpoch', 'isSelf'].includes(key)) return acc
+                    return /* html */`
+                      ${['localEpoch', 'awarenessEpoch', 'nickname'].includes(key) ? '' : acc}
+                      <tr ${key === 'nickname' ? 'class=nickname': ''}>
+                        <td>${key === 'nickname'
+                          ? user.isSelf
+                            ? 'Your nickname:'
+                            : 'User nickname:'
+                          : key === 'localEpoch'
+                          ? 'first time visited:'
+                          : key === 'epoch'
+                          ? 'last time visited:'
+                          : key === 'awarenessEpoch'
+                          ? 'last time synced:'
+                          : key === 'mutuallyConnectedUsers'
+                          ? 'connected users:'
+                          : key === 'uid'
+                          ? 'unique id:'
+                          : `${key}:`
+                        }</td>
+                        <td>${key === 'mutuallyConnectedUsers'
+                          ? Object.keys(user[key]).reduce((acc, providerName) => /* html */`
+                            ${acc}
+                            ${Array.isArray(user[key][providerName])
+                              ? user[key][providerName].reduce((acc, mutuallyConnectedUser) => {
+                                  const fullUser = allUsers.get(mutuallyConnectedUser.uid)
+                                  return `${acc ? `${acc}, ` : acc}${fullUser ? `<chat-a-nick-name uid='${fullUser.uid}' nickname="${fullUser.nickname}"${fullUser.isSelf ? ' self' : ''}></chat-a-nick-name>` : ''}`
+                                }, '')
+                              : 'none'
+                            }
+                          `, '') || 'none'
+                          : key === 'nickname'
+                          ? `<chat-a-nick-name uid='${user.uid}' nickname="${user.nickname}"${user.isSelf ? ' self' : ''}></chat-a-nick-name>`
+                          : typeof user[key] === 'string' && user[key].includes('epoch') && key !== 'uid'
+                          ? new Date(JSON.parse(user[key]).epoch).toLocaleString(navigator.language)
+                          : typeof user[key] === 'object'
+                            ? JSON.stringify(user[key])
+                            : user[key]
+                        }</td>
+                      </tr>
+                      ${['localEpoch', 'awarenessEpoch', 'nickname'].includes(key) ? acc : ''}
+                    `
+                  }, '')}
+                </tbody>
+              </table>
+            </div>
+          </li>
+        </template>
+      </wct-load-template-tag>
+    `,'')
   }
 
   get details () {

@@ -26,7 +26,14 @@ export default class NickName extends Shadow() {
           cancelable: true,
           composed: true
         }))
-      } else if (this.hasAttribute('self') && (!this.hasAttribute('click-only-on-icon') || event.composedPath().some(node => node.tagName?.toUpperCase() === 'SVG'))) {
+      } else if (this.hasAttribute('user-dialog-show-event-only-on-avatar') && event.composedPath().some(node => node.classList?.contains('avatar'))) {
+        this.dispatchEvent(new CustomEvent('user-dialog-show-event', {
+          detail: { uid: this.getAttribute('uid') },
+          bubbles: true,
+          cancelable: true,
+          composed: true
+        }))
+      } else if (this.hasAttribute('self') && !event.composedPath().some(node => node.classList?.contains('avatar'))) {
         this.dispatchEvent(new CustomEvent('open-nickname', {
           detail: { command: 'show-modal' },
           bubbles: true,
@@ -52,12 +59,10 @@ export default class NickName extends Shadow() {
         const data = await event.detail.getData()
         let user
         if ((user = data.allUsers.get(this.getAttribute('uid')))) {
-          if (!user.isSelf) {
-            if (data.usersConnectedWithSelf.has(this.getAttribute('uid'))) {
-              this.setAttribute('is-connected-with-self', '')
-            } else {
-              this.removeAttribute('is-connected-with-self')
-            }
+          if ((user.isSelf && data.usersConnectedWithSelf.size) || data.usersConnectedWithSelf.has(this.getAttribute('uid'))) {
+            this.setAttribute('is-connected-with-self', '')
+          } else {
+            this.removeAttribute('is-connected-with-self')
           }
           this.renderHTML(user.nickname || '')
         }
