@@ -289,6 +289,7 @@ export default class Users extends Shadow() {
             --color-hover: var(--color);
             --cursor-hover: auto;
             display: flex;
+            flex-wrap: wrap;
             justify-content: space-between;
             align-items: center;
             border-bottom: 1px solid var(--color);
@@ -490,7 +491,7 @@ export default class Users extends Shadow() {
     `
   }
 
-  static async renderUserTableList (ol, users, allUsers, separator, activeUid) {
+  static async renderUserTableList (ol, users, allUsers, newestMessageTimestamp, activeUid) {
     ol.innerHTML = await Array.from(users).reduce(async (acc, [key, user]) => /* html */`
       ${await acc}
       <wct-load-template-tag uid='${user.uid}'${activeUid === user.uid ? ' class=active' : ''} no-css copy-class-list>
@@ -507,7 +508,7 @@ export default class Users extends Shadow() {
               <table>
                 <tbody>
                   ${Object.keys(user).reduce((acc, key) => {
-                    if (['connectedUsers', 'connectedUsersCount', 'mutuallyConnectedUsersCount', 'sessionEpoch', 'isSelf'].includes(key)) return acc
+                    if (['connectedUsers', 'connectedUsersCount', 'mutuallyConnectedUsersCount', 'sessionEpoch', 'isSelf', 'epoch'].includes(key)) return acc
                     return /* html */`
                       ${['localEpoch', 'awarenessEpoch', 'nickname'].includes(key) ? '' : acc}
                       <tr ${key === 'nickname' ? 'class=nickname': ''}>
@@ -517,10 +518,8 @@ export default class Users extends Shadow() {
                             : 'User nickname:'
                           : key === 'localEpoch'
                           ? 'first time visited:'
-                          : key === 'epoch'
-                          ? 'last time visited:'
                           : key === 'awarenessEpoch'
-                          ? 'last time synced:'
+                          ? 'last time visited:'
                           : key === 'mutuallyConnectedUsers'
                           ? 'connected users:'
                           : key === 'uid'

@@ -20,6 +20,17 @@ import { WebWorker } from '../../../../event-driven-web-components-prototypes/sr
   }} TextObj
 */
 
+/**
+ * outgoing event
+ @typedef {{
+  getAll: () => Promise<TextObj[]>,
+  getAdded: () => Promise<TextObj[]>,
+  added: number,
+  getDeleted: () => Promise<TextObj[]>,
+  deleted: number
+ }} ChatEventDetail
+*/
+
 /* global CustomEvent */
 /* global self */
 
@@ -126,15 +137,30 @@ export const Chat = (ChosenHTMLElement = WebWorker()) => class Chat extends Chos
           : Promise.resolve([])
         ), true)
       }
+      /** @type {ChatEventDetail} */
+      const detail = {
+        // enrich the chat object with the info if it has been self
+        getAll,
+        getAdded,
+        added: event.detail.yjsEvent?.changes?.added?.size,
+        getDeleted,
+        deleted: event.detail.yjsEvent?.changes?.deleted?.size
+      }
+      this.chatEventDetailResolve(detail)
+      this.chatEventDetail = Promise.resolve(detail)
       this.dispatchEvent(new CustomEvent('yjs-chat-update', {
-        detail: {
-          // enrich the chat object with the info if it has been self
-          getAll,
-          getAdded,
-          added: event.detail.yjsEvent?.changes?.added?.size,
-          getDeleted,
-          deleted: event.detail.yjsEvent?.changes?.deleted?.size
-        },
+        detail,
+        bubbles: true,
+        cancelable: true,
+        composed: true
+      }))
+    }
+
+    this.getChatEventDetailEventListener = event => {
+      if (event && event.detail && event.detail.resolve) return event.detail.resolve(this.chatEventDetail)
+      this.dispatchEvent(new CustomEvent(`yjs-chat-event-detail`, {
+        /** @type {Promise<ChatEventDetail>} */
+        detail: this.chatEventDetail,
         bubbles: true,
         cancelable: true,
         composed: true
@@ -157,6 +183,11 @@ export const Chat = (ChosenHTMLElement = WebWorker()) => class Chat extends Chos
     this.allTextObjsInSync = new Map()
 
     this.nicknameEventListener = event => (this.nickname = Promise.resolve(event.detail.nickname))
+
+    /** @type {(ChatEventDetail)=>void} */
+    this.chatEventDetailResolve = map => map
+    /** @type {Promise<ChatEventDetail>} */
+    this.chatEventDetail = new Promise(resolve => (this.chatEventDetailResolve = resolve))
 
     /** @type {(any)=>void} */
     this.uidResolve = map => map
@@ -186,6 +217,7 @@ export const Chat = (ChosenHTMLElement = WebWorker()) => class Chat extends Chos
     this.addEventListener('chat-add', this.chatAddEventListener)
     this.addEventListener('chat-delete', this.chatDeleteEventListener)
     this.addEventListener('chat-get-text-obj', this.getTextObjEventListener)
+    this.addEventListener(`yjs-get-chat-event-detail`, this.getChatEventDetailEventListener)
     this.globalEventTarget.addEventListener('yjs-users', this.usersEventListener)
     this.globalEventTarget.addEventListener('yjs-chat-observe', this.chatObserveEventListener)
     this.globalEventTarget.addEventListener('yjs-nickname', this.nicknameEventListener)
@@ -219,6 +251,7 @@ export const Chat = (ChosenHTMLElement = WebWorker()) => class Chat extends Chos
     this.removeEventListener('chat-add', this.chatAddEventListener)
     this.removeEventListener('chat-delete', this.chatDeleteEventListener)
     this.removeEventListener('chat-get-text-obj', this.getTextObjEventListener)
+    this.removeEventListener(`yjs-get-chat-event-detail`, this.getChatEventDetailEventListener)
     this.globalEventTarget.removeEventListener('yjs-users', this.usersEventListener)
     this.globalEventTarget.removeEventListener('yjs-chat-observe', this.chatObserveEventListener)
     this.globalEventTarget.removeEventListener('yjs-nickname', this.nicknameEventListener)
