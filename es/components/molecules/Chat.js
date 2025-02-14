@@ -97,7 +97,7 @@ export default class Chat extends Shadow() {
               // wait for intersection to happen before we can decide to scroll or not
               setTimeout(() => {
                 if (textObj.isSelf || this.ul.lastElementChild.matches('chat-m-message[intersecting]')) {
-                  this.scrollIntoView(() => this.ul.lastElementChild, true)
+                  this.scrollElIntoView(() => this.ul.lastElementChild, true)
                 } else {
                   this.dispatchEvent(new CustomEvent('scroll-icon-show-event', {
                     bubbles: true,
@@ -139,15 +139,22 @@ export default class Chat extends Shadow() {
       // messages intersecting with the upper half resp. top of the screen
       if (event.detail.entry.boundingClientRect.top < self.innerHeight / 2) {
         clearTimeout(timeout)
-        timeout = setTimeout(() => {
+        timeout = setTimeout(async () => {
           let ulChildrenArr = []
           // avoid saving scrollEl on first time intersection of message after connect, since the initial event does not grab the most top message
           if ((ulChildrenArr = Array.from(this.ul.children)) && (ulChildrenArr = ulChildrenArr.splice(ulChildrenArr.indexOf(event.detail.target)))) {
+            let scrollEl = this.ul.lastElementChild.hasAttribute('intersecting')
+              ? this.ul.lastElementChild.getAttribute('timestamp')
+              : (await new Promise(async resolve => {
+                // if scrolled to bottom send last message as ref to storage
+                const mainScrollElDetail = await this.getMainScrollElDetail()
+                setTimeout(() => resolve(mainScrollElDetail.isScrolledBottom()), mainScrollElDetail.scrollTimer)
+              }))
+              ? this.ul.lastElementChild.getAttribute('timestamp')
+              // topBorder + 50 is for making sure that not only the bottom of the message is seen but 50px parts of it
+              : ulChildrenArr.find(child => child.getBoundingClientRect().bottom > topBorder + 50)?.getAttribute('timestamp') || event.detail.scrollEl
             this.dispatchEvent(new CustomEvent('yjs-merge-active-room', {
-              detail: {
-                // topBorder + 50 is for making sure that not only the bottom of the message is seen but 50px parts of it
-                scrollEl: this.ul.lastElementChild.hasAttribute('intersecting') ? this.ul.lastElementChild.getAttribute('timestamp') : ulChildrenArr.find(child => child.getBoundingClientRect().bottom > topBorder + 50)?.getAttribute('timestamp') || event.detail.scrollEl
-              },
+              detail: { scrollEl },
               bubbles: true,
               cancelable: true,
               composed: true
@@ -158,7 +165,7 @@ export default class Chat extends Shadow() {
     }
 
     this.chatScrollEventListener = event => {
-      if (event?.detail?.scrollEl && this.ulGetScrollElFunc(event.detail.scrollEl)()) this.scrollIntoView(this.ulGetScrollElFunc(event.detail.scrollEl), true)
+      if (event?.detail?.scrollEl && this.ulGetScrollElFunc(event.detail.scrollEl)()) this.scrollElIntoView(this.ulGetScrollElFunc(event.detail.scrollEl), true)
     }
 
     let resizeTimeout = null
@@ -187,8 +194,9 @@ export default class Chat extends Shadow() {
         composed: true
       }))).then(room => {
         if (room?.scrollEl && this.ulGetScrollElFunc(room.scrollEl)()) {
-          this.scrollIntoView(this.ulGetScrollElFunc(room.scrollEl))
+          this.scrollElIntoView(this.ulGetScrollElFunc(room.scrollEl))
         } else if (room?.scrollTop) {
+          // backwards compatible behavior and if no scrollTop scrolls to bottom
           this.dispatchEvent(new CustomEvent('main-scroll', {
             detail: {
               behavior: 'instant',
@@ -354,7 +362,7 @@ export default class Chat extends Shadow() {
     return null
   }
 
-  scrollIntoView (getScrollElFunc, smooth = false, counter = 0) {
+  scrollElIntoView (getScrollElFunc, smooth = false, counter = 0) {
     counter++
     const scrollEl = getScrollElFunc()
     if (!scrollEl) return
@@ -363,7 +371,7 @@ export default class Chat extends Shadow() {
       const scrollEl = getScrollElFunc()
       if (!scrollEl) return
       if (scrollEl.matches(':not([intersecting])') && counter < 15) {
-        this.scrollIntoView(getScrollElFunc, counter > 2 ? false : smooth, counter)
+        this.scrollElIntoView(getScrollElFunc, counter > 2 ? false : smooth, counter)
       } else {
         scrollEl.scrollIntoView({ behavior: 'instant' })
         // trying to have scroll down button work more reliable
@@ -401,7 +409,7 @@ export default class Chat extends Shadow() {
     }
     promise.then(room => {
       if (room?.scrollEl && this.ulGetScrollElFunc(room.scrollEl)()) {
-        this.scrollIntoView(this.ulGetScrollElFunc(room.scrollEl))
+        this.scrollElIntoView(this.ulGetScrollElFunc(room.scrollEl))
       } else if (room?.scrollTop) {
         // backwards compatible behavior and if no scrollTop scrolls to bottom
         this.dispatchEvent(new CustomEvent('main-scroll', {
@@ -423,9 +431,18 @@ export default class Chat extends Shadow() {
           composed: true
         })), 200)
       } else if (this.ul?.lastElementChild) {
-        this.scrollIntoView(this.ulGetScrollElFunc(this.ul.lastElementChild.getAttribute('timestamp')))
+        this.scrollElIntoView(this.ulGetScrollElFunc(this.ul.lastElementChild.getAttribute('timestamp')))
       }
     })
+  }
+
+  async getMainScrollElDetail () {
+    return this._getMainScrollElDetail || (this._getMainScrollElDetail = new Promise(resolve => this.dispatchEvent(new CustomEvent('get-main-scroll-el', {
+      detail: { resolve },
+      bubbles: true,
+      cancelable: true,
+      composed: true
+    }))))
   }
 
   get ul () {
