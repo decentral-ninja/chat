@@ -442,7 +442,7 @@ export default class Users extends Shadow() {
     Users.renderSummaryText(this.summary, data, this.hasAttribute('online'))
     Users.renderP2pGraph(this.usersGraph, data.usersConnectedWithSelf, separator, this.getAttribute('active'))
     await Users.renderUserTableList(this.usersOl, data.usersConnectedWithSelf, data.allUsers, separator, this.getAttribute('active'))
-    await Users.renderUserTableList(this.allUsersOl, new Map(Array.from(data.allUsers).filter(([key, user]) => !data.usersConnectedWithSelf.get(key))), data.allUsers, separator, this.getAttribute('active'))
+    await Users.renderUserTableList(this.allUsersOl, new Map(Array.from(data.allUsers).filter(([key, user]) => !data.usersConnectedWithSelf.get(key)).sort((a, b) => JSON.parse(b[1].awarenessEpoch || b[1].epoch).epoch - JSON.parse(a[1].awarenessEpoch || a[1].epoch).epoch)), data.allUsers, separator, this.getAttribute('active'))
   }
 
   setActive (uid, ol, active = true, scroll = true) {
@@ -508,7 +508,9 @@ export default class Users extends Shadow() {
               <table>
                 <tbody>
                   ${Object.keys(user).reduce((acc, key) => {
-                    if (['connectedUsers', 'connectedUsersCount', 'mutuallyConnectedUsersCount', 'sessionEpoch', 'isSelf', 'epoch'].includes(key)) return acc
+                    const ignoredKeys = ['connectedUsers', 'connectedUsersCount', 'mutuallyConnectedUsersCount', 'sessionEpoch', 'isSelf']
+                    if (user.awarenessEpoch) ignoredKeys.push('epoch') // backward compatible to old chats/user, which did not have awarenessEpoch, then just use epoch
+                    if (ignoredKeys.includes(key)) return acc
                     return /* html */`
                       ${['localEpoch', 'awarenessEpoch', 'nickname'].includes(key) ? '' : acc}
                       <tr ${key === 'nickname' ? 'class=nickname': ''}>
@@ -518,7 +520,7 @@ export default class Users extends Shadow() {
                             : 'User nickname:'
                           : key === 'localEpoch'
                           ? 'first time visited:'
-                          : key === 'awarenessEpoch'
+                          : key === 'awarenessEpoch' || key === 'epoch'
                           ? 'last time visited:'
                           : key === 'mutuallyConnectedUsers'
                           ? 'connected users:'
