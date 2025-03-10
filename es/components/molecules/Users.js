@@ -393,7 +393,7 @@ export default class Users extends Shadow() {
       bubbles: true,
       cancelable: true,
       composed: true
-    }))).then(nickname => (this.html = /* html */`<chat-m-nick-name-dialog namespace="dialog-top-slide-in-" show-event-name="open-nickname" nickname="${nickname}"></chat-m-nick-name-dialog>`))
+    }))).then(({nickname, randomNickname}) => (this.html = /* html */`<chat-m-nick-name-dialog ${randomNickname ? 'open ': ''}namespace="dialog-top-slide-in-" show-event-name="open-nickname" nickname="${nickname}"></chat-m-nick-name-dialog>`))
     return this.fetchModules([
       {
         // @ts-ignore

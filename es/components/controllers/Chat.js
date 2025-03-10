@@ -197,7 +197,7 @@ export const Chat = (ChosenHTMLElement = WebWorker()) => class Chat extends Chos
     /** @type {(any)=>void} */
     this.nicknameResolve = map => map
     /** @type {Promise<string>} */
-    this.nickname = new Promise(resolve => (this.nicknameResolve = resolve))
+    this.nickname = new Promise(resolve => (this.nicknameResolve = resolve)).then(({nickname}) => nickname)
 
     /** @type {(any)=>void} */
     this.usersDataResolve = map => map
