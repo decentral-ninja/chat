@@ -335,7 +335,7 @@ export default class Users extends Shadow() {
           }
           :host > dialog #offline {
             --dialog-top-slide-in-p-margin: 0;
-            color: var(--color-secondary);
+            color: var(--color-disabled, var(--color-secondary));
             z-index: 10;
             position: sticky;
             top: 4px;
@@ -476,9 +476,9 @@ export default class Users extends Shadow() {
     summary.innerHTML = /* html */`
       <a-loading namespace="loading-default-" size="0.75"></a-loading> ${online
         ? data.usersConnectedWithSelf.size > 1
-          ? `<span style="color:green">You are connected to ${data.usersConnectedWithSelf.size - 1} ${data.usersConnectedWithSelf.size === 2 ? 'User' : 'Users'}</span>`
+          ? `<span style="color:var(--color-green-full)">You are connected to ${data.usersConnectedWithSelf.size - 1} ${data.usersConnectedWithSelf.size === 2 ? 'User' : 'Users'}</span>`
           : 'You are alone!'
-        : '<span style="color:var(--color-secondary)">You are offline!</span>'
+        : '<span style="color:var(--color-error)">You are offline!</span>'
       }
     `
   }
