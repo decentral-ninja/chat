@@ -66,7 +66,7 @@ export default class Providers extends Shadow() {
   connectedCallback () {
     if (this.shouldRenderCSS()) this.renderCSS()
     if (this.shouldRenderHTML()) this.renderHTML()
-    this.globalEventTarget.addEventListener('yjs-providers', this.providersEventListener)
+    this.globalEventTarget.addEventListener('yjs-providers-data', this.providersEventListener)
     this.globalEventTarget.addEventListener('provider-dialog-show-event', this.providerDialogShowEventEventListener)
     this.section.addEventListener('click', this.openDialog)
     self.addEventListener('online', this.onlineEventListener)
@@ -74,7 +74,7 @@ export default class Providers extends Shadow() {
   }
 
   disconnectedCallback () {
-    this.globalEventTarget.removeEventListener('yjs-providers', this.providersEventListener)
+    this.globalEventTarget.removeEventListener('yjs-providers-data', this.providersEventListener)
     this.globalEventTarget.removeEventListener('provider-dialog-show-event', this.providerDialogShowEventEventListener)
     this.section.removeEventListener('click', this.openDialog)
     self.removeEventListener('offline', this.offlineEventListener)

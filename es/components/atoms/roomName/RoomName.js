@@ -108,24 +108,24 @@ export default class RoomName extends Shadow() {
       *:focus {
         outline: none;
       }
-      :host > a {
+      :host > a, :host > a > div.name {
         align-items: end;
         display: flex;
         tap-highlight-color: transparent;
         --webkit-tap-highlight-color: transparent;
       }
-      :host > a > wct-icon-mdx {
+      :host > a wct-icon-mdx {
         display: flex;
       }
-      :host > a > h1 {
+      :host > a h1 {
         flex-shrink: 1;
       }
-      :host > a > h1, :host > a > div.aka {
+      :host > a h1, :host > a div.aka, :host > a > div.name {
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
       }
-      :host > a > div.aka {
+      :host > a div.aka {
         color: var(--color-disabled);
         font-style: italic;
         font-size: 0.75em;
@@ -135,11 +135,13 @@ export default class RoomName extends Shadow() {
         list-style: inside;
         flex-shrink: 2;
       }
-      :host > a > div.aka:empty {
+      :host > a div.aka:empty {
         display: none;
       }
       @media only screen and (max-width: _max-width_) {
-        :host {}
+        :host > a {
+          flex-wrap: wrap;
+        }
       }
     `
     return this.fetchTemplate()
@@ -170,8 +172,10 @@ export default class RoomName extends Shadow() {
   renderHTML (roomName, getRoomsResult) {
     this.html = ''
     this.html = /* html */`<a href="#">
-      <wct-icon-mdx hover-on-parent-element id="show-modal" rotate="180deg" icon-url="../../../../../../img/icons/chevron-left.svg" size="1.75em"></wct-icon-mdx>
-      <h1>${roomName || 'Loading...'}</h1>
+      <div class=name>
+        <wct-icon-mdx hover-on-parent-element id="show-modal" rotate="180deg" icon-url="../../../../../../img/icons/chevron-left.svg" size="1.75em"></wct-icon-mdx>
+        <h1>${roomName || 'Loading...'}</h1>
+      </div>
       <div class=aka>${getRoomsResult?.value?.[roomName]?.aka ? getRoomsResult.value[roomName].aka : ''}</div>
     </a>`
     return this.fetchModules([
