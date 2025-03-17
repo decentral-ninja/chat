@@ -46,6 +46,35 @@ export default class Providers extends Shadow() {
       this.openDialog(event)
     }
 
+    this.submitWebsocketUrlEventListener = event => {
+      event.stopPropagation()
+      let input
+      if (this.providersDivGrids.find(grid => (input = grid.root.querySelector('[inputId="websocket-url"]')?.inputField))) {
+        this.dispatchEvent(new CustomEvent('yjs-update-providers', {
+          detail: {
+            websocketUrl: input.value
+          },
+          bubbles: true,
+          cancelable: true,
+          composed: true
+        }))
+      }
+    }
+    this.submitWebrtcUrlEventListener = event => {
+      event.stopPropagation()
+      let input
+      if (this.providersDivGrids.find(grid => (input = grid.root.querySelector('[inputId="webrtc-url"]')?.inputField))) {
+        this.dispatchEvent(new CustomEvent('yjs-update-providers', {
+          detail: {
+            webrtcUrl: input.value
+          },
+          bubbles: true,
+          cancelable: true,
+          composed: true
+        }))
+      }
+    }
+
     this.onlineEventListener = async event => {
       this.setAttribute('online', '')
       this.dialog?.setAttribute('online', '')
@@ -66,6 +95,8 @@ export default class Providers extends Shadow() {
   connectedCallback () {
     if (this.shouldRenderCSS()) this.renderCSS()
     if (this.shouldRenderHTML()) this.renderHTML()
+      this.addEventListener('submit-websocket-url', this.submitWebsocketUrlEventListener)
+    this.addEventListener('submit-webrtc-url', this.submitWebrtcUrlEventListener)
     this.globalEventTarget.addEventListener('yjs-providers-data', this.providersEventListener)
     this.globalEventTarget.addEventListener('provider-dialog-show-event', this.providerDialogShowEventEventListener)
     this.section.addEventListener('click', this.openDialog)
@@ -74,6 +105,8 @@ export default class Providers extends Shadow() {
   }
 
   disconnectedCallback () {
+    this.removeEventListener('submit-websocket-url', this.submitWebsocketUrlEventListener)
+    this.removeEventListener('submit-webrtc-url', this.submitWebrtcUrlEventListener)
     this.globalEventTarget.removeEventListener('yjs-providers-data', this.providersEventListener)
     this.globalEventTarget.removeEventListener('provider-dialog-show-event', this.providerDialogShowEventEventListener)
     this.section.removeEventListener('click', this.openDialog)
@@ -107,6 +140,12 @@ export default class Providers extends Shadow() {
   renderCSS () {
     this.css = /* css */`
       :host {
+        --button-primary-width: 100%;
+        --button-primary-height: 100%;
+        --wct-input-input-height: 100%;
+        --wct-input-height: var(--wct-input-input-height);
+        --wct-input-border-radius: var(--border-radius) 0 0 var(--border-radius);
+        --button-primary-border-radius: 0 var(--border-radius) var(--border-radius) 0;
         cursor: pointer;
       }
       :host > section {
@@ -161,9 +200,7 @@ export default class Providers extends Shadow() {
           <wct-menu-icon id="close" no-aria class="open sticky" namespace="menu-icon-close-" no-click></wct-menu-icon>
           <h4>Provider Data:</h4>
           <p id="offline">You are offline!</p>
-          <div id=providers>
-            Providers...
-          </div>
+          <div id=providers></div>
         </dialog>
       </wct-dialog>
     `
@@ -187,6 +224,16 @@ export default class Providers extends Shadow() {
       },
       {
         // @ts-ignore
+        path: `${this.importMetaUrl}../../../../web-components-toolbox/src/es/components/organisms/grid/Grid.js?${Environment?.version || ''}`,
+        name: 'wct-grid'
+      },
+      {
+        // @ts-ignore
+        path: `${this.importMetaUrl}../../../../web-components-toolbox/src/es/components/atoms/input/Input.js?${Environment?.version || ''}`,
+        name: 'wct-input'
+      },
+      {
+        // @ts-ignore
         path: `${this.importMetaUrl}../../../../components/atoms/loading/Loading.js?${Environment?.version || ''}`,
         name: 'a-loading'
       }
@@ -196,6 +243,33 @@ export default class Providers extends Shadow() {
   renderData (data) {
     Providers.renderSectionText(this.section, data, this.hasAttribute('online'))
     Providers.renderProvidersList(this.providersDiv, data)
+    // TODO: Below only reproduces the old behavior
+    new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-providers', {
+      detail: {
+        resolve
+      },
+      bubbles: true,
+      cancelable: true,
+      composed: true
+    }))).then(async ({ websocketUrl, webrtcUrl }) => {
+      this.providersDiv.innerHTML = /* html */`
+        <h4 class=left>websocketUrls:</h4>
+        <wct-grid auto-fill="20%">
+          <section>
+            <wct-input grid-column="1/5" inputId="websocket-url" value="${websocketUrl || ''}" placeholder='websocketUrls separated with a "," and no spaces in between' namespace="wct-input-" namespace-fallback submit-search="submit-websocket-url" any-key-listener autofocus force></wct-input>
+            <wct-button namespace="button-primary-" request-event-name="submit-websocket-url" click-no-toggle-active>enter</wct-button>
+          </section>
+        </wct-grid>
+        <hr>
+        <h4 class=left>webrtcUrls:</h4>
+        <wct-grid auto-fill="20%">
+          <section>
+            <wct-input grid-column="1/5" inputId="webrtc-url" value="${webrtcUrl || ''}" placeholder='webrtcUrls separated with a "," and no spaces in between' namespace="wct-input-" namespace-fallback submit-search="submit-webrtc-url" any-key-listener autofocus force></wct-input>
+            <wct-button namespace="button-primary-" request-event-name="submit-webrtc-url" click-no-toggle-active>enter</wct-button>
+          </section>
+        </wct-grid>
+      `
+    })
   }
 
   static async renderSectionText (section, data, online) {
@@ -228,6 +302,10 @@ export default class Providers extends Shadow() {
 
   get providersDiv () {
     return this.dialog.root.querySelector('#providers')
+  }
+
+  get providersDivGrids () {
+    return Array.from(this.providersDiv.querySelectorAll('wct-grid'))
   }
 
   isDialogOpen () {
