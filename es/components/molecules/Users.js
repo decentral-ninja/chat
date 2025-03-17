@@ -167,9 +167,6 @@ export default class Users extends Shadow() {
       :host([updating]) > details > summary > a-loading {
         display: inline-block;
       }
-      :host > wct-dialog {
-        font-size: 1rem;
-      }
     `
   }
 

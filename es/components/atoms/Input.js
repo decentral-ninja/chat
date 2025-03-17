@@ -229,7 +229,8 @@ export default class Input extends Shadow() {
       :host > div {
         --button-primary-width: 100%;
         --button-primary-height: 100%;
-        --button-primary-font-size: 1rem;
+        --button-primary-font-size: max(16px, 1em);
+        --button-primary-font-size-mobile: 1em;
         --color-hover: var(--color-yellow);
         display: flex;
         width: 100%;
@@ -303,7 +304,6 @@ export default class Input extends Shadow() {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        font-size: 1rem;
         position: sticky;
         top: 0;
         background-color: var(--background-color);

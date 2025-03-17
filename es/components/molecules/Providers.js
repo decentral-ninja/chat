@@ -130,9 +130,6 @@ export default class Providers extends Shadow() {
       :host([updating]) > section > a-loading {
         display: flex;
       }
-      :host > wct-dialog {
-        font-size: 1rem;
-      }
     `
   }
 

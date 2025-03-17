@@ -18,15 +18,7 @@ export default class Navigation extends Shadow() {
     super({ importMetaUrl: import.meta.url, ...options }, ...args)
 
     this.eventListener = async event => {
-      if (event.composedPath()[0].getAttribute('id') === 'jitsi') {
-        self.open(`https://jitsi.mgrs.dev/${this.dialogGrid.root.querySelector('#room-name').textContent.replace(/\s+/g, '')}`)
-      } else if (event.composedPath()[0].getAttribute('id') === 'nickname') {
-        this.dispatchEvent(new CustomEvent('open-nickname', {
-          bubbles: true,
-          cancelable: true,
-          composed: true
-        }))
-      } else if (event.composedPath()[0].getAttribute('id') === 'server') {
+      if (event.composedPath()[0].getAttribute('id') === 'server') {
         new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-providers', {
           detail: {
             resolve

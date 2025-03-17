@@ -198,9 +198,6 @@ export default class Message extends WebWorker(Intersection()) {
    */
   renderCSS () {
     this.css = /* css */`
-      :host > chat-m-message-dialog {
-        font-size: 1rem;
-      }
       :host li {
         display: flex;
         flex-direction: column;
