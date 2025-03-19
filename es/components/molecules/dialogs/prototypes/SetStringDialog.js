@@ -40,7 +40,6 @@ export default class SetStringDialog extends Dialog {
         --wct-input-border-radius: var(--border-radius) 0 0 var(--border-radius);
         --button-primary-border-radius: 0 var(--border-radius) var(--border-radius) 0;
         --wct-input-placeholder-color: lightgray;
-        font-size: 1rem;
       }
       :host > dialog {
         scrollbar-color: var(--color) var(--background-color);

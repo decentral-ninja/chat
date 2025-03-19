@@ -229,7 +229,8 @@ export default class Input extends Shadow() {
       :host > div {
         --button-primary-width: 100%;
         --button-primary-height: 100%;
-        --button-primary-font-size: 1rem;
+        --button-primary-font-size: max(16px, 1em);
+        --button-primary-font-size-mobile: 1em;
         --color-hover: var(--color-yellow);
         display: flex;
         width: 100%;
@@ -303,7 +304,6 @@ export default class Input extends Shadow() {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        font-size: 1rem;
         position: sticky;
         top: 0;
         background-color: var(--background-color);
@@ -359,7 +359,7 @@ export default class Input extends Shadow() {
       <div>
         <emoji-button></emoji-button>
         <textarea enterkeyhint="enter" placeholder="type your message..." rows="2"></textarea>
-        <wct-button id=send namespace="button-primary-" request-event-name="submit-room-name" click-no-toggle-active>
+        <wct-button id=send namespace="button-primary-" click-no-toggle-active>
           <wct-icon-mdx icon-url="../../../../../../img/icons/send-2.svg" size="1.5em"></wct-icon-mdx>
         </wct-button>
         <wct-icon-mdx id=wormhole title="Upload your files at wormhole and copy/paste the link into the chat to share..." icon-url="../../../../../../img/icons/file-upload.svg" size="3em"></wct-icon-mdx>

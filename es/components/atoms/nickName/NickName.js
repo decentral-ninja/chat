@@ -77,7 +77,7 @@ export default class NickName extends Shadow() {
     this.addEventListener('click', this.clickEventListener)
     this.globalEventTarget.addEventListener('yjs-users', this.usersEventListener)
     if (this.hasAttribute('self')) this.globalEventTarget.addEventListener('yjs-nickname', this.nicknameEventListener)
-      this.connectedCallbackOnce()
+    this.connectedCallbackOnce()
   }
 
   connectedCallbackOnce () {
@@ -201,7 +201,7 @@ export default class NickName extends Shadow() {
         <span class=avatar>
           <wct-icon-mdx hover-on-parent-shadow-root-host id=connected title=connected icon-url="../../../../../../img/icons/mobiledata.svg" size="0.75em"></wct-icon-mdx>
         </span>
-        <${this.hTagName}>${nickname || 'Loading...'}</${this.hTagName}>
+        <${this.hTagName}>${nickname || this.getAttribute('nickname') || 'None'}</${this.hTagName}>
         ${this.hasAttribute('self') ? '<wct-icon-mdx hover-on-parent-element id="show-modal" title="edit nickname" icon-url="../../../../../../img/icons/pencil.svg" size="1em"></wct-icon-mdx>' : ''}
       </a>
     `

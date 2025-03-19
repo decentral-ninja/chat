@@ -82,7 +82,6 @@ export default class ShareDialog extends Dialog {
     this.setCss(/* css */`
       :host {
         --dialog-top-slide-in-hr-margin: 0 0 var(--content-spacing);
-        font-size: 1rem;
       }
       :host > dialog {
         --dialog-top-slide-in-a-text-decoration: underline;
