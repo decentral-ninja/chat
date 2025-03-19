@@ -41,10 +41,7 @@ export default class Providers extends Shadow() {
         this.removeAttribute('updating')
       }
     }
-    this.providerDialogShowEventEventListener = event => {
-      this.setAttribute('active', event.detail.uid)
-      this.openDialog(event)
-    }
+    this.providerDialogShowEventEventListener = event => this.openDialog(event)
 
     this.submitWebsocketUrlEventListener = event => {
       event.stopPropagation()
@@ -95,7 +92,7 @@ export default class Providers extends Shadow() {
   connectedCallback () {
     if (this.shouldRenderCSS()) this.renderCSS()
     if (this.shouldRenderHTML()) this.renderHTML()
-      this.addEventListener('submit-websocket-url', this.submitWebsocketUrlEventListener)
+    this.addEventListener('submit-websocket-url', this.submitWebsocketUrlEventListener)
     this.addEventListener('submit-webrtc-url', this.submitWebrtcUrlEventListener)
     this.globalEventTarget.addEventListener('yjs-providers-data', this.providersEventListener)
     this.globalEventTarget.addEventListener('provider-dialog-show-event', this.providerDialogShowEventEventListener)
@@ -110,8 +107,8 @@ export default class Providers extends Shadow() {
     this.globalEventTarget.removeEventListener('yjs-providers-data', this.providersEventListener)
     this.globalEventTarget.removeEventListener('provider-dialog-show-event', this.providerDialogShowEventEventListener)
     this.section.removeEventListener('click', this.openDialog)
+    self.removeEventListener('online', this.onlineEventListener)
     self.removeEventListener('offline', this.offlineEventListener)
-    self.removeEventListener('resize', this.resizeEventListener)
   }
 
   /**
@@ -256,16 +253,16 @@ export default class Providers extends Shadow() {
         <h4 class=left>websocketUrls:</h4>
         <wct-grid auto-fill="20%">
           <section>
-            <wct-input grid-column="1/5" inputId="websocket-url" value="${websocketUrl || ''}" placeholder='websocketUrls separated with a "," and no spaces in between' namespace="wct-input-" namespace-fallback submit-search="submit-websocket-url" any-key-listener autofocus force></wct-input>
-            <wct-button namespace="button-primary-" request-event-name="submit-websocket-url" click-no-toggle-active>enter</wct-button>
+            <wct-input grid-column="1/5" inputId="websocket-url" value="${websocketUrl || ''}" placeholder='websocketUrls separated with a "," and no spaces in between' namespace="wct-input-" namespace-fallback submit-search="submit-websocket-url" autofocus force></wct-input>
+            <wct-button namespace="button-primary-" request-event-name="submit-websocket-url" click-no-toggle-active>set</wct-button>
           </section>
         </wct-grid>
         <hr>
         <h4 class=left>webrtcUrls:</h4>
         <wct-grid auto-fill="20%">
           <section>
-            <wct-input grid-column="1/5" inputId="webrtc-url" value="${webrtcUrl || ''}" placeholder='webrtcUrls separated with a "," and no spaces in between' namespace="wct-input-" namespace-fallback submit-search="submit-webrtc-url" any-key-listener autofocus force></wct-input>
-            <wct-button namespace="button-primary-" request-event-name="submit-webrtc-url" click-no-toggle-active>enter</wct-button>
+            <wct-input grid-column="1/5" inputId="webrtc-url" value="${webrtcUrl || ''}" placeholder='webrtcUrls separated with a "," and no spaces in between' namespace="wct-input-" namespace-fallback submit-search="submit-webrtc-url" autofocus force></wct-input>
+            <wct-button namespace="button-primary-" request-event-name="submit-webrtc-url" click-no-toggle-active>set</wct-button>
           </section>
         </wct-grid>
       `
