@@ -47,7 +47,7 @@ export default class Notifications extends Hover() {
           this.counterEl.textContent = notificationsCounter > this.notificationsMax ? `${this.notificationsMax}+` : notificationsCounter
           if (typeof navigator.setAppBadge === 'function') navigator.setAppBadge(notificationsCounter)
           if (notificationsCounter) {
-            document.title = `(${this.counterEl.textContent}) ${document.title.replace(/\(\d+\)\s/g, '')}`
+            document.title = `(${this.counterEl.textContent}) ${document.title.replace(/\(\d.*\)\s/g, '')}`
             // TODO: Play notification sound
           } else {
             this.hidden = true
