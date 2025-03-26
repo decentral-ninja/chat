@@ -108,14 +108,20 @@ export default class Rooms extends Shadow() {
           }
         })
       } else if ((target = event.composedPath().find(el => el.hasAttribute?.('delete')))) {
-        this.dispatchEvent(new CustomEvent('yjs-delete-room', {
+        new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-delete-room', {
           detail: {
+            resolve,
             name: target.getAttribute('delete')
           },
           bubbles: true,
           cancelable: true,
           composed: true
-        }))
+        }))).then(() => this.dispatchEvent(new CustomEvent('yjs-request-notifications', {
+          detail: { force: true },
+          bubbles: true,
+          cancelable: true,
+          composed: true
+        })))
         this.dispatchEvent(new CustomEvent('yjs-unsubscribe-notifications', {
           detail: {
             room: target.getAttribute('delete'),
@@ -125,24 +131,24 @@ export default class Rooms extends Shadow() {
           cancelable: true,
           composed: true
         }))
-        // if this would be needed, wait for the rooms to recover from yjs-delete-room
-        /*
-        this.dispatchEvent(new CustomEvent('yjs-request-notifications', {
-          detail: { force: true },
-          bubbles: true,
-          cancelable: true,
-          composed: true
-        }))
-        */
         this.clearAllDeleted()
         target.parentNode.classList.add('deleted')
       } else if ((target = event.composedPath().find(el => el.hasAttribute?.('undo')))) {
         target.parentNode.classList.remove('deleted')
-        this.dispatchEvent(new CustomEvent('yjs-undo-room', {
+        new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-undo-room', {
+          detail: {
+            resolve
+          },
           bubbles: true,
           cancelable: true,
           composed: true
-        }))
+        // TODO: request notifications only fetches the notifications of the active providers, allow to fetch them from the deleted room locationHref
+        }))).then(() => this.dispatchEvent(new CustomEvent('yjs-request-notifications', {
+          detail: { force: true },
+          bubbles: true,
+          cancelable: true,
+          composed: true
+        })))
         this.dispatchEvent(new CustomEvent('yjs-subscribe-notifications', {
           detail: {
             room: target.getAttribute('undo'),
@@ -152,15 +158,6 @@ export default class Rooms extends Shadow() {
           cancelable: true,
           composed: true
         }))
-        // if this would be needed, wait for the rooms to recover from yjs-undo-room
-        /*
-        this.dispatchEvent(new CustomEvent('yjs-request-notifications', {
-          detail: { force: true },
-          bubbles: true,
-          cancelable: true,
-          composed: true
-        }))
-        */
       } else if ((target = event.composedPath().find(el => el.matches?.('[disabled]')))) {
         this.dialog?.close()
       }
