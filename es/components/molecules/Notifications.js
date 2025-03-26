@@ -33,10 +33,17 @@ export default class Notifications extends Hover() {
       this.notificationsEventListener = event => {
         let keys
         if (!(this.hidden = !(keys = Object.keys(event.detail.notifications)).length)) {
-          const notificationsCounter = keys.reduce((acc, key) => acc + (event.detail.rooms.value[key]
-            ? event.detail.notifications[key].length
-            : 0
-          ), 0)
+          const notificationsCounter = keys.reduce((acc, key) => {
+            const timestamps = []
+            return acc + (event.detail.rooms.value[key]
+              ? event.detail.notifications[key].filter(notification => {
+                if (timestamps.includes(notification.timestamp)) return false
+                timestamps.push(notification.timestamp)
+                return true
+              }).length
+              : 0
+            )
+          }, 0)
           this.counterEl.textContent = notificationsCounter > this.notificationsMax ? `${this.notificationsMax}+` : notificationsCounter
           if (typeof navigator.setAppBadge === 'function') navigator.setAppBadge(notificationsCounter)
           if (notificationsCounter) {

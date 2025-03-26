@@ -118,18 +118,22 @@ export default class Rooms extends Shadow() {
         }))
         this.dispatchEvent(new CustomEvent('yjs-unsubscribe-notifications', {
           detail: {
-            room: target.getAttribute('delete')
+            room: target.getAttribute('delete'),
+            locationHref: target.getAttribute('href')
           },
           bubbles: true,
           cancelable: true,
           composed: true
         }))
+        // if this would be needed, wait for the rooms to recover from yjs-delete-room
+        /*
         this.dispatchEvent(new CustomEvent('yjs-request-notifications', {
           detail: { force: true },
           bubbles: true,
           cancelable: true,
           composed: true
         }))
+        */
         this.clearAllDeleted()
         target.parentNode.classList.add('deleted')
       } else if ((target = event.composedPath().find(el => el.hasAttribute?.('undo')))) {
@@ -142,18 +146,21 @@ export default class Rooms extends Shadow() {
         this.dispatchEvent(new CustomEvent('yjs-subscribe-notifications', {
           detail: {
             room: target.getAttribute('undo'),
-            resolve: () => {}
+            locationHref: target.getAttribute('href')
           },
           bubbles: true,
           cancelable: true,
           composed: true
         }))
+        // if this would be needed, wait for the rooms to recover from yjs-undo-room
+        /*
         this.dispatchEvent(new CustomEvent('yjs-request-notifications', {
           detail: { force: true },
           bubbles: true,
           cancelable: true,
           composed: true
         }))
+        */
       } else if ((target = event.composedPath().find(el => el.matches?.('[disabled]')))) {
         this.dialog?.close()
       }
@@ -548,8 +555,8 @@ export default class Rooms extends Shadow() {
             </a>
             <wct-icon-mdx title="share" share="${key}" icon-url="../../../../../../img/icons/share-3.svg" size="2em"></wct-icon-mdx>
             <wct-icon-mdx title="edit aka" edit="${key}" li-count=${i} icon-url="../../../../../../img/icons/pencil.svg" size="2em"></wct-icon-mdx>
-            <wct-icon-mdx title="delete" delete="${key.replace(/"/g, "'")}" icon-url="../../../../../../img/icons/trash.svg" size="2em"></wct-icon-mdx>
-            <wct-icon-mdx title="undo" undo="${key}" icon-url="../../../../../../img/icons/trash-off.svg" size="2em"></wct-icon-mdx>
+            <wct-icon-mdx title="delete" delete="${key.replace(/"/g, "'")}" href="${rooms.value[key].locationHref}" icon-url="../../../../../../img/icons/trash.svg" size="2em"></wct-icon-mdx>
+            <wct-icon-mdx title="undo" undo="${key}" href="${rooms.value[key].locationHref}" icon-url="../../../../../../img/icons/trash-off.svg" size="2em"></wct-icon-mdx>
           </div>
         </li>`, '')
       }

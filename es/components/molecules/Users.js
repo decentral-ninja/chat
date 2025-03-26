@@ -161,6 +161,9 @@ export default class Users extends Shadow() {
       :host {
         cursor: pointer;
       }
+      :host > details > summary {
+        font-size: 0.65em;
+      }
       :host > details > summary > a-loading {
         display: none;
       }
@@ -324,7 +327,6 @@ export default class Users extends Shadow() {
             border: 1px dashed var(--color-secondary);
           }
           :host([online]) > dialog #offline,
-          :host(:not([online])) > dialog #users-graph,
           :host > dialog #users-graph:empty,
           :host > dialog #users-graph:has(> chat-a-p2p-graph[no-data]),
           :host > dialog #users-graph:has(> chat-a-p2p-graph:not([no-data])) ~ #no-connections {
@@ -335,7 +337,7 @@ export default class Users extends Shadow() {
             color: var(--color-disabled, var(--color-secondary));
             z-index: 10;
             position: sticky;
-            top: 4px;
+            top: 3px;
           }
           :host > dialog #no-connections {
             --dialog-top-slide-in-p-margin: 0;
@@ -471,11 +473,12 @@ export default class Users extends Shadow() {
 
   static renderSummaryText (summary, data, online) {
     summary.innerHTML = /* html */`
-      <a-loading namespace="loading-default-" size="0.75"></a-loading> ${online
-        ? data.usersConnectedWithSelf.size > 1
+      <a-loading namespace="loading-default-" size="0.75"></a-loading> ${
+        data.usersConnectedWithSelf.size > 1
           ? `<span style="color:var(--color-green-full)">You are connected to ${data.usersConnectedWithSelf.size - 1} ${data.usersConnectedWithSelf.size === 2 ? 'User' : 'Users'}</span>`
-          : 'You are alone!'
-        : '<span style="color:var(--color-error)">You are offline!</span>'
+          : online
+            ? 'You are alone!'
+            : '<span style="color:var(--color-error)">You are offline!</span>'
       }
     `
   }

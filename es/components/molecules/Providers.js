@@ -17,19 +17,23 @@ export default class Providers extends Shadow() {
 
     let lastProvidersEventGetData = null
     let timeoutId = null
-    this.providersEventListener = event => {
+    this.providersEventListener = (event, force) => {
       lastProvidersEventGetData = event.detail.getData
       this.setAttribute('updating', '')
       clearTimeout(timeoutId)
       timeoutId = setTimeout(async () => {
         if (this.isDialogOpen()) {
-          this.renderData(await event.detail.getData())
+          this.renderData(await event.detail.getData(), force)
         } else {
-          Providers.renderSectionText(this.section, await event.detail.getData(), this.hasAttribute('online'))
+          Providers.renderSectionText(this.section, await event.detail.getData(), this.hasAttribute('online'), force)
         }
         this.removeAttribute('updating')
         // @ts-ignore
       }, this.isDialogOpen() ? 200 : self.Environment.awarenessEventListenerDelay)
+    }
+    
+    this.providersChangeEventListener = event => {
+      if (lastProvidersEventGetData) this.providersEventListener({detail: { getData: lastProvidersEventGetData}}, true)
     }
 
     this.openDialog = async event => {
@@ -95,6 +99,7 @@ export default class Providers extends Shadow() {
     this.addEventListener('submit-websocket-url', this.submitWebsocketUrlEventListener)
     this.addEventListener('submit-webrtc-url', this.submitWebrtcUrlEventListener)
     this.globalEventTarget.addEventListener('yjs-providers-data', this.providersEventListener)
+    this.globalEventTarget.addEventListener('yjs-providers-change', this.providersChangeEventListener)
     this.globalEventTarget.addEventListener('provider-dialog-show-event', this.providerDialogShowEventEventListener)
     this.section.addEventListener('click', this.openDialog)
     self.addEventListener('online', this.onlineEventListener)
@@ -105,6 +110,7 @@ export default class Providers extends Shadow() {
     this.removeEventListener('submit-websocket-url', this.submitWebsocketUrlEventListener)
     this.removeEventListener('submit-webrtc-url', this.submitWebrtcUrlEventListener)
     this.globalEventTarget.removeEventListener('yjs-providers-data', this.providersEventListener)
+    this.globalEventTarget.removeEventListener('yjs-providers-change', this.providersChangeEventListener)
     this.globalEventTarget.removeEventListener('provider-dialog-show-event', this.providerDialogShowEventEventListener)
     this.section.removeEventListener('click', this.openDialog)
     self.removeEventListener('online', this.onlineEventListener)
@@ -237,9 +243,9 @@ export default class Providers extends Shadow() {
     ])
   }
 
-  renderData (data) {
-    Providers.renderSectionText(this.section, data, this.hasAttribute('online'))
-    Providers.renderProvidersList(this.providersDiv, data)
+  renderData (data, force) {
+    Providers.renderSectionText(this.section, data, this.hasAttribute('online'), force)
+    Providers.renderProvidersList(this.providersDiv, data, force)
     // TODO: Below only reproduces the old behavior
     new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-providers', {
       detail: {
@@ -269,19 +275,21 @@ export default class Providers extends Shadow() {
     })
   }
 
-  static async renderSectionText (section, data, online) {
+  static async renderSectionText (section, data, online, force) {
+    console.log('****renderSectionText providers data*****', data)
     section.innerHTML = /* html */`
-      ${online
-        ? (await data.getSessionProvidersByStatus()).connected.length
-          ? '<wct-icon-mdx title="Network providers connected" style="color:var(--color-green-full)" icon-url="../../../../../../img/icons/network.svg" size="2em"></wct-icon-mdx>'
-          : '<wct-icon-mdx title="No connection to Network providers" style="color:var(--color-error)" icon-url="../../../../../../img/icons/network-off.svg" size="2em"></wct-icon-mdx>'
-        : '<wct-icon-mdx title="You are offline!" style="color:var(--color-error)" icon-url="../../../../../../img/icons/network-off.svg" size="2em"></wct-icon-mdx>'
+      ${(await data.getSessionProvidersByStatus(force)).connected.length
+        ? '<wct-icon-mdx title="Network providers connected" style="color:var(--color-green-full)" icon-url="../../../../../../img/icons/network.svg" size="2em"></wct-icon-mdx>'
+        : online
+          ? '<wct-icon-mdx title="No connection to Network providers" style="color:var(--color-error)" icon-url="../../../../../../img/icons/network-off.svg" size="2em"></wct-icon-mdx>'
+          : '<wct-icon-mdx title="You are offline!" style="color:var(--color-error)" icon-url="../../../../../../img/icons/network-off.svg" size="2em"></wct-icon-mdx>'
       }
       <a-loading namespace="loading-default-" size="1.5"></a-loading>
     `
   }
 
-  static async renderProvidersList (div, data) {
+  static async renderProvidersList (div, data, force) {
+    // TODO: getData() flag getWebsocketInfo = false in certain use cases
     console.log('***renderProvidersList******', div, data)
   }
 
