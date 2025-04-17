@@ -474,11 +474,11 @@ export default class Users extends Shadow() {
   static renderSummaryText (summary, data, online) {
     summary.innerHTML = /* html */`
       <a-loading namespace="loading-default-" size="0.75"></a-loading> ${
-        data.usersConnectedWithSelf.size > 1
-          ? `<span style="color:var(--color-green-full)">You are connected to ${data.usersConnectedWithSelf.size - 1} ${data.usersConnectedWithSelf.size === 2 ? 'User' : 'Users'}</span>`
-          : online
-            ? 'You are alone!'
-            : '<span style="color:var(--color-error)">You are offline!</span>'
+        online
+          ? data.usersConnectedWithSelf.size > 1
+            ? `<span style="color:var(--color-green-full)">You are connected to ${data.usersConnectedWithSelf.size - 1} ${data.usersConnectedWithSelf.size === 2 ? 'User' : 'Users'}</span>`
+            : 'You are alone!'
+          : '<span style="color:var(--color-error)">You are offline!</span>'
       }
     `
   }

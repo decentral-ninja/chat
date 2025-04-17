@@ -50,9 +50,10 @@ export default class Providers extends Shadow() {
     this.submitWebsocketUrlEventListener = event => {
       event.stopPropagation()
       let input
-      if (this.providersDivGrids.find(grid => (input = grid.root.querySelector('[inputId="websocket-url"]')?.inputField))) {
+      if ((input = this.websocketInput)) {
         this.dispatchEvent(new CustomEvent('yjs-update-providers', {
           detail: {
+            // @ts-ignore
             websocketUrl: input.value
           },
           bubbles: true,
@@ -64,9 +65,10 @@ export default class Providers extends Shadow() {
     this.submitWebrtcUrlEventListener = event => {
       event.stopPropagation()
       let input
-      if (this.providersDivGrids.find(grid => (input = grid.root.querySelector('[inputId="webrtc-url"]')?.inputField))) {
+      if ((input = this.webrtcInput)) {
         this.dispatchEvent(new CustomEvent('yjs-update-providers', {
           detail: {
+            // @ts-ignore
             webrtcUrl: input.value
           },
           bubbles: true,
@@ -203,7 +205,24 @@ export default class Providers extends Shadow() {
           <wct-menu-icon id="close" no-aria class="open sticky" namespace="menu-icon-close-" no-click></wct-menu-icon>
           <h4>Provider Data:</h4>
           <p id="offline">You are offline!</p>
-          <div id=providers></div>
+          <div id=providers>
+            <!-- TODO: ******************************* Below only reproduces the old behavior ******************************* -->
+            <h4 class=left>websocketUrls:</h4>
+            <wct-grid auto-fill="20%">
+              <section>
+                <wct-input grid-column="1/5" inputId="websocket-url" value="" placeholder='websocketUrls separated with a "," and no spaces in between' namespace="wct-input-" namespace-fallback submit-search="submit-websocket-url" force></wct-input>
+                <wct-button namespace="button-primary-" request-event-name="submit-websocket-url" click-no-toggle-active>set</wct-button>
+              </section>
+            </wct-grid>
+            <hr>
+            <h4 class=left>webrtcUrls:</h4>
+            <wct-grid auto-fill="20%">
+              <section>
+                <wct-input grid-column="1/5" inputId="webrtc-url" value="" placeholder='webrtcUrls separated with a "," and no spaces in between' namespace="wct-input-" namespace-fallback submit-search="submit-webrtc-url" force></wct-input>
+                <wct-button namespace="button-primary-" request-event-name="submit-webrtc-url" click-no-toggle-active>set</wct-button>
+              </section>
+            </wct-grid>
+          </div>
         </dialog>
       </wct-dialog>
     `
@@ -246,7 +265,7 @@ export default class Providers extends Shadow() {
   renderData (data, force) {
     Providers.renderSectionText(this.section, data, this.hasAttribute('online'), force)
     Providers.renderProvidersList(this.providersDiv, data, force)
-    // TODO: Below only reproduces the old behavior
+    // TODO: ******************************* Below only reproduces the old behavior *******************************
     new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-providers', {
       detail: {
         resolve
@@ -255,42 +274,76 @@ export default class Providers extends Shadow() {
       cancelable: true,
       composed: true
     }))).then(async ({ websocketUrl, webrtcUrl }) => {
-      this.providersDiv.innerHTML = /* html */`
-        <h4 class=left>websocketUrls:</h4>
-        <wct-grid auto-fill="20%">
-          <section>
-            <wct-input grid-column="1/5" inputId="websocket-url" value="${websocketUrl || ''}" placeholder='websocketUrls separated with a "," and no spaces in between' namespace="wct-input-" namespace-fallback submit-search="submit-websocket-url" autofocus force></wct-input>
-            <wct-button namespace="button-primary-" request-event-name="submit-websocket-url" click-no-toggle-active>set</wct-button>
-          </section>
-        </wct-grid>
-        <hr>
-        <h4 class=left>webrtcUrls:</h4>
-        <wct-grid auto-fill="20%">
-          <section>
-            <wct-input grid-column="1/5" inputId="webrtc-url" value="${webrtcUrl || ''}" placeholder='webrtcUrls separated with a "," and no spaces in between' namespace="wct-input-" namespace-fallback submit-search="submit-webrtc-url" autofocus force></wct-input>
-            <wct-button namespace="button-primary-" request-event-name="submit-webrtc-url" click-no-toggle-active>set</wct-button>
-          </section>
-        </wct-grid>
-      `
+      /** @type {HTMLInputElement | any} */
+      let websocketInput
+      if ((websocketInput = this.websocketInput) && websocketUrl !== websocketInput.value && !websocketInput.matches(':focus')) websocketInput.value = websocketUrl
+      /** @type {HTMLInputElement | any} */
+      let webrtcInput
+      if ((webrtcInput = this.webrtcInput) && webrtcUrl !== webrtcInput.value && !webrtcInput.matches(':focus')) webrtcInput.value = webrtcUrl
     })
   }
 
   static async renderSectionText (section, data, online, force) {
-    console.log('****renderSectionText providers data*****', data)
     section.innerHTML = /* html */`
-      ${(await data.getSessionProvidersByStatus(force)).connected.length
-        ? '<wct-icon-mdx title="Network providers connected" style="color:var(--color-green-full)" icon-url="../../../../../../img/icons/network.svg" size="2em"></wct-icon-mdx>'
-        : online
-          ? '<wct-icon-mdx title="No connection to Network providers" style="color:var(--color-error)" icon-url="../../../../../../img/icons/network-off.svg" size="2em"></wct-icon-mdx>'
-          : '<wct-icon-mdx title="You are offline!" style="color:var(--color-error)" icon-url="../../../../../../img/icons/network-off.svg" size="2em"></wct-icon-mdx>'
+      ${online
+        ? (await data.getSessionProvidersByStatus(force)).connected.length
+          ? '<wct-icon-mdx title="Network providers connected" style="color:var(--color-green-full)" icon-url="../../../../../../img/icons/network.svg" size="2em"></wct-icon-mdx>'
+          : '<wct-icon-mdx title="No connection to Network providers" style="color:var(--color-error)" icon-url="../../../../../../img/icons/network-off.svg" size="2em"></wct-icon-mdx>'
+        : '<wct-icon-mdx title="You are offline!" style="color:var(--color-error)" icon-url="../../../../../../img/icons/network-off.svg" size="2em"></wct-icon-mdx>'
       }
       <a-loading namespace="loading-default-" size="1.5"></a-loading>
     `
   }
 
   static async renderProvidersList (div, data, force) {
-    // TODO: getData() flag getWebsocketInfo = false in certain use cases
-    console.log('***renderProvidersList******', div, data)
+    const providers = new Map()
+    // important, keep order not that less information overwrites the more precise information at mergeProvider
+    Providers.fillProvidersWithAllProviders(providers, data.allProviders)
+    // TODO: get providers from storage, which once were connected
+    Providers.fillProvidersWithSessionProvidersByStatus(providers, await data.getSessionProvidersByStatus(force), data.separator)
+    // TODO: data.getWebsocketInfo (don't overwrite any providers with the urls received here)
+    // TODO: make a nice interface/types for providers map
+    console.log('***renderProvidersList******', providers)
+  }
+
+  static fillProvidersWithSessionProvidersByStatus (providers, data, separator) {
+    for (const key in data) {
+      data[key].forEach(url => {
+        const [name, realUrl] = url.split(separator)
+        url = new URL(realUrl)
+        providers.set(url.hostname, Providers.mergeProvider(providers.get(url.hostname), {
+          name,
+          status: key,
+          urls: new Map([[url.origin, url]]),
+          origins: ['session']
+        }))
+      })
+    }
+    return providers
+  }
+
+  static fillProvidersWithAllProviders (providers, data) {
+    Array.from(data).forEach(([name, providersMap]) => Array.from(providersMap).forEach(([url, users]) => {
+      try {
+        url = new URL(url)
+      } catch (error) {
+        url = { hostname: url }
+      }
+      providers.set(url.hostname, Providers.mergeProvider(providers.get(url.hostname), {
+        name,
+        urls: new Map([[url.origin, url]]),
+        origins: ['crdt']
+      }))
+    }))
+    return providers
+  }
+
+  static mergeProvider (providerA, providerB) {
+    if (!providerA) return providerB
+    const providerNew = {}
+    providerNew.urls = new Map(Array.from(providerA.urls).concat(Array.from(providerB.urls)))
+    providerNew.origins = providerA.origins.concat(providerB.origins)
+    return Object.assign(providerA, providerB, providerNew)
   }
 
   get section () {
@@ -311,6 +364,18 @@ export default class Providers extends Shadow() {
 
   get providersDivGrids () {
     return Array.from(this.providersDiv.querySelectorAll('wct-grid'))
+  }
+
+  get websocketInput () {
+    let input = null
+    this.providersDivGrids.find(grid => (input = grid.root.querySelector('[inputId="websocket-url"]')?.inputField))
+    return input
+  }
+
+  get webrtcInput () {
+    let input = null
+    this.providersDivGrids.find(grid => (input = grid.root.querySelector('[inputId="webrtc-url"]')?.inputField))
+    return input
   }
 
   isDialogOpen () {
