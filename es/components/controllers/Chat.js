@@ -158,7 +158,7 @@ export const Chat = (ChosenHTMLElement = WebWorker()) => class Chat extends Chos
 
     this.getChatEventDetailEventListener = event => {
       if (event && event.detail && event.detail.resolve) return event.detail.resolve(this.chatEventDetail)
-      this.dispatchEvent(new CustomEvent(`yjs-chat-event-detail`, {
+      this.dispatchEvent(new CustomEvent('yjs-chat-event-detail', {
         /** @type {Promise<ChatEventDetail>} */
         detail: this.chatEventDetail,
         bubbles: true,
@@ -217,7 +217,7 @@ export const Chat = (ChosenHTMLElement = WebWorker()) => class Chat extends Chos
     this.addEventListener('chat-add', this.chatAddEventListener)
     this.addEventListener('chat-delete', this.chatDeleteEventListener)
     this.addEventListener('chat-get-text-obj', this.getTextObjEventListener)
-    this.addEventListener(`yjs-get-chat-event-detail`, this.getChatEventDetailEventListener)
+    this.addEventListener('yjs-get-chat-event-detail', this.getChatEventDetailEventListener)
     this.globalEventTarget.addEventListener('yjs-users', this.usersEventListener)
     this.globalEventTarget.addEventListener('yjs-chat-observe', this.chatObserveEventListener)
     this.globalEventTarget.addEventListener('yjs-nickname', this.nicknameEventListener)

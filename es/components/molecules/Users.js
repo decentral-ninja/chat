@@ -257,12 +257,21 @@ export default class Users extends Shadow() {
             margin: 0;
             transition: padding 0.05s ease-out;
           }
-          :host ol > li.active > * {
-            --box-shadow-default: var(--box-shadow-length-one) var(--box-shadow-color), var(--box-shadow-length-two) var(--box-shadow-color);
+          :host ol > li:where([self], .active) > * {
+            --color: var(--background-color);
+            --a-color: var(--background-color);
+            --h2-color: var(--background-color);
+            --h3-color: var(--background-color);
             --h4-color: var(--background-color);
+            --box-shadow-default: var(--box-shadow-length-one) var(--box-shadow-color), var(--box-shadow-length-two) var(--box-shadow-color);
             color: var(--background-color);
-            background-color: var(--background-color-rgba-50);
             border-radius: var(--border-radius);
+          }
+          :host ol > li[self] > * {
+            background-color: var(--background-color-rgba-50);
+          }
+          :host ol > li.active > * {
+            background-color: var(--color-active);
           }
           :host ol > li > div {
             height: 100%;
@@ -274,6 +283,31 @@ export default class Users extends Shadow() {
           }
           :host ol > li > div > table > tbody > tr {
             display: contents;
+          }
+          :host ol > li:where(.updated, .outdated) > div > table > tbody > tr.time-status {
+            padding-bottom: var(--h-margin-bottom, 1em);
+          }
+          :host ol > li:where(.updated, .outdated) > div > table > tbody > tr.time-status > td {
+            font-style: italic;
+            margin-bottom: var(--h-margin-bottom, 1em);
+          }
+          :host ol > li:not(.active, [self]).updated > div > h2 {
+            border-bottom: 1px solid var(--color-green-full);
+          }
+          :host ol > li:not(.active, [self]).updated > div > table > tbody > tr.time-status > td.time-status-icons {
+            --color: var(--color-green-full);
+          }
+          :host ol > li.updated > div > table > tbody > tr.time-status > td {
+            border-bottom: 1px dotted var(--color-green-full);
+          }
+          :host ol > li:not(.active, [self]).outdated > div > h2 {
+            border-bottom: 1px solid var(--color-error);
+          }
+          :host ol > li:not(.active, [self]).outdated > div > table > tbody > tr.time-status > td.time-status-icons {
+            --color: var(--color-error);
+          }
+          :host ol > li.outdated > div > table > tbody > tr.time-status > td {
+            border-bottom: 1px dotted var(--color-error);
           }
           :host ol > li > div > table > tbody > tr > td {
             overflow-wrap: anywhere;
@@ -440,8 +474,17 @@ export default class Users extends Shadow() {
   async renderData (data, separator) {
     Users.renderSummaryText(this.summary, data, this.hasAttribute('online'))
     Users.renderP2pGraph(this.usersGraph, data.usersConnectedWithSelf, separator, this.getAttribute('active'))
-    await Users.renderUserTableList(this.usersOl, data.usersConnectedWithSelf, data.allUsers, separator, this.getAttribute('active'))
-    await Users.renderUserTableList(this.allUsersOl, new Map(Array.from(data.allUsers).filter(([key, user]) => !data.usersConnectedWithSelf.get(key)).sort((a, b) => JSON.parse(b[1].awarenessEpoch || b[1].epoch).epoch - JSON.parse(a[1].awarenessEpoch || a[1].epoch).epoch)), data.allUsers, separator, this.getAttribute('active'))
+    // get the timestamp of the newest message
+    const newestMessage = (await new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-chat-event-detail', {
+      detail: {
+        resolve
+      },
+      bubbles: true,
+      cancelable: true,
+      composed: true
+    }))).then(chatEventDetail => chatEventDetail.getAll()).then(textObjs => textObjs.sort((a, b) => a.timestamp - b.timestamp).slice(-1)[0]))
+    await Users.renderUserTableList(this.usersOl, data.usersConnectedWithSelf, data.allUsers, newestMessage, true, this.getAttribute('active'))
+    await Users.renderUserTableList(this.allUsersOl, new Map(Array.from(data.allUsers).filter(([key, user]) => !data.usersConnectedWithSelf.get(key)).sort((a, b) => JSON.parse(b[1].awarenessEpoch || b[1].epoch).epoch - JSON.parse(a[1].awarenessEpoch || a[1].epoch).epoch)), data.allUsers, newestMessage, false, this.getAttribute('active'))
   }
 
   setActive (uid, ol, active = true, scroll = true) {
@@ -491,12 +534,13 @@ export default class Users extends Shadow() {
     `
   }
 
-  static async renderUserTableList (ol, users, allUsers, newestMessageTimestamp, activeUid) {
+  static async renderUserTableList (ol, users, allUsers, newestMessage, areConnectedUsers, activeUid) {
+    let isUpToDate
     ol.innerHTML = await Array.from(users).reduce(async (acc, [key, user]) => /* html */`
       ${await acc}
       <wct-load-template-tag uid='${user.uid}'${activeUid === user.uid ? ' class=active' : ''} no-css copy-class-list>
         <template>
-          <li uid='${user.uid}'${user.isSelf ? ' self': ''} style="--box-shadow-color: ${(await getHexColor(user.uid))};border-color: ${(await getHexColor(user.uid))};">
+          <li uid='${user.uid}'${user.isSelf ? ' self': ''} class="${(isUpToDate = areConnectedUsers || user.uid === newestMessage.uid || JSON.parse(user.awarenessEpoch || user.epoch).epoch >= newestMessage.timestamp) ? 'updated' : 'outdated'}" style="--box-shadow-color: ${(await getHexColor(user.uid))};border-color: ${(await getHexColor(user.uid))};">
             <div>
               <h2>
                 <span>${user.nickname || 'none'}</span>
@@ -507,6 +551,21 @@ export default class Users extends Shadow() {
               </h2>
               <table>
                 <tbody>
+                  ${user.isSelf
+                    ? ''
+                    : /* html */`
+                      <tr class="time-status">
+                        <td>${isUpToDate
+                          ? 'is up to date:'
+                          : 'is outdated:'
+                        }</td>
+                        <td class="time-status-icons">${isUpToDate
+                          ? '<wct-icon-mdx title="is up to date" no-hover icon-url="../../../../../../img/icons/message-check.svg" size="1.5em"></wct-icon-mdx>'
+                          : '<wct-icon-mdx title="is outdated" no-hover icon-url="../../../../../../img/icons/message-x.svg" size="1.5em"></wct-icon-mdx>'
+                        }</td>
+                      </tr>
+                    `
+                  }
                   ${Object.keys(user).reduce((acc, key) => {
                     const ignoredKeys = ['connectedUsers', 'connectedUsersCount', 'mutuallyConnectedUsersCount', 'sessionEpoch', 'isSelf']
                     if (user.awarenessEpoch) ignoredKeys.push('epoch') // backward compatible to old chats/user, which did not have awarenessEpoch, then just use epoch
@@ -577,19 +636,19 @@ export default class Users extends Shadow() {
   }
 
   isDialogOpen () {
-    return this.dialog.root.querySelector('dialog[open]')
+    return this.dialog?.root?.querySelector('dialog[open]')
   }
 
   get usersGraph () {
-    return this.dialog.root.querySelector('#users-graph')
+    return this.dialog?.root.querySelector('#users-graph')
   }
 
   get usersOl () {
-    return this.dialog.root.querySelector('#users')
+    return this.dialog?.root.querySelector('#users')
   }
 
   get allUsersOl () {
-    return this.dialog.root.querySelector('#all-users')
+    return this.dialog?.root.querySelector('#all-users')
   }
 
   get globalEventTarget () {

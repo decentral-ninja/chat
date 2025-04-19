@@ -77,6 +77,12 @@ export default class Chat extends Shadow() {
                 this.ul.prepend(div.children[0])
               }
             }
+            // update awareness timestamp when message is written
+            if (!isUlEmpty && wasLastMessage) this.dispatchEvent(new CustomEvent('yjs-update-awareness-epoch', {
+              bubbles: true,
+              cancelable: true,
+              composed: true
+            }))
           }
           // scroll behavior
           if (wasLastMessage) {
