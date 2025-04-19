@@ -426,7 +426,7 @@ export default class Users extends Shadow() {
       bubbles: true,
       cancelable: true,
       composed: true
-    }))).then(({nickname, randomNickname}) => (this.html = /* html */`<chat-m-nick-name-dialog ${randomNickname ? 'open ': ''}namespace="dialog-top-slide-in-" show-event-name="open-nickname" nickname="${nickname}"></chat-m-nick-name-dialog>`))
+    }))).then(({ nickname, randomNickname }) => (this.html = /* html */`<chat-m-nick-name-dialog ${randomNickname ? 'open ' : ''}namespace="dialog-top-slide-in-" show-event-name="open-nickname" nickname="${nickname}"></chat-m-nick-name-dialog>`))
     return this.fetchModules([
       {
         // @ts-ignore
@@ -540,7 +540,7 @@ export default class Users extends Shadow() {
       ${await acc}
       <wct-load-template-tag uid='${user.uid}'${activeUid === user.uid ? ' class=active' : ''} no-css copy-class-list>
         <template>
-          <li uid='${user.uid}'${user.isSelf ? ' self': ''} class="${(isUpToDate = areConnectedUsers || user.uid === newestMessage.uid || JSON.parse(user.awarenessEpoch || user.epoch).epoch >= newestMessage.timestamp) ? 'updated' : 'outdated'}" style="--box-shadow-color: ${(await getHexColor(user.uid))};border-color: ${(await getHexColor(user.uid))};">
+          <li uid='${user.uid}'${user.isSelf ? ' self' : ''} class="${(isUpToDate = areConnectedUsers || user.uid === newestMessage.uid || JSON.parse(user.awarenessEpoch || user.epoch).epoch >= newestMessage.timestamp) ? 'updated' : 'outdated' /* eslint-disable-line */}" style="--box-shadow-color: ${(await getHexColor(user.uid))};border-color: ${(await getHexColor(user.uid))};">
             <div>
               <h2>
                 <span>${user.nickname || 'none'}</span>
@@ -572,7 +572,7 @@ export default class Users extends Shadow() {
                     if (ignoredKeys.includes(key)) return acc
                     return /* html */`
                       ${['localEpoch', 'awarenessEpoch', 'nickname'].includes(key) ? '' : acc}
-                      <tr ${key === 'nickname' ? 'class=nickname': ''}>
+                      <tr ${key === 'nickname' ? 'class=nickname' : ''}>
                         <td>${key === 'nickname'
                           ? user.isSelf
                             ? 'Your nickname:'
@@ -616,7 +616,7 @@ export default class Users extends Shadow() {
           </li>
         </template>
       </wct-load-template-tag>
-    `,'')
+    `, '')
   }
 
   get details () {

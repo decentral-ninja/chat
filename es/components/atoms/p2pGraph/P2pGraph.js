@@ -166,15 +166,17 @@ export default class P2pGraph extends Shadow() {
     graph.add(obj)
     obj = { ...obj, ...graph.list().slice(-1)[0], svgNode: Array.from(svg.querySelectorAll('g')).slice(-1)[0] /* The following does not work until the graph stops moving, so we grab the last entry in the svg: // svg.querySelector(`[cx="${obj.x}"]`) */ }
     let circle
-    if ((circle = obj.svgNode.querySelector('circle'))) getHexColor(obj.id).then(hex => {
-      const hexClass = `hex-${hex.substring(1)}`
-      circle.classList.add(hexClass)
-      this.css = /* css */`
+    if ((circle = obj.svgNode.querySelector('circle'))) {
+      getHexColor(obj.id).then(hex => {
+        const hexClass = `hex-${hex.substring(1)}`
+        circle.classList.add(hexClass)
+        this.css = /* css */`
         :host > div > svg .node > circle.${hexClass} {
           fill: ${hex} !important;
         }
       `
-    })
+      })
+    }
     return obj
   }
 

@@ -78,11 +78,13 @@ export default class Chat extends Shadow() {
               }
             }
             // update awareness timestamp when message is written
-            if (!isUlEmpty && wasLastMessage) this.dispatchEvent(new CustomEvent('yjs-update-awareness-epoch', {
-              bubbles: true,
-              cancelable: true,
-              composed: true
-            }))
+            if (!isUlEmpty && wasLastMessage) {
+              this.dispatchEvent(new CustomEvent('yjs-update-awareness-epoch', {
+                bubbles: true,
+                cancelable: true,
+                composed: true
+              }))
+            }
           }
           // scroll behavior
           if (wasLastMessage) {
@@ -149,16 +151,16 @@ export default class Chat extends Shadow() {
           let ulChildrenArr = []
           // avoid saving scrollEl on first time intersection of message after connect, since the initial event does not grab the most top message
           if ((ulChildrenArr = Array.from(this.ul.children)) && (ulChildrenArr = ulChildrenArr.splice(ulChildrenArr.indexOf(event.detail.target)))) {
-            let scrollEl = this.ul.lastElementChild.hasAttribute('intersecting')
+            const scrollEl = this.ul.lastElementChild.hasAttribute('intersecting')
               ? this.ul.lastElementChild.getAttribute('timestamp')
-              : (await new Promise(async resolve => {
+              : (await new Promise(async resolve => { // eslint-disable-line
                 // if scrolled to bottom send last message as ref to storage
-                const mainScrollElDetail = await this.getMainScrollElDetail()
-                setTimeout(() => resolve(mainScrollElDetail.isScrolledBottom()), mainScrollElDetail.scrollTimer)
-              }))
-              ? this.ul.lastElementChild.getAttribute('timestamp')
-              // topBorder + 50 is for making sure that not only the bottom of the message is seen but 50px parts of it
-              : ulChildrenArr.find(child => child.getBoundingClientRect().bottom > topBorder + 50)?.getAttribute('timestamp') || event.detail.scrollEl
+                  const mainScrollElDetail = await this.getMainScrollElDetail()
+                  setTimeout(() => resolve(mainScrollElDetail.isScrolledBottom()), mainScrollElDetail.scrollTimer)
+                }))
+                  ? this.ul.lastElementChild.getAttribute('timestamp')
+                // topBorder + 50 is for making sure that not only the bottom of the message is seen but 50px parts of it
+                  : ulChildrenArr.find(child => child.getBoundingClientRect().bottom > topBorder + 50)?.getAttribute('timestamp') || event.detail.scrollEl
             this.dispatchEvent(new CustomEvent('yjs-merge-active-room', {
               detail: { scrollEl },
               bubbles: true,

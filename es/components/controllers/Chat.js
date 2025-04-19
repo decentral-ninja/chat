@@ -197,7 +197,7 @@ export const Chat = (ChosenHTMLElement = WebWorker()) => class Chat extends Chos
     /** @type {(any)=>void} */
     this.nicknameResolve = map => map
     /** @type {Promise<string>} */
-    this.nickname = new Promise(resolve => (this.nicknameResolve = resolve)).then(({nickname}) => nickname)
+    this.nickname = new Promise(resolve => (this.nicknameResolve = resolve)).then(({ nickname }) => nickname)
 
     /** @type {(any)=>void} */
     this.usersDataResolve = map => map
@@ -251,7 +251,7 @@ export const Chat = (ChosenHTMLElement = WebWorker()) => class Chat extends Chos
     this.removeEventListener('chat-add', this.chatAddEventListener)
     this.removeEventListener('chat-delete', this.chatDeleteEventListener)
     this.removeEventListener('chat-get-text-obj', this.getTextObjEventListener)
-    this.removeEventListener(`yjs-get-chat-event-detail`, this.getChatEventDetailEventListener)
+    this.removeEventListener('yjs-get-chat-event-detail', this.getChatEventDetailEventListener)
     this.globalEventTarget.removeEventListener('yjs-users', this.usersEventListener)
     this.globalEventTarget.removeEventListener('yjs-chat-observe', this.chatObserveEventListener)
     this.globalEventTarget.removeEventListener('yjs-nickname', this.nicknameEventListener)

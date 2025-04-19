@@ -1,6 +1,7 @@
 // @ts-check
 import { Shadow } from '../../../../event-driven-web-components-prototypes/src/Shadow.js'
 
+/* global Environment */
 /* global self */
 
 /**
@@ -31,9 +32,9 @@ export default class Providers extends Shadow() {
         // @ts-ignore
       }, this.isDialogOpen() ? 200 : self.Environment.awarenessEventListenerDelay)
     }
-    
+
     this.providersChangeEventListener = event => {
-      if (lastProvidersEventGetData) this.providersEventListener({detail: { getData: lastProvidersEventGetData}}, true)
+      if (lastProvidersEventGetData) this.providersEventListener({ detail: { getData: lastProvidersEventGetData } }, true)
     }
 
     this.openDialog = async event => {

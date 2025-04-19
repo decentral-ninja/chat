@@ -41,7 +41,7 @@ export default class NickNameDialog extends SetStringDialog {
     /** @type {(any)=>void} */
     this.nicknameResolve = map => map
     /** @type { Promise<string> } */
-    this.nickname = new Promise(resolve => (this.nicknameResolve = resolve)).then(({nickname}) => nickname)
+    this.nickname = new Promise(resolve => (this.nicknameResolve = resolve)).then(({ nickname }) => nickname)
   }
 
   connectedCallback () {
