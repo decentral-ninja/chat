@@ -527,6 +527,7 @@ export default class Users extends Shadow() {
   }
 
   static renderP2pGraph (graph, data, separator, activeUid) {
+    // TODO: Proper update diffing logic, only render the graph when having changes, to avoid jumping on multiple updates
     graph.innerHTML = /* html */`
       <chat-a-p2p-graph separator="${separator || ''}"${activeUid ? ` active='${activeUid}'` : ''}>
         <template>${JSON.stringify(Array.isArray(data) ? data : Array.from(data))}</template>
@@ -536,6 +537,7 @@ export default class Users extends Shadow() {
 
   static async renderUserTableList (ol, users, allUsers, newestMessage, areConnectedUsers, activeUid) {
     let isUpToDate
+    // TODO: Proper update diffing logic, only render the users which have changes, to avoid blitz on multiple updates
     ol.innerHTML = await Array.from(users).reduce(async (acc, [key, user]) => /* html */`
       ${await acc}
       <wct-load-template-tag uid='${user.uid}'${activeUid === user.uid ? ' class=active' : ''} no-css copy-class-list>
