@@ -18,15 +18,15 @@ export default class Providers extends Shadow() {
 
     let lastProvidersEventGetData = null
     let timeoutId = null
-    this.providersEventListener = (event, force) => {
+    this.providersEventListener = event => {
       lastProvidersEventGetData = event.detail.getData
       this.setAttribute('updating', '')
       clearTimeout(timeoutId)
       timeoutId = setTimeout(async () => {
         if (this.isDialogOpen()) {
-          this.renderData(await event.detail.getData(), force)
+          this.renderData(await event.detail.getData())
         } else {
-          Providers.renderSectionText(this.section, await event.detail.getData(), this.hasAttribute('online'), force)
+          Providers.renderSectionText(this.section, await event.detail.getData(), this.hasAttribute('online'))
         }
         this.removeAttribute('updating')
         // @ts-ignore
@@ -34,7 +34,7 @@ export default class Providers extends Shadow() {
     }
 
     this.providersChangeEventListener = event => {
-      if (lastProvidersEventGetData) this.providersEventListener({ detail: { getData: lastProvidersEventGetData } }, true)
+      if (lastProvidersEventGetData) this.providersEventListener({ detail: { getData: lastProvidersEventGetData } })
     }
 
     this.openDialog = async event => {
@@ -263,9 +263,9 @@ export default class Providers extends Shadow() {
     ])
   }
 
-  renderData (data, force) {
-    Providers.renderSectionText(this.section, data, this.hasAttribute('online'), force)
-    Providers.renderProvidersList(this.providersDiv, data, force)
+  renderData (data) {
+    Providers.renderSectionText(this.section, data, this.hasAttribute('online'))
+    Providers.renderProvidersList(this.providersDiv, data)
     // TODO: ******************************* Below only reproduces the old behavior *******************************
     new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-providers', {
       detail: {
@@ -284,10 +284,10 @@ export default class Providers extends Shadow() {
     })
   }
 
-  static async renderSectionText (section, data, online, force) {
+  static async renderSectionText (section, data, online) {
     section.innerHTML = /* html */`
       ${online
-        ? (await data.getSessionProvidersByStatus(force)).connected.length
+        ? (await data.getSessionProvidersByStatus()).connected.length
           ? '<wct-icon-mdx title="Network providers connected" style="color:var(--color-green-full)" icon-url="../../../../../../img/icons/network.svg" size="2em"></wct-icon-mdx>'
           : '<wct-icon-mdx title="No connection to Network providers" style="color:var(--color-error)" icon-url="../../../../../../img/icons/network-off.svg" size="2em"></wct-icon-mdx>'
         : '<wct-icon-mdx title="You are offline!" style="color:var(--color-error)" icon-url="../../../../../../img/icons/network-off.svg" size="2em"></wct-icon-mdx>'
@@ -296,15 +296,15 @@ export default class Providers extends Shadow() {
     `
   }
 
-  static async renderProvidersList (div, data, force) {
+  static async renderProvidersList (div, data) {
     const providers = new Map()
     // important, keep order not that less information overwrites the more precise information at mergeProvider
     Providers.fillProvidersWithAllProviders(providers, data.allProviders)
     // TODO: get providers from storage, which once were connected
-    Providers.fillProvidersWithSessionProvidersByStatus(providers, await data.getSessionProvidersByStatus(force), data.separator)
+    Providers.fillProvidersWithSessionProvidersByStatus(providers, await data.getSessionProvidersByStatus(data.separator), data.separator)
     // TODO: data.getWebsocketInfo (don't overwrite any providers with the urls received here)
     // TODO: make a nice interface/types for providers map
-    console.log('***renderProvidersList******', providers)
+    console.log('***renderProvidersList******', {data, providers})
   }
 
   static fillProvidersWithSessionProvidersByStatus (providers, data, separator) {
