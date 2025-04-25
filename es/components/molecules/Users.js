@@ -595,6 +595,7 @@ export default class Users extends Shadow() {
                             ${Array.isArray(user[key][providerName])
                               ? user[key][providerName].reduce((acc, mutuallyConnectedUser) => {
                                   const fullUser = allUsers.get(mutuallyConnectedUser.uid)
+                                  // TODO: Connected users through multiple providers are listed multiple times for each provider
                                   return `${acc ? `${acc}, ` : acc}${fullUser ? `<chat-a-nick-name uid='${fullUser.uid}' nickname="${fullUser.nickname}"${fullUser.isSelf ? ' self' : ''}></chat-a-nick-name>` : ''}`
                                 }, '')
                               : 'none'
