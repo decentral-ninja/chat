@@ -299,12 +299,52 @@ export default class Providers extends Shadow() {
   static async renderProvidersList (div, data) {
     const providers = new Map()
     // important, keep order not that less information overwrites the more precise information at mergeProvider
-    Providers.fillProvidersWithAllProviders(providers, data.allProviders)
-    // TODO: get providers from storage, which once were connected
+    Providers.fillProvidersWithProvidersFromCrdt(providers, data.allProviders)
+    Providers.fillProvidersWithProvidersFromCrdt(providers, data.providers, 'once-established')
+    Providers.fillProvidersWithProvidersFromRooms(providers, await data.getProvidersFromRooms(), data.separator)
     Providers.fillProvidersWithSessionProvidersByStatus(providers, await data.getSessionProvidersByStatus(data.separator), data.separator)
-    // TODO: data.getWebsocketInfo (don't overwrite any providers with the urls received here)
     // TODO: make a nice interface/types for providers map
-    console.log('***renderProvidersList******', {data, providers})
+    // TODO: consider webworker for some static functions
+    // TODO: data.getWebsocketInfo & data.pingProvider
+    console.log('***renderProvidersList******', { data, providers })
+  }
+
+  static fillProvidersWithProvidersFromCrdt (providers, data, status = 'unknown') {
+    Array.from(data).forEach(([name, providersMap]) => Array.from(providersMap).forEach(([url, users]) => {
+      try {
+        url = new URL(url)
+      } catch (error) {
+        return providers
+      }
+      providers.set(url.hostname, Providers.mergeProvider(providers.get(url.hostname), {
+        status,
+        urls: new Map([[url.origin, { name, url }]]),
+        origins: ['crdt']
+      }))
+    }))
+    return providers
+  }
+
+  static fillProvidersWithProvidersFromRooms (providers, data, separator) {
+    Array.from(data).forEach(({ room, url, prop }) => {
+      let [name, realUrl] = url.split(separator)
+      // incase no separator is found (fallback for old room provider array)
+      if (!realUrl) {
+        realUrl = name
+        name = undefined
+      }
+      try {
+        url = new URL(realUrl)
+      } catch (error) {
+        return providers
+      }
+      providers.set(url.hostname, Providers.mergeProvider(providers.get(url.hostname), {
+        status: prop === 'providers' ? 'once-established' : 'unknown',
+        urls: new Map([[url.origin, { name, url }]]),
+        origins: [room]
+      }))
+    })
+    return providers
   }
 
   static fillProvidersWithSessionProvidersByStatus (providers, data, separator) {
@@ -313,9 +353,8 @@ export default class Providers extends Shadow() {
         const [name, realUrl] = url.split(separator)
         url = new URL(realUrl)
         providers.set(url.hostname, Providers.mergeProvider(providers.get(url.hostname), {
-          name,
           status: key,
-          urls: new Map([[url.origin, url]]),
+          urls: new Map([[url.origin, { name, url }]]),
           origins: ['session']
         }))
       })
@@ -323,27 +362,11 @@ export default class Providers extends Shadow() {
     return providers
   }
 
-  static fillProvidersWithAllProviders (providers, data) {
-    Array.from(data).forEach(([name, providersMap]) => Array.from(providersMap).forEach(([url, users]) => {
-      try {
-        url = new URL(url)
-      } catch (error) {
-        url = { hostname: url }
-      }
-      providers.set(url.hostname, Providers.mergeProvider(providers.get(url.hostname), {
-        name,
-        urls: new Map([[url.origin, url]]),
-        origins: ['crdt']
-      }))
-    }))
-    return providers
-  }
-
   static mergeProvider (providerA, providerB) {
     if (!providerA) return providerB
     const providerNew = {}
     providerNew.urls = new Map(Array.from(providerA.urls).concat(Array.from(providerB.urls)))
-    providerNew.origins = providerA.origins.concat(providerB.origins)
+    providerNew.origins = Array.from(new Set(providerA.origins.concat(providerB.origins)))
     return Object.assign(providerA, providerB, providerNew)
   }
 
