@@ -5,6 +5,20 @@ import { Shadow } from '../../../../event-driven-web-components-prototypes/src/S
 /* global self */
 
 /**
+ * Provider container for rendering
+ @typedef {
+  Map<string, {
+    origins: ['environment', 'crdt', 'session', string],
+    status: 'connected' | 'disconnected' | 'unknown' | 'default',
+    urls: Map<string, {
+      name: import("../../../../event-driven-web-components-yjs/src/es/EventDrivenYjs.js").ProviderNames,
+      url: URL
+    }>
+  }>
+ } ProvidersContainer
+*/
+
+/**
  * The providers view
  * TODO: display providers and also allow provider changes
  * TODO: keepAlive time
@@ -18,9 +32,9 @@ export default class Providers extends Shadow() {
 
     let lastProvidersEventGetData = null
     let timeoutId = null
-    this.providersEventListener = event => {
+    this.providersEventListener = (event, setUpdating = true) => {
       lastProvidersEventGetData = event.detail.getData
-      this.setAttribute('updating', '')
+      if (!setUpdating) this.setAttribute('updating', '')
       clearTimeout(timeoutId)
       timeoutId = setTimeout(async () => {
         if (this.isDialogOpen()) {
@@ -34,7 +48,7 @@ export default class Providers extends Shadow() {
     }
 
     this.providersChangeEventListener = event => {
-      if (lastProvidersEventGetData) this.providersEventListener({ detail: { getData: lastProvidersEventGetData } })
+      if (lastProvidersEventGetData) this.providersEventListener({ detail: { getData: lastProvidersEventGetData } }, false)
     }
 
     this.openDialog = async event => {
@@ -297,16 +311,30 @@ export default class Providers extends Shadow() {
   }
 
   static async renderProvidersList (div, data) {
+    /** @type {ProvidersContainer} */
     const providers = new Map()
     // important, keep order not that less information overwrites the more precise information at mergeProvider
     Providers.fillProvidersWithProvidersFromCrdt(providers, data.allProviders)
     Providers.fillProvidersWithProvidersFromCrdt(providers, data.providers, 'once-established')
     Providers.fillProvidersWithProvidersFromRooms(providers, await data.getProvidersFromRooms(), data.separator)
+    // @ts-ignore
+    Providers.fillProvidersWithProvidersFromEnvironment(providers, self.Environment)
     Providers.fillProvidersWithSessionProvidersByStatus(providers, await data.getSessionProvidersByStatus(data.separator), data.separator)
-    // TODO: make a nice interface/types for providers map
     // TODO: consider webworker for some static functions
     // TODO: data.getWebsocketInfo & data.pingProvider
     console.log('***renderProvidersList******', { data, providers })
+  }
+
+  static fillProvidersWithProvidersFromEnvironment (providers, data, status = 'default') {
+    data.providers.forEach(provider => {
+      const url = new URL(provider.url)
+      providers.set(url.hostname, Providers.mergeProvider(providers.get(url.hostname), {
+        status,
+        urls: new Map([[url.origin, { name: provider.name, url }]]),
+        origins: ['environment']
+      }))
+    })
+    return providers
   }
 
   static fillProvidersWithProvidersFromCrdt (providers, data, status = 'unknown') {
