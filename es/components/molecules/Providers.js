@@ -10,6 +10,7 @@ import { Shadow } from '../../../../event-driven-web-components-prototypes/src/S
   Map<string, {
     origins: ['environment', 'crdt', 'session', string],
     status: 'connected' | 'disconnected' | 'unknown' | 'default',
+    providerFallbacks: Map<string, string[]>,
     urls: Map<string, {
       name: import("../../../../event-driven-web-components-yjs/src/es/EventDrivenYjs.js").ProviderNames,
       url: URL
@@ -320,7 +321,6 @@ export default class Providers extends Shadow() {
     // @ts-ignore
     Providers.fillProvidersWithProvidersFromEnvironment(providers, self.Environment)
     Providers.fillProvidersWithSessionProvidersByStatus(providers, await data.getSessionProvidersByStatus(data.separator), data.separator)
-    // TODO: consider webworker for some static functions
     // TODO: data.getWebsocketInfo & data.pingProvider
     console.log('***renderProvidersList******', { data, providers })
   }
@@ -354,7 +354,7 @@ export default class Providers extends Shadow() {
   }
 
   static fillProvidersWithProvidersFromRooms (providers, data, separator) {
-    Array.from(data).forEach(({ room, url, prop }) => {
+    Array.from(data).forEach(({ room, url, prop, providerFallbacks }) => {
       let [name, realUrl] = url.split(separator)
       // incase no separator is found (fallback for old room provider array)
       if (!realUrl) {
@@ -369,7 +369,8 @@ export default class Providers extends Shadow() {
       providers.set(url.hostname, Providers.mergeProvider(providers.get(url.hostname), {
         status: prop === 'providers' ? 'once-established' : 'unknown',
         urls: new Map([[url.origin, { name, url }]]),
-        origins: [room]
+        origins: [room],
+        providerFallbacks: new Map(providerFallbacks[url.hostname]?.urls)
       }))
     })
     return providers
@@ -393,9 +394,33 @@ export default class Providers extends Shadow() {
   static mergeProvider (providerA, providerB) {
     if (!providerA) return providerB
     const providerNew = {}
-    providerNew.urls = new Map(Array.from(providerA.urls).concat(Array.from(providerB.urls)))
+    providerNew.urls = Providers.mergeMap(providerA.urls, providerB.urls)
     providerNew.origins = Array.from(new Set(providerA.origins.concat(providerB.origins)))
+    providerNew.providerFallbacks = Providers.mergeMap(providerA.providerFallbacks, providerB.providerFallbacks)
     return Object.assign(providerA, providerB, providerNew)
+  }
+
+  static mergeMap (mapA, mapB) {
+    if (!mapA) return mapB
+    if (!mapB) return mapA
+    const reduce = arr => Array.from(arr).reduce((acc, [key, value]) => {
+      acc.push(key)
+      return acc
+    }, [])
+    const keys = Array.from(new Set(reduce(mapA).concat(reduce(mapB))))
+    return keys.reduce((acc, key) => {
+      const valueA = mapA.get(key)
+      const valueB = mapB.get(key)
+      acc.set(key, !valueA
+        ? valueB
+        : !valueB
+          ? valueA
+          : Array.isArray(valueA) && Array.isArray(valueB)
+            ? Array.from(new Set(valueA.concat(valueB)))
+            : Object.assign(valueA, valueB)
+      ).get(key)
+      return acc
+    }, new Map())
   }
 
   get section () {
