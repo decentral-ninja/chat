@@ -8,9 +8,10 @@ import { Shadow } from '../../../../event-driven-web-components-prototypes/src/S
  * Provider container for rendering
  @typedef {
   Map<string, {
-    origins: ['environment', 'crdt', 'session', string],
-    status: 'connected' | 'disconnected' | 'unknown' | 'default',
-    providerFallbacks: Map<string, string[]>,
+    origins: 'environment' | 'crdt' | 'session' | string[],
+    status: 'connected' | 'disconnected' | 'once-established' | 'default' | 'unknown'[],
+    providerFallbacks?: Map<string, string[]>,
+    permanentFallback?: string,
     urls: Map<string, {
       name: import("../../../../event-driven-web-components-yjs/src/es/EventDrivenYjs.js").ProviderNames,
       url: URL
@@ -316,25 +317,15 @@ export default class Providers extends Shadow() {
     const providers = new Map()
     // important, keep order not that less information overwrites the more precise information at mergeProvider
     Providers.fillProvidersWithProvidersFromCrdt(providers, data.allProviders)
-    Providers.fillProvidersWithProvidersFromCrdt(providers, data.providers, 'once-established')
     Providers.fillProvidersWithProvidersFromRooms(providers, await data.getProvidersFromRooms(), data.separator)
+    Providers.fillProvidersWithProvidersFromCrdt(providers, data.providers, 'once-established')
     // @ts-ignore
     Providers.fillProvidersWithProvidersFromEnvironment(providers, self.Environment)
     Providers.fillProvidersWithSessionProvidersByStatus(providers, await data.getSessionProvidersByStatus(data.separator), data.separator)
+    // @ts-ignore
+    Providers.fillProvidersWithPermanentFallbacksFromEnvironment(providers, self.Environment)
     // TODO: data.getWebsocketInfo & data.pingProvider
     console.log('***renderProvidersList******', { data, providers })
-  }
-
-  static fillProvidersWithProvidersFromEnvironment (providers, data, status = 'default') {
-    data.providers.forEach(provider => {
-      const url = new URL(provider.url)
-      providers.set(url.hostname, Providers.mergeProvider(providers.get(url.hostname), {
-        status,
-        urls: new Map([[url.origin, { name: provider.name, url }]]),
-        origins: ['environment']
-      }))
-    })
-    return providers
   }
 
   static fillProvidersWithProvidersFromCrdt (providers, data, status = 'unknown') {
@@ -345,7 +336,7 @@ export default class Providers extends Shadow() {
         return providers
       }
       providers.set(url.hostname, Providers.mergeProvider(providers.get(url.hostname), {
-        status,
+        status: [status],
         urls: new Map([[url.origin, { name, url }]]),
         origins: ['crdt']
       }))
@@ -367,10 +358,22 @@ export default class Providers extends Shadow() {
         return providers
       }
       providers.set(url.hostname, Providers.mergeProvider(providers.get(url.hostname), {
-        status: prop === 'providers' ? 'once-established' : 'unknown',
+        status: [prop === 'providers' ? 'once-established' : 'unknown'],
         urls: new Map([[url.origin, { name, url }]]),
         origins: [room],
         providerFallbacks: new Map(providerFallbacks[url.hostname]?.urls)
+      }))
+    })
+    return providers
+  }
+
+  static fillProvidersWithProvidersFromEnvironment (providers, data, status = 'default') {
+    data.providers.forEach(provider => {
+      const url = new URL(provider.url)
+      providers.set(url.hostname, Providers.mergeProvider(providers.get(url.hostname), {
+        status: [status],
+        urls: new Map([[url.origin, { name: provider.name, url }]]),
+        origins: ['environment']
       }))
     })
     return providers
@@ -382,7 +385,7 @@ export default class Providers extends Shadow() {
         const [name, realUrl] = url.split(separator)
         url = new URL(realUrl)
         providers.set(url.hostname, Providers.mergeProvider(providers.get(url.hostname), {
-          status: key,
+          status: [key],
           urls: new Map([[url.origin, { name, url }]]),
           origins: ['session']
         }))
@@ -391,11 +394,22 @@ export default class Providers extends Shadow() {
     return providers
   }
 
+  static fillProvidersWithPermanentFallbacksFromEnvironment (providers, data) {
+    Array.from(data.permanentFallbacks).forEach(([provider, fallback]) => {
+      const url = new URL(provider)
+      if (providers.has(url.hostname)) providers.set(url.hostname, Providers.mergeProvider(providers.get(url.hostname), {
+        permanentFallback: fallback
+      }))
+    })
+    return providers
+  }
+
   static mergeProvider (providerA, providerB) {
     if (!providerA) return providerB
     const providerNew = {}
+    if (providerA.origins && providerB.origins) providerNew.origins = Array.from(new Set(providerA.origins.concat(providerB.origins)))
+    if (providerA.status && providerB.status) providerNew.status = Array.from(new Set(providerA.status.concat(providerB.status)))
     providerNew.urls = Providers.mergeMap(providerA.urls, providerB.urls)
-    providerNew.origins = Array.from(new Set(providerA.origins.concat(providerB.origins)))
     providerNew.providerFallbacks = Providers.mergeMap(providerA.providerFallbacks, providerB.providerFallbacks)
     return Object.assign(providerA, providerB, providerNew)
   }
