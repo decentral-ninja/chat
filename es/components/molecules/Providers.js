@@ -7,13 +7,29 @@ import { Shadow } from '../../../../event-driven-web-components-prototypes/src/S
 /**
  * Provider container for rendering
  @typedef {
+  'environment' | 'crdt' | 'session' | string
+ } Origin
+*/
+
+/**
+ * Provider container for rendering
+ @typedef {
+  'connected' | 'disconnected' | 'once-established' | 'default' | 'unknown'
+ } Status
+*/
+
+/**
+ * Provider container for rendering
+ @typedef {
   Map<string, {
-    origins: 'environment' | 'crdt' | 'session' | string[],
-    status: 'connected' | 'disconnected' | 'once-established' | 'default' | 'unknown'[],
+    origins: Origin[],
+    status: Status[],
     providerFallbacks?: Map<string, string[]>,
     permanentFallback?: string,
     urls: Map<string, {
       name: import("../../../../event-driven-web-components-yjs/src/es/EventDrivenYjs.js").ProviderNames,
+      status: Status,
+      origins: Origin,
       url: URL
     }>
   }>
@@ -281,7 +297,13 @@ export default class Providers extends Shadow() {
 
   renderData (data) {
     Providers.renderSectionText(this.section, data, this.hasAttribute('online'))
-    Providers.renderProvidersList(this.providersDiv, data)
+    Providers.renderProvidersList(this.providersDiv, data, this.fetchModules([
+      {
+        // @ts-ignore
+        path: `${this.importMetaUrl}./Provider.js?${Environment?.version || ''}`,
+        name: 'chat-m-provider'
+      }
+    ]))
     // TODO: ******************************* Below only reproduces the old behavior *******************************
     new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-providers', {
       detail: {
@@ -312,7 +334,7 @@ export default class Providers extends Shadow() {
     `
   }
 
-  static async renderProvidersList (div, data) {
+  static async renderProvidersList (div, data, fetchModuleProvider) {
     /** @type {ProvidersContainer} */
     const providers = new Map()
     // important, keep order not that less information overwrites the more precise information at mergeProvider
@@ -326,6 +348,17 @@ export default class Providers extends Shadow() {
     Providers.fillProvidersWithPermanentFallbacksFromEnvironment(providers, self.Environment)
     // TODO: data.getWebsocketInfo & data.pingProvider
     console.log('***renderProvidersList******', { data, providers })
+    // TODO: Sorting
+    fetchModuleProvider.then(modules => Array.from(providers).forEach(([name, providerData]) => {
+      // @ts-ignore
+      const id = `${self.Environment?.providerNamespace || 'p_'}${name.replaceAll('.', '-')}` // string <ident> without dots https://developer.mozilla.org/en-US/docs/Web/CSS/ident
+      let provider
+      if ((provider = div.querySelector(`#${id}`))) {
+        provider.update(providerData)
+      } else {
+        div.appendChild(new modules[0].constructorClass(id, providerData))
+      }
+    }))
   }
 
   static fillProvidersWithProvidersFromCrdt (providers, data, status = 'unknown') {
@@ -337,7 +370,7 @@ export default class Providers extends Shadow() {
       }
       providers.set(url.hostname, Providers.mergeProvider(providers.get(url.hostname), {
         status: [status],
-        urls: new Map([[url.origin, { name, url }]]),
+        urls: new Map([[url.origin, { name, url, status: status, origin: 'crdt' }]]),
         origins: ['crdt']
       }))
     }))
@@ -357,9 +390,10 @@ export default class Providers extends Shadow() {
       } catch (error) {
         return providers
       }
+      const status = prop === 'providers' ? 'once-established' : 'unknown'
       providers.set(url.hostname, Providers.mergeProvider(providers.get(url.hostname), {
-        status: [prop === 'providers' ? 'once-established' : 'unknown'],
-        urls: new Map([[url.origin, { name, url }]]),
+        status: [status],
+        urls: new Map([[url.origin, { name, url, status: status, origin: room }]]),
         origins: [room],
         providerFallbacks: new Map(providerFallbacks[url.hostname]?.urls)
       }))
@@ -372,7 +406,7 @@ export default class Providers extends Shadow() {
       const url = new URL(provider.url)
       providers.set(url.hostname, Providers.mergeProvider(providers.get(url.hostname), {
         status: [status],
-        urls: new Map([[url.origin, { name: provider.name, url }]]),
+        urls: new Map([[url.origin, { name: provider.name, url, status: status, origin: 'environment' }]]),
         origins: ['environment']
       }))
     })
@@ -386,7 +420,7 @@ export default class Providers extends Shadow() {
         url = new URL(realUrl)
         providers.set(url.hostname, Providers.mergeProvider(providers.get(url.hostname), {
           status: [key],
-          urls: new Map([[url.origin, { name, url }]]),
+          urls: new Map([[url.origin, { name, url, status: key, origin: 'session' }]]),
           origins: ['session']
         }))
       })
