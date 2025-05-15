@@ -13,8 +13,9 @@ import { Shadow } from '../../../../event-driven-web-components-prototypes/src/S
 
 /**
  * Provider container for rendering
+ * Status gets filled by 5 runs, so max. length 5
  @typedef {
-  'connected' | 'disconnected' | 'once-established' | 'default' | 'unknown'
+  'connected' | 'disconnected' | 'default' | 'once-established' | 'unknown'
  } Status
 */
 
@@ -24,6 +25,7 @@ import { Shadow } from '../../../../event-driven-web-components-prototypes/src/S
   Map<string, {
     origins: Origin[],
     status: Status[],
+    statusCount?: number,
     providerFallbacks?: Map<string, string[]>,
     permanentFallback?: string,
     urls: Map<string, {
@@ -38,8 +40,6 @@ import { Shadow } from '../../../../event-driven-web-components-prototypes/src/S
 
 /**
  * The providers view
- * TODO: display providers and also allow provider changes
- * TODO: keepAlive time
  *
  * @export
  * @class Providers
@@ -346,17 +346,35 @@ export default class Providers extends Shadow() {
     Providers.fillProvidersWithSessionProvidersByStatus(providers, await data.getSessionProvidersByStatus(data.separator), data.separator)
     // @ts-ignore
     Providers.fillProvidersWithPermanentFallbacksFromEnvironment(providers, self.Environment)
-    // TODO: data.getWebsocketInfo & data.pingProvider
     console.log('***renderProvidersList******', { data, providers })
-    // TODO: Sorting
-    fetchModuleProvider.then(modules => Array.from(providers).forEach(([name, providerData]) => {
+    // Sorting 'connected' | 'disconnected' | 'default' | 'once-established' | 'unknown'; the lower the number the higher ranked
+    const statusPriority = {
+      connected: 1,
+      disconnected: 2,
+      default: 3,
+      'once-established': 4,
+      unknown: 5
+    }
+    const lowestPriority = 6
+    fetchModuleProvider.then(modules => Array.from(providers).map(([name, providerData]) => {
+      // calc the status number; the lower the number the higher it shall rank in the ascending list
+      providerData.statusCount = providerData.status.reduce((acc, curr, i) => {
+        acc[i] = statusPriority[curr] ? statusPriority[curr] : lowestPriority
+        return acc
+        // prefill the array with 5 elements, since it gets filled 5 times above, if all found
+      }, new Array(5).fill(lowestPriority)).reduce((acc, curr) => acc + curr, 0)
+      return [name, providerData]
+      // Note: A negative value indicates that a should come before b
+      // @ts-ignore
+    }).sort(([aName, aProviderData], [bName, bProviderData]) => aProviderData.statusCount - bProviderData.statusCount).forEach(([name, providerData]) => {
+      //// render or update
       // @ts-ignore
       const id = `${self.Environment?.providerNamespace || 'p_'}${name.replaceAll('.', '-')}` // string <ident> without dots https://developer.mozilla.org/en-US/docs/Web/CSS/ident
       let provider
       if ((provider = div.querySelector(`#${id}`))) {
         provider.update(providerData)
       } else {
-        div.appendChild(new modules[0].constructorClass(id, providerData))
+        div.appendChild(new modules[0].constructorClass(id, name, providerData))
       }
     }))
   }

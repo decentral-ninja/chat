@@ -7,10 +7,11 @@ import { Shadow } from '../../../../web-components-toolbox/src/es/components/pro
 * @type {CustomElementConstructor}
 */
 export default class Provider extends Shadow() {
-  constructor (id, data, options = {}, ...args) {
+  constructor (id, name, data, options = {}, ...args) {
     super({ importMetaUrl: import.meta.url, ...options }, ...args)
 
     this.setAttribute('id', id)
+    this.name = name
     /** @type {import('./Providers.js').ProvidersContainer} */
     this.data = data
   }
@@ -40,7 +41,7 @@ export default class Provider extends Shadow() {
    * @return {boolean}
    */
   shouldRenderHTML () {
-    return !this.div
+    return !this.section
   }
 
   /**
@@ -88,15 +89,19 @@ export default class Provider extends Shadow() {
    * @returns Promise<void>
    */
   renderHTML () {
-    this.html = '<div>Content rendered from Component: Provider</div>'
+    // TODO: Event when it has fallbacks, so that other providers can react and know that they are a fallback for...
+    // TODO: Intersection observer for calling data.getWebsocketInfo & data.pingProvider 
+    this.update(this.data)
   }
 
   update (data) {
     this.data = data
     console.log('*****data****', data, this)
+    this.html = ''
+    this.html = `<section>${this.name}</section>`
   }
 
-  get div () {
-    return this.root.querySelector('div')
+  get section () {
+    return this.root.querySelector('section')
   }
 }
