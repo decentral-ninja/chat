@@ -21,20 +21,24 @@ import { Shadow } from '../../../../event-driven-web-components-prototypes/src/S
 
 /**
  * Provider container for rendering
- @typedef {
-  Map<string, {
-    origins: Origin[],
-    status: Status[],
-    statusCount?: number,
-    providerFallbacks?: Map<string, string[]>,
-    permanentFallback?: string,
-    urls: Map<string, {
-      name: import("../../../../event-driven-web-components-yjs/src/es/EventDrivenYjs.js").ProviderNames,
-      status: Status,
-      origins: Origin,
-      url: URL
-    }>
+ @typedef {{
+  origins: Origin[],
+  status: Status[],
+  statusCount?: number,
+  providerFallbacks?: Map<string, string[]>,
+  permanentFallback?: string,
+  urls: Map<string, {
+    name: import("../../../../event-driven-web-components-yjs/src/es/EventDrivenYjs.js").ProviderNames,
+    status: Status,
+    origins: Origin,
+    url: URL
   }>
+}} Provider
+
+/**
+ * Provider container for rendering
+ @typedef {
+  Map<string, Provider>
  } ProvidersContainer
 */
 

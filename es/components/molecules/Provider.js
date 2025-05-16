@@ -12,7 +12,7 @@ export default class Provider extends Shadow() {
 
     this.setAttribute('id', id)
     this.name = name
-    /** @type {import('./Providers.js').ProvidersContainer} */
+    /** @type {import('./Providers.js').Provider} */
     this.data = data
   }
 
@@ -50,7 +50,9 @@ export default class Provider extends Shadow() {
    */
   renderCSS () {
     this.css = /* css */`
-      :host {}
+      :host section {
+        display: flex;
+      }
       @media only screen and (max-width: _max-width_) {
         :host {}
       }
@@ -90,18 +92,46 @@ export default class Provider extends Shadow() {
    */
   renderHTML () {
     // TODO: Event when it has fallbacks, so that other providers can react and know that they are a fallback for...
-    // TODO: Intersection observer for calling data.getWebsocketInfo & data.pingProvider 
-    this.update(this.data)
+    // TODO: Intersection observer for calling data.getWebsocketInfo & data.pingProvider
+    this.html = /* html */`
+      <section>
+        <input type=checkbox />
+        <select id=protocol></select>
+      </section>
+    `
+    this.update(this.data, this.providersUrls)
   }
 
-  update (data) {
+  /**
+   * Update components
+   * @param {import('./Providers.js').Provider} data
+   * @param {import('../../../../event-driven-web-components-yjs/src/es/EventDrivenYjs.js').ProvidersUpdateEventDetail} providersUrls
+   * @returns {void}
+   */
+  update (data, providersUrls) {
     this.data = data
-    console.log('*****data****', data, this)
-    this.html = ''
-    this.html = `<section>${this.name}</section>`
+    console.log('*****data****', data, this, providersUrls)
+    this.checkbox.checked = data.status.includes('connected')
+    Array.from(data.urls).forEach(([origin, urlContainer]) => {
+      let option
+      if (!(option = this.selectProtocol.querySelector(`option[value="${urlContainer.url.protocol}"]`))) {
+        option = document.createElement('option')
+        option.value = option.textContent = urlContainer.url.protocol
+        this.selectProtocol.appendChild(option)
+      }
+      option.selected = urlContainer.status.includes('connected') || urlContainer.status.includes('disconnected')
+    })
   }
 
   get section () {
     return this.root.querySelector('section')
+  }
+
+  get checkbox () {
+    return this.root.querySelector('input[type=checkbox]')
+  }
+
+  get selectProtocol () {
+    return this.root.querySelector('select[id=protocol]')
   }
 }
