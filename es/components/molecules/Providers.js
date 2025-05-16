@@ -237,6 +237,10 @@ export default class Providers extends Shadow() {
             position: sticky;
             top: 4px;
           }
+          :host > dialog #providers {
+            display: flex;
+            flex-direction: column;
+          }
         </style>
         <dialog>
           <wct-menu-icon id="close" no-aria class="open sticky" namespace="menu-icon-close-" no-click></wct-menu-icon>
@@ -370,15 +374,15 @@ export default class Providers extends Shadow() {
       return [name, providerData]
       // Note: A negative value indicates that a should come before b
       // @ts-ignore
-    }).sort(([aName, aProviderData], [bName, bProviderData]) => aProviderData.statusCount - bProviderData.statusCount).forEach(([name, providerData]) => {
+    }).sort(([aName, aProviderData], [bName, bProviderData]) => aProviderData.statusCount - bProviderData.statusCount).forEach(([name, providerData], i) => {
       //// render or update
       // @ts-ignore
       const id = `${self.Environment?.providerNamespace || 'p_'}${name.replaceAll('.', '-')}` // string <ident> without dots https://developer.mozilla.org/en-US/docs/Web/CSS/ident
       let provider
       if ((provider = div.querySelector(`#${id}`))) {
-        provider.update(providerData)
+        provider.update(providerData, i)
       } else {
-        div.appendChild(new modules[0].constructorClass(id, name, providerData))
+        div.appendChild(new modules[0].constructorClass(id, name, providerData, i))
       }
     }))
   }

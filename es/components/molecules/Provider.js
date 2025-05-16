@@ -7,13 +7,14 @@ import { Shadow } from '../../../../web-components-toolbox/src/es/components/pro
 * @type {CustomElementConstructor}
 */
 export default class Provider extends Shadow() {
-  constructor (id, name, data, options = {}, ...args) {
+  constructor (id, name, data, order, options = {}, ...args) {
     super({ importMetaUrl: import.meta.url, ...options }, ...args)
 
     this.setAttribute('id', id)
     this.name = name
     /** @type {import('./Providers.js').Provider} */
     this.data = data
+    this.order = order
   }
 
   connectedCallback () {
@@ -93,34 +94,56 @@ export default class Provider extends Shadow() {
   renderHTML () {
     // TODO: Event when it has fallbacks, so that other providers can react and know that they are a fallback for...
     // TODO: Intersection observer for calling data.getWebsocketInfo & data.pingProvider
+    // keep-alive max=30days, value=1day, step=1h
     this.html = /* html */`
       <section>
         <input type=checkbox />
+        <select id=name></select>
         <select id=protocol></select>
+        <span>//</span>
+        <span id=hostname></span>
+        <input id=keep-alive type=range min=0 max=2592000000 value="86400000" step=3600000 />
       </section>
     `
-    this.update(this.data, this.providersUrls)
+    this.html = this.customStyle
+    this.update(this.data, this.order)
   }
 
   /**
    * Update components
    * @param {import('./Providers.js').Provider} data
-   * @param {import('../../../../event-driven-web-components-yjs/src/es/EventDrivenYjs.js').ProvidersUpdateEventDetail} providersUrls
+   * @param {number} order
    * @returns {void}
    */
-  update (data, providersUrls) {
+  update (data, order) {
     this.data = data
-    console.log('*****data****', data, this, providersUrls)
-    this.checkbox.checked = data.status.includes('connected')
-    Array.from(data.urls).forEach(([origin, urlContainer]) => {
-      let option
-      if (!(option = this.selectProtocol.querySelector(`option[value="${urlContainer.url.protocol}"]`))) {
-        option = document.createElement('option')
-        option.value = option.textContent = urlContainer.url.protocol
-        this.selectProtocol.appendChild(option)
+    this.order = order
+    this.customStyle.innerText = /* css */`
+      :host {
+        order: ${order};
       }
-      option.selected = urlContainer.status.includes('connected') || urlContainer.status.includes('disconnected')
+    `
+    console.log('*****data****', data, this)
+    this.checkbox.checked = data.status.includes('connected')
+    Array.from(data.urls).forEach(([origin, urlContainer], i) => {
+      const selected = urlContainer.status.includes('connected') || urlContainer.status.includes('disconnected')
+      Provider.updateSelect(this.selectName, urlContainer.name || 'websocket', selected)
+      Provider.updateSelect(this.selectProtocol, urlContainer.url.protocol, selected)
+      if (i === 0) this.spanHostname.textContent = urlContainer.url.hostname
+      if (urlContainer.url.searchParams.get('keep-alive')) {
+        // TODO: keep-alive
+      }
     })
+  }
+
+  static updateSelect (select, value, selected) {
+    let option
+      if (!(option = select.querySelector(`option[value="${value}"]`))) {
+        option = document.createElement('option')
+        option.value = option.textContent = value
+        select.appendChild(option)
+      }
+      option.selected = selected
   }
 
   get section () {
@@ -131,7 +154,26 @@ export default class Provider extends Shadow() {
     return this.root.querySelector('input[type=checkbox]')
   }
 
+  get selectName () {
+    return this.root.querySelector('select[id=name]')
+  }
+
   get selectProtocol () {
     return this.root.querySelector('select[id=protocol]')
+  }
+
+  get spanHostname () {
+    return this.root.querySelector('span[id=hostname]')
+  }
+
+  get customStyle () {
+    return (
+      this._customStyle ||
+        (this._customStyle = (() => {
+          const style = document.createElement('style')
+          style.setAttribute('protected', 'true')
+          return style
+        })())
+    )
   }
 }
