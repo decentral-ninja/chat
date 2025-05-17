@@ -15,6 +15,12 @@ export default class Provider extends Shadow() {
     /** @type {import('./Providers.js').Provider} */
     this.data = data
     this.order = order
+
+    this.keepAliveDefaultValue = 86400000
+
+    let msCounter, daysCounter
+    this.inputKeepAliveChangeEventListener = event => (this.spanKeepAliveCounter.textContent = `${event.target.value} (delete data on websocket after: ${msCounter = event.target.value/1000/60/60} hours ≈ ${daysCounter = (msCounter/24).toFixed(1)} day${Number(daysCounter) >= 2 ? 's' : ''})`)
+    this.selectNameChangeEventListener = event => event.target.setAttribute('value', event.target.value)
   }
 
   connectedCallback () {
@@ -23,9 +29,14 @@ export default class Provider extends Shadow() {
     if (this.shouldRenderCSS()) showPromises.push(this.renderCSS())
     if (this.shouldRenderHTML()) showPromises.push(this.renderHTML())
     Promise.all(showPromises).then(() => (this.hidden = false))
+    this.inputKeepAlive.addEventListener('change', this.inputKeepAliveChangeEventListener)
+    this.selectName.addEventListener('change', this.selectNameChangeEventListener)
   }
 
-  disconnectedCallback () {}
+  disconnectedCallback () {
+    this.inputKeepAlive.removeEventListener('change', this.inputKeepAliveChangeEventListener)
+    this.selectName.removeEventListener('change', this.selectNameChangeEventListener)
+  }
 
   /**
    * evaluates if a render is necessary
@@ -53,6 +64,12 @@ export default class Provider extends Shadow() {
     this.css = /* css */`
       :host section {
         display: flex;
+      }
+      :host section select ~ :is(#keep-alive-counter, #keep-alive, #keep-alive-name) {
+        display: none;
+      }
+      :host section select#name[value=websocket] ~ :is(#keep-alive-counter, #keep-alive, #keep-alive-name) {
+        display: block;
       }
       @media only screen and (max-width: _max-width_) {
         :host {}
@@ -94,17 +111,20 @@ export default class Provider extends Shadow() {
   renderHTML () {
     // TODO: Event when it has fallbacks, so that other providers can react and know that they are a fallback for...
     // TODO: Intersection observer for calling data.getWebsocketInfo & data.pingProvider
-    // keep-alive max=30days, value=1day, step=1h
+    // keep-alive max=10days, value=1day, step=1h
     this.html = /* html */`
       <section>
-        <input type=checkbox />
+        <input id=connected type=checkbox />
         <select id=name></select>
         <select id=protocol></select>
         <span>//</span>
         <span id=hostname></span>
-        <input id=keep-alive type=range min=0 max=2592000000 value="86400000" step=3600000 />
+        <span id=keep-alive-name>?keep-alive=</span>
+        <span id=keep-alive-counter></span>
+        <input id=keep-alive type=range min=0 max=864000000 value="${this.keepAliveDefaultValue}" step=3600000 />
       </section>
     `
+    this.inputKeepAliveChangeEventListener({target: {value: this.inputKeepAlive.value}})
     this.html = this.customStyle
     this.update(this.data, this.order)
   }
@@ -124,33 +144,34 @@ export default class Provider extends Shadow() {
       }
     `
     console.log('*****data****', data, this)
-    this.checkbox.checked = data.status.includes('connected')
+    // TODO: on change input make component touched and stop updating until user confirmed the value
+    this.inputCheckbox.checked = data.status.includes('connected')
+    let keepAlive = 0
     Array.from(data.urls).forEach(([origin, urlContainer], i) => {
       const selected = urlContainer.status.includes('connected') || urlContainer.status.includes('disconnected')
       Provider.updateSelect(this.selectName, urlContainer.name || 'websocket', selected)
+      this.selectName.setAttribute('value', this.selectName.value)
       Provider.updateSelect(this.selectProtocol, urlContainer.url.protocol, selected)
       if (i === 0) this.spanHostname.textContent = urlContainer.url.hostname
-      if (urlContainer.url.searchParams.get('keep-alive')) {
-        // TODO: keep-alive
-      }
+      if (keepAlive < (keepAlive = Number(urlContainer.url.searchParams.get('keep-alive')))) this.inputKeepAliveChangeEventListener({target: {value: (this.inputKeepAlive.value = keepAlive)}})
     })
   }
 
   static updateSelect (select, value, selected) {
     let option
-      if (!(option = select.querySelector(`option[value="${value}"]`))) {
-        option = document.createElement('option')
-        option.value = option.textContent = value
-        select.appendChild(option)
-      }
-      option.selected = selected
+    if (!(option = select.querySelector(`option[value="${value}"]`))) {
+      option = document.createElement('option')
+      option.value = option.textContent = value
+      select.appendChild(option)
+    }
+    option.selected = selected
   }
 
   get section () {
     return this.root.querySelector('section')
   }
 
-  get checkbox () {
+  get inputCheckbox () {
     return this.root.querySelector('input[type=checkbox]')
   }
 
@@ -164,6 +185,14 @@ export default class Provider extends Shadow() {
 
   get spanHostname () {
     return this.root.querySelector('span[id=hostname]')
+  }
+
+  get spanKeepAliveCounter () {
+    return this.root.querySelector('span[id=keep-alive-counter]')
+  }
+
+  get inputKeepAlive () {
+    return this.root.querySelector('input[id=keep-alive]')
   }
 
   get customStyle () {
