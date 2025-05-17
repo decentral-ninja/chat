@@ -145,6 +145,8 @@ export default class Provider extends Shadow() {
     `
     console.log('*****data****', data, this)
     // TODO: on change input make component touched and stop updating until user confirmed the value
+    // TODO: Link to users dialog vice-versa
+    // TODO: Link to docker hub and github y-websocket repo
     this.inputCheckbox.checked = data.status.includes('connected')
     let keepAlive = 0
     Array.from(data.urls).forEach(([origin, urlContainer], i) => {
