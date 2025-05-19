@@ -18,9 +18,23 @@ export default class Provider extends Shadow() {
 
     this.keepAliveDefaultValue = 86400000
 
+    const changeEventListener = event => this.setAttribute('touched', '')
     let msCounter, daysCounter
-    this.inputKeepAliveChangeEventListener = event => (this.spanKeepAliveCounter.textContent = `${event.target.value} (delete data on websocket after: ${msCounter = event.target.value/1000/60/60} hours ≈ ${daysCounter = (msCounter/24).toFixed(1)} day${Number(daysCounter) >= 2 ? 's' : ''})`)
-    this.selectNameChangeEventListener = event => event.target.setAttribute('value', event.target.value)
+    this.inputKeepAliveChangeEventListener = (event, initialValue = false) => {
+      this.spanKeepAliveCounter.textContent = `${event.target.value} (delete data on websocket after: ${msCounter = event.target.value/1000/60/60} hours ≈ ${daysCounter = (msCounter/24).toFixed(1)} day${Number(daysCounter) >= 2 ? 's' : ''})`
+      if (!initialValue) changeEventListener(event)
+    }
+    this.selectNameChangeEventListener = event => {
+      event.target.setAttribute('value', event.target.value)
+      changeEventListener(event)
+    }
+    this.selectProtocolChangeEventListener = event => changeEventListener(event)
+
+    this.undoEventListener = event => {
+      event.stopPropagation()
+      this.removeAttribute('touched')
+      this.update(this.data, this.order)
+    }
   }
 
   connectedCallback () {
@@ -31,11 +45,15 @@ export default class Provider extends Shadow() {
     Promise.all(showPromises).then(() => (this.hidden = false))
     this.inputKeepAlive.addEventListener('change', this.inputKeepAliveChangeEventListener)
     this.selectName.addEventListener('change', this.selectNameChangeEventListener)
+    this.selectProtocol.addEventListener('change', this.selectProtocolChangeEventListener)
+    this.addEventListener('undo', this.undoEventListener)
   }
 
   disconnectedCallback () {
     this.inputKeepAlive.removeEventListener('change', this.inputKeepAliveChangeEventListener)
     this.selectName.removeEventListener('change', this.selectNameChangeEventListener)
+    this.selectProtocol.removeEventListener('change', this.selectProtocolChangeEventListener)
+    this.removeEventListener('undo', this.undoEventListener)
   }
 
   /**
@@ -62,13 +80,36 @@ export default class Provider extends Shadow() {
    */
   renderCSS () {
     this.css = /* css */`
-      :host section {
+      :host {
+        --button-primary-border-radius: var(--border-radius);
+      }
+      :host > section {
         display: flex;
       }
-      :host section select ~ :is(#keep-alive-counter, #keep-alive, #keep-alive-name) {
+      :host > section > select ~ :where(#keep-alive-counter, #keep-alive, #keep-alive-name) {
         display: none;
       }
-      :host section select#name[value=websocket] ~ :is(#keep-alive-counter, #keep-alive, #keep-alive-name) {
+      :host > section > select#name[value=websocket] ~ :where(#keep-alive-counter, #keep-alive, #keep-alive-name) {
+        display: block;
+      }
+      :host > section > :where(wct-icon-mdx, wct-button) {
+        display: none;
+      }
+      :host([connected]) > section > :where(wct-icon-mdx#connected, wct-button#disconnect) {
+        --color: var(--color-green-full);
+        display: block;
+      }
+      :host(:not([connected])) > section > :where(wct-icon-mdx#disconnected, wct-button#connect) {
+        --color: var(--color-secondary);
+        display: block;
+      }
+      :host([touched][connected]) > section > :where(wct-button#set, wct-button#undo) {
+        display: block;
+      }
+      :host([touched]:not([connected])) > section > wct-button#connect {
+        display: none;
+      }
+      :host([touched]:not([connected])) > section > :where(wct-button#set-and-connect, wct-button#undo) {
         display: block;
       }
       @media only screen and (max-width: _max-width_) {
@@ -114,7 +155,8 @@ export default class Provider extends Shadow() {
     // keep-alive max=10days, value=1day, step=1h
     this.html = /* html */`
       <section>
-        <input id=connected type=checkbox />
+        <wct-icon-mdx hover-on-parent-shadow-root-host id=connected title=connected no-hover icon-url="../../../../../../img/icons/plug-connected.svg" size="2em"></wct-icon-mdx>
+        <wct-icon-mdx hover-on-parent-shadow-root-host id=disconnected title=disconnected no-hover icon-url="../../../../../../img/icons/plug-connected-x.svg" size="2em"></wct-icon-mdx>
         <select id=name></select>
         <select id=protocol></select>
         <span>//</span>
@@ -122,11 +164,28 @@ export default class Provider extends Shadow() {
         <span id=keep-alive-name>?keep-alive=</span>
         <span id=keep-alive-counter></span>
         <input id=keep-alive type=range min=0 max=864000000 value="${this.keepAliveDefaultValue}" step=3600000 />
+        <wct-button id=connect namespace="button-primary-" request-event-name="connect" click-no-toggle-active>connect</wct-button>
+        <wct-button id=set-and-connect namespace="button-primary-" request-event-name="connect" click-no-toggle-active>set changes & connect</wct-button>
+        <wct-button id=set namespace="button-primary-" request-event-name="connect" click-no-toggle-active>set changes</wct-button>
+        <wct-button id=undo namespace="button-primary-" request-event-name="undo" click-no-toggle-active>undo</wct-button>
+        <wct-button id=disconnect namespace="button-primary-" request-event-name="disconnect" click-no-toggle-active>disconnect</wct-button>
       </section>
     `
-    this.inputKeepAliveChangeEventListener({target: {value: this.inputKeepAlive.value}})
     this.html = this.customStyle
+    this.inputKeepAliveChangeEventListener({target: {value: this.inputKeepAlive.value}}, true)
     this.update(this.data, this.order)
+    return this.fetchModules([
+      {
+        // @ts-ignore
+        path: `${this.importMetaUrl}../../../../web-components-toolbox/src/es/components/atoms/iconMdx/IconMdx.js?${Environment?.version || ''}`,
+        name: 'wct-icon-mdx'
+      },
+      {
+        // @ts-ignore
+        path: `${this.importMetaUrl}../../../../web-components-toolbox/src/es/components/atoms/button/Button.js?${Environment?.version || ''}`,
+        name: 'wct-button'
+      }
+    ])
   }
 
   /**
@@ -147,16 +206,24 @@ export default class Provider extends Shadow() {
     // TODO: on change input make component touched and stop updating until user confirmed the value
     // TODO: Link to users dialog vice-versa
     // TODO: Link to docker hub and github y-websocket repo
-    this.inputCheckbox.checked = data.status.includes('connected')
-    let keepAlive = 0
+    if (data.status.includes('connected')) {
+      this.setAttribute('connected', '')
+    } else  {
+      this.removeAttribute('connected')
+    }
+    // avoid updating when inputs got changed
+    if (this.hasAttribute('touched')) return
+    let keepAlive = this.keepAliveDefaultValue
     Array.from(data.urls).forEach(([origin, urlContainer], i) => {
       const selected = urlContainer.status.includes('connected') || urlContainer.status.includes('disconnected')
       Provider.updateSelect(this.selectName, urlContainer.name || 'websocket', selected)
       this.selectName.setAttribute('value', this.selectName.value)
       Provider.updateSelect(this.selectProtocol, urlContainer.url.protocol, selected)
       if (i === 0) this.spanHostname.textContent = urlContainer.url.hostname
-      if (keepAlive < (keepAlive = Number(urlContainer.url.searchParams.get('keep-alive')))) this.inputKeepAliveChangeEventListener({target: {value: (this.inputKeepAlive.value = keepAlive)}})
+      let currentKeepAlive
+      if ((i === 0 || selected) && (currentKeepAlive = Number(urlContainer.url.searchParams.get('keep-alive')))) keepAlive = currentKeepAlive
     })
+    this.inputKeepAliveChangeEventListener({target: {value: (this.inputKeepAlive.value = keepAlive)}}, true)
   }
 
   static updateSelect (select, value, selected) {
@@ -171,10 +238,6 @@ export default class Provider extends Shadow() {
 
   get section () {
     return this.root.querySelector('section')
-  }
-
-  get inputCheckbox () {
-    return this.root.querySelector('input[type=checkbox]')
   }
 
   get selectName () {
