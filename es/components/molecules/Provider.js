@@ -30,6 +30,18 @@ export default class Provider extends Shadow() {
     }
     this.selectProtocolChangeEventListener = event => changeEventListener(event)
 
+    this.connectEventListener = event => {
+      event.stopPropagation()
+      this.removeAttribute('touched')
+      this.setAttribute('connecting', '')
+      console.log('*********', 'connectEventListener')
+    }
+    this.disconnectEventListener = event => {
+      event.stopPropagation()
+      this.removeAttribute('touched')
+      this.setAttribute('disconnecting', '')
+      console.log('*********', 'connectEventListener')
+    }
     this.undoEventListener = event => {
       event.stopPropagation()
       this.removeAttribute('touched')
@@ -46,6 +58,8 @@ export default class Provider extends Shadow() {
     this.inputKeepAlive.addEventListener('change', this.inputKeepAliveChangeEventListener)
     this.selectName.addEventListener('change', this.selectNameChangeEventListener)
     this.selectProtocol.addEventListener('change', this.selectProtocolChangeEventListener)
+    this.addEventListener('connect', this.connectEventListener)
+    this.addEventListener('disconnect', this.disconnectEventListener)
     this.addEventListener('undo', this.undoEventListener)
   }
 
@@ -53,6 +67,8 @@ export default class Provider extends Shadow() {
     this.inputKeepAlive.removeEventListener('change', this.inputKeepAliveChangeEventListener)
     this.selectName.removeEventListener('change', this.selectNameChangeEventListener)
     this.selectProtocol.removeEventListener('change', this.selectProtocolChangeEventListener)
+    this.removeEventListener('connect', this.connectEventListener)
+    this.removeEventListener('disconnect', this.disconnectEventListener)
     this.removeEventListener('undo', this.undoEventListener)
   }
 
@@ -92,15 +108,19 @@ export default class Provider extends Shadow() {
       :host > section > select#name[value=websocket] ~ :where(#keep-alive-counter, #keep-alive, #keep-alive-name) {
         display: block;
       }
-      :host > section > :where(wct-icon-mdx, wct-button) {
+      :host > section :where(wct-icon-mdx, wct-button) {
         display: none;
       }
-      :host([connected]) > section > :where(wct-icon-mdx#connected, wct-button#disconnect) {
-        --color: var(--color-green-full);
-        display: block;
+      :host([connected]) > section > div#connection-status > wct-icon-mdx#connected, :host(:not([connected])) > section > div#connection-status > wct-icon-mdx#disconnected {
+        display: contents;
       }
-      :host(:not([connected])) > section > :where(wct-icon-mdx#disconnected, wct-button#connect) {
+      :host([connected]) > section > div#connection-status > wct-icon-mdx#connected {
+        --color: var(--color-green-full);
+      }
+      :host(:not([connected])) > section > div#connection-status > wct-icon-mdx#disconnected {
         --color: var(--color-secondary);
+      }
+      :host(:not([connected])) > section wct-button#connect, :host([connected]) > section wct-button#disconnect {
         display: block;
       }
       :host([touched][connected]) > section > :where(wct-button#set, wct-button#undo) {
@@ -111,6 +131,30 @@ export default class Provider extends Shadow() {
       }
       :host([touched]:not([connected])) > section > :where(wct-button#set-and-connect, wct-button#undo) {
         display: block;
+      }
+      :host > section > div#connection-status {
+        display: grid;
+        grid-template-columns: 1fr;
+        grid-template-rows: 1fr;
+        align-content: center;
+        justify-content: center;
+      }
+      :host > section > div#connection-status > *, :host > section > div#connection-status > wct-icon-mdx::part(svg) {
+        grid-column: 1;
+        grid-row: 1;
+      }
+      :host > section > div#connection-status > wct-icon-mdx::part(svg) {
+        align-self: center;
+        justify-self: center;
+      }
+      :host > section > div#connection-status > a-loading {
+        display: none;
+      }
+      :host([connecting]) > section > div#connection-status > :is(wct-icon-mdx#connected, wct-icon-mdx#disconnected), :host([disconnecting]) > section > div#connection-status > :is(wct-icon-mdx#connected, wct-icon-mdx#disconnected) {
+        --color: var(--color-disabled);
+      }
+      :host([connecting]) > section > div#connection-status > a-loading, :host([disconnecting]) > section > div#connection-status > a-loading {
+        display: flex;
       }
       @media only screen and (max-width: _max-width_) {
         :host {}
@@ -155,8 +199,11 @@ export default class Provider extends Shadow() {
     // keep-alive max=10days, value=1day, step=1h
     this.html = /* html */`
       <section>
-        <wct-icon-mdx hover-on-parent-shadow-root-host id=connected title=connected no-hover icon-url="../../../../../../img/icons/plug-connected.svg" size="2em"></wct-icon-mdx>
-        <wct-icon-mdx hover-on-parent-shadow-root-host id=disconnected title=disconnected no-hover icon-url="../../../../../../img/icons/plug-connected-x.svg" size="2em"></wct-icon-mdx>
+        <div id=connection-status>
+          <wct-icon-mdx hover-on-parent-shadow-root-host id=connected title=connected no-hover icon-url="../../../../../../img/icons/plug-connected.svg" size="2em"></wct-icon-mdx>
+          <wct-icon-mdx hover-on-parent-shadow-root-host id=disconnected title=disconnected no-hover icon-url="../../../../../../img/icons/plug-connected-x.svg" size="2em"></wct-icon-mdx>
+          <a-loading namespace="loading-default-" size="1.5"></a-loading>
+        </div>
         <select id=name></select>
         <select id=protocol></select>
         <span>//</span>
@@ -184,6 +231,11 @@ export default class Provider extends Shadow() {
         // @ts-ignore
         path: `${this.importMetaUrl}../../../../web-components-toolbox/src/es/components/atoms/button/Button.js?${Environment?.version || ''}`,
         name: 'wct-button'
+      },
+      {
+        // @ts-ignore
+        path: `${this.importMetaUrl}../../../../components/atoms/loading/Loading.js?${Environment?.version || ''}`,
+        name: 'a-loading'
       }
     ])
   }
@@ -211,6 +263,8 @@ export default class Provider extends Shadow() {
     } else  {
       this.removeAttribute('connected')
     }
+    this.removeAttribute('connecting')
+    this.removeAttribute('disconnecting')
     // avoid updating when inputs got changed
     if (this.hasAttribute('touched')) return
     let keepAlive = this.keepAliveDefaultValue
