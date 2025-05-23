@@ -251,7 +251,6 @@ export default class Providers extends Shadow() {
           <h4>Provider Data:</h4>
           <p id="offline">You are offline!</p>
           <div id=providers>
-            <!-- TODO: p2pGraph -->
             <!-- TODO: ******************************* Below only reproduces the old behavior ******************************* -->
             <h4 class=left>websocketUrls:</h4>
             <wct-grid auto-fill="20%">

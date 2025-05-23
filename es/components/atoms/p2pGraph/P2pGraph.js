@@ -61,6 +61,9 @@ export default class P2pGraph extends Shadow() {
       :host > div > svg g {
         cursor: pointer;
       }
+      :host > div > svg .node.is-self > circle {
+        filter: drop-shadow(0px 0px 0.5em var(--color-secondary));
+      }
     `
     return Promise.resolve()
   }

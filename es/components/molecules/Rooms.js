@@ -182,7 +182,7 @@ export default class Rooms extends Shadow() {
           try {
             const url = new URL(inputField.value.replace(/"/g, ''))
             const roomName = url.searchParams.get('room')
-            if (roomName) return history.pushState({ ...history.state, pageTitle: roomName }, roomName, url.href)
+            if (roomName) return history.pushState({ ...history.state, pageTitle: roomName }, roomName, url.href.replace(url.origin, location.origin))
           } catch (error) {}
         }
         const url = new URL(location.href)

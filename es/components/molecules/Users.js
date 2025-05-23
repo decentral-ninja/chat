@@ -268,7 +268,9 @@ export default class Users extends Shadow() {
             border-radius: var(--border-radius);
           }
           :host ol > li[self] > * {
+            border: 1px solid var(--color-secondary);
             background-color: var(--background-color-rgba-50);
+            box-shadow: 0px 0px 0.5em var(--color-secondary);
           }
           :host ol > li.active > * {
             background-color: var(--color-active);
@@ -542,7 +544,7 @@ export default class Users extends Shadow() {
       ${await acc}
       <wct-load-template-tag uid='${user.uid}'${activeUid === user.uid ? ' class=active' : ''} no-css copy-class-list>
         <template>
-          <li uid='${user.uid}'${user.isSelf ? ' self' : ''} class="${(isUpToDate = areConnectedUsers || user.uid === newestMessage.uid || JSON.parse(user.awarenessEpoch || user.epoch).epoch >= newestMessage.timestamp) ? 'updated' : 'outdated' /* eslint-disable-line */}" style="--box-shadow-color: ${(await getHexColor(user.uid))};border-color: ${(await getHexColor(user.uid))};">
+          <li uid='${user.uid}'${user.isSelf ? ' self' : ''} class="${(isUpToDate = areConnectedUsers || user.uid === newestMessage?.uid || JSON.parse(user.awarenessEpoch || user.epoch).epoch >= newestMessage?.timestamp) ? 'updated' : 'outdated' /* eslint-disable-line */}" style="--box-shadow-color: ${(await getHexColor(user.uid))};border-color: ${(await getHexColor(user.uid))};">
             <div>
               <h2>
                 <span>${user.nickname || 'none'}</span>

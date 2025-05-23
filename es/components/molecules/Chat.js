@@ -295,6 +295,8 @@ export default class Chat extends Shadow() {
         transform: rotate(45deg) translate(-33%, 23%);
         width: inherit;
         max-width: max-content;
+        filter: url("#svg-grain");
+        animation: filter-animation .2s steps(1) infinite;
       }
       :host > ul + section#empty > chat-m-message {
         transform: translate(min(365px, 54%), min(228px, 27%));
@@ -316,6 +318,23 @@ export default class Chat extends Shadow() {
           opacity: 0;
         }
       }
+      @keyframes filter-animation {
+        0% {
+          filter: url("#svg-grain-one");
+        }
+        20% {
+          filter: none;
+        }
+        40% {
+          filter: url("#svg-grain-three");
+        }
+        60% {
+          filter: none;
+        }
+        80% {
+          filter: url("#svg-grain-two");
+        }
+      }
     `
   }
 
@@ -331,6 +350,26 @@ export default class Chat extends Shadow() {
       </ul>
       <section id=empty class=hidden>
         <img src="./src/img/ninjaBob.png" />
+        <svg id="svg-filter">
+          <filter id="svg-grain-one">
+            <feTurbulence baseFrequency="0.60,0.90" result="colorNoise" />
+            <feColorMatrix in="colorNoise" type="matrix" values=".33 .33 .33 0 0 .33 .33 .33 0 0 .33 .33 .33 0 0 0 0 0 1 0"/>
+            <feComposite operator="in" in2="SourceGraphic" result="monoNoise"/>
+            <feBlend in="SourceGraphic" in2="monoNoise" mode="multiply" />
+          </filter>
+          <filter id="svg-grain-two">
+            <feTurbulence baseFrequency="0.60,0.90" result="colorNoise" />
+            <feColorMatrix in="colorNoise" type="matrix" values=".66 .66 .66 0 0 .66 .66 .66 0 0 .66 .66 .66 0 0 0 0 0 1 0"/>
+            <feComposite operator="in" in2="SourceGraphic" result="monoNoise"/>
+            <feBlend in="SourceGraphic" in2="monoNoise" mode="multiply" />
+          </filter>
+          <filter id="svg-grain-three">
+            <feTurbulence baseFrequency="0.60,0.90" result="colorNoise" />
+            <feColorMatrix in="colorNoise" type="matrix" values=".99 .99 .99 0 0 .99 .99 .99 0 0 .99 .99 .99 0 0 0 0 0 1 0"/>
+            <feComposite operator="in" in2="SourceGraphic" result="monoNoise"/>
+            <feBlend in="SourceGraphic" in2="monoNoise" mode="multiply" />
+          </filter>
+        </svg>
         <chat-m-message update-on-connected-callback timestamp="${Date.now()}" static no-dialog no-update>
           <template>{"updatedNickname":"Ninja Bob","timestamp":${Date.now()},"text":"Start a conversation by entering your message below!"}</template>
         </chat-m-message>
