@@ -174,6 +174,8 @@ export const Chat = (ChosenHTMLElement = WebWorker()) => class Chat extends Chos
       event.detail.resolve(textObj)
     }
 
+    this.getTimestampsOfMessages = async event => event.detail.resolve(Array.from(this.allTextObjsInSync).map(([key, value]) => value.timestamp))
+
     /**
      * Keeps all chatObserveEventListener received textObj (aka. Message.js data) in the runtime with the most recent UNPACKED (function getAll, etc. executed) representation
      * Short: Represents all textObj by last unpacked state in sync
@@ -218,6 +220,7 @@ export const Chat = (ChosenHTMLElement = WebWorker()) => class Chat extends Chos
     this.addEventListener('chat-delete', this.chatDeleteEventListener)
     this.addEventListener('chat-get-text-obj', this.getTextObjEventListener)
     this.addEventListener('yjs-get-chat-event-detail', this.getChatEventDetailEventListener)
+    this.globalEventTarget.addEventListener('yjs-get-timestamps-of-messages', this.getTimestampsOfMessages)
     this.globalEventTarget.addEventListener('yjs-users', this.usersEventListener)
     this.globalEventTarget.addEventListener('yjs-chat-observe', this.chatObserveEventListener)
     this.globalEventTarget.addEventListener('yjs-nickname', this.nicknameEventListener)
@@ -252,6 +255,7 @@ export const Chat = (ChosenHTMLElement = WebWorker()) => class Chat extends Chos
     this.removeEventListener('chat-delete', this.chatDeleteEventListener)
     this.removeEventListener('chat-get-text-obj', this.getTextObjEventListener)
     this.removeEventListener('yjs-get-chat-event-detail', this.getChatEventDetailEventListener)
+    this.globalEventTarget.removeEventListener('yjs-get-timestamps-of-messages', this.getTimestampsOfMessages)
     this.globalEventTarget.removeEventListener('yjs-users', this.usersEventListener)
     this.globalEventTarget.removeEventListener('yjs-chat-observe', this.chatObserveEventListener)
     this.globalEventTarget.removeEventListener('yjs-nickname', this.nicknameEventListener)
