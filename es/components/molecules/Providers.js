@@ -244,6 +244,7 @@ export default class Providers extends Shadow() {
           :host > dialog #providers {
             display: flex;
             flex-direction: column;
+            gap: 0.5em;
           }
         </style>
         <dialog>

@@ -101,6 +101,16 @@ export default class Provider extends Shadow() {
       }
       :host > section {
         display: flex;
+        align-items: center;
+        gap: 0.25em;
+        justify-content: space-between;
+        border: var(--wct-input-border, 1px solid black);
+        border-radius: var(--border-radius);
+        --button-primary-border-radius: 0 var(--border-radius) var(--border-radius) 0;
+      }
+      :host > section > select {
+        height: 2em;
+        font-size: 1em;
       }
       :host > section > select ~ :where(#keep-alive-counter, #keep-alive, #keep-alive-name) {
         display: none;
@@ -196,6 +206,7 @@ export default class Provider extends Shadow() {
   renderHTML () {
     // TODO: Event when it has fallbacks, so that other providers can react and know that they are a fallback for...
     // TODO: Intersection observer for calling data.getWebsocketInfo & data.pingProvider
+    // TODO: Add notification
     // keep-alive max=10days, value=1day, step=1h
     this.html = /* html */`
       <section>

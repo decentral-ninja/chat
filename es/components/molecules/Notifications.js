@@ -62,7 +62,7 @@ export default class Notifications extends Hover() {
 
     this.clickEventListener = event => {
       event.preventDefault()
-      this.dispatchEvent(new CustomEvent('open-room', {
+      this.dispatchEvent(new CustomEvent(this.getAttribute('click-event-name') || 'open-room', {
         bubbles: true,
         cancelable: true,
         composed: true

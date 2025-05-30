@@ -27,11 +27,6 @@ export default class Rooms extends Shadow() {
         if ((await this.roomPromise).room.done) {
           // enter new room
           this.dialog?.close()
-          this.dispatchEvent(new CustomEvent('close-menu', {
-            bubbles: true,
-            cancelable: true,
-            composed: true
-          }))
         } else if (target.hasAttribute('room-name')) {
           event.preventDefault()
           event.stopPropagation()
@@ -142,7 +137,6 @@ export default class Rooms extends Shadow() {
           bubbles: true,
           cancelable: true,
           composed: true
-        // TODO: request notifications only fetches the notifications of the active providers, allow to fetch them from the deleted room locationHref
         }))).then(() => this.dispatchEvent(new CustomEvent('yjs-request-notifications', {
           detail: { force: true },
           bubbles: true,
@@ -159,6 +153,11 @@ export default class Rooms extends Shadow() {
           composed: true
         }))
       } else if ((target = event.composedPath().find(el => el.matches?.('[disabled]')))) {
+        if (target.querySelector('chat-m-notifications:not([hidden])')) this.dispatchEvent(new CustomEvent('provider-dialog-show-event', {
+          bubbles: true,
+          cancelable: true,
+          composed: true
+        }))
         this.dialog?.close()
       }
     }
@@ -171,11 +170,6 @@ export default class Rooms extends Shadow() {
       } else {
         // go to room
         this.dialog?.close()
-        this.dispatchEvent(new CustomEvent('close-menu', {
-          bubbles: true,
-          cancelable: true,
-          composed: true
-        }))
         const inputField = event.composedPath()[0].inputField || event.composedPath()[0].previousElementSibling?.inputField
         // check if url got entered as room name
         if (inputField?.value) {
@@ -487,7 +481,6 @@ export default class Rooms extends Shadow() {
       }
       :host ul > li[disabled] > div > a {
         color: var(--color-disabled);
-        cursor: not-allowed;
       }
       :host ul > li:not([disabled]):last-child {
         border-bottom: none;
