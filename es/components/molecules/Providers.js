@@ -60,7 +60,7 @@ export default class Providers extends Shadow() {
       clearTimeout(timeoutId)
       timeoutId = setTimeout(async () => {
         if (this.isDialogOpen()) {
-          this.renderData(await event.detail.getData())
+          this.renderData(await event.detail.getData(), await (await this.roomPromise).room)
         } else {
           Providers.renderSectionText(this.section, await event.detail.getData(), this.hasAttribute('online'))
         }
@@ -78,7 +78,7 @@ export default class Providers extends Shadow() {
       this.dialog.show('show-modal')
       if (lastProvidersEventGetData) {
         clearTimeout(timeoutId)
-        this.renderData(await lastProvidersEventGetData())
+        this.renderData(await lastProvidersEventGetData(), await (await this.roomPromise).room)
         this.removeAttribute('updating')
       }
     }
@@ -130,6 +130,11 @@ export default class Providers extends Shadow() {
     } else {
       this.offlineEventListener()
     }
+
+    /** @type {(any)=>void} */
+    this.roomResolve = map => map
+    /** @type {Promise<{ locationHref: string, room: Promise<string> & {done: boolean} }>} */
+    this.roomPromise = new Promise(resolve => (this.roomResolve = resolve))
   }
 
   connectedCallback () {
@@ -143,6 +148,20 @@ export default class Providers extends Shadow() {
     this.section.addEventListener('click', this.openDialog)
     self.addEventListener('online', this.onlineEventListener)
     self.addEventListener('offline', this.offlineEventListener)
+    this.connectedCallbackOnce()
+  }
+
+  connectedCallbackOnce () {
+    this.dispatchEvent(new CustomEvent('yjs-get-room', {
+      detail: {
+        resolve: this.roomResolve
+      },
+      bubbles: true,
+      cancelable: true,
+      composed: true
+    }))
+    // @ts-ignore
+    this.connectedCallbackOnce = () => {}
   }
 
   disconnectedCallback () {
@@ -313,7 +332,7 @@ export default class Providers extends Shadow() {
     ])
   }
 
-  renderData (data) {
+  renderData (data, roomName) {
     Providers.renderSectionText(this.section, data, this.hasAttribute('online'))
     Providers.renderProvidersList(this.providersDiv, data, this.fetchModules([
       {
@@ -321,7 +340,7 @@ export default class Providers extends Shadow() {
         path: `${this.importMetaUrl}./Provider.js?${Environment?.version || ''}`,
         name: 'chat-m-provider'
       }
-    ]))
+    ]), roomName)
     // TODO: ******************************* Below only reproduces the old behavior *******************************
     new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-providers', {
       detail: {
@@ -352,7 +371,7 @@ export default class Providers extends Shadow() {
     `
   }
 
-  static async renderProvidersList (div, data, fetchModuleProvider) {
+  static async renderProvidersList (div, data, fetchModuleProvider, roomName) {
     /** @type {ProvidersContainer} */
     const providers = new Map()
     // important, keep order not that less information overwrites the more precise information at mergeProvider
@@ -364,7 +383,6 @@ export default class Providers extends Shadow() {
     Providers.fillProvidersWithSessionProvidersByStatus(providers, await data.getSessionProvidersByStatus(data.separator), data.separator)
     // @ts-ignore
     Providers.fillProvidersWithPermanentFallbacksFromEnvironment(providers, self.Environment)
-    console.log('***renderProvidersList******', { data, providers })
     // Sorting 'connected' | 'disconnected' | 'default' | 'once-established' | 'unknown'; the lower the number the higher ranked
     const statusPriority = {
       connected: 1,
@@ -392,7 +410,7 @@ export default class Providers extends Shadow() {
       if ((provider = div.querySelector(`#${id}`))) {
         provider.update(providerData, i)
       } else {
-        div.appendChild(new modules[0].constructorClass(id, name, providerData, i))
+        div.appendChild(new modules[0].constructorClass(id, name, providerData, i, roomName))
       }
     }))
   }

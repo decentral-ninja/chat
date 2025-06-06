@@ -7,7 +7,7 @@ import { Shadow } from '../../../../web-components-toolbox/src/es/components/pro
 * @type {CustomElementConstructor}
 */
 export default class Provider extends Shadow() {
-  constructor (id, name, data, order, options = {}, ...args) {
+  constructor (id, name, data, order, roomName, options = {}, ...args) {
     super({ importMetaUrl: import.meta.url, ...options }, ...args)
 
     this.setAttribute('id', id)
@@ -15,6 +15,7 @@ export default class Provider extends Shadow() {
     /** @type {import('./Providers.js').Provider} */
     this.data = data
     this.order = order
+    this.roomName = roomName
 
     this.keepAliveDefaultValue = 86400000
 
@@ -215,6 +216,7 @@ export default class Provider extends Shadow() {
           <wct-icon-mdx hover-on-parent-shadow-root-host id=disconnected title=disconnected no-hover icon-url="../../../../../../img/icons/plug-connected-x.svg" size="2em"></wct-icon-mdx>
           <a-loading namespace="loading-default-" size="1.5"></a-loading>
         </div>
+        <chat-m-notifications room="${this.roomName}" hostname="${Array.from(this.data?.urls || [])?.[0]?.[1].url.hostname || ''}" on-connected-request-notifications allow-mute no-click no-hover no-scroll></chat-m-notifications>
         <select id=name></select>
         <select id=protocol></select>
         <span>//</span>
@@ -247,6 +249,11 @@ export default class Provider extends Shadow() {
         // @ts-ignore
         path: `${this.importMetaUrl}../../../../components/atoms/loading/Loading.js?${Environment?.version || ''}`,
         name: 'a-loading'
+      },
+      {
+        // @ts-ignore
+        path: `${this.importMetaUrl}./Notifications.js?${Environment?.version || ''}`,
+        name: 'chat-m-notifications'
       }
     ])
   }
@@ -265,7 +272,7 @@ export default class Provider extends Shadow() {
         order: ${order};
       }
     `
-    console.log('*****data****', data, this)
+    this.notifications.setAttribute('hostname', Array.from(this.data?.urls || [])?.[0]?.[1].url.hostname || '')
     // TODO: on change input make component touched and stop updating until user confirmed the value
     // TODO: Link to users dialog vice-versa
     // TODO: Link to docker hub and github y-websocket repo
@@ -323,6 +330,10 @@ export default class Provider extends Shadow() {
 
   get inputKeepAlive () {
     return this.root.querySelector('input[id=keep-alive]')
+  }
+
+  get notifications () {
+    return this.root.querySelector('chat-m-notifications')
   }
 
   get customStyle () {

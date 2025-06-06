@@ -173,7 +173,7 @@ export default class RoomName extends Shadow() {
     this.html = ''
     this.html = /* html */`<a href="#">
       <div class=name>
-        <wct-icon-mdx hover-on-parent-element id="show-modal" rotate="180deg" icon-url="../../../../../../img/icons/chevron-left.svg" size="1.75em"></wct-icon-mdx>
+        <wct-icon-mdx title="open rooms" hover-on-parent-element id="show-modal" rotate="180deg" icon-url="../../../../../../img/icons/chevron-left.svg" size="1.75em"></wct-icon-mdx>
         <h1>${roomName || 'Loading...'}</h1>
       </div>
       <div class=aka>${getRoomsResult?.value?.[roomName]?.aka ? getRoomsResult.value[roomName].aka : ''}</div>

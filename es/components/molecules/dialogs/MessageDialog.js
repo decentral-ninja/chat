@@ -151,8 +151,8 @@ export default class MessageDialog extends Dialog {
         <div id="controls">
           <div id="reply"><wct-icon-mdx reply title="reply to message" icon-url="../../../../../../img/icons/arrow-back-up.svg" size="2em"></wct-icon-mdx></div>
           <div id="delete" title="delete message!">
-            <wct-icon-mdx delete icon-url="../../../../../../img/icons/trash.svg" size="2em"></wct-icon-mdx>
-            <wct-icon-mdx undo icon-url="../../../../../../img/icons/trash-off.svg" size="2em"></wct-icon-mdx>
+            <wct-icon-mdx title=delete delete icon-url="../../../../../../img/icons/trash.svg" size="2em"></wct-icon-mdx>
+            <wct-icon-mdx title=undo undo icon-url="../../../../../../img/icons/trash-off.svg" size="2em"></wct-icon-mdx>
           </div>
           <wct-dialog-clipboard id=clipboard namespace="dialog-clipboard-default-">
             <wct-icon-mdx id="show-modal" title="copy" icon-url="../../../../../../img/icons/copy.svg" size="2em"></wct-icon-mdx>

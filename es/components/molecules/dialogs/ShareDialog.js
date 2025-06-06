@@ -155,7 +155,7 @@ export default class ShareDialog extends Dialog {
           <textarea>${locationHref}</textarea>
           <div id="controls">
             <wct-dialog-clipboard id=clipboard title="copy" namespace="dialog-clipboard-default-">
-              <wct-icon-mdx id="show-modal" icon-url="../../../../../../img/icons/copy.svg" size="2em"></wct-icon-mdx>
+              <wct-icon-mdx title=copy id="show-modal" icon-url="../../../../../../img/icons/copy.svg" size="2em"></wct-icon-mdx>
               <template>${locationHref}</template>
             </wct-dialog-clipboard>
             ${this.hasAttribute('is-active-room') || this.hasAttribute('no-share-in-chat') ? '' : '<wct-icon-mdx id=share-chat title="share in this chat" icon-url="../../../../../../img/icons/message-2-share.svg" size="2em"></wct-icon-mdx>'}

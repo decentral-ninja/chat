@@ -517,9 +517,6 @@ export default class Rooms extends Shadow() {
       :host ul > li > div > a > chat-m-notifications {
         font-size: 0.75em;
       }
-      :host ul > li > div > a > chat-m-notifications[hidden] {
-        display: none;
-      }
       :host ul > li > div > a > div.aka {
         color: var(--color-disabled);
         font-style: italic;
@@ -541,7 +538,7 @@ export default class Rooms extends Shadow() {
             <a route href="${rooms.value[key].locationHref}">
               <div>${key}</div>
               <div class=aka>${rooms.value[key].aka ? rooms.value[key].aka : ''}</div>
-              <chat-m-notifications room="${key}" no-click${i + 1 === arr.length ? ' on-connected-request-notifications' : ''} hover-on-parent-element></chat-m-notifications>
+              <chat-m-notifications room="${key}" no-click${i + 1 === arr.length ? ' on-connected-request-notifications' : ''} hover-on-parent-element allow-mute></chat-m-notifications>
             </a>
             <wct-icon-mdx title="share" share="${key}" icon-url="../../../../../../img/icons/share-3.svg" size="2em"></wct-icon-mdx>
             <wct-icon-mdx title="edit aka" edit="${key}" li-count=${i} icon-url="../../../../../../img/icons/pencil.svg" size="2em"></wct-icon-mdx>
