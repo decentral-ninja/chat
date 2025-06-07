@@ -78,33 +78,36 @@ export default class Notifications extends Hover() {
       }))
     }
 
+    // TODO: updating-mute animation
     this.muteEventListener = event => {
       event.stopPropagation()
       event.preventDefault()
-      // TODO: attribute updating with animation
-      this.dispatchEvent(new CustomEvent('yjs-mute-notifications', {
+      this.setAttribute('updating-mute', '')
+      new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-mute-notifications', {
         detail: {
           roomName: this.getAttribute('room'),
-          hostname: this.getAttribute('hostname')
+          hostname: this.getAttribute('hostname'),
+          resolve
         },
         bubbles: true,
         cancelable: true,
         composed: true
-      }))
+      }))).then(() => this.removeAttribute('updating-mute'))
     }
     this.unmuteEventListener = event => {
       event.stopPropagation()
       event.preventDefault()
-      // TODO: attribute updating with animation
-      this.dispatchEvent(new CustomEvent('yjs-unmute-notifications', {
+      this.setAttribute('updating-mute', '')
+      new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-unmute-notifications', {
         detail: {
           roomName: this.getAttribute('room'),
-          hostname: this.getAttribute('hostname')
+          hostname: this.getAttribute('hostname'),
+          resolve
         },
         bubbles: true,
         cancelable: true,
         composed: true
-      }))
+      }))).then(() => this.removeAttribute('updating-mute'))
     }
   }
 
