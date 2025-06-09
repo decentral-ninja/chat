@@ -34,13 +34,13 @@ export default class Provider extends Shadow() {
     this.connectEventListener = event => {
       event.stopPropagation()
       this.removeAttribute('touched')
-      this.setAttribute('connecting', '')
+      this.iconStatesEl.setAttribute('updating', '')
       console.log('*********', 'connectEventListener')
     }
     this.disconnectEventListener = event => {
       event.stopPropagation()
       this.removeAttribute('touched')
-      this.setAttribute('disconnecting', '')
+      this.iconStatesEl.setAttribute('updating', '')
       console.log('*********', 'connectEventListener')
     }
     this.undoEventListener = event => {
@@ -109,6 +109,12 @@ export default class Provider extends Shadow() {
         border-radius: var(--border-radius);
         --button-primary-border-radius: 0 var(--border-radius) var(--border-radius) 0;
       }
+      :host > section > chat-m-notifications {
+        display: none;
+      }
+      :host > section > chat-m-notifications:has(~ select[value=websocket]) {
+        display: block;
+      }
       :host > section > select {
         height: 2em;
         font-size: 1em;
@@ -122,15 +128,6 @@ export default class Provider extends Shadow() {
       :host > section :where(wct-icon-mdx, wct-button) {
         display: none;
       }
-      :host([connected]) > section > div#connection-status > wct-icon-mdx#connected, :host(:not([connected])) > section > div#connection-status > wct-icon-mdx#disconnected {
-        display: contents;
-      }
-      :host([connected]) > section > div#connection-status > wct-icon-mdx#connected {
-        --color: var(--color-green-full);
-      }
-      :host(:not([connected])) > section > div#connection-status > wct-icon-mdx#disconnected {
-        --color: var(--color-secondary);
-      }
       :host(:not([connected])) > section wct-button#connect, :host([connected]) > section wct-button#disconnect {
         display: block;
       }
@@ -142,30 +139,6 @@ export default class Provider extends Shadow() {
       }
       :host([touched]:not([connected])) > section > :where(wct-button#set-and-connect, wct-button#undo) {
         display: block;
-      }
-      :host > section > div#connection-status {
-        display: grid;
-        grid-template-columns: 1fr;
-        grid-template-rows: 1fr;
-        align-content: center;
-        justify-content: center;
-      }
-      :host > section > div#connection-status > *, :host > section > div#connection-status > wct-icon-mdx::part(svg) {
-        grid-column: 1;
-        grid-row: 1;
-      }
-      :host > section > div#connection-status > wct-icon-mdx::part(svg) {
-        align-self: center;
-        justify-self: center;
-      }
-      :host > section > div#connection-status > a-loading {
-        display: none;
-      }
-      :host([connecting]) > section > div#connection-status > :is(wct-icon-mdx#connected, wct-icon-mdx#disconnected), :host([disconnecting]) > section > div#connection-status > :is(wct-icon-mdx#connected, wct-icon-mdx#disconnected) {
-        --color: var(--color-disabled);
-      }
-      :host([connecting]) > section > div#connection-status > a-loading, :host([disconnecting]) > section > div#connection-status > a-loading {
-        display: flex;
       }
       @media only screen and (max-width: _max-width_) {
         :host {}
@@ -211,11 +184,10 @@ export default class Provider extends Shadow() {
     // keep-alive max=10days, value=1day, step=1h
     this.html = /* html */`
       <section>
-        <div id=connection-status>
-          <wct-icon-mdx hover-on-parent-shadow-root-host id=connected title=connected no-hover icon-url="../../../../../../img/icons/plug-connected.svg" size="2em"></wct-icon-mdx>
-          <wct-icon-mdx hover-on-parent-shadow-root-host id=disconnected title=disconnected no-hover icon-url="../../../../../../img/icons/plug-connected-x.svg" size="2em"></wct-icon-mdx>
-          <a-loading namespace="loading-default-" size="1.5"></a-loading>
-        </div>
+        <a-icon-states state="disconnected">
+          <wct-icon-mdx state="connected" hover-on-parent-shadow-root-host id=connected title=connected style="--color: var(--color-green-full);" no-hover icon-url="../../../../../../img/icons/plug-connected.svg" size="2em"></wct-icon-mdx>
+          <wct-icon-mdx state="disconnected" hover-on-parent-shadow-root-host id=disconnected title=disconnected style="--color: var(--color-secondary);" no-hover icon-url="../../../../../../img/icons/plug-connected-x.svg" size="2em"></wct-icon-mdx>
+        </a-icon-states>
         <chat-m-notifications room="${this.roomName}" hostname="${Array.from(this.data?.urls || [])?.[0]?.[1].url.hostname || ''}" on-connected-request-notifications allow-mute no-click no-hover no-scroll></chat-m-notifications>
         <select id=name></select>
         <select id=protocol></select>
@@ -247,8 +219,8 @@ export default class Provider extends Shadow() {
       },
       {
         // @ts-ignore
-        path: `${this.importMetaUrl}../../../../components/atoms/loading/Loading.js?${Environment?.version || ''}`,
-        name: 'a-loading'
+        path: `${this.importMetaUrl}../../../../components/atoms/iconStates/IconStates.js?${Environment?.version || ''}`,
+        name: 'a-icon-states'
       },
       {
         // @ts-ignore
@@ -278,11 +250,12 @@ export default class Provider extends Shadow() {
     // TODO: Link to docker hub and github y-websocket repo
     if (data.status.includes('connected')) {
       this.setAttribute('connected', '')
+      this.iconStatesEl.setAttribute('state', 'connected')
     } else  {
       this.removeAttribute('connected')
+      this.iconStatesEl.setAttribute('state', 'disconnected')
     }
-    this.removeAttribute('connecting')
-    this.removeAttribute('disconnecting')
+    this.iconStatesEl.removeAttribute('updating')
     // avoid updating when inputs got changed
     if (this.hasAttribute('touched')) return
     let keepAlive = this.keepAliveDefaultValue
@@ -306,6 +279,10 @@ export default class Provider extends Shadow() {
       select.appendChild(option)
     }
     option.selected = selected
+  }
+
+  get iconStatesEl () {
+    return this.root.querySelector('a-icon-states')
   }
 
   get section () {

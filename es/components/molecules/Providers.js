@@ -56,15 +56,15 @@ export default class Providers extends Shadow() {
     let timeoutId = null
     this.providersEventListener = (event, setUpdating = true) => {
       lastProvidersEventGetData = event.detail.getData
-      if (!setUpdating) this.setAttribute('updating', '')
+      if (!setUpdating) this.iconStatesEl.setAttribute('updating', '')
       clearTimeout(timeoutId)
       timeoutId = setTimeout(async () => {
         if (this.isDialogOpen()) {
           this.renderData(await event.detail.getData(), await (await this.roomPromise).room)
         } else {
-          Providers.renderSectionText(this.section, await event.detail.getData(), this.hasAttribute('online'))
+          Providers.toggleIconStates(this.iconStatesEl, await event.detail.getData(), this.hasAttribute('online'))
         }
-        this.removeAttribute('updating')
+        this.iconStatesEl.removeAttribute('updating')
         // @ts-ignore
       }, this.isDialogOpen() ? 200 : self.Environment.awarenessEventListenerDelay)
     }
@@ -79,7 +79,7 @@ export default class Providers extends Shadow() {
       if (lastProvidersEventGetData) {
         clearTimeout(timeoutId)
         this.renderData(await lastProvidersEventGetData(), await (await this.roomPromise).room)
-        this.removeAttribute('updating')
+        this.iconStatesEl.removeAttribute('updating')
       }
     }
     this.providerDialogShowEventEventListener = event => this.openDialog(event)
@@ -118,12 +118,12 @@ export default class Providers extends Shadow() {
     this.onlineEventListener = async event => {
       this.setAttribute('online', '')
       this.dialog?.setAttribute('online', '')
-      if (lastProvidersEventGetData) Providers.renderSectionText(this.section, await lastProvidersEventGetData(), this.hasAttribute('online'))
+      if (lastProvidersEventGetData) Providers.toggleIconStates(this.iconStatesEl, await lastProvidersEventGetData(), this.hasAttribute('online'))
     }
     this.offlineEventListener = async event => {
       this.removeAttribute('online')
       this.dialog?.removeAttribute('online')
-      if (lastProvidersEventGetData) Providers.renderSectionText(this.section, await lastProvidersEventGetData(), this.hasAttribute('online'))
+      if (lastProvidersEventGetData) Providers.toggleIconStates(this.iconStatesEl, await lastProvidersEventGetData(), this.hasAttribute('online'))
     }
     if (navigator.onLine) {
       this.onlineEventListener()
@@ -145,7 +145,7 @@ export default class Providers extends Shadow() {
     this.globalEventTarget.addEventListener('yjs-providers-data', this.providersEventListener)
     this.globalEventTarget.addEventListener('yjs-providers-change', this.providersChangeEventListener)
     this.globalEventTarget.addEventListener('provider-dialog-show-event', this.providerDialogShowEventEventListener)
-    this.section.addEventListener('click', this.openDialog)
+    this.iconStatesEl.addEventListener('click', this.openDialog)
     self.addEventListener('online', this.onlineEventListener)
     self.addEventListener('offline', this.offlineEventListener)
     this.connectedCallbackOnce()
@@ -170,7 +170,7 @@ export default class Providers extends Shadow() {
     this.globalEventTarget.removeEventListener('yjs-providers-data', this.providersEventListener)
     this.globalEventTarget.removeEventListener('yjs-providers-change', this.providersChangeEventListener)
     this.globalEventTarget.removeEventListener('provider-dialog-show-event', this.providerDialogShowEventEventListener)
-    this.section.removeEventListener('click', this.openDialog)
+    this.iconStatesEl.removeEventListener('click', this.openDialog)
     self.removeEventListener('online', this.onlineEventListener)
     self.removeEventListener('offline', this.offlineEventListener)
   }
@@ -190,7 +190,7 @@ export default class Providers extends Shadow() {
    * @return {boolean}
    */
   shouldRenderHTML () {
-    return !this.section
+    return !this.iconStatesEl
   }
 
   /**
@@ -209,31 +209,6 @@ export default class Providers extends Shadow() {
         --button-primary-border-radius: 0 var(--border-radius) var(--border-radius) 0;
         cursor: pointer;
       }
-      :host > section {
-        display: grid;
-        grid-template-columns: 1fr;
-        grid-template-rows: 1fr;
-        align-content: center;
-        justify-content: center;
-      }
-      :host > section > *, :host > section > wct-icon-mdx::part(svg) {
-        grid-column: 1;
-        grid-row: 1;
-      }
-      :host > section > wct-icon-mdx::part(svg) {
-        align-self: center;
-        justify-self: center;
-      }
-      :host > section > a-loading {
-        display: none;
-      }
-      :host([updating]) > section > a-loading {
-        display: flex;
-      }
-      :host([updating]) > section > wct-icon-mdx{
-        --color-green-full: var(--color-disabled);
-        --color-error: var(--color-disabled);
-      }
     `
   }
 
@@ -244,10 +219,12 @@ export default class Providers extends Shadow() {
   */
   renderHTML () {
     this.html = /* html */`
-      <section>
-        <wct-icon-mdx title="Network providers" icon-url="../../../../../../img/icons/network.svg" size="2em"></wct-icon-mdx>
-        <a-loading namespace="loading-default-" size="1.5"></a-loading>
-      </section>
+      <a-icon-states>
+        <wct-icon-mdx state="default" title="Network providers" icon-url="../../../../../../img/icons/network.svg" size="2em"></wct-icon-mdx>
+        <wct-icon-mdx state="connected" title="Network providers connected" style="color:var(--color-green-full)" icon-url="../../../../../../img/icons/network.svg" size="2em"></wct-icon-mdx>
+        <wct-icon-mdx state="disconnected" title="No connection to Network providers" style="color:var(--color-error)" icon-url="../../../../../../img/icons/network-off.svg" size="2em"></wct-icon-mdx>
+        <wct-icon-mdx state="offline" title="You are offline!" style="color:var(--color-error)" icon-url="../../../../../../img/icons/network-off.svg" size="2em"></wct-icon-mdx>
+      </a-icon-states>
       <wct-dialog namespace="dialog-top-slide-in-"${this.hasAttribute('online') ? ' online' : ''}>
         <style protected>
           :host([online]) > dialog #offline {
@@ -326,14 +303,14 @@ export default class Providers extends Shadow() {
       },
       {
         // @ts-ignore
-        path: `${this.importMetaUrl}../../../../components/atoms/loading/Loading.js?${Environment?.version || ''}`,
-        name: 'a-loading'
+        path: `${this.importMetaUrl}../../../../components/atoms/iconStates/IconStates.js?${Environment?.version || ''}`,
+        name: 'a-icon-states'
       }
     ])
   }
 
   renderData (data, roomName) {
-    Providers.renderSectionText(this.section, data, this.hasAttribute('online'))
+    Providers.toggleIconStates(this.iconStatesEl, data, this.hasAttribute('online'))
     Providers.renderProvidersList(this.providersDiv, data, this.fetchModules([
       {
         // @ts-ignore
@@ -359,16 +336,13 @@ export default class Providers extends Shadow() {
     })
   }
 
-  static async renderSectionText (section, data, online) {
-    section.innerHTML = /* html */`
-      ${online
-        ? (await data.getSessionProvidersByStatus()).connected.length
-          ? '<wct-icon-mdx title="Network providers connected" style="color:var(--color-green-full)" icon-url="../../../../../../img/icons/network.svg" size="2em"></wct-icon-mdx>'
-          : '<wct-icon-mdx title="No connection to Network providers" style="color:var(--color-error)" icon-url="../../../../../../img/icons/network-off.svg" size="2em"></wct-icon-mdx>'
-        : '<wct-icon-mdx title="You are offline!" style="color:var(--color-error)" icon-url="../../../../../../img/icons/network-off.svg" size="2em"></wct-icon-mdx>'
-      }
-      <a-loading namespace="loading-default-" size="1.5"></a-loading>
-    `
+  static async toggleIconStates (iconStatesEl, data, online) {
+    iconStatesEl.setAttribute('state', online
+      ? (await data.getSessionProvidersByStatus()).connected.length
+        ? 'connected'
+        : 'disconnected'
+      : 'offline'
+    )
   }
 
   static async renderProvidersList (div, data, fetchModuleProvider, roomName) {
@@ -525,8 +499,8 @@ export default class Providers extends Shadow() {
     }, new Map())
   }
 
-  get section () {
-    return this.root.querySelector('section')
+  get iconStatesEl () {
+    return this.root.querySelector('a-icon-states')
   }
 
   get dialog () {
