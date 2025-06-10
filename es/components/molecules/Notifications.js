@@ -26,8 +26,10 @@ export default class Notifications extends Hover() {
         const hostname = this.getAttribute('hostname')
         let notifications = (event.detail.notifications[roomName] || []).filter(notification => !isMuted(event.detail.notificationMutes, roomName, notification.host))
         if (hostname) notifications = notifications.filter(notification => notification.host === hostname)
-        if (!(this.hidden = !notifications.length)) {
+        if (!this.hasAttribute('allow-mute')) this.hidden = !notifications.length
+        if (notifications.length) {
           this.counterEl.textContent = notifications.length > this.notificationsMax ? `${this.notificationsMax}+` : notifications.length
+          this.iconStatesEl.setAttribute('counter', notifications.length > this.notificationsMax ? `${this.notificationsMax}+` : notifications.length)
           // nickname can not be updated, since we would have to fetch the room of this notification and get user data
           this.messageEl.textContent = `${notifications[0].nickname}: ${notifications[0].text}`
           if (!this.hasAttribute('no-scroll')) setTimeout(() => this.parentNode?.scrollIntoView({ behavior: 'smooth' }), 200)
@@ -35,9 +37,11 @@ export default class Notifications extends Hover() {
         // check if this notification is muted
         if (this.hasAttribute('allow-mute') && isMuted(event.detail.notificationMutes, hostname ? '' : roomName, hostname)) {
           this.setAttribute('muted', '')
-          this.hidden = false
+          this.iconStatesEl.setAttribute('state', 'muted')
+          if (!this.hasAttribute('allow-mute')) this.hidden = false
         } else {
           this.removeAttribute('muted')
+          this.iconStatesEl.removeAttribute('state')
         }
       }
     } else {
@@ -57,12 +61,13 @@ export default class Notifications extends Hover() {
         }, 0)
         if (notificationsCounter) {
           // TODO: Play notification sound
-          this.hidden = false
+          if (!this.hasAttribute('allow-mute')) this.hidden = false
           this.counterEl.textContent = notificationsCounter > this.notificationsMax ? `${this.notificationsMax}+` : notificationsCounter
+          this.iconStatesEl.setAttribute('counter', notificationsCounter > this.notificationsMax ? `${this.notificationsMax}+` : notificationsCounter)
           if (typeof navigator.setAppBadge === 'function') navigator.setAppBadge(notificationsCounter)
           document.title = `(${this.counterEl.textContent}) ${document.title.replace(/\(\d.*\)\s/g, '')}`
         } else if (typeof navigator.clearAppBadge === 'function') {
-          this.hidden = true
+          if (!this.hasAttribute('allow-mute')) this.hidden = true
           navigator.clearAppBadge()
           document.title = document.title.replace(/\(\d+\)\s/g, '')
         }
@@ -78,7 +83,6 @@ export default class Notifications extends Hover() {
       }))
     }
 
-    // TODO: updating-mute animation
     this.muteEventListener = event => {
       event.stopPropagation()
       event.preventDefault()
@@ -113,7 +117,7 @@ export default class Notifications extends Hover() {
 
   connectedCallback () {
     super.connectedCallback()
-    this.hidden = true
+    if (!this.hasAttribute('allow-mute')) this.hidden = true
     if (this.shouldRenderCSS()) this.renderCSS()
     if (this.shouldRenderHTML()) this.renderHTML()
     this.globalEventTarget.addEventListener('yjs-notifications', this.notificationsEventListener)
@@ -218,6 +222,9 @@ export default class Notifications extends Hover() {
       :host([no-hover]) > div#status > div#bell-and-counter > span {
         cursor: default;
       }
+      :host([no-hover]) > div#status > div#bell-and-counter > span:empty {
+        display: none;
+      }
       :host(:not([no-hover]):hover) > div#status > div#bell-and-counter > span, :host(.hover) > div#status > div#bell-and-counter > span {
         background-color: var(--color-yellow);
       }
@@ -274,6 +281,14 @@ export default class Notifications extends Hover() {
   */
   renderHTML () {
     this.html = /* html */`
+      <a-icon-states show-counter-on-hover>
+        ${this.hasAttribute('allow-mute')
+          ? '<wct-icon-mdx state="default-hover" no-counter title="turn notifications off" id="bell-off" style="--color: var(--color-hover);" icon-url="../../../../../../img/icons/bell-off.svg" size="2em"></wct-icon-mdx>'
+          : ''
+        }
+        <wct-icon-mdx state="muted" no-counter title="turn notifications on" id="bell-plus" icon-url="../../../../../../img/icons/bell-plus.svg" size="2em"></wct-icon-mdx>
+        <wct-icon-mdx state="default" id="show-modal" title=notifications icon-url="../../../../../../img/icons/bell.svg" size="2em" ${this.hasAttribute('no-hover') ? 'no-hover' : 'hover-on-parent-shadow-root-host'}></wct-icon-mdx>
+      </a-icon-states>
       <div id=status>
         <div id="bell-on-off">
           <wct-icon-mdx title="turn notifications off" id="bell-off" icon-url="../../../../../../img/icons/bell-off.svg" size="2em"></wct-icon-mdx>
@@ -281,7 +296,7 @@ export default class Notifications extends Hover() {
         </div>
         <div id="bell-and-counter">
           <wct-icon-mdx id="show-modal" title=notifications icon-url="../../../../../../img/icons/bell.svg" size="2em" ${this.hasAttribute('no-hover') ? 'no-hover' : 'hover-on-parent-shadow-root-host'}></wct-icon-mdx>
-          <span id="counter">10</span>
+          <span id="counter"></span>
         </div>
       </div>
       <p><span id="message"></span></p>
@@ -291,6 +306,11 @@ export default class Notifications extends Hover() {
         // @ts-ignore
         path: `${this.importMetaUrl}../../../../web-components-toolbox/src/es/components/atoms/iconMdx/IconMdx.js?${Environment?.version || ''}`,
         name: 'wct-icon-mdx'
+      },
+      {
+        // @ts-ignore
+        path: `${this.importMetaUrl}../../../../components/atoms/iconStates/IconStates.js?${Environment?.version || ''}`,
+        name: 'a-icon-states'
       }
     ])
   }
@@ -309,6 +329,10 @@ export default class Notifications extends Hover() {
 
   get unmuteEl () {
     return this.root.querySelector('#bell-plus')
+  }
+
+  get iconStatesEl () {
+    return this.root.querySelector('a-icon-states')
   }
 
   get globalEventTarget () {
