@@ -28,7 +28,6 @@ export default class Notifications extends Hover() {
         if (hostname) notifications = notifications.filter(notification => notification.host === hostname)
         if (!this.hasAttribute('allow-mute')) this.hidden = !notifications.length
         if (notifications.length) {
-          this.counterEl.textContent = notifications.length > this.notificationsMax ? `${this.notificationsMax}+` : notifications.length
           this.iconStatesEl.setAttribute('counter', notifications.length > this.notificationsMax ? `${this.notificationsMax}+` : notifications.length)
           // nickname can not be updated, since we would have to fetch the room of this notification and get user data
           this.messageEl.textContent = `${notifications[0].nickname}: ${notifications[0].text}`
@@ -62,10 +61,10 @@ export default class Notifications extends Hover() {
         if (notificationsCounter) {
           // TODO: Play notification sound
           if (!this.hasAttribute('allow-mute')) this.hidden = false
-          this.counterEl.textContent = notificationsCounter > this.notificationsMax ? `${this.notificationsMax}+` : notificationsCounter
-          this.iconStatesEl.setAttribute('counter', notificationsCounter > this.notificationsMax ? `${this.notificationsMax}+` : notificationsCounter)
+          const textContent = notificationsCounter > this.notificationsMax ? `${this.notificationsMax}+` : notificationsCounter
+          this.iconStatesEl.setAttribute('counter', textContent)
           if (typeof navigator.setAppBadge === 'function') navigator.setAppBadge(notificationsCounter)
-          document.title = `(${this.counterEl.textContent}) ${document.title.replace(/\(\d.*\)\s/g, '')}`
+          document.title = `(${textContent}) ${document.title.replace(/\(\d.*\)\s/g, '')}`
         } else if (typeof navigator.clearAppBadge === 'function') {
           if (!this.hasAttribute('allow-mute')) this.hidden = true
           navigator.clearAppBadge()
@@ -180,8 +179,7 @@ export default class Notifications extends Hover() {
         --color-hover: var(--color-yellow);
         --counter-color: var(--color-secondary);
         display: flex;
-        align-items: baseline;
-        gap: 0.5em;
+        align-items: center;
       }
       :host(.hover) {
         --color: var(--color-yellow);
@@ -190,88 +188,15 @@ export default class Notifications extends Hover() {
       :host([hidden]) {
         display: none;
       }
-      :host > div#status > div#bell-and-counter {
-        display: grid;
-        grid-template-columns: 1fr;
-        grid-template-rows: 1fr;
-      }
-      :host > div#status > div#bell-and-counter > * {
-        grid-column: 1;
-        grid-row: 1;
-      }
-      :host > div#status > div#bell-and-counter > wct-icon-mdx {
-        display: block;
-        height: 2em;
-      }
-      :host > div#status > div#bell-and-counter > span {
-        background-color: var(--color-secondary);
-        border-radius: 50%;
-        color: white;
-        cursor: pointer;
+      :host > p > span#message {
         font-size: 0.75em;
-        height: fit-content;
-        margin-right: 1.5em;
-        max-width: 2em;
-        opacity: 0.75;
         overflow: hidden;
-        padding: 0.1em 0.5em;
         text-overflow: ellipsis;
-        transform: translate(1.5em, 1.25em);
-        transition: background-color 0.3s ease-out;
         white-space: nowrap;
         width: fit-content;
       }
-      :host([no-hover]) > div#status > div#bell-and-counter > span {
-        cursor: default;
-      }
-      :host([no-hover]) > div#status > div#bell-and-counter > span:empty {
+      :host([allow-mute][muted]) > p > span#message {
         display: none;
-      }
-      :host(:not([no-hover]):hover) > div#status > div#bell-and-counter > span, :host(.hover) > div#status > div#bell-and-counter > span {
-        background-color: var(--color-yellow);
-      }
-      :host > div#status > div#bell-on-off {
-        display: none;
-      }
-      :host([allow-mute]) > div#status:hover > div#bell-on-off {
-        display: block;
-      }
-      :host([allow-mute][muted]) > div#status > div#bell-on-off {
-        display: block;
-      }
-      :host([allow-mute]) > div#status:hover > div#bell-and-counter, :host([allow-mute][muted]) > div#status > div#bell-and-counter {
-        display: none;
-      }
-      :host([allow-mute]) > div#status:hover > div#bell-on-off > #bell-off {
-        display: block;
-      }
-      :host([allow-mute]) > div#status:hover > div#bell-on-off > #bell-plus {
-        display: none;
-      }
-      :host([allow-mute][muted]) > div#status > div#bell-on-off > #bell-off, :host([allow-mute][muted]) > p > span#message {
-        display: none;
-      }
-      :host([allow-mute][muted]) > div#status > div#bell-on-off > #bell-plus {
-        display: block;
-      }
-      :host > p {
-        color: var(--color-disabled);
-        padding: 0;
-        margin: 0;
-        width: 100%;
-        transition: color 0.3s ease-out;
-      }
-      :host(:not([no-hover]):hover) > p, :host(.hover) > p {
-        color: var(--color-yellow);
-      }
-      :host > p:has(> span:empty) {
-        display: none;
-      }
-      :host > p > span {
-        display: block;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
       }
     `
   }
@@ -283,7 +208,7 @@ export default class Notifications extends Hover() {
   */
   renderHTML () {
     this.html = /* html */`
-      <a-icon-states show-counter-on-hover>
+      <a-icon-states show-counter-on-hover mode=false id=icon-states>
         ${this.hasAttribute('allow-mute')
           ? '<wct-icon-mdx state="default-hover" no-counter title="turn notifications off" id="bell-off" style="--color: var(--color-hover);" icon-url="../../../../../../img/icons/bell-off.svg" size="2em"></wct-icon-mdx>'
           : ''
@@ -291,16 +216,6 @@ export default class Notifications extends Hover() {
         <wct-icon-mdx state="muted" no-counter title="turn notifications on" id="bell-plus" icon-url="../../../../../../img/icons/bell-plus.svg" size="2em"></wct-icon-mdx>
         <wct-icon-mdx state="default" id="show-modal" title=notifications icon-url="../../../../../../img/icons/bell.svg" size="2em" ${this.hasAttribute('no-hover') ? 'no-hover' : 'hover-on-parent-shadow-root-host'}></wct-icon-mdx>
       </a-icon-states>
-      <div id=status>
-        <div id="bell-on-off">
-          <wct-icon-mdx title="turn notifications off" id="bell-off" icon-url="../../../../../../img/icons/bell-off.svg" size="2em"></wct-icon-mdx>
-          <wct-icon-mdx title="turn notifications on" id="bell-plus" icon-url="../../../../../../img/icons/bell-plus.svg" size="2em"></wct-icon-mdx>
-        </div>
-        <div id="bell-and-counter">
-          <wct-icon-mdx id="show-modal" title=notifications icon-url="../../../../../../img/icons/bell.svg" size="2em" ${this.hasAttribute('no-hover') ? 'no-hover' : 'hover-on-parent-shadow-root-host'}></wct-icon-mdx>
-          <span id="counter"></span>
-        </div>
-      </div>
       <p><span id="message"></span></p>
     `
     return this.fetchModules([
@@ -315,10 +230,6 @@ export default class Notifications extends Hover() {
         name: 'a-icon-states'
       }
     ])
-  }
-
-  get counterEl () {
-    return this.root.querySelector('#counter')
   }
 
   get messageEl () {
