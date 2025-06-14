@@ -188,7 +188,7 @@ export default class Provider extends Shadow() {
           <wct-icon-mdx state="connected" hover-on-parent-shadow-root-host id=connected title=connected style="--color: var(--color-green-full);" no-hover icon-url="../../../../../../img/icons/plug-connected.svg" size="2em"></wct-icon-mdx>
           <wct-icon-mdx state="disconnected" hover-on-parent-shadow-root-host id=disconnected title=disconnected style="--color: var(--color-secondary);" no-hover icon-url="../../../../../../img/icons/plug-connected-x.svg" size="2em"></wct-icon-mdx>
         </a-icon-states>
-        <chat-m-notifications room="${this.roomName}" hostname="${Array.from(this.data?.urls || [])?.[0]?.[1].url.hostname || ''}" on-connected-request-notifications allow-mute no-click no-hover no-scroll></chat-m-notifications>
+        <chat-m-notifications room="${this.roomName}" hostname="${Array.from(this.data?.urls || [])?.[0]?.[1].url.hostname || ''}" on-connected-request-notifications allow-mute no-click no-hover></chat-m-notifications>
         <select id=name></select>
         <select id=protocol></select>
         <span>//</span>

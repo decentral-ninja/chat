@@ -19,22 +19,22 @@ export default class Notifications extends Hover() {
     this.roomNamePrefix = self.Environment?.roomNamePrefix || 'chat-'
     this.notificationsMax = 9
 
-    const isMuted = (mutes, roomName, hostname) => roomName && mutes.roomNames?.some(muteRoomName => muteRoomName === roomName) || hostname && mutes.hostnames?.some(muteHostname => muteHostname === hostname)
+    const isMuted = (mutes, includedOrigins, roomName, hostname) => (roomName && mutes && mutes.roomNames?.some(muteRoomName => muteRoomName === roomName)) || (hostname && ((mutes && mutes.hostnames?.some(muteHostname => muteHostname === hostname)) || includedOrigins.every(includedOrigin => !includedOrigin.includes(hostname))))
     if (this.hasAttribute('room')) {
       this.notificationsEventListener = event => {
         const roomName = this.getAttribute('room')
         const hostname = this.getAttribute('hostname')
-        let notifications = (event.detail.notifications[roomName] || []).filter(notification => !isMuted(event.detail.notificationMutes, roomName, notification.host))
+        let notifications = (event.detail.notifications[roomName] || []).filter(notification => !isMuted(event.detail.notificationMutes, event.detail.origins, roomName, notification.host))
         if (hostname) notifications = notifications.filter(notification => notification.host === hostname)
         if (!this.hasAttribute('allow-mute')) this.hidden = !notifications.length
         if (notifications.length) {
           this.iconStatesEl.setAttribute('counter', notifications.length > this.notificationsMax ? `${this.notificationsMax}+` : notifications.length)
           // nickname can not be updated, since we would have to fetch the room of this notification and get user data
           this.messageEl.textContent = `${notifications[0].nickname}: ${notifications[0].text}`
-          if (!this.hasAttribute('no-scroll')) setTimeout(() => this.parentNode?.scrollIntoView({ behavior: 'smooth' }), 200)
+          if (this.hasAttribute('scroll')) setTimeout(() => this.parentNode?.scrollIntoView({ behavior: 'smooth' }), 200)
         }
         // check if this notification is muted
-        if (this.hasAttribute('allow-mute') && isMuted(event.detail.notificationMutes, hostname ? '' : roomName, hostname)) {
+        if (this.hasAttribute('allow-mute') && isMuted(event.detail.notificationMutes, event.detail.origins, hostname ? '' : roomName, hostname)) {
           this.setAttribute('muted', '')
           this.iconStatesEl.setAttribute('state', 'muted')
           if (!this.hasAttribute('allow-mute')) this.hidden = false
@@ -42,6 +42,7 @@ export default class Notifications extends Hover() {
           this.removeAttribute('muted')
           this.iconStatesEl.removeAttribute('state')
         }
+        this.iconStatesEl.removeAttribute('updating')
       }
     } else {
       this.notificationsEventListener = event => {
@@ -51,7 +52,7 @@ export default class Notifications extends Hover() {
           return acc + (event.detail.rooms.value[key]
             ? event.detail.notifications[key].filter(notification => {
               if (timestamps.includes(notification.timestamp)) return false
-              if (isMuted(event.detail.notificationMutes, key, notification.host)) return false
+              if (isMuted(event.detail.notificationMutes, event.detail.origins, key, notification.host)) return false
               timestamps.push(notification.timestamp)
               return true
             }).length
@@ -70,6 +71,7 @@ export default class Notifications extends Hover() {
           navigator.clearAppBadge()
           document.title = document.title.replace(/\(\d+\)\s/g, '')
         }
+        this.iconStatesEl.removeAttribute('updating')
       }
     }
 
@@ -85,7 +87,7 @@ export default class Notifications extends Hover() {
     this.muteEventListener = event => {
       event.stopPropagation()
       event.preventDefault()
-      this.setAttribute('updating-mute', '')
+      this.iconStatesEl.setAttribute('updating', '')
       new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-mute-notifications', {
         detail: {
           roomName: this.getAttribute('room'),
@@ -95,12 +97,12 @@ export default class Notifications extends Hover() {
         bubbles: true,
         cancelable: true,
         composed: true
-      }))).then(() => this.removeAttribute('updating-mute'))
+      })))
     }
     this.unmuteEventListener = event => {
       event.stopPropagation()
       event.preventDefault()
-      this.setAttribute('updating-mute', '')
+      this.iconStatesEl.setAttribute('updating', '')
       new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-unmute-notifications', {
         detail: {
           roomName: this.getAttribute('room'),
@@ -110,7 +112,7 @@ export default class Notifications extends Hover() {
         bubbles: true,
         cancelable: true,
         composed: true
-      }))).then(() => this.removeAttribute('updating-mute'))
+      })))
     }
   }
 
@@ -208,7 +210,7 @@ export default class Notifications extends Hover() {
   */
   renderHTML () {
     this.html = /* html */`
-      <a-icon-states show-counter-on-hover mode=false id=icon-states>
+      <a-icon-states no-pointer-events-updating show-counter-on-hover mode=false id=icon-states>
         ${this.hasAttribute('allow-mute')
           ? '<wct-icon-mdx state="default-hover" no-counter title="turn notifications off" id="bell-off" style="--color: var(--color-hover);" icon-url="../../../../../../img/icons/bell-off.svg" size="2em"></wct-icon-mdx>'
           : ''
