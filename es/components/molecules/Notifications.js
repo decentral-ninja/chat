@@ -202,7 +202,10 @@ export default class Notifications extends Hover() {
       }
       :host > span#message {
         display: none;
-        cursor: pointer;
+        ${this.hasAttribute('span-cursor')
+          ? `cursor: ${this.getAttribute('span-cursor')};`
+          : ''
+        }
         font-style: italic;
         font-size: 0.75em;
         overflow: hidden;
