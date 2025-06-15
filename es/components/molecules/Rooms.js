@@ -153,7 +153,7 @@ export default class Rooms extends Shadow() {
           composed: true
         }))
       } else if ((target = event.composedPath().find(el => el.matches?.('[disabled]')))) {
-        if (target.querySelector('chat-m-notifications:not([hidden])')) this.dispatchEvent(new CustomEvent('provider-dialog-show-event', {
+        if (target.querySelector('chat-m-notifications[has-notifications]')) this.dispatchEvent(new CustomEvent('provider-dialog-show-event', {
           bubbles: true,
           cancelable: true,
           composed: true
@@ -458,6 +458,7 @@ export default class Rooms extends Shadow() {
         overflow: auto;
         scrollbar-color: var(--color) var(--background-color);
         scrollbar-width: thin;
+        padding-bottom: 0.5em;
       }
       :host ul > li {
         border-bottom: 1px solid var(--background-color-rgba-50);
@@ -470,7 +471,7 @@ export default class Rooms extends Shadow() {
       :host ul > li > div {
         display: flex;
         gap: 1em;
-        align-items: center;
+        align-items: start;
         justify-content: space-between;
       }
       :host ul > li[disabled] {
@@ -514,8 +515,8 @@ export default class Rooms extends Shadow() {
       :host ul > li > div > wct-icon-mdx[share], :host ul > li > div > wct-icon-mdx[edit] {
         --color: unset;
       }
-      :host ul > li > div > a > chat-m-notifications {
-        font-size: 0.75em;
+      :host ul > li[disabled] > div > chat-m-notifications {
+        color: var(--color-disabled);
       }
       :host ul > li > div > a > div.aka {
         color: var(--color-disabled);
@@ -538,8 +539,8 @@ export default class Rooms extends Shadow() {
             <a route href="${rooms.value[key].locationHref}">
               <div>${key}</div>
               <div class=aka>${rooms.value[key].aka ? rooms.value[key].aka : ''}</div>
-              <chat-m-notifications room="${key}" no-click${i + 1 === arr.length ? ' on-connected-request-notifications' : ''} hover-on-parent-element allow-mute></chat-m-notifications>
             </a>
+            <chat-m-notifications room="${key}" no-click${i + 1 === arr.length ? ' on-connected-request-notifications' : ''} allow-mute></chat-m-notifications>
             <wct-icon-mdx title="share" share="${key}" icon-url="../../../../../../img/icons/share-3.svg" size="2em"></wct-icon-mdx>
             <wct-icon-mdx title="edit aka" edit="${key}" li-count=${i} icon-url="../../../../../../img/icons/pencil.svg" size="2em"></wct-icon-mdx>
             <wct-icon-mdx title="delete" delete="${key.replace(/"/g, "'")}" href="${rooms.value[key].locationHref}" icon-url="../../../../../../img/icons/trash.svg" size="2em"></wct-icon-mdx>

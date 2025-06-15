@@ -29,9 +29,13 @@ export default class Notifications extends Hover() {
         if (!this.hasAttribute('allow-mute')) this.hidden = !notifications.length
         if (notifications.length) {
           this.iconStatesEl.setAttribute('counter', notifications.length > this.notificationsMax ? `${this.notificationsMax}+` : notifications.length)
+          this.setAttribute('has-notifications', '')
           // nickname can not be updated, since we would have to fetch the room of this notification and get user data
           this.messageEl.textContent = `${notifications[0].nickname}: ${notifications[0].text}`
           if (this.hasAttribute('scroll')) setTimeout(() => this.parentNode?.scrollIntoView({ behavior: 'smooth' }), 200)
+        } else {
+          this.iconStatesEl.removeAttribute('counter')
+          this.removeAttribute('has-notifications')
         }
         // check if this notification is muted
         if (this.hasAttribute('allow-mute') && isMuted(event.detail.notificationMutes, event.detail.origins, hostname ? '' : roomName, hostname)) {
@@ -64,10 +68,13 @@ export default class Notifications extends Hover() {
           if (!this.hasAttribute('allow-mute')) this.hidden = false
           const textContent = notificationsCounter > this.notificationsMax ? `${this.notificationsMax}+` : notificationsCounter
           this.iconStatesEl.setAttribute('counter', textContent)
+          this.setAttribute('has-notifications', '')
           if (typeof navigator.setAppBadge === 'function') navigator.setAppBadge(notificationsCounter)
           document.title = `(${textContent}) ${document.title.replace(/\(\d.*\)\s/g, '')}`
         } else if (typeof navigator.clearAppBadge === 'function') {
           if (!this.hasAttribute('allow-mute')) this.hidden = true
+          this.iconStatesEl.removeAttribute('counter')
+          this.removeAttribute('has-notifications')
           navigator.clearAppBadge()
           document.title = document.title.replace(/\(\d+\)\s/g, '')
         }
@@ -131,6 +138,7 @@ export default class Notifications extends Hover() {
   }
 
   connectedCallbackOnce () {
+    this.iconStatesEl.setAttribute('updating', '')
     if (this.hasAttribute('on-connected-request-notifications')) {
       this.dispatchEvent(new CustomEvent('yjs-request-notifications', {
         bubbles: true,
@@ -177,7 +185,6 @@ export default class Notifications extends Hover() {
   renderCSS () {
     this.css = /* css */`
       :host {
-        --color: var(--color-error);
         --color-hover: var(--color-yellow);
         --counter-color: var(--color-secondary);
         display: flex;
@@ -187,17 +194,32 @@ export default class Notifications extends Hover() {
         --color: var(--color-yellow);
         --counter-color: var(--color-yellow);
       }
-      :host([hidden]) {
-        display: none;
+      :host([muted]) {
+        --color: var(--color-secondary);
       }
-      :host > p > span#message {
+      :host([has-notifications]) {
+        --color: var(--color-error);
+      }
+      :host > span#message {
+        display: none;
+        cursor: pointer;
+        font-style: italic;
         font-size: 0.75em;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
         width: fit-content;
+        max-width: 10em;
+        align-self: end;
+        padding-left: 0.75em;
       }
-      :host([allow-mute][muted]) > p > span#message {
+      :host([has-notifications]) > span#message {
+        display: block;
+      }
+      :host([allow-mute][muted]) > span#message {
+        display: none;
+      }
+      :host([hidden]) {
         display: none;
       }
     `
@@ -218,7 +240,7 @@ export default class Notifications extends Hover() {
         <wct-icon-mdx state="muted" no-counter title="turn notifications on" id="bell-plus" icon-url="../../../../../../img/icons/bell-plus.svg" size="2em"></wct-icon-mdx>
         <wct-icon-mdx state="default" id="show-modal" title=notifications icon-url="../../../../../../img/icons/bell.svg" size="2em" ${this.hasAttribute('no-hover') ? 'no-hover' : 'hover-on-parent-shadow-root-host'}></wct-icon-mdx>
       </a-icon-states>
-      <p><span id="message"></span></p>
+      <span id="message"></span>
     `
     return this.fetchModules([
       {

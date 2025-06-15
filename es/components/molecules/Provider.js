@@ -113,7 +113,7 @@ export default class Provider extends Shadow() {
         display: none;
       }
       :host > section > chat-m-notifications:has(~ select[value=websocket]) {
-        display: block;
+        display: flex;
       }
       :host > section > select {
         height: 2em;
