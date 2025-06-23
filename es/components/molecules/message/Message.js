@@ -211,7 +211,7 @@ export default class Message extends WebWorker(Intersection()) {
         width: ${this.getAttribute('width') || '80%'};
       }
       :host li:not([deleted]) {
-        min-height: var(--chat-m-message-min-height, 5em);
+        min-height: var(--chat-m-message-min-height, 5em); /* wct-load-template-tag requirement */
       }
       :host([deleted]) li {
         text-decoration: line-through;

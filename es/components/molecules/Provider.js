@@ -1,5 +1,6 @@
 // @ts-check
 import { Shadow } from '../../../../web-components-toolbox/src/es/components/prototypes/Shadow.js'
+import { jsonParseMapUrlReviver } from '../../../../Helpers.js'
 
 /**
 * @export
@@ -10,12 +11,22 @@ export default class Provider extends Shadow() {
   constructor (id, name, data, order, roomName, options = {}, ...args) {
     super({ importMetaUrl: import.meta.url, ...options }, ...args)
 
-    this.setAttribute('id', id)
-    this.name = name
-    /** @type {import('./Providers.js').Provider} */
-    this.data = data
-    this.order = order
-    this.roomName = roomName
+    if (this.template) {
+      ({id: this.id, name: this.name, data: this.data, order: this.order, roomName: this.roomName} = JSON.parse(this.template.content.textContent, jsonParseMapUrlReviver))
+      // revive url from href
+      /** @type {import('./Providers.js').Provider} */
+      this.data.urls.forEach((url, key) => {
+        if (typeof url.url === 'string') this.data.urls.set(key, {...url, url: new URL(url.url)})
+      })
+    } else {
+      this.id = id
+      this.name = name
+      /** @type {import('./Providers.js').Provider} */
+      this.data = data
+      this.order = order
+      this.roomName = roomName
+    }
+    this.setAttribute('id', this.id)
 
     this.keepAliveDefaultValue = 86400000
 
@@ -41,7 +52,7 @@ export default class Provider extends Shadow() {
       event.stopPropagation()
       this.removeAttribute('touched')
       this.iconStatesEl.setAttribute('updating', '')
-      console.log('*********', 'connectEventListener')
+      console.log('*********', 'disconnectEventListener')
     }
     this.undoEventListener = event => {
       event.stopPropagation()
@@ -99,6 +110,7 @@ export default class Provider extends Shadow() {
     this.css = /* css */`
       :host {
         --button-primary-border-radius: var(--border-radius);
+        --button-primary-border-radius: 0 var(--border-radius) var(--border-radius) 0;
       }
       :host > section {
         display: flex;
@@ -107,7 +119,7 @@ export default class Provider extends Shadow() {
         justify-content: space-between;
         border: var(--wct-input-border, 1px solid black);
         border-radius: var(--border-radius);
-        --button-primary-border-radius: 0 var(--border-radius) var(--border-radius) 0;
+        min-height: var(--chat-m-provider-min-height, 5em); /* wct-load-template-tag requirement */
       }
       :host > section > chat-m-notifications {
         display: none;
@@ -311,6 +323,10 @@ export default class Provider extends Shadow() {
 
   get notifications () {
     return this.root.querySelector('chat-m-notifications')
+  }
+
+  get template () {
+    return this.root.querySelector('template')
   }
 
   get customStyle () {

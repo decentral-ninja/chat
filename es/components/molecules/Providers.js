@@ -1,5 +1,6 @@
 // @ts-check
 import { Shadow } from '../../../../event-driven-web-components-prototypes/src/Shadow.js'
+import { jsonStringifyMapUrlReplacer } from '../../../../Helpers.js'
 
 /* global Environment */
 /* global self */
@@ -201,6 +202,7 @@ export default class Providers extends Shadow() {
   renderCSS () {
     this.css = /* css */`
       :host {
+        --chat-m-provider-min-height: 5em;
         --button-primary-width: 100%;
         --button-primary-height: 100%;
         --wct-input-input-height: 100%;
@@ -241,6 +243,9 @@ export default class Providers extends Shadow() {
             display: flex;
             flex-direction: column;
             gap: 0.5em;
+          }
+          :host > dialog #providers > wct-load-template-tag {
+            min-height: var(--chat-m-provider-min-height);
           }
         </style>
         <dialog>
@@ -305,19 +310,18 @@ export default class Providers extends Shadow() {
         // @ts-ignore
         path: `${this.importMetaUrl}../../../../components/atoms/iconStates/IconStates.js?${Environment?.version || ''}`,
         name: 'a-icon-states'
+      },
+      {
+        // @ts-ignore
+        path: `${this.importMetaUrl}./Provider.js?${Environment?.version || ''}`,
+        name: 'chat-m-provider'
       }
     ])
   }
 
   renderData (data, roomName) {
     Providers.toggleIconStates(this.iconStatesEl, data, this.hasAttribute('online'))
-    Providers.renderProvidersList(this.providersDiv, data, this.fetchModules([
-      {
-        // @ts-ignore
-        path: `${this.importMetaUrl}./Provider.js?${Environment?.version || ''}`,
-        name: 'chat-m-provider'
-      }
-    ]), roomName)
+    Providers.renderProvidersList(this.providersDiv, data, roomName)
     // TODO: ******************************* Below only reproduces the old behavior *******************************
     new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-providers', {
       detail: {
@@ -345,7 +349,7 @@ export default class Providers extends Shadow() {
     )
   }
 
-  static async renderProvidersList (div, data, fetchModuleProvider, roomName) {
+  static async renderProvidersList (div, data, roomName) {
     /** @type {ProvidersContainer} */
     const providers = new Map()
     // important, keep order not that less information overwrites the more precise information at mergeProvider
@@ -366,7 +370,8 @@ export default class Providers extends Shadow() {
       unknown: 5
     }
     const lowestPriority = 6
-    fetchModuleProvider.then(modules => Array.from(providers).map(([name, providerData]) => {
+    const tempDiv = document.createElement('div')
+    tempDiv.innerHTML = Array.from(providers).map(([name, providerData]) => {
       // calc the status number; the lower the number the higher it shall rank in the ascending list
       providerData.statusCount = providerData.status.reduce((acc, curr, i) => {
         acc[i] = statusPriority[curr] ? statusPriority[curr] : lowestPriority
@@ -376,17 +381,24 @@ export default class Providers extends Shadow() {
       return [name, providerData]
       // Note: A negative value indicates that a should come before b
       // @ts-ignore
-    }).sort(([aName, aProviderData], [bName, bProviderData]) => aProviderData.statusCount - bProviderData.statusCount).forEach(([name, providerData], i) => {
+    }).sort(([aName, aProviderData], [bName, bProviderData]) => aProviderData.statusCount - bProviderData.statusCount).reduce((acc, [name, providerData], i) => {
       //// render or update
       // @ts-ignore
       const id = `${self.Environment?.providerNamespace || 'p_'}${name.replaceAll('.', '-')}` // string <ident> without dots https://developer.mozilla.org/en-US/docs/Web/CSS/ident
+      const renderProvider = () => `<wct-load-template-tag id=${id} no-css style="order: 10000;"><template><chat-m-provider><template>${JSON.stringify({id, name, data: providerData, order: i, roomName}, jsonStringifyMapUrlReplacer)}</template></chat-m-provider></template></wct-load-template-tag>`
       let provider
       if ((provider = div.querySelector(`#${id}`))) {
-        provider.update(providerData, i)
+        if (typeof provider.update === 'function') {
+          provider.update(providerData, i)
+        } else {
+          provider.outerHTML = renderProvider()
+        }
       } else {
-        div.appendChild(new modules[0].constructorClass(id, name, providerData, i, roomName))
+        return acc + renderProvider()
       }
-    }))
+      return acc
+    }, '')
+    Array.from(tempDiv.children).forEach(child => div.appendChild(child))
   }
 
   static fillProvidersWithProvidersFromCrdt (providers, data, status = 'unknown') {
