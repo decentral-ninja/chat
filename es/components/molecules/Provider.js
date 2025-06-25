@@ -2,6 +2,8 @@
 import { Shadow } from '../../../../web-components-toolbox/src/es/components/prototypes/Shadow.js'
 import { jsonParseMapUrlReviver } from '../../../../Helpers.js'
 
+/* global Environment */
+
 /**
 * @export
 * @class Provider
@@ -12,11 +14,11 @@ export default class Provider extends Shadow() {
     super({ importMetaUrl: import.meta.url, ...options }, ...args)
 
     if (this.template) {
-      ({id: this.id, name: this.name, data: this.data, order: this.order, roomName: this.roomName} = JSON.parse(this.template.content.textContent, jsonParseMapUrlReviver))
+      ({ id: this.id, name: this.name, data: this.data, order: this.order, roomName: this.roomName } = JSON.parse(this.template.content.textContent, jsonParseMapUrlReviver))
       // revive url from href
       /** @type {import('./Providers.js').Provider} */
       this.data.urls.forEach((url, key) => {
-        if (typeof url.url === 'string') this.data.urls.set(key, {...url, url: new URL(url.url)})
+        if (typeof url.url === 'string') this.data.urls.set(key, { ...url, url: new URL(url.url) })
       })
     } else {
       this.id = id
@@ -33,7 +35,7 @@ export default class Provider extends Shadow() {
     const changeEventListener = event => this.setAttribute('touched', '')
     let msCounter, daysCounter
     this.inputKeepAliveChangeEventListener = (event, initialValue = false) => {
-      this.spanKeepAliveCounter.textContent = `${event.target.value} (delete data on websocket after: ${msCounter = event.target.value/1000/60/60} hours ≈ ${daysCounter = (msCounter/24).toFixed(1)} day${Number(daysCounter) >= 2 ? 's' : ''})`
+      this.spanKeepAliveCounter.textContent = `${event.target.value} (delete data on websocket after: ${msCounter = event.target.value / 1000 / 60 / 60} hours ≈ ${daysCounter = (msCounter / 24).toFixed(1)} day${Number(daysCounter) >= 2 ? 's' : ''})`
       if (!initialValue) changeEventListener(event)
     }
     this.selectNameChangeEventListener = event => {
@@ -159,33 +161,7 @@ export default class Provider extends Shadow() {
         :host {}
       }
     `
-    return this.fetchTemplate()
-  }
-
-  /**
-   * fetches the template
-   */
-  fetchTemplate () {
-    /** @type {import("../../../../web-components-toolbox/src/es/components/prototypes/Shadow.js").fetchCSSParams[]} */
-    const styles = [
-      {
-        path: `${this.importMetaUrl}../../../../css/reset.css`, // no variables for this reason no namespace
-        namespace: false
-      },
-      {
-        path: `${this.importMetaUrl}../../../../css/style.css`, // apply namespace and fallback to allow overwriting on deeper level
-        namespaceFallback: true
-      }
-    ]
-    switch (this.getAttribute('namespace')) {
-      case 'provider-default-':
-        return this.fetchCSS([{
-          path: `${this.importMetaUrl}./default-/default-.css`, // apply namespace since it is specific and no fallback
-          namespace: false
-        }, ...styles], false) // using showPromises @connectedCallback makes hide action inside Shadow.fetchCSS obsolete, so second argument hide = false
-      default:
-        return //this.fetchCSS(styles)
-    }
+    return Promise.resolve()
   }
 
   /**
@@ -218,7 +194,7 @@ export default class Provider extends Shadow() {
       </section>
     `
     this.html = this.customStyle
-    this.inputKeepAliveChangeEventListener({target: {value: this.inputKeepAlive.value}}, true)
+    this.inputKeepAliveChangeEventListener({ target: { value: this.inputKeepAlive.value } }, true)
     this.update(this.data, this.order)
     return this.fetchModules([
       {
@@ -262,7 +238,7 @@ export default class Provider extends Shadow() {
     if (data.status.includes('connected')) {
       this.setAttribute('connected', '')
       this.iconStatesEl.setAttribute('state', 'connected')
-    } else  {
+    } else {
       this.removeAttribute('connected')
       this.iconStatesEl.setAttribute('state', 'disconnected')
     }
@@ -283,7 +259,7 @@ export default class Provider extends Shadow() {
       let currentKeepAlive
       if ((i === 0 || selected) && (currentKeepAlive = Number(urlContainer.url.searchParams.get('keep-alive')))) keepAlive = currentKeepAlive
     })
-    this.inputKeepAliveChangeEventListener({target: {value: (this.inputKeepAlive.value = keepAlive)}}, true)
+    this.inputKeepAliveChangeEventListener({ target: { value: (this.inputKeepAlive.value = keepAlive) } }, true)
   }
 
   static updateSelect (select, value, selected) {

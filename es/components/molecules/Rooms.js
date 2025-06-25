@@ -153,11 +153,13 @@ export default class Rooms extends Shadow() {
           composed: true
         }))
       } else if ((target = event.composedPath().find(el => el.matches?.('[disabled]')))) {
-        if (target.querySelector('chat-m-notifications[has-notifications]')) this.dispatchEvent(new CustomEvent('provider-dialog-show-event', {
-          bubbles: true,
-          cancelable: true,
-          composed: true
-        }))
+        if (target.querySelector('chat-m-notifications[has-notifications]')) {
+          this.dispatchEvent(new CustomEvent('provider-dialog-show-event', {
+            bubbles: true,
+            cancelable: true,
+            composed: true
+          }))
+        }
         this.dialog?.close()
       }
     }

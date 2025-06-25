@@ -343,8 +343,8 @@ export default class Providers extends Shadow() {
   static async toggleIconStates (iconStatesEl, data, online) {
     iconStatesEl.setAttribute('state', online
       ? (await data.getSessionProvidersByStatus()).connected.length
-        ? 'connected'
-        : 'disconnected'
+          ? 'connected'
+          : 'disconnected'
       : 'offline'
     )
   }
@@ -382,10 +382,10 @@ export default class Providers extends Shadow() {
       // Note: A negative value indicates that a should come before b
       // @ts-ignore
     }).sort(([aName, aProviderData], [bName, bProviderData]) => aProviderData.statusCount - bProviderData.statusCount).reduce((acc, [name, providerData], i) => {
-      //// render or update
+      /// / render or update
       // @ts-ignore
       const id = `${self.Environment?.providerNamespace || 'p_'}${name.replaceAll('.', '-')}` // string <ident> without dots https://developer.mozilla.org/en-US/docs/Web/CSS/ident
-      const renderProvider = () => `<wct-load-template-tag id=${id} no-css style="order: 10000;"><template><chat-m-provider><template>${JSON.stringify({id, name, data: providerData, order: i, roomName}, jsonStringifyMapUrlReplacer)}</template></chat-m-provider></template></wct-load-template-tag>`
+      const renderProvider = () => `<wct-load-template-tag id=${id} no-css style="order: 10000;"><template><chat-m-provider><template>${JSON.stringify({ id, name, data: providerData, order: i, roomName }, jsonStringifyMapUrlReplacer)}</template></chat-m-provider></template></wct-load-template-tag>`
       let provider
       if ((provider = div.querySelector(`#${id}`))) {
         if (typeof provider.update === 'function') {
@@ -410,7 +410,7 @@ export default class Providers extends Shadow() {
       }
       providers.set(url.hostname, Providers.mergeProvider(providers.get(url.hostname), {
         status: [status],
-        urls: new Map([[url.origin, { name, url, status: status, origin: 'crdt' }]]),
+        urls: new Map([[url.origin, { name, url, status, origin: 'crdt' }]]),
         origins: ['crdt']
       }))
     }))
@@ -433,7 +433,7 @@ export default class Providers extends Shadow() {
       const status = prop === 'providers' ? 'once-established' : 'unknown'
       providers.set(url.hostname, Providers.mergeProvider(providers.get(url.hostname), {
         status: [status],
-        urls: new Map([[url.origin, { name, url, status: status, origin: room }]]),
+        urls: new Map([[url.origin, { name, url, status, origin: room }]]),
         origins: [room],
         providerFallbacks: new Map(providerFallbacks[url.hostname]?.urls)
       }))
@@ -446,7 +446,7 @@ export default class Providers extends Shadow() {
       const url = new URL(provider.url)
       providers.set(url.hostname, Providers.mergeProvider(providers.get(url.hostname), {
         status: [status],
-        urls: new Map([[url.origin, { name: provider.name, url, status: status, origin: 'environment' }]]),
+        urls: new Map([[url.origin, { name: provider.name, url, status, origin: 'environment' }]]),
         origins: ['environment']
       }))
     })
@@ -464,17 +464,19 @@ export default class Providers extends Shadow() {
       }))
     })
     // keep strictly this order, that the connected overwrites the disconnected
-    loopProviders(data['disconnected'], 'disconnected')
-    loopProviders(data['connected'], 'connected')
+    loopProviders(data.disconnected, 'disconnected')
+    loopProviders(data.connected, 'connected')
     return providers
   }
 
   static fillProvidersWithPermanentFallbacksFromEnvironment (providers, data) {
     Array.from(data.permanentFallbacks).forEach(([provider, fallback]) => {
       const url = new URL(provider)
-      if (providers.has(url.hostname)) providers.set(url.hostname, Providers.mergeProvider(providers.get(url.hostname), {
-        permanentFallback: fallback
-      }))
+      if (providers.has(url.hostname)) {
+        providers.set(url.hostname, Providers.mergeProvider(providers.get(url.hostname), {
+          permanentFallback: fallback
+        }))
+      }
     })
     return providers
   }
@@ -503,10 +505,10 @@ export default class Providers extends Shadow() {
       acc.set(key, !valueA
         ? valueB
         : !valueB
-          ? valueA
-          : Array.isArray(valueA) && Array.isArray(valueB)
-            ? Array.from(new Set(valueA.concat(valueB)))
-            : Object.assign(valueA, valueB)
+            ? valueA
+            : Array.isArray(valueA) && Array.isArray(valueB)
+              ? Array.from(new Set(valueA.concat(valueB)))
+              : Object.assign(valueA, valueB)
       ).get(key)
       return acc
     }, new Map())

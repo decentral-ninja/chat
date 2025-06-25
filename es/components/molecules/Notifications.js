@@ -95,31 +95,29 @@ export default class Notifications extends Hover() {
       event.stopPropagation()
       event.preventDefault()
       this.iconStatesEl.setAttribute('updating', '')
-      new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-mute-notifications', {
+      this.dispatchEvent(new CustomEvent('yjs-mute-notifications', {
         detail: {
           roomName: this.getAttribute('room'),
-          hostname: this.getAttribute('hostname'),
-          resolve
+          hostname: this.getAttribute('hostname')
         },
         bubbles: true,
         cancelable: true,
         composed: true
-      })))
+      }))
     }
     this.unmuteEventListener = event => {
       event.stopPropagation()
       event.preventDefault()
       this.iconStatesEl.setAttribute('updating', '')
-      new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-unmute-notifications', {
+      this.dispatchEvent(new CustomEvent('yjs-unmute-notifications', {
         detail: {
           roomName: this.getAttribute('room'),
-          hostname: this.getAttribute('hostname'),
-          resolve
+          hostname: this.getAttribute('hostname')
         },
         bubbles: true,
         cancelable: true,
         composed: true
-      })))
+      }))
     }
   }
 
@@ -153,7 +151,7 @@ export default class Notifications extends Hover() {
     super.disconnectedCallback()
     this.globalEventTarget.removeEventListener('yjs-notifications', this.notificationsEventListener)
     if (!this.hasAttribute('no-click')) this.removeEventListener('click', this.clickEventListener)
-      if (this.hasAttribute('allow-mute')) {
+    if (this.hasAttribute('allow-mute')) {
       this.muteEl.removeEventListener('click', this.muteEventListener)
       this.unmuteEl.removeEventListener('click', this.unmuteEventListener)
     }
