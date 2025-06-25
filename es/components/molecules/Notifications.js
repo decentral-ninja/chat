@@ -194,8 +194,8 @@ export default class Notifications extends Hover() {
         --color: var(--color-yellow);
         --counter-color: var(--color-yellow);
       }
-      :host([muted]) {
-        --color: var(--color-secondary);
+      :host(:not([muted])) {
+        --color: var(--color-green-full);
       }
       :host([has-notifications]) {
         --color: var(--color-error);
@@ -237,7 +237,7 @@ export default class Notifications extends Hover() {
     this.html = /* html */`
       <a-icon-states no-pointer-events-updating show-counter-on-hover mode=false id=icon-states>
         ${this.hasAttribute('allow-mute')
-          ? '<wct-icon-mdx state="default-hover" no-counter title="turn notifications off" id="bell-off" style="--color: var(--color-hover);" icon-url="../../../../../../img/icons/bell-off.svg" size="2em"></wct-icon-mdx>'
+          ? '<wct-icon-mdx state="default-hover" no-counter title="turn notifications off" id="bell-off" icon-url="../../../../../../img/icons/bell-off.svg" size="2em"></wct-icon-mdx>'
           : ''
         }
         <wct-icon-mdx state="muted" no-counter title="turn notifications on" id="bell-plus" icon-url="../../../../../../img/icons/bell-plus.svg" size="2em"></wct-icon-mdx>

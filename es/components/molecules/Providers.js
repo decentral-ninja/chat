@@ -454,17 +454,18 @@ export default class Providers extends Shadow() {
   }
 
   static fillProvidersWithSessionProvidersByStatus (providers, data, separator) {
-    for (const key in data) {
-      data[key].forEach(url => {
-        const [name, realUrl] = url.split(separator)
-        url = new URL(realUrl)
-        providers.set(url.hostname, Providers.mergeProvider(providers.get(url.hostname), {
-          status: [key],
-          urls: new Map([[url.origin, { name, url, status: key, origin: 'session' }]]),
-          origins: ['session']
-        }))
-      })
-    }
+    const loopProviders = (providersArr, key) => providersArr.forEach(url => {
+      const [name, realUrl] = url.split(separator)
+      url = new URL(realUrl)
+      providers.set(url.hostname, Providers.mergeProvider(providers.get(url.hostname), {
+        status: [key],
+        urls: new Map([[url.origin, { name, url, status: key, origin: 'session' }]]),
+        origins: ['session']
+      }))
+    })
+    // keep strictly this order, that the connected overwrites the disconnected
+    loopProviders(data['disconnected'], 'disconnected')
+    loopProviders(data['connected'], 'connected')
     return providers
   }
 

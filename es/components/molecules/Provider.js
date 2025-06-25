@@ -152,6 +152,9 @@ export default class Provider extends Shadow() {
       :host([touched]:not([connected])) > section > :where(wct-button#set-and-connect, wct-button#undo) {
         display: block;
       }
+       :host > section > span:has(+ span#port:empty) {
+        display: none;
+       }
       @media only screen and (max-width: _max-width_) {
         :host {}
       }
@@ -190,9 +193,6 @@ export default class Provider extends Shadow() {
    * @returns Promise<void>
    */
   renderHTML () {
-    // TODO: Event when it has fallbacks, so that other providers can react and know that they are a fallback for...
-    // TODO: Intersection observer for calling data.getWebsocketInfo & data.pingProvider
-    // TODO: Add notification
     // keep-alive max=10days, value=1day, step=1h
     this.html = /* html */`
       <section>
@@ -205,6 +205,8 @@ export default class Provider extends Shadow() {
         <select id=protocol></select>
         <span>//</span>
         <span id=hostname></span>
+        <span>:</span>
+        <span id=port></span>
         <span id=keep-alive-name>?keep-alive=</span>
         <span id=keep-alive-counter></span>
         <input id=keep-alive type=range min=0 max=864000000 value="${this.keepAliveDefaultValue}" step=3600000 />
@@ -257,9 +259,6 @@ export default class Provider extends Shadow() {
       }
     `
     this.notifications.setAttribute('hostname', Array.from(this.data?.urls || [])?.[0]?.[1].url.hostname || '')
-    // TODO: on change input make component touched and stop updating until user confirmed the value
-    // TODO: Link to users dialog vice-versa
-    // TODO: Link to docker hub and github y-websocket repo
     if (data.status.includes('connected')) {
       this.setAttribute('connected', '')
       this.iconStatesEl.setAttribute('state', 'connected')
@@ -276,7 +275,11 @@ export default class Provider extends Shadow() {
       Provider.updateSelect(this.selectName, urlContainer.name || 'websocket', selected)
       this.selectName.setAttribute('value', this.selectName.value)
       Provider.updateSelect(this.selectProtocol, urlContainer.url.protocol, selected)
-      if (i === 0) this.spanHostname.textContent = urlContainer.url.hostname
+      this.selectProtocol.setAttribute('value', this.selectProtocol.value)
+      if (i === 0) {
+        this.spanHostname.textContent = urlContainer.url.hostname
+        this.spanPort.textContent = urlContainer.url.port
+      }
       let currentKeepAlive
       if ((i === 0 || selected) && (currentKeepAlive = Number(urlContainer.url.searchParams.get('keep-alive')))) keepAlive = currentKeepAlive
     })
@@ -311,6 +314,10 @@ export default class Provider extends Shadow() {
 
   get spanHostname () {
     return this.root.querySelector('span[id=hostname]')
+  }
+
+  get spanPort () {
+    return this.root.querySelector('span[id=port]')
   }
 
   get spanKeepAliveCounter () {
