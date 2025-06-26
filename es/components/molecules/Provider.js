@@ -296,8 +296,8 @@ export default class Provider extends Shadow() {
         </div>
         <wct-button id=connect style="grid-area: connect-btn" namespace="button-primary-" request-event-name="connect" click-no-toggle-active>connect</wct-button>
         <wct-button id=disconnect style="grid-area: connect-btn" namespace="button-primary-" request-event-name="disconnect" click-no-toggle-active>disconnect</wct-button>
-        <wct-button id=set-and-connect style="grid-area: connect-btn" namespace="button-primary-" request-event-name="connect" click-no-toggle-active>set changes & connect</wct-button>
-        <wct-button id=set style="grid-area: set-btn" namespace="button-secondary-" request-event-name="connect" click-no-toggle-active>set changes</wct-button>
+        <wct-button id=set-and-connect style="grid-area: connect-btn" namespace="button-primary-" request-event-name="connect" click-no-toggle-active>save changes & connect</wct-button>
+        <wct-button id=set style="grid-area: set-btn" namespace="button-secondary-" request-event-name="connect" click-no-toggle-active>save changes</wct-button>
         <wct-button id=undo style="grid-area: undo-btn" namespace="button-secondary-" request-event-name="undo" click-no-toggle-active>undo</wct-button>
       </section>
     `
