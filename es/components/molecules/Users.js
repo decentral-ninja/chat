@@ -253,7 +253,7 @@ export default class Users extends Shadow() {
             padding: 1em;
           }
           :host ol > li > * {
-            padding: 0.75em;
+            padding: var(--card-padding, 0.75em);
             margin: 0;
             transition: padding 0.05s ease-out;
           }
@@ -277,6 +277,9 @@ export default class Users extends Shadow() {
           }
           :host ol > li > div {
             height: 100%;
+          }
+          :host ol > li > div > table {
+            margin: 0;
           }
           :host ol > li > div > table > tbody {
             display: grid;

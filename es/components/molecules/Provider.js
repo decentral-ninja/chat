@@ -35,7 +35,8 @@ export default class Provider extends Shadow() {
     const changeEventListener = event => this.setAttribute('touched', '')
     let msCounter, daysCounter
     this.inputKeepAliveChangeEventListener = (event, initialValue = false) => {
-      this.spanKeepAliveCounter.textContent = `${event.target.value} (delete data on websocket after: ${msCounter = event.target.value / 1000 / 60 / 60} hours ≈ ${daysCounter = (msCounter / 24).toFixed(1)} day${Number(daysCounter) >= 2 ? 's' : ''})`
+      this.spanKeepAliveCounter.textContent = event.target.value
+      this.spanKeepAliveText.textContent = `(delete data on websocket after: ${msCounter = event.target.value / 1000 / 60 / 60} ${msCounter === 0 ? ' seconds = immediately after the last client disconnects!' : `hours ≈ ${daysCounter = (msCounter / 24).toFixed(1)} day${Number(daysCounter) >= 2 ? 's' : ''}`})`
       if (!initialValue) changeEventListener(event)
     }
     this.selectNameChangeEventListener = event => {
@@ -47,12 +48,14 @@ export default class Provider extends Shadow() {
     this.connectEventListener = event => {
       event.stopPropagation()
       this.removeAttribute('touched')
+      this.setAttribute('updating', '')
       this.iconStatesEl.setAttribute('updating', '')
       console.log('*********', 'connectEventListener')
     }
     this.disconnectEventListener = event => {
       event.stopPropagation()
       this.removeAttribute('touched')
+      this.setAttribute('updating', '')
       this.iconStatesEl.setAttribute('updating', '')
       console.log('*********', 'disconnectEventListener')
     }
@@ -112,32 +115,110 @@ export default class Provider extends Shadow() {
     this.css = /* css */`
       :host {
         --button-primary-border-radius: var(--border-radius);
-        --button-primary-border-radius: 0 var(--border-radius) var(--border-radius) 0;
+        --button-primary-width: 100%;
+        --button-primary-height: 100%;
+        --button-secondary-border-radius: var(--border-radius);
+        --button-secondary-width: 100%;
+        --button-secondary-height: 100%;
+        --h2-word-break: break-all;
+        position: relative;
+      }
+      :host([updating]) {
+        --button-primary-background-color-custom: var(--color-gray);
+        --button-primary-border-color: var(--color-gray);
+        pointer-events: none;
+      }
+      :host([updating])::after {
+          animation: updating 3s ease infinite;
+          content: "";
+          border-radius: var(--border-radius);
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background: linear-gradient(120deg, var(--color-secondary), var(--background-color));
+          background-size: 200% 200%;
+          opacity: .5;
+      }
+      @keyframes updating { 
+        0%{background-position:10% 0%}
+        50%{background-position:91% 100%}
+        100%{background-position:10% 0%}
       }
       :host > section {
-        display: flex;
-        align-items: center;
-        gap: 0.25em;
-        justify-content: space-between;
-        border: var(--wct-input-border, 1px solid black);
+        border: var(--wct-input-border, 1px solid var(--color-black));
         border-radius: var(--border-radius);
+        box-shadow: var(--box-shadow-length-one) var(--box-shadow-color), var(--box-shadow-length-two) var(--box-shadow-color);
         min-height: var(--chat-m-provider-min-height, 5em); /* wct-load-template-tag requirement */
+      }
+      /* https://weedshaker.github.io/cssGridLayout/ */
+      #grid {
+        display: grid;
+        grid-template-areas:
+          "connectionStateIcon title title title title notification"
+          "url url url url url url"
+          "keep-alive keep-alive keep-alive keep-alive keep-alive keep-alive"
+          "set-btn set-btn undo-btn undo-btn connect-btn connect-btn";
+        grid-template-columns: repeat(6, 1fr);
+        padding: var(--card-padding, 0.75em);
+        align-items: center;
+        gap: var(--grid-gap, 0.5em);
+      }
+      :host > section > a-icon-states {
+        display: block;
+        align-self: start;
+        justify-self: start;
       }
       :host > section > chat-m-notifications {
         display: none;
+        align-self: start;
+        justify-self: end;
       }
-      :host > section > chat-m-notifications:has(~ select[value=websocket]) {
+      :host > section > chat-m-notifications:has(~ div#url > select[value=websocket]) {
         display: flex;
       }
-      :host > section > select {
-        height: 2em;
-        font-size: 1em;
-      }
-      :host > section > select ~ :where(#keep-alive-counter, #keep-alive, #keep-alive-name) {
+      :host > section > div#url > span:has(+ span#port:empty) {
         display: none;
       }
-      :host > section > select#name[value=websocket] ~ :where(#keep-alive-counter, #keep-alive, #keep-alive-name) {
-        display: block;
+      :host > section > div:where(#url, #keep-alive) {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: center;
+        background-color: var(--color-gray-lighter);
+        padding: 0.5em;
+        border: 1px solid var(--color-black);
+        border-radius: var(--border-radius);
+      }
+      :host > section > div#keep-alive {
+        gap: 1em;
+        justify-content: space-between;
+      }
+      :host > section > div#url > select {
+        --outline-color: transparent;
+        border: 0;
+        height: 2em;
+        font-size: 1em;
+        cursor: pointer;
+      }
+      :host > section > div#keep-alive, :host > section > div#url > :where(#keep-alive-name, #keep-alive-counter) {
+        display: none;
+      }
+      :host > section:has(> div#url > select[value=websocket]) > div#keep-alive {
+        display: flex;
+      }
+      :host > section:has(> div#url > select[value=websocket]) > div#url > :where(#keep-alive-name, #keep-alive-counter) {
+        display: inline;
+      }
+      :host > section > div#keep-alive > #keep-alive-input {
+        max-width: 100%;
+        margin: 0;
+        flex-grow: 1;
+      }
+      :host > section > wct-button {
+        height: 100%;
+        word-break: break-word;
       }
       :host > section :where(wct-icon-mdx, wct-button) {
         display: none;
@@ -154,14 +235,35 @@ export default class Provider extends Shadow() {
       :host([touched]:not([connected])) > section > :where(wct-button#set-and-connect, wct-button#undo) {
         display: block;
       }
-       :host > section > span:has(+ span#port:empty) {
-        display: none;
-       }
       @media only screen and (max-width: _max-width_) {
-        :host {}
+        #grid {
+          grid-template-areas:
+            "connectionStateIcon connectionStateIcon connectionStateIcon notification notification notification"
+            "title title title title title title"
+            "url url url url url url"
+            "keep-alive keep-alive keep-alive keep-alive keep-alive keep-alive"
+            "set-btn set-btn set-btn undo-btn undo-btn undo-btn"
+            "connect-btn connect-btn connect-btn connect-btn connect-btn connect-btn";
+        }
       }
     `
-    return Promise.resolve()
+    return this.fetchTemplate()
+  }
+
+  /**
+   * fetches the template
+   */
+  fetchTemplate () {
+    return this.fetchCSS([
+      {
+        path: `${this.importMetaUrl}../../../../web-components-toolbox/src/css/reset.css`, // no variables for this reason no namespace
+        namespace: false
+      },
+      {
+        path: `${this.importMetaUrl}../../../../web-components-toolbox/src/css/style.css`, // apply namespace and fallback to allow overwriting on deeper level
+        namespaceFallback: true
+      }
+    ])
   }
 
   /**
@@ -171,26 +273,32 @@ export default class Provider extends Shadow() {
   renderHTML () {
     // keep-alive max=10days, value=1day, step=1h
     this.html = /* html */`
-      <section>
-        <a-icon-states state="disconnected">
+      <section id=grid>
+        <a-icon-states state="disconnected" style="grid-area: connectionStateIcon">
           <wct-icon-mdx state="connected" hover-on-parent-shadow-root-host id=connected title=connected style="--color: var(--color-green-full);" no-hover icon-url="../../../../../../img/icons/plug-connected.svg" size="2em"></wct-icon-mdx>
           <wct-icon-mdx state="disconnected" hover-on-parent-shadow-root-host id=disconnected title=disconnected style="--color: var(--color-secondary);" no-hover icon-url="../../../../../../img/icons/plug-connected-x.svg" size="2em"></wct-icon-mdx>
         </a-icon-states>
-        <chat-m-notifications room="${this.roomName}" hostname="${Array.from(this.data?.urls || [])?.[0]?.[1].url.hostname || ''}" on-connected-request-notifications allow-mute no-click no-hover></chat-m-notifications>
-        <select id=name></select>
-        <select id=protocol></select>
-        <span>//</span>
-        <span id=hostname></span>
-        <span>:</span>
-        <span id=port></span>
-        <span id=keep-alive-name>?keep-alive=</span>
-        <span id=keep-alive-counter></span>
-        <input id=keep-alive type=range min=0 max=864000000 value="${this.keepAliveDefaultValue}" step=3600000 />
-        <wct-button id=connect namespace="button-primary-" request-event-name="connect" click-no-toggle-active>connect</wct-button>
-        <wct-button id=set-and-connect namespace="button-primary-" request-event-name="connect" click-no-toggle-active>set changes & connect</wct-button>
-        <wct-button id=set namespace="button-primary-" request-event-name="connect" click-no-toggle-active>set changes</wct-button>
-        <wct-button id=undo namespace="button-primary-" request-event-name="undo" click-no-toggle-active>undo</wct-button>
-        <wct-button id=disconnect namespace="button-primary-" request-event-name="disconnect" click-no-toggle-active>disconnect</wct-button>
+        <h2 style="grid-area: title">Title</h2>
+        <chat-m-notifications style="grid-area: notification" room="${this.roomName}" hostname="${Array.from(this.data?.urls || [])?.[0]?.[1].url.hostname || ''}" on-connected-request-notifications allow-mute no-click no-hover></chat-m-notifications>
+        <div id=url style="grid-area: url">
+          <select id=name></select>
+          <select id=protocol></select>
+          <span>//</span>
+          <span id=hostname></span>
+          <span>:</span>
+          <span id=port></span>
+          <span id=keep-alive-name>?keep-alive=</span>
+          <span id=keep-alive-counter></span>
+        </div>
+        <div id=keep-alive style="grid-area: keep-alive">
+          <input id=keep-alive-input type=range min=0 max=864000000 value="${this.keepAliveDefaultValue}" step=3600000 />
+          <span id=keep-alive-text></span>
+        </div>
+        <wct-button id=connect style="grid-area: connect-btn" namespace="button-primary-" request-event-name="connect" click-no-toggle-active>connect</wct-button>
+        <wct-button id=disconnect style="grid-area: connect-btn" namespace="button-primary-" request-event-name="disconnect" click-no-toggle-active>disconnect</wct-button>
+        <wct-button id=set-and-connect style="grid-area: connect-btn" namespace="button-primary-" request-event-name="connect" click-no-toggle-active>set changes & connect</wct-button>
+        <wct-button id=set style="grid-area: set-btn" namespace="button-secondary-" request-event-name="connect" click-no-toggle-active>set changes</wct-button>
+        <wct-button id=undo style="grid-area: undo-btn" namespace="button-secondary-" request-event-name="undo" click-no-toggle-active>undo</wct-button>
       </section>
     `
     this.html = this.customStyle
@@ -242,6 +350,7 @@ export default class Provider extends Shadow() {
       this.removeAttribute('connected')
       this.iconStatesEl.setAttribute('state', 'disconnected')
     }
+    this.removeAttribute('updating')
     this.iconStatesEl.removeAttribute('updating')
     // avoid updating when inputs got changed
     if (this.hasAttribute('touched')) return
@@ -253,6 +362,7 @@ export default class Provider extends Shadow() {
       Provider.updateSelect(this.selectProtocol, urlContainer.url.protocol, selected)
       this.selectProtocol.setAttribute('value', this.selectProtocol.value)
       if (i === 0) {
+        this.titleEl.textContent = urlContainer.url.hostname
         this.spanHostname.textContent = urlContainer.url.hostname
         this.spanPort.textContent = urlContainer.url.port
       }
@@ -274,6 +384,10 @@ export default class Provider extends Shadow() {
 
   get iconStatesEl () {
     return this.root.querySelector('a-icon-states')
+  }
+
+  get titleEl () {
+    return this.root.querySelector('h2')
   }
 
   get section () {
@@ -299,9 +413,12 @@ export default class Provider extends Shadow() {
   get spanKeepAliveCounter () {
     return this.root.querySelector('span[id=keep-alive-counter]')
   }
+  get spanKeepAliveText () {
+    return this.root.querySelector('span[id=keep-alive-text]')
+  }
 
   get inputKeepAlive () {
-    return this.root.querySelector('input[id=keep-alive]')
+    return this.root.querySelector('input[id=keep-alive-input]')
   }
 
   get notifications () {

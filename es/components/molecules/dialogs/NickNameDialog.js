@@ -83,7 +83,7 @@ export default class NickNameDialog extends SetStringDialog {
         <style protected>
           #set-default-nickname-wrapper {
             display: flex;
-            gap: 0.5em;
+            gap: var(--grid-gap, 0.5em);
             padding: 0.5em 0 0;
             justify-content: end;
           }

@@ -242,7 +242,7 @@ export default class Providers extends Shadow() {
           :host > dialog #providers {
             display: flex;
             flex-direction: column;
-            gap: 0.5em;
+            gap: var(--grid-gap, 0.5em);
           }
           :host > dialog #providers > wct-load-template-tag {
             min-height: var(--chat-m-provider-min-height);
@@ -352,6 +352,7 @@ export default class Providers extends Shadow() {
   static async renderProvidersList (div, data, roomName) {
     /** @type {ProvidersContainer} */
     const providers = new Map()
+    // Note: WebWorkers 900ms are slower than this 240ms, tested 06/25/25
     // important, keep order not that less information overwrites the more precise information at mergeProvider
     Providers.fillProvidersWithProvidersFromCrdt(providers, data.allProviders)
     Providers.fillProvidersWithProvidersFromRooms(providers, await data.getProvidersFromRooms(), data.separator)
@@ -385,7 +386,7 @@ export default class Providers extends Shadow() {
       /// / render or update
       // @ts-ignore
       const id = `${self.Environment?.providerNamespace || 'p_'}${name.replaceAll('.', '-')}` // string <ident> without dots https://developer.mozilla.org/en-US/docs/Web/CSS/ident
-      const renderProvider = () => `<wct-load-template-tag id=${id} no-css style="order: 10000;"><template><chat-m-provider><template>${JSON.stringify({ id, name, data: providerData, order: i, roomName }, jsonStringifyMapUrlReplacer)}</template></chat-m-provider></template></wct-load-template-tag>`
+      const renderProvider = () => `<wct-load-template-tag id=${id} no-css style="order: ${i};"><template><chat-m-provider><template>${JSON.stringify({ id, name, data: providerData, order: i, roomName }, jsonStringifyMapUrlReplacer)}</template></chat-m-provider></template></wct-load-template-tag>`
       let provider
       if ((provider = div.querySelector(`#${id}`))) {
         if (typeof provider.update === 'function') {
