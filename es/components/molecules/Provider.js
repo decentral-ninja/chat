@@ -212,6 +212,7 @@ export default class Provider extends Shadow() {
         display: inline;
       }
       :host > section > div#keep-alive > #keep-alive-input {
+        accent-color: var(--color-secondary);
         max-width: 100%;
         margin: 0;
         flex-grow: 1;
