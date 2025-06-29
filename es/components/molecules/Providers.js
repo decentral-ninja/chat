@@ -16,7 +16,7 @@ import { jsonStringifyMapUrlReplacer } from '../../../../Helpers.js'
  * Provider container for rendering
  * Status gets filled by 5 runs, so max. length 5
  @typedef {
-  'connected' | 'disconnected' | 'default' | 'once-established' | 'unknown'
+  'connected' | 'disconnected' | 'default' | 'once-established' | 'active' | 'unknown'
  } Status
 */
 
@@ -116,6 +116,56 @@ export default class Providers extends Shadow() {
       }
     }
 
+    this.connectProviderEventListener = event => {
+      console.log('****connectProviderEventListener*****', event.detail, this.websocketUrl, this.webrtcUrl)
+      if (event.detail.urlHrefObj) {
+        const isWebsocket = event.detail.urlHrefObj.name === 'websocket'
+        const urls = (isWebsocket ? this.websocketUrl : this.webrtcUrl || '').split(',').filter(urlStr => {
+          try {
+            const url = new URL(urlStr) // eslint-disable-line
+            if (url.hostname === event.detail.urlHrefObj.url.hostname) return false
+            return true
+          } catch (error) {
+            return false
+          }
+        })
+        urls.push(event.detail.urlHrefObj.href)
+        this.dispatchEvent(new CustomEvent('yjs-update-providers', {
+          detail: {
+            // @ts-ignore
+            [isWebsocket ? 'websocketUrl': 'webrtcUrl']: urls.join(',')
+          },
+          bubbles: true,
+          cancelable: true,
+          composed: true
+        }))
+      }
+    }
+    this.disconnectProviderEventListener = event => {
+      console.log('****disconnectProviderEventListener*****', event.detail, this.websocketUrl, this.webrtcUrl)
+      if (event.detail.urlHrefObj) {
+        const isWebsocket = event.detail.urlHrefObj.name === 'websocket'
+        const urls = (isWebsocket ? this.websocketUrl : this.webrtcUrl || '').split(',').filter(urlStr => {
+          try {
+            const url = new URL(urlStr) // eslint-disable-line
+            if (url.hostname === event.detail.urlHrefObj.url.hostname) return false
+            return true
+          } catch (error) {
+            return false
+          }
+        })
+        this.dispatchEvent(new CustomEvent('yjs-update-providers', {
+          detail: {
+            // @ts-ignore
+            [isWebsocket ? 'websocketUrl': 'webrtcUrl']: urls.join(',')
+          },
+          bubbles: true,
+          cancelable: true,
+          composed: true
+        }))
+      }
+    }
+
     this.openUserDialogClickListener = event => {
       event.preventDefault()
       this.dispatchEvent(new CustomEvent('user-dialog-show-event', {
@@ -152,6 +202,8 @@ export default class Providers extends Shadow() {
     if (this.shouldRenderHTML()) this.renderHTML().then(() => this.dialog.dialogPromise.then(dialog => this.usersDialogLink.addEventListener('click', this.openUserDialogClickListener)))
     this.addEventListener('submit-websocket-url', this.submitWebsocketUrlEventListener)
     this.addEventListener('submit-webrtc-url', this.submitWebrtcUrlEventListener)
+    this.addEventListener('connect-provider', this.connectProviderEventListener)
+    this.addEventListener('disconnect-provider', this.disconnectProviderEventListener)
     this.globalEventTarget.addEventListener('yjs-providers-data', this.providersEventListener)
     this.globalEventTarget.addEventListener('yjs-providers-change', this.providersChangeEventListener)
     this.globalEventTarget.addEventListener('provider-dialog-show-event', this.providerDialogShowEventEventListener)
@@ -177,6 +229,8 @@ export default class Providers extends Shadow() {
   disconnectedCallback () {
     this.removeEventListener('submit-websocket-url', this.submitWebsocketUrlEventListener)
     this.removeEventListener('submit-webrtc-url', this.submitWebrtcUrlEventListener)
+    this.removeEventListener('connect-provider', this.connectProviderEventListener)
+    this.removeEventListener('disconnect-provider', this.disconnectProviderEventListener)
     this.dialog.dialogPromise.then(dialog => this.usersDialogLink.removeEventListener('click', this.openUserDialogClickListener))
     this.globalEventTarget.removeEventListener('yjs-providers-data', this.providersEventListener)
     this.globalEventTarget.removeEventListener('yjs-providers-change', this.providersChangeEventListener)
@@ -253,20 +307,39 @@ export default class Providers extends Shadow() {
             position: sticky;
             top: 4px;
           }
-          :host > dialog #providers {
+          :host > dialog > #providers {
             --color: var(--a-color);
             --color-hover: var(--color-yellow);
             display: flex;
             flex-direction: column;
             gap: var(--grid-gap, 0.5em);
           }
-          :host > dialog #providers > wct-load-template-tag {
+          :host > dialog > #providers > wct-load-template-tag {
             min-height: var(--chat-m-provider-min-height);
           }
-          :host > dialog #providers-graph {
+          :host > dialog > #providers > #providers-graph {
             border-radius: var(--border-radius);
             padding: 5svh 10svw;
             border: 1px dashed var(--color-secondary);
+            position: relative;
+          }
+          :host > dialog > #providers > #providers-graph:has(~ chat-m-provider[updating])::after {
+            animation: updating 3s ease infinite;
+            content: "";
+            border-radius: var(--border-radius);
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(120deg, var(--color-secondary), var(--background-color));
+            background-size: 200% 200%;
+            opacity: .5;
+          }
+          @keyframes updating { 
+            0%{background-position:10% 0%}
+            50%{background-position:91% 100%}
+            100%{background-position:10% 0%}
           }
         </style>
         <dialog>
@@ -305,7 +378,7 @@ export default class Providers extends Shadow() {
             <div id="providers-graph"></div>
             <ul>
               <li><a id=users-dialog-link href="#">Users connection graph</a></li>
-              <li><a href="https://github.com/Weedshaker/y-websocket/tree/30631cb6f5069d0cc828b93853d45ca8b74d1dd4" target="_blank">Host your own websocket - github</a></li>
+              <li><a href="https://github.com/Weedshaker/y-websocket/tree/master" target="_blank">Host your own websocket - github</a></li>
               <li><a href="https://hub.docker.com/repository/docker/weedshaker/y-websocket/general" target="_blank">Host your own websocket - docker container</a></li>
             </ul>
           </div>
@@ -369,9 +442,6 @@ export default class Providers extends Shadow() {
   }
 
   renderData (data, roomName) {
-    Providers.toggleIconStates(this.iconStatesEl, data, this.hasAttribute('online'))
-    Providers.renderProvidersList(this.providersDiv, data, roomName, this.providersGraph)
-    // TODO: ******************************* Below only reproduces the old behavior *******************************
     new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-providers', {
       detail: {
         resolve
@@ -380,6 +450,11 @@ export default class Providers extends Shadow() {
       cancelable: true,
       composed: true
     }))).then(async ({ websocketUrl, webrtcUrl }) => {
+      this.websocketUrl = websocketUrl
+      this.webrtcUrl = webrtcUrl
+      Providers.toggleIconStates(this.iconStatesEl, data, this.hasAttribute('online'))
+      Providers.renderProvidersList(this.providersDiv, data, roomName, websocketUrl, webrtcUrl, this.providersGraph)
+      // TODO: ******************************* Below only reproduces the old behavior *******************************
       /** @type {HTMLInputElement | any} */
       let websocketInput
       if ((websocketInput = this.websocketInput) && websocketUrl !== websocketInput.value && !websocketInput.matches(':focus')) websocketInput.value = websocketUrl
@@ -398,7 +473,7 @@ export default class Providers extends Shadow() {
     )
   }
 
-  static async renderProvidersList (div, data, roomName, providersGraph) {
+  static async renderProvidersList (div, data, roomName, websocketUrl, webrtcUrl, providersGraph) {
     /** @type {ProvidersContainer} */
     const providers = new Map()
     // Note: WebWorkers 900ms are slower than this 240ms, tested 06/25/25
@@ -411,13 +486,18 @@ export default class Providers extends Shadow() {
     Providers.fillProvidersWithSessionProvidersByStatus(providers, await data.getSessionProvidersByStatus(data.separator), data.separator)
     // @ts-ignore
     Providers.fillProvidersWithPermanentFallbacksFromEnvironment(providers, self.Environment)
-    // Sorting 'connected' | 'disconnected' | 'default' | 'once-established' | 'unknown'; the lower the number the higher ranked
+    // check if the provider is active
+    providers.forEach((provider, key) => {
+      if (websocketUrl?.includes(key) || webrtcUrl?.includes(key)) provider.status.push('active')
+    })
+    // Sorting 'connected' | 'disconnected' | 'default' | 'once-established' | 'active' | 'unknown'; the lower the number the higher ranked
     const statusPriority = {
-      connected: 1,
-      disconnected: 2,
-      default: 3,
-      'once-established': 4,
-      unknown: 5
+      active: 1,
+      connected: 2,
+      disconnected: 3,
+      default: 4,
+      'once-established': 5,
+      unknown: 6
     }
     const lowestPriority = 6
     const tempDiv = document.createElement('div')

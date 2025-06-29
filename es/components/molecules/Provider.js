@@ -50,14 +50,28 @@ export default class Provider extends Shadow() {
       this.removeAttribute('touched')
       this.setAttribute('updating', '')
       this.iconStatesEl.setAttribute('updating', '')
-      console.log('*********', 'connectEventListener')
+      this.dispatchEvent(new CustomEvent('connect-provider', {
+        detail: {
+          urlHrefObj: this.getUrlHrefObj()
+        },
+        bubbles: true,
+        cancelable: true,
+        composed: true
+      }))
     }
     this.disconnectEventListener = event => {
       event.stopPropagation()
       this.removeAttribute('touched')
       this.setAttribute('updating', '')
       this.iconStatesEl.setAttribute('updating', '')
-      console.log('*********', 'disconnectEventListener')
+      this.dispatchEvent(new CustomEvent('disconnect-provider', {
+        detail: {
+          urlHrefObj: this.getUrlHrefObj()
+        },
+        bubbles: true,
+        cancelable: true,
+        composed: true
+      }))
     }
     this.undoEventListener = event => {
       event.stopPropagation()
@@ -284,7 +298,7 @@ export default class Provider extends Shadow() {
     this.html = /* html */`
       <section id=grid>
         <a-icon-states state="disconnected" style="grid-area: connectionStateIcon">
-          <wct-icon-mdx state="connected" hover-on-parent-shadow-root-host id=connected title=connected style="--color: var(--color-green-full);" no-hover icon-url="../../../../../../img/icons/plug-connected.svg" size="2em"></wct-icon-mdx>
+          <wct-icon-mdx state="connected" hover-on-parent-shadow-root-host id=connected title=active style="--color: var(--color-green-full);" no-hover icon-url="../../../../../../img/icons/plug-connected.svg" size="2em"></wct-icon-mdx>
           <wct-icon-mdx state="disconnected" hover-on-parent-shadow-root-host id=disconnected title=disconnected style="--color: var(--color-secondary);" no-hover icon-url="../../../../../../img/icons/plug-connected-x.svg" size="2em"></wct-icon-mdx>
         </a-icon-states>
         <h2 style="grid-area: title">Title</h2>
@@ -352,7 +366,7 @@ export default class Provider extends Shadow() {
       }
     `
     this.notifications.setAttribute('hostname', Array.from(this.data?.urls || [])?.[0]?.[1].url.hostname || '')
-    if (data.status.includes('connected')) {
+    if (data.status.includes('connected') || data.status.includes('active')) {
       this.setAttribute('connected', '')
       this.iconStatesEl.setAttribute('state', 'connected')
     } else {
@@ -365,7 +379,7 @@ export default class Provider extends Shadow() {
     if (this.hasAttribute('touched')) return
     let keepAlive = this.keepAliveDefaultValue
     Array.from(data.urls).forEach(([origin, urlContainer], i) => {
-      const selected = urlContainer.status.includes('connected') || urlContainer.status.includes('disconnected')
+      const selected = urlContainer.status === 'connected' || urlContainer.status === 'disconnected'
       Provider.updateSelect(this.selectName, urlContainer.name || 'websocket', selected)
       this.selectName.setAttribute('value', this.selectName.value)
       Provider.updateSelect(this.selectProtocol, urlContainer.url.protocol, selected)
@@ -389,6 +403,21 @@ export default class Provider extends Shadow() {
       select.appendChild(option)
     }
     option.selected = selected
+  }
+
+  getUrlHrefObj () {
+    let url
+    try {
+      url = new URL(Array.from(this.data.urls)[0][1].url.href.replace(Array.from(this.data.urls)[0][1].url.protocol, this.selectProtocol.value))
+    } catch (error) {
+      return null
+    }
+    if (this.selectName.value === 'websocket') {
+      url.searchParams.set('keepAlive', this.inputKeepAlive.value)
+    } else {
+      url.searchParams.delete('keepAlive')
+    }
+    return { url, href: url.href, name: this.selectName.value }
   }
 
   get iconStatesEl () {
