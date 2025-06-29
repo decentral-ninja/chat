@@ -54,6 +54,7 @@ export default class Providers extends Shadow() {
     super({ importMetaUrl: import.meta.url, ...options }, ...args)
 
     let lastProvidersEventGetData = null
+    this.lastSeparator = this.getAttribute('separator') || '<>'
     let timeoutId = null
     this.providersEventListener = (event, setUpdating = true) => {
       lastProvidersEventGetData = event.detail.getData
@@ -117,7 +118,6 @@ export default class Providers extends Shadow() {
     }
 
     this.connectProviderEventListener = event => {
-      console.log('****connectProviderEventListener*****', event.detail, this.websocketUrl, this.webrtcUrl)
       if (event.detail.urlHrefObj) {
         const isWebsocket = event.detail.urlHrefObj.name === 'websocket'
         const urls = (isWebsocket ? this.websocketUrl : this.webrtcUrl || '').split(',').filter(urlStr => {
@@ -142,7 +142,6 @@ export default class Providers extends Shadow() {
       }
     }
     this.disconnectProviderEventListener = event => {
-      console.log('****disconnectProviderEventListener*****', event.detail, this.websocketUrl, this.webrtcUrl)
       if (event.detail.urlHrefObj) {
         const isWebsocket = event.detail.urlHrefObj.name === 'websocket'
         const urls = (isWebsocket ? this.websocketUrl : this.webrtcUrl || '').split(',').filter(urlStr => {
@@ -191,6 +190,15 @@ export default class Providers extends Shadow() {
       this.offlineEventListener()
     }
 
+    let resizeTimeout = null
+    this.resizeEventListener = event => {
+      clearTimeout(resizeTimeout)
+      resizeTimeout = setTimeout(async () => {
+        // the graph has to be refreshed when resize
+        if (this.lastP2pGraphData) Providers.renderP2pGraph(this.providersGraph, await this.lastP2pGraphData, this.lastSeparator)
+      }, 200)
+    }
+
     /** @type {(any)=>void} */
     this.roomResolve = map => map
     /** @type {Promise<{ locationHref: string, room: Promise<string> & {done: boolean} }>} */
@@ -210,6 +218,7 @@ export default class Providers extends Shadow() {
     this.iconStatesEl.addEventListener('click', this.openDialog)
     self.addEventListener('online', this.onlineEventListener)
     self.addEventListener('offline', this.offlineEventListener)
+    self.addEventListener('resize', this.resizeEventListener)
     this.connectedCallbackOnce()
   }
 
@@ -238,6 +247,7 @@ export default class Providers extends Shadow() {
     this.iconStatesEl.removeEventListener('click', this.openDialog)
     self.removeEventListener('online', this.onlineEventListener)
     self.removeEventListener('offline', this.offlineEventListener)
+    self.removeEventListener('resize', this.resizeEventListener)
   }
 
   /**
@@ -266,7 +276,7 @@ export default class Providers extends Shadow() {
   renderCSS () {
     this.css = /* css */`
       :host {
-        --chat-m-provider-min-height: 20em;
+        --chat-m-provider-min-height: 15em;
         --button-primary-width: 100%;
         --button-primary-height: 100%;
         --wct-input-input-height: 100%;
@@ -442,6 +452,7 @@ export default class Providers extends Shadow() {
   }
 
   renderData (data, roomName) {
+    this.lastSeparator = data.separator
     new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-providers', {
       detail: {
         resolve
@@ -453,7 +464,7 @@ export default class Providers extends Shadow() {
       this.websocketUrl = websocketUrl
       this.webrtcUrl = webrtcUrl
       Providers.toggleIconStates(this.iconStatesEl, data, this.hasAttribute('online'))
-      Providers.renderProvidersList(this.providersDiv, data, roomName, websocketUrl, webrtcUrl, this.providersGraph)
+      this.lastP2pGraphData = Providers.renderProvidersList(this.providersDiv, data, roomName, websocketUrl, webrtcUrl, this.providersGraph)
       // TODO: ******************************* Below only reproduces the old behavior *******************************
       /** @type {HTMLInputElement | any} */
       let websocketInput
@@ -488,7 +499,12 @@ export default class Providers extends Shadow() {
     Providers.fillProvidersWithPermanentFallbacksFromEnvironment(providers, self.Environment)
     // check if the provider is active
     providers.forEach((provider, key) => {
-      if (websocketUrl?.includes(key) || webrtcUrl?.includes(key)) provider.status.push('active')
+      if (websocketUrl?.includes(key) || webrtcUrl?.includes(key)) {
+        provider.status.push('active')
+        provider.urls.forEach((urlContainer, key) => {
+          if ((urlContainer.name === 'websocket' ? websocketUrl : webrtcUrl || '').includes(urlContainer.url.origin)) urlContainer.status = 'active'
+        })
+      }
     })
     // Sorting 'connected' | 'disconnected' | 'default' | 'once-established' | 'active' | 'unknown'; the lower the number the higher ranked
     const statusPriority = {
@@ -529,11 +545,13 @@ export default class Providers extends Shadow() {
       return acc
     }, '')
     Array.from(tempDiv.children).forEach(child => div.appendChild(child))
-    Providers.renderP2pGraph(providersGraph, Array.from(providers).reduce((acc, [hostname, provider]) => {
+    const p2pGraphData = Array.from(providers).reduce((acc, [hostname, provider]) => {
       // @ts-ignore
       if (provider.status.includes('connected')) acc.push([hostname, provider])
       return acc
-    }, []), data.separator)
+    }, [])
+    Providers.renderP2pGraph(providersGraph, p2pGraphData, data.separator)
+    return p2pGraphData
   }
 
   static fillProvidersWithProvidersFromCrdt (providers, data, status = 'unknown') {

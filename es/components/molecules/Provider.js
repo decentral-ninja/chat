@@ -246,7 +246,7 @@ export default class Provider extends Shadow() {
       :host([touched][connected]) > section > :where(wct-button#set, wct-button#undo) {
         display: block;
       }
-      :host([touched]:not([connected])) > section > wct-button#connect {
+      :host([touched]:not([connected])) > section > wct-button#connect, :host([touched]) > section > wct-button#disconnect {
         display: none;
       }
       :host([touched]:not([connected])) > section > :where(wct-button#set-and-connect, wct-button#undo) {
@@ -298,7 +298,7 @@ export default class Provider extends Shadow() {
     this.html = /* html */`
       <section id=grid>
         <a-icon-states state="disconnected" style="grid-area: connectionStateIcon">
-          <wct-icon-mdx state="connected" hover-on-parent-shadow-root-host id=connected title=active style="--color: var(--color-green-full);" no-hover icon-url="../../../../../../img/icons/plug-connected.svg" size="2em"></wct-icon-mdx>
+          <wct-icon-mdx state="connected" hover-on-parent-shadow-root-host id=connected title=connected style="--color: var(--color-green-full);" no-hover icon-url="../../../../../../img/icons/plug-connected.svg" size="2em"></wct-icon-mdx>
           <wct-icon-mdx state="disconnected" hover-on-parent-shadow-root-host id=disconnected title=disconnected style="--color: var(--color-secondary);" no-hover icon-url="../../../../../../img/icons/plug-connected-x.svg" size="2em"></wct-icon-mdx>
         </a-icon-states>
         <h2 style="grid-area: title">Title</h2>
@@ -320,7 +320,7 @@ export default class Provider extends Shadow() {
         <wct-button id=connect style="grid-area: connect-btn" namespace="button-primary-" request-event-name="connect" click-no-toggle-active>connect</wct-button>
         <wct-button id=disconnect style="grid-area: connect-btn" namespace="button-primary-" request-event-name="disconnect" click-no-toggle-active>disconnect</wct-button>
         <wct-button id=set-and-connect style="grid-area: connect-btn" namespace="button-primary-" request-event-name="connect" click-no-toggle-active>save changes & connect</wct-button>
-        <wct-button id=set style="grid-area: set-btn" namespace="button-secondary-" request-event-name="connect" click-no-toggle-active>save changes</wct-button>
+        <wct-button id=set style="grid-area: connect-btn" namespace="button-secondary-" request-event-name="connect" click-no-toggle-active>save changes</wct-button>
         <wct-button id=undo style="grid-area: undo-btn" namespace="button-secondary-" request-event-name="undo" click-no-toggle-active>undo</wct-button>
       </section>
     `
@@ -368,18 +368,36 @@ export default class Provider extends Shadow() {
     this.notifications.setAttribute('hostname', Array.from(this.data?.urls || [])?.[0]?.[1].url.hostname || '')
     if (data.status.includes('connected') || data.status.includes('active')) {
       this.setAttribute('connected', '')
-      this.iconStatesEl.setAttribute('state', 'connected')
     } else {
       this.removeAttribute('connected')
+    }
+    if (data.status.includes('connected')) {
+      this.iconStatesEl.setAttribute('state', 'connected')
+    } else {
       this.iconStatesEl.setAttribute('state', 'disconnected')
     }
-    this.removeAttribute('updating')
+    if (this.hasAttribute('updating')) {
+      this.dispatchEvent(new CustomEvent('yjs-request-notifications', {
+        detail: { force: true },
+        bubbles: true,
+        cancelable: true,
+        composed: true
+      }))
+      this.removeAttribute('updating')
+    }
     this.iconStatesEl.removeAttribute('updating')
     // avoid updating when inputs got changed
     if (this.hasAttribute('touched')) return
     let keepAlive = this.keepAliveDefaultValue
+    this.selectName.disabled = data.status.includes('active') || data.status.includes('connected')
+    // reset the selected options
+    Provider.resetSelect(this.selectName)
+    Provider.resetSelect(this.selectProtocol)
+    this.spanPort.textContent = ''
     Array.from(data.urls).forEach(([origin, urlContainer], i) => {
-      const selected = urlContainer.status === 'connected' || urlContainer.status === 'disconnected'
+      const selected = data.status.includes('active')
+        ? urlContainer.status === 'active'
+        : urlContainer.status === 'connected' || urlContainer.status === 'disconnected'
       Provider.updateSelect(this.selectName, urlContainer.name || 'websocket', selected)
       this.selectName.setAttribute('value', this.selectName.value)
       Provider.updateSelect(this.selectProtocol, urlContainer.url.protocol, selected)
@@ -387,12 +405,18 @@ export default class Provider extends Shadow() {
       if (i === 0) {
         this.titleEl.textContent = urlContainer.url.hostname
         this.spanHostname.textContent = urlContainer.url.hostname
+      }
+      if (selected && !this.spanPort.textContent) {
         this.spanPort.textContent = urlContainer.url.port
       }
       let currentKeepAlive
-      if ((i === 0 || selected) && (currentKeepAlive = Number(urlContainer.url.searchParams.get('keep-alive')))) keepAlive = currentKeepAlive
+      if ((selected && keepAlive === this.keepAliveDefaultValue) && (currentKeepAlive = Number(urlContainer.url.searchParams.get('keep-alive')))) keepAlive = currentKeepAlive
     })
     this.inputKeepAliveChangeEventListener({ target: { value: (this.inputKeepAlive.value = keepAlive) } }, true)
+  }
+
+  static resetSelect (select) {
+    Array.from(select.querySelectorAll('option')).forEach(option => (option.selected = false))
   }
 
   static updateSelect (select, value, selected) {
@@ -402,20 +426,24 @@ export default class Provider extends Shadow() {
       option.value = option.textContent = value
       select.appendChild(option)
     }
-    option.selected = selected
+    if (!option.selected) option.selected = selected
   }
 
   getUrlHrefObj () {
+    const urlsArr = Array.from(this.data.urls)
     let url
     try {
-      url = new URL(Array.from(this.data.urls)[0][1].url.href.replace(Array.from(this.data.urls)[0][1].url.protocol, this.selectProtocol.value))
+      url = new URL(urlsArr[0][1].url.href
+        .replace(urlsArr[0][1].url.protocol, this.selectProtocol.value)
+        .replace(urlsArr[0][1].url.port, this.spanPort.textContent)
+      )
     } catch (error) {
       return null
     }
     if (this.selectName.value === 'websocket') {
-      url.searchParams.set('keepAlive', this.inputKeepAlive.value)
+      url.searchParams.set('keep-alive', this.inputKeepAlive.value)
     } else {
-      url.searchParams.delete('keepAlive')
+      url.searchParams.delete('keep-alive')
     }
     return { url, href: url.href, name: this.selectName.value }
   }
