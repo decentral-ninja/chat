@@ -82,14 +82,27 @@ export default class P2pGraph extends Shadow() {
       // https://github.com/feross/p2p-graph?tab=readme-ov-file
       const graph = new P2PGraph(this.div)
       const nodes = []
+      const providersSelfId = 'Self-777-MySelf'
+      if (this.hasAttribute('providers')) {
+        nodes.push(providersSelfId)
+        this.add(graph, this.svg, {
+          id: providersSelfId,
+          fixed: true,
+          name: 'YOU'
+        }).svgNode.classList.add('is-self')
+      }
       users.forEach(([key, user]) => {
         if (nodes.includes(key)) return
         nodes.push(key)
         const graphUserObj = this.add(graph, this.svg, {
           id: key,
           fixed: false,
-          name: user.nickname
+          name: user.nickname || key
         })
+        if (this.hasAttribute('providers')) {
+          graph.connect(providersSelfId, key)
+          return
+        }
         graphUserObj.svgNode.classList.add(user.isSelf ? 'is-self' : 'other')
         graphUserObj.svgNode.addEventListener('click', event => this.dispatchEvent(new CustomEvent('p2p-graph-click', {
           detail: { graphUserObj, isActive: !!this.svg.querySelector('[style="opacity: 0.2;"]') },

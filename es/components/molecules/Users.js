@@ -44,7 +44,7 @@ export default class Users extends Shadow() {
       }
     }
     this.userDialogShowEventEventListener = event => {
-      this.setAttribute('active', event.detail.uid)
+      if (event.detail?.uid) this.setAttribute('active', event.detail.uid)
       this.openDialog(event)
     }
 

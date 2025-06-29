@@ -30,13 +30,13 @@ export default class Provider extends Shadow() {
     }
     this.setAttribute('id', this.id)
 
-    this.keepAliveDefaultValue = 86400000
+    this.keepAliveDefaultValue = 0 // hast to be the same as on Servers Utils.js (delay) L: 333
 
     const changeEventListener = event => this.setAttribute('touched', '')
     let msCounter, daysCounter
     this.inputKeepAliveChangeEventListener = (event, initialValue = false) => {
       this.spanKeepAliveCounter.textContent = event.target.value
-      this.spanKeepAliveText.textContent = `(keep data on websocket for: ${msCounter = event.target.value / 1000 / 60 / 60} ${msCounter === 0 ? ' seconds = immediately after the last client disconnects!' : `hours ≈ ${daysCounter = (msCounter / 24).toFixed(1)} day${Number(daysCounter) >= 2 ? 's' : ''}`})`
+      this.spanKeepAliveText.textContent = `(keep data on websocket for: ${msCounter = event.target.value / 1000 / 60 / 60} ${msCounter === 0 ? ' seconds = deleted immediately after the last client disconnects!' : `hours ≈ ${daysCounter = (msCounter / 24).toFixed(1)} day${Number(daysCounter) >= 2 ? 's' : ''}`})`
       if (!initialValue) changeEventListener(event)
     }
     this.selectNameChangeEventListener = event => {

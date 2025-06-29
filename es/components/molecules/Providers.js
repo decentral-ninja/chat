@@ -149,7 +149,7 @@ export default class Providers extends Shadow() {
 
   connectedCallback () {
     if (this.shouldRenderCSS()) this.renderCSS()
-    if (this.shouldRenderHTML()) this.renderHTML()
+    if (this.shouldRenderHTML()) this.renderHTML().then(() => this.dialog.dialogPromise.then(dialog => this.usersDialogLink.addEventListener('click', this.openUserDialogClickListener)))
     this.addEventListener('submit-websocket-url', this.submitWebsocketUrlEventListener)
     this.addEventListener('submit-webrtc-url', this.submitWebrtcUrlEventListener)
     this.globalEventTarget.addEventListener('yjs-providers-data', this.providersEventListener)
@@ -177,6 +177,7 @@ export default class Providers extends Shadow() {
   disconnectedCallback () {
     this.removeEventListener('submit-websocket-url', this.submitWebsocketUrlEventListener)
     this.removeEventListener('submit-webrtc-url', this.submitWebrtcUrlEventListener)
+    this.dialog.dialogPromise.then(dialog => this.usersDialogLink.removeEventListener('click', this.openUserDialogClickListener))
     this.globalEventTarget.removeEventListener('yjs-providers-data', this.providersEventListener)
     this.globalEventTarget.removeEventListener('yjs-providers-change', this.providersChangeEventListener)
     this.globalEventTarget.removeEventListener('provider-dialog-show-event', this.providerDialogShowEventEventListener)
@@ -262,6 +263,11 @@ export default class Providers extends Shadow() {
           :host > dialog #providers > wct-load-template-tag {
             min-height: var(--chat-m-provider-min-height);
           }
+          :host > dialog #providers-graph {
+            border-radius: var(--border-radius);
+            padding: 5svh 10svw;
+            border: 1px dashed var(--color-secondary);
+          }
         </style>
         <dialog>
           <wct-menu-icon id="close" no-aria class="open sticky" namespace="menu-icon-close-" no-click></wct-menu-icon>
@@ -296,8 +302,9 @@ export default class Providers extends Shadow() {
               </details>
             </wct-details>
             <!-- TODO: ******************************* Above only reproduces the old behavior ******************************* -->
+            <div id="providers-graph"></div>
             <ul>
-              <li><a href="#">Providers and users connection graph</a></li>
+              <li><a id=users-dialog-link href="#">Users connection graph</a></li>
               <li><a href="https://github.com/Weedshaker/y-websocket/tree/30631cb6f5069d0cc828b93853d45ca8b74d1dd4" target="_blank">Host your own websocket - github</a></li>
               <li><a href="https://hub.docker.com/repository/docker/weedshaker/y-websocket/general" target="_blank">Host your own websocket - docker container</a></li>
             </ul>
@@ -308,6 +315,11 @@ export default class Providers extends Shadow() {
     // prefetch offline icon
     this.html = '<wct-icon-mdx style="display:none" icon-url="../../../../../../img/icons/network-off.svg" size="0em"></wct-icon-mdx>'
     return this.fetchModules([
+      {
+        // @ts-ignore
+        path: `${this.importMetaUrl}../atoms/p2pGraph/P2pGraph.js?${Environment?.version || ''}`,
+        name: 'chat-a-p2p-graph'
+      },
       {
         // @ts-ignorem
         path: `${this.importMetaUrl}../../../../web-components-toolbox/src/es/components/atoms/menuIcon/MenuIcon.js?${Environment?.version || ''}`,
@@ -358,7 +370,7 @@ export default class Providers extends Shadow() {
 
   renderData (data, roomName) {
     Providers.toggleIconStates(this.iconStatesEl, data, this.hasAttribute('online'))
-    Providers.renderProvidersList(this.providersDiv, data, roomName)
+    Providers.renderProvidersList(this.providersDiv, data, roomName, this.providersGraph)
     // TODO: ******************************* Below only reproduces the old behavior *******************************
     new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-providers', {
       detail: {
@@ -386,7 +398,7 @@ export default class Providers extends Shadow() {
     )
   }
 
-  static async renderProvidersList (div, data, roomName) {
+  static async renderProvidersList (div, data, roomName, providersGraph) {
     /** @type {ProvidersContainer} */
     const providers = new Map()
     // Note: WebWorkers 900ms are slower than this 240ms, tested 06/25/25
@@ -437,6 +449,11 @@ export default class Providers extends Shadow() {
       return acc
     }, '')
     Array.from(tempDiv.children).forEach(child => div.appendChild(child))
+    Providers.renderP2pGraph(providersGraph, Array.from(providers).reduce((acc, [hostname, provider]) => {
+      // @ts-ignore
+      if (provider.status.includes('connected')) acc.push([hostname, provider])
+      return acc
+    }, []), data.separator)
   }
 
   static fillProvidersWithProvidersFromCrdt (providers, data, status = 'unknown') {
@@ -552,16 +569,21 @@ export default class Providers extends Shadow() {
     }, new Map())
   }
 
+  static renderP2pGraph (graph, data, separator) {
+    // TODO: Proper update diffing logic, only render the graph when having changes, to avoid jumping on multiple updates
+    graph.innerHTML = /* html */`
+      <chat-a-p2p-graph separator="${separator || ''}" providers>
+        <template>${JSON.stringify(Array.isArray(data) ? data : Array.from(data))}</template>
+      </chat-a-p2p-graph>
+    `
+  }
+
   get iconStatesEl () {
     return this.root.querySelector('a-icon-states')
   }
 
   get dialog () {
     return this.root.querySelector('wct-dialog')
-  }
-
-  get dialogEl () {
-    return this.dialog?.root.querySelector('dialog')
   }
 
   get providersDiv () {
@@ -582,6 +604,14 @@ export default class Providers extends Shadow() {
     let input = null
     this.providersDivGrids.find(grid => (input = grid.root.querySelector('[inputId="webrtc-url"]')?.inputField))
     return input
+  }
+
+  get usersDialogLink () {
+    return this.dialog?.root.querySelector('#users-dialog-link')
+  }
+
+  get providersGraph () {
+    return this.dialog?.root.querySelector('#providers-graph')
   }
 
   isDialogOpen () {
