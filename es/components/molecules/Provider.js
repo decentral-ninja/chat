@@ -36,7 +36,7 @@ export default class Provider extends Shadow() {
     let msCounter, daysCounter
     this.inputKeepAliveChangeEventListener = (event, initialValue = false) => {
       this.spanKeepAliveCounter.textContent = event.target.value
-      this.spanKeepAliveText.textContent = `(delete data on websocket after: ${msCounter = event.target.value / 1000 / 60 / 60} ${msCounter === 0 ? ' seconds = immediately after the last client disconnects!' : `hours ≈ ${daysCounter = (msCounter / 24).toFixed(1)} day${Number(daysCounter) >= 2 ? 's' : ''}`})`
+      this.spanKeepAliveText.textContent = `(keep data on websocket for: ${msCounter = event.target.value / 1000 / 60 / 60} ${msCounter === 0 ? ' seconds = immediately after the last client disconnects!' : `hours ≈ ${daysCounter = (msCounter / 24).toFixed(1)} day${Number(daysCounter) >= 2 ? 's' : ''}`})`
       if (!initialValue) changeEventListener(event)
     }
     this.selectNameChangeEventListener = event => {
@@ -120,10 +120,12 @@ export default class Provider extends Shadow() {
         --button-secondary-border-radius: var(--border-radius);
         --button-secondary-width: 100%;
         --button-secondary-height: 100%;
+        --color: var(--a-color);
+        --color-hover: var(--color-yellow);
         --h2-word-break: break-all;
         position: relative;
       }
-      :host([updating]) {
+      :host([updating]) > section > wct-button {
         --button-primary-background-color-custom: var(--color-gray);
         --button-primary-border-color: var(--color-gray);
         pointer-events: none;
@@ -235,6 +237,12 @@ export default class Provider extends Shadow() {
       }
       :host([touched]:not([connected])) > section > :where(wct-button#set-and-connect, wct-button#undo) {
         display: block;
+      }
+      :host > section > wct-button:where(#connect, #set-and-connect, #set) {
+        --button-primary-background-color-custom: var(--color-green);
+        --button-primary-border-color: var(--color-green);
+        --button-secondary-color: var(--color-green);
+        --button-secondary-border-color: var(--color-green);
       }
       @media only screen and (max-width: _max-width_) {
         #grid {

@@ -360,6 +360,10 @@ export default class Users extends Shadow() {
           :host chat-a-nick-name {
             display: inline-block;
           }
+          :host > dialog {
+            scrollbar-color: var(--color) var(--background-color);
+            scrollbar-width: thin;
+          }
           :host > dialog #users-graph {
             border-radius: var(--border-radius);
             padding: 5svh 10svw;

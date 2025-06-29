@@ -116,6 +116,15 @@ export default class Providers extends Shadow() {
       }
     }
 
+    this.openUserDialogClickListener = event => {
+      event.preventDefault()
+      this.dispatchEvent(new CustomEvent('user-dialog-show-event', {
+        bubbles: true,
+        cancelable: true,
+        composed: true
+      }))
+    }
+
     this.onlineEventListener = async event => {
       this.setAttribute('online', '')
       this.dialog?.setAttribute('online', '')
@@ -202,7 +211,7 @@ export default class Providers extends Shadow() {
   renderCSS () {
     this.css = /* css */`
       :host {
-        --chat-m-provider-min-height: 5em;
+        --chat-m-provider-min-height: 20em;
         --button-primary-width: 100%;
         --button-primary-height: 100%;
         --wct-input-input-height: 100%;
@@ -229,6 +238,10 @@ export default class Providers extends Shadow() {
       </a-icon-states>
       <wct-dialog namespace="dialog-top-slide-in-"${this.hasAttribute('online') ? ' online' : ''}>
         <style protected>
+          :host > dialog {
+            scrollbar-color: var(--color) var(--background-color);
+            scrollbar-width: thin;
+          }
           :host([online]) > dialog #offline {
             display: none
           }
@@ -240,6 +253,8 @@ export default class Providers extends Shadow() {
             top: 4px;
           }
           :host > dialog #providers {
+            --color: var(--a-color);
+            --color-hover: var(--color-yellow);
             display: flex;
             flex-direction: column;
             gap: var(--grid-gap, 0.5em);
@@ -254,21 +269,38 @@ export default class Providers extends Shadow() {
           <p id="offline">You are offline!</p>
           <div id=providers>
             <!-- TODO: ******************************* Below only reproduces the old behavior ******************************* -->
-            <h4 class=left>websocketUrls:</h4>
-            <wct-grid auto-fill="20%">
-              <section>
-                <wct-input grid-column="1/5" inputId="websocket-url" value="" placeholder='websocketUrls separated with a "," and no spaces in between' namespace="wct-input-" namespace-fallback submit-search="submit-websocket-url" force></wct-input>
-                <wct-button namespace="button-primary-" request-event-name="submit-websocket-url" click-no-toggle-active>set</wct-button>
-              </section>
-            </wct-grid>
-            <hr>
-            <h4 class=left>webrtcUrls:</h4>
-            <wct-grid auto-fill="20%">
-              <section>
-                <wct-input grid-column="1/5" inputId="webrtc-url" value="" placeholder='webrtcUrls separated with a "," and no spaces in between' namespace="wct-input-" namespace-fallback submit-search="submit-webrtc-url" force></wct-input>
-                <wct-button namespace="button-primary-" request-event-name="submit-webrtc-url" click-no-toggle-active>set</wct-button>
-              </section>
-            </wct-grid>
+            <wct-details namespace="details-default-" id=set-providers-manually mode=false>
+              <details>
+                <summary>
+                  <h4>Set (new) providers manually:</h4>
+                </summary>
+                <div>
+                  <p>Note: Write providers separated with a "," and no spaces in between. This is work in progress and is going to be replaced.<br>Until then, be patient for the UI to update after clicking the "set"-button or close and reopen the Providers Dialog.</p>
+                  <hr>
+                  <h4 class=left>websocketUrls:</h4>
+                  <wct-grid auto-fill="20%">
+                    <section>
+                      <wct-input grid-column="1/5" inputId="websocket-url" value="" placeholder='websocketUrls separated with a "," and no spaces in between' namespace="wct-input-" namespace-fallback submit-search="submit-websocket-url" force></wct-input>
+                      <wct-button namespace="button-primary-" request-event-name="submit-websocket-url" click-no-toggle-active>set</wct-button>
+                    </section>
+                  </wct-grid>
+                  <hr>
+                  <h4 class=left>webrtcUrls:</h4>
+                  <wct-grid auto-fill="20%" style="margin-bottom: 0;">
+                    <section>
+                      <wct-input grid-column="1/5" inputId="webrtc-url" value="" placeholder='webrtcUrls separated with a "," and no spaces in between' namespace="wct-input-" namespace-fallback submit-search="submit-webrtc-url" force></wct-input>
+                      <wct-button namespace="button-primary-" request-event-name="submit-webrtc-url" click-no-toggle-active>set</wct-button>
+                    </section>
+                  </wct-grid>
+                </div>
+              </details>
+            </wct-details>
+            <!-- TODO: ******************************* Above only reproduces the old behavior ******************************* -->
+            <ul>
+              <li><a href="#">Providers and users connection graph</a></li>
+              <li><a href="https://github.com/Weedshaker/y-websocket/tree/30631cb6f5069d0cc828b93853d45ca8b74d1dd4" target="_blank">Host your own websocket - github</a></li>
+              <li><a href="https://hub.docker.com/repository/docker/weedshaker/y-websocket/general" target="_blank">Host your own websocket - docker container</a></li>
+            </ul>
           </div>
         </dialog>
       </wct-dialog>
@@ -277,7 +309,7 @@ export default class Providers extends Shadow() {
     this.html = '<wct-icon-mdx style="display:none" icon-url="../../../../../../img/icons/network-off.svg" size="0em"></wct-icon-mdx>'
     return this.fetchModules([
       {
-        // @ts-ignore
+        // @ts-ignorem
         path: `${this.importMetaUrl}../../../../web-components-toolbox/src/es/components/atoms/menuIcon/MenuIcon.js?${Environment?.version || ''}`,
         name: 'wct-menu-icon'
       },
@@ -285,6 +317,11 @@ export default class Providers extends Shadow() {
         // @ts-ignore
         path: `${this.importMetaUrl}../../../../web-components-toolbox/src/es/components/molecules/dialog/Dialog.js?${Environment?.version || ''}`,
         name: 'wct-dialog'
+      },
+      {
+        // @ts-ignore
+        path: `${this.importMetaUrl}../../../../web-components-toolbox/src/es/components/molecules/details/Details.js?${Environment?.version || ''}`,
+        name: 'wct-details'
       },
       {
         // @ts-ignore
