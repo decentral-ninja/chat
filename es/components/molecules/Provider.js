@@ -326,7 +326,7 @@ export default class Provider extends Shadow() {
     `
     this.html = this.customStyle
     this.inputKeepAliveChangeEventListener({ target: { value: this.inputKeepAlive.value } }, true)
-    this.update(this.data, this.order)
+    this.update(this.data, this.order, true)
     return this.fetchModules([
       {
         // @ts-ignore
@@ -355,12 +355,13 @@ export default class Provider extends Shadow() {
    * Update components
    * @param {import('./Providers.js').Provider} data
    * @param {number} order
+   * @param {boolean} [updateOrder=false]
    * @returns {void}
    */
-  update (data, order) {
+  update (data, order, updateOrder = false) {
     this.data = data
     this.order = order
-    this.customStyle.innerText = /* css */`
+    if (updateOrder) this.customStyle.innerText = /* css */`
       :host {
         order: ${order};
       }

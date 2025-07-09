@@ -165,6 +165,9 @@ export default class Providers extends Shadow() {
       }
     }
 
+    this.providerDialogWasClosed = false
+    this.providerDialogClosed = event => (this.providerDialogWasClosed = true)
+
     this.openUserDialogClickListener = event => {
       event.preventDefault()
       this.dispatchEvent(new CustomEvent('user-dialog-show-event', {
@@ -212,6 +215,7 @@ export default class Providers extends Shadow() {
     this.addEventListener('submit-webrtc-url', this.submitWebrtcUrlEventListener)
     this.addEventListener('connect-provider', this.connectProviderEventListener)
     this.addEventListener('disconnect-provider', this.disconnectProviderEventListener)
+    this.addEventListener('provider-dialog-closed', this.providerDialogClosed)
     this.globalEventTarget.addEventListener('yjs-providers-data', this.providersEventListener)
     this.globalEventTarget.addEventListener('yjs-providers-change', this.providersChangeEventListener)
     this.globalEventTarget.addEventListener('provider-dialog-show-event', this.providerDialogShowEventEventListener)
@@ -240,6 +244,7 @@ export default class Providers extends Shadow() {
     this.removeEventListener('submit-webrtc-url', this.submitWebrtcUrlEventListener)
     this.removeEventListener('connect-provider', this.connectProviderEventListener)
     this.removeEventListener('disconnect-provider', this.disconnectProviderEventListener)
+    this.removeEventListener('provider-dialog-closed', this.providerDialogClosed)
     this.dialog.dialogPromise.then(dialog => this.usersDialogLink.removeEventListener('click', this.openUserDialogClickListener))
     this.globalEventTarget.removeEventListener('yjs-providers-data', this.providersEventListener)
     this.globalEventTarget.removeEventListener('yjs-providers-change', this.providersChangeEventListener)
@@ -301,7 +306,7 @@ export default class Providers extends Shadow() {
         <wct-icon-mdx state="disconnected" title="No connection to Network providers" style="color:var(--color-error)" icon-url="../../../../../../img/icons/network-off.svg" size="2em"></wct-icon-mdx>
         <wct-icon-mdx state="offline" title="You are offline!" style="color:var(--color-error)" icon-url="../../../../../../img/icons/network-off.svg" size="2em"></wct-icon-mdx>
       </a-icon-states>
-      <wct-dialog namespace="dialog-top-slide-in-"${this.hasAttribute('online') ? ' online' : ''}>
+      <wct-dialog namespace="dialog-top-slide-in-"${this.hasAttribute('online') ? ' online' : ''} closed-event-name="provider-dialog-closed">
         <style protected>
           :host > dialog {
             scrollbar-color: var(--color) var(--background-color);
@@ -464,7 +469,8 @@ export default class Providers extends Shadow() {
       this.websocketUrl = websocketUrl
       this.webrtcUrl = webrtcUrl
       Providers.toggleIconStates(this.iconStatesEl, data, this.hasAttribute('online'))
-      this.lastP2pGraphData = Providers.renderProvidersList(this.providersDiv, data, roomName, websocketUrl, webrtcUrl, this.providersGraph)
+      this.lastP2pGraphData = Providers.renderProvidersList(this.providersDiv, data, roomName, websocketUrl, webrtcUrl, this.providersGraph, this.providerDialogWasClosed)
+      this.providerDialogWasClosed = false
       // TODO: ******************************* Below only reproduces the old behavior *******************************
       /** @type {HTMLInputElement | any} */
       let websocketInput
@@ -484,7 +490,7 @@ export default class Providers extends Shadow() {
     )
   }
 
-  static async renderProvidersList (div, data, roomName, websocketUrl, webrtcUrl, providersGraph) {
+  static async renderProvidersList (div, data, roomName, websocketUrl, webrtcUrl, providersGraph, providerDialogWasClosed) {
     /** @type {ProvidersContainer} */
     const providers = new Map()
     // Note: WebWorkers 900ms are slower than this 240ms, tested 06/25/25
@@ -497,12 +503,21 @@ export default class Providers extends Shadow() {
     Providers.fillProvidersWithSessionProvidersByStatus(providers, await data.getSessionProvidersByStatus(data.separator), data.separator)
     // @ts-ignore
     Providers.fillProvidersWithPermanentFallbacksFromEnvironment(providers, self.Environment)
+    const mapHostname = url => {
+      try {
+        return (new URL(url)).hostname
+      } catch (error) {
+        return null
+      }
+    }
+    const websocketUrls = (websocketUrl || '').split(',').map(mapHostname)
+    const webrtcUrls = (webrtcUrl || '').split(',').map(mapHostname)
     // check if the provider is active
     providers.forEach((provider, key) => {
-      if (websocketUrl?.includes(key) || webrtcUrl?.includes(key)) {
+      if (websocketUrls?.includes(key) || webrtcUrls?.includes(key)) {
         provider.status.push('active')
         provider.urls.forEach((urlContainer, key) => {
-          if ((urlContainer.name === 'websocket' ? websocketUrl : webrtcUrl || '').includes(urlContainer.url.origin)) urlContainer.status = 'active'
+          if ((urlContainer.name === 'websocket' ? websocketUrls : webrtcUrls || '').includes(urlContainer.url.hostname)) urlContainer.status = 'active'
         })
       }
     })
@@ -535,7 +550,7 @@ export default class Providers extends Shadow() {
       let provider
       if ((provider = div.querySelector(`#${id}`))) {
         if (typeof provider.update === 'function') {
-          provider.update(providerData, i)
+          provider.update(providerData, i, providerDialogWasClosed)
         } else {
           provider.outerHTML = renderProvider()
         }
