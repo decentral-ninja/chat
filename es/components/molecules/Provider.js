@@ -30,7 +30,7 @@ export default class Provider extends Shadow() {
     }
     this.setAttribute('id', this.id)
 
-    this.keepAliveDefaultValue = 0 // hast to be the same as on Servers Utils.js (delay) L: 333
+    this.keepAliveDefaultValue = 0 // has to be the same as on Servers Utils.js (delay) L: 333
 
     const changeEventListener = event => this.setAttribute('touched', '')
     let msCounter, daysCounter
@@ -395,10 +395,17 @@ export default class Provider extends Shadow() {
     Provider.resetSelect(this.selectName)
     Provider.resetSelect(this.selectProtocol)
     this.spanPort.textContent = ''
+    let hasSelected = false
     Array.from(data.urls).forEach(([origin, urlContainer], i) => {
-      const selected = data.status.includes('active')
+      let selected = data.status.includes('active')
         ? urlContainer.status === 'active'
         : urlContainer.status === 'connected' || urlContainer.status === 'disconnected'
+      if (selected) {
+        hasSelected = true
+      } else if (!hasSelected) {
+        selected = urlContainer.status === 'once-established' || urlContainer.status === 'default'
+        if (selected) hasSelected = true
+      }
       Provider.updateSelect(this.selectName, urlContainer.name || 'websocket', selected)
       this.selectName.setAttribute('value', this.selectName.value)
       Provider.updateSelect(this.selectProtocol, urlContainer.url.protocol, selected)
@@ -407,9 +414,7 @@ export default class Provider extends Shadow() {
         this.titleEl.textContent = urlContainer.url.hostname
         this.spanHostname.textContent = urlContainer.url.hostname
       }
-      if (selected && !this.spanPort.textContent) {
-        this.spanPort.textContent = urlContainer.url.port
-      }
+      if (selected) this.spanPort.textContent = urlContainer.url.port ? urlContainer.url.port : ''
       let currentKeepAlive
       if ((selected && keepAlive === this.keepAliveDefaultValue) && (currentKeepAlive = Number(urlContainer.url.searchParams.get('keep-alive')))) keepAlive = currentKeepAlive
     })
@@ -434,10 +439,9 @@ export default class Provider extends Shadow() {
     const urlsArr = Array.from(this.data.urls)
     let url
     try {
-      url = new URL(urlsArr[0][1].url.href
-        .replace(urlsArr[0][1].url.protocol, this.selectProtocol.value)
-        .replace(urlsArr[0][1].url.port, this.spanPort.textContent)
-      )
+      url = new URL(urlsArr[0][1].url.href)
+      if (this.selectProtocol.value) url.protocol =  this.selectProtocol.value
+      if (this.spanPort.textContent) url.port = this.spanPort.textContent
     } catch (error) {
       return null
     }

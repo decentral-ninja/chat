@@ -369,7 +369,7 @@ export default class Providers extends Shadow() {
                   <h4>Set (new) providers manually:</h4>
                 </summary>
                 <div>
-                  <p>Note: Write providers separated with a "," and no spaces in between. This is work in progress and is going to be replaced.<br>Until then, be patient for the UI to update after clicking the "set"-button or close and reopen the Providers Dialog.</p>
+                  <p>Note: Write providers separated with a "," and no spaces in between.</p>
                   <hr>
                   <h4 class=left>websocketUrls:</h4>
                   <wct-grid auto-fill="20%">
@@ -510,14 +510,23 @@ export default class Providers extends Shadow() {
         return null
       }
     }
-    const websocketUrls = (websocketUrl || '').split(',').map(mapHostname)
-    const webrtcUrls = (webrtcUrl || '').split(',').map(mapHostname)
+    const websocketHostnames = (websocketUrl || '').split(',').map(mapHostname)
+    const webrtcHostnames = (webrtcUrl || '').split(',').map(mapHostname)
+    const mapOrigin = url => {
+      try {
+        return (new URL(url)).origin
+      } catch (error) {
+        return null
+      }
+    }
+    const websocketOrigins = (websocketUrl || '').split(',').map(mapOrigin)
+    const webrtcOrigins = (webrtcUrl || '').split(',').map(mapOrigin)
     // check if the provider is active
     providers.forEach((provider, key) => {
-      if (websocketUrls?.includes(key) || webrtcUrls?.includes(key)) {
+      if (websocketHostnames?.includes(key) || webrtcHostnames?.includes(key)) {
         provider.status.push('active')
         provider.urls.forEach((urlContainer, key) => {
-          if ((urlContainer.name === 'websocket' ? websocketUrls : webrtcUrls || '').includes(urlContainer.url.hostname)) urlContainer.status = 'active'
+          if ((urlContainer.name === 'websocket' ? websocketOrigins : webrtcOrigins || '').includes(urlContainer.url.origin)) urlContainer.status = 'active'
         })
       }
     })
