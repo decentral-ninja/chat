@@ -353,6 +353,10 @@ export default class Providers extends Shadow() {
             background-size: 200% 200%;
             opacity: .5;
           }
+          :host > dialog > #providers:has(> chat-m-provider[updating]) > chat-m-provider {
+            pointer-events: none;
+            cursor: not-allowed;
+          }
           @keyframes updating { 
             0%{background-position:10% 0%}
             50%{background-position:91% 100%}
