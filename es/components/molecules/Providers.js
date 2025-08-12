@@ -288,6 +288,8 @@ export default class Providers extends Shadow() {
         --wct-input-height: var(--wct-input-input-height);
         --wct-input-border-radius: var(--border-radius) 0 0 var(--border-radius);
         --button-primary-border-radius: 0 var(--border-radius) var(--border-radius) 0;
+        --counter-color: var(--color-green-full);
+        --counter-color-hover: var(--counter-color);
         cursor: pointer;
       }
     `
@@ -300,7 +302,7 @@ export default class Providers extends Shadow() {
   */
   renderHTML () {
     this.html = /* html */`
-      <a-icon-states>
+      <a-icon-states show-counter-on-hover>
         <wct-icon-mdx state="default" title="Network providers" icon-url="../../../../../../img/icons/network.svg" size="2em"></wct-icon-mdx>
         <wct-icon-mdx state="connected" title="Network providers connected" style="color:var(--color-green-full)" icon-url="../../../../../../img/icons/network.svg" size="2em"></wct-icon-mdx>
         <wct-icon-mdx state="disconnected" title="No connection to Network providers" style="color:var(--color-error)" icon-url="../../../../../../img/icons/network-off.svg" size="2em"></wct-icon-mdx>
@@ -482,12 +484,18 @@ export default class Providers extends Shadow() {
   }
 
   static async toggleIconStates (iconStatesEl, data, online) {
+    let counter = 0
     iconStatesEl.setAttribute('state', online
-      ? (await data.getSessionProvidersByStatus()).connected.length
+      ? (counter = (await data.getSessionProvidersByStatus()).connected.length)
           ? 'connected'
           : 'disconnected'
       : 'offline'
     )
+    if (counter) {
+      iconStatesEl.setAttribute('counter', counter)
+    } else {
+      iconStatesEl.removeAttribute('counter')
+    }
   }
 
   static async renderProvidersList (div, data, roomName, websocketUrl, webrtcUrl, providersGraph, providerDialogWasClosed) {
