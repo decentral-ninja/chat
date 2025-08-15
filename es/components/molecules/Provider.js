@@ -30,7 +30,7 @@ export default class Provider extends Shadow() {
     }
     this.setAttribute('id', this.id)
 
-    this.keepAliveDefaultValue = 0 // has to be the same as on Servers Utils.js (delay) L: 333
+    this.keepAliveDefaultValue = 86400000 // has to be the same as on Servers Utils.js (delay) L: 333
 
     const changeEventListener = event => this.setAttribute('touched', '')
     let msCounter, daysCounter

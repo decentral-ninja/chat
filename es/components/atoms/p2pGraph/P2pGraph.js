@@ -114,7 +114,7 @@ export default class P2pGraph extends Shadow() {
         if (this.getAttribute('active') === graphUserObj.id) setTimeout(() => graphUserObj.svgNode.querySelector('circle')?.dispatchEvent(new CustomEvent('click', { bubbles: true, cancelable: true, composed: true })))
         // only show providers with mutually connected users
         const separator = this.getAttribute('separator') || '<>'
-        for (const providerName in user.mutuallyConnectedUsers) {
+        for (const providerName in user[this.hasAttribute('connected-users') ? 'connectedUsers' : 'mutuallyConnectedUsers']) {
           const graphProviderObj = nodes.includes(providerName)
             ? null
             : this.add(graph, this.svg, {
