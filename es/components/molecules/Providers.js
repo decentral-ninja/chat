@@ -68,7 +68,7 @@ export default class Providers extends Shadow() {
         }
         this.iconStatesEl.removeAttribute('updating')
         // @ts-ignore
-      }, this.isDialogOpen() ? 200 : self.Environment.awarenessEventListenerDelay)
+      }, this.isDialogOpen() ? 2000 : self.Environment.awarenessEventListenerDelay)
     }
 
     this.providersChangeEventListener = event => {
