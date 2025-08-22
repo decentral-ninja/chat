@@ -198,7 +198,7 @@ export default class Providers extends Shadow() {
       clearTimeout(resizeTimeout)
       resizeTimeout = setTimeout(async () => {
         // the graph has to be refreshed when resize
-        if (this.lastP2pGraphData) Providers.renderP2pGraph(this.providersGraph, await this.lastP2pGraphData, this.lastSeparator)
+        if (this.lastP2pGraphData) Providers.renderP2pGraph(this.providersGraph, await this.lastP2pGraphData, this.lastSeparator, true)
       }, 200)
     }
 
@@ -368,6 +368,12 @@ export default class Providers extends Shadow() {
           <h4>Provider Data:</h4>
           <p id="offline">You are offline!</p>
           <div id=providers>
+            <div id="providers-graph"></div>
+            <ul>
+              <li><a id=users-dialog-link href="#">Users connection graph</a></li>
+              <li><a href="https://github.com/Weedshaker/y-websocket/tree/master" target="_blank">Host your own websocket - github</a></li>
+              <li><a href="https://hub.docker.com/repository/docker/weedshaker/y-websocket/general" target="_blank">Host your own websocket - docker container</a></li>
+            </ul>
             <!-- TODO: ******************************* Below only reproduces the old behavior ******************************* -->
             <wct-details namespace="details-default-" id=set-providers-manually mode=false>
               <details>
@@ -396,12 +402,6 @@ export default class Providers extends Shadow() {
               </details>
             </wct-details>
             <!-- TODO: ******************************* Above only reproduces the old behavior ******************************* -->
-            <div id="providers-graph"></div>
-            <ul>
-              <li><a id=users-dialog-link href="#">Users connection graph</a></li>
-              <li><a href="https://github.com/Weedshaker/y-websocket/tree/master" target="_blank">Host your own websocket - github</a></li>
-              <li><a href="https://hub.docker.com/repository/docker/weedshaker/y-websocket/general" target="_blank">Host your own websocket - docker container</a></li>
-            </ul>
           </div>
         </dialog>
       </wct-dialog>
@@ -703,13 +703,16 @@ export default class Providers extends Shadow() {
     }, new Map())
   }
 
-  static renderP2pGraph (graph, data, separator) {
-    // TODO: Proper update diffing logic, only render the graph when having changes, to avoid jumping on multiple updates
-    graph.innerHTML = /* html */`
-      <chat-a-p2p-graph separator="${separator || ''}" providers>
-        <template>${JSON.stringify(Array.isArray(data) ? data : Array.from(data))}</template>
-      </chat-a-p2p-graph>
-    `
+  static renderP2pGraph (graph, data, separator, force = false) {
+    const stringifiedData = JSON.stringify(Array.isArray(data) ? data : Array.from(data))
+    const isSame = graph.children[0]?.template.content.textContent === stringifiedData
+    if (force || !isSame) {
+      graph.innerHTML = /* html */`
+        <chat-a-p2p-graph separator="${separator || ''}" providers>
+          <template>${stringifiedData}</template>
+        </chat-a-p2p-graph>
+      `
+    }
   }
 
   get iconStatesEl () {

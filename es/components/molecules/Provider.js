@@ -299,6 +299,7 @@ export default class Provider extends Shadow() {
       <section id=grid>
         <a-icon-states state="disconnected" style="grid-area: connectionStateIcon">
           <wct-icon-mdx state="connected" hover-on-parent-shadow-root-host id=connected title=connected style="--color: var(--color-green-full);" no-hover icon-url="../../../../../../img/icons/plug-connected.svg" size="2em"></wct-icon-mdx>
+          <wct-icon-mdx state="connecting" hover-on-parent-shadow-root-host id=connecting title="trying to connect" style="--color: var(--color-orange);" no-hover icon-url="../../../../../../img/icons/plug-connected.svg" size="2em"></wct-icon-mdx>
           <wct-icon-mdx state="disconnected" hover-on-parent-shadow-root-host id=disconnected title=disconnected style="--color: var(--color-secondary);" no-hover icon-url="../../../../../../img/icons/plug-connected-x.svg" size="2em"></wct-icon-mdx>
         </a-icon-states>
         <h2 style="grid-area: title">Title</h2>
@@ -372,8 +373,13 @@ export default class Provider extends Shadow() {
     } else {
       this.removeAttribute('connected')
     }
+    let removeUpdating = true
     if (data.status.includes('connected')) {
       this.iconStatesEl.setAttribute('state', 'connected')
+    } else if (data.status.includes('active')) {
+      this.iconStatesEl.setAttribute('state', 'connecting')
+      this.iconStatesEl.setAttribute('updating', '')
+      removeUpdating = false
     } else {
       this.iconStatesEl.setAttribute('state', 'disconnected')
     }
@@ -386,7 +392,7 @@ export default class Provider extends Shadow() {
       }))
       this.removeAttribute('updating')
     }
-    this.iconStatesEl.removeAttribute('updating')
+    if (removeUpdating) this.iconStatesEl.removeAttribute('updating')
     // avoid updating when inputs got changed
     if (this.hasAttribute('touched')) return
     let keepAlive = this.keepAliveDefaultValue
