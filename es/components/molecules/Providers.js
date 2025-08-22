@@ -458,6 +458,11 @@ export default class Providers extends Shadow() {
       },
       {
         // @ts-ignore
+        path: `${this.importMetaUrl}../../../../web-components-toolbox/src/es/components/molecules/loadTemplateTag/LoadTemplateTag.js?${Environment?.version || ''}`,
+        name: 'wct-load-template-tag'
+      },
+      {
+        // @ts-ignore
         path: `${this.importMetaUrl}./Provider.js?${Environment?.version || ''}`,
         name: 'chat-m-provider'
       }
@@ -569,7 +574,7 @@ export default class Providers extends Shadow() {
       /// / render or update
       // @ts-ignore
       const id = `${self.Environment?.providerNamespace || 'p_'}${name.replaceAll('.', '-')}` // string <ident> without dots https://developer.mozilla.org/en-US/docs/Web/CSS/ident
-      const renderProvider = () => `<wct-load-template-tag id=${id} no-css style="order: ${i};"><template><chat-m-provider><template>${JSON.stringify({ id, name, data: providerData, order: i, roomName }, jsonStringifyMapUrlReplacer)}</template></chat-m-provider></template></wct-load-template-tag>`
+      const renderProvider = () => /* html */`<wct-load-template-tag id=${id} no-css style="order: ${i};"><template><chat-m-provider><template>${JSON.stringify({ id, name, data: providerData, order: i, roomName }, jsonStringifyMapUrlReplacer)}</template></chat-m-provider></template></wct-load-template-tag>`
       let provider
       if ((provider = div.querySelector(`#${id}`))) {
         if (typeof provider.update === 'function') {

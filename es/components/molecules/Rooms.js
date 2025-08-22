@@ -371,6 +371,11 @@ export default class Rooms extends Shadow() {
         },
         {
           // @ts-ignore
+          path: `${this.importMetaUrl}../../../../web-components-toolbox/src/es/components/molecules/loadTemplateTag/LoadTemplateTag.js?${Environment?.version || ''}`,
+          name: 'wct-load-template-tag'
+        },
+        {
+          // @ts-ignore
           path: `${this.importMetaUrl}./Notifications.js?${Environment?.version || ''}`,
           name: 'chat-m-notifications'
         }
@@ -488,6 +493,9 @@ export default class Rooms extends Shadow() {
       :host ul > li:not([disabled]):last-child {
         border-bottom: none;
       }
+      :host ul > wct-load-template-tag {
+        min-height: 3em;
+      }
       :host ul > li > div.deleted {
         text-decoration: line-through;
       }
@@ -536,7 +544,7 @@ export default class Rooms extends Shadow() {
     <ul>
       ${Object.keys(rooms.value)
         .sort((a, b) => rooms.value[b].entered?.[0] - rooms.value[a].entered?.[0])
-        .reduce((acc, key, i, arr) => acc + /* html */`<li id="${key}"${key === activeRoomName ? ' disabled' : ''}>
+        .reduce((acc, key, i, arr) => acc + /* html */`<wct-load-template-tag no-css copy-class-list><template><li id="${key}"${key === activeRoomName ? ' disabled' : ''}>
           <div>
             <a route href="${rooms.value[key].locationHref}">
               <div>${key}</div>
@@ -548,7 +556,7 @@ export default class Rooms extends Shadow() {
             <wct-icon-mdx title="delete" delete="${key.replace(/"/g, "'")}" href="${rooms.value[key].locationHref}" icon-url="../../../../../../img/icons/trash.svg" size="2em"></wct-icon-mdx>
             <wct-icon-mdx title="undo" undo="${key}" href="${rooms.value[key].locationHref}" icon-url="../../../../../../img/icons/trash-off.svg" size="2em"></wct-icon-mdx>
           </div>
-        </li>`, '')
+        </li></template></wct-load-template-tag>`, '')
       }
     </ul>`
   }
@@ -572,7 +580,7 @@ export default class Rooms extends Shadow() {
   static filterFunction (filter, nodes) {
     filter = filter.toUpperCase()
     // @ts-ignore
-    nodes.forEach(node => node.classList[!filter || (node.innerText || node.textContent).toUpperCase().includes(filter) ? 'remove' : 'add']('hidden'))
+    nodes.forEach(node => node.classList[!filter || (node.template?.content.textContent || node.innerText || node.textContent).toUpperCase().includes(filter) ? 'remove' : 'add']('hidden'))
   }
 
   /**
