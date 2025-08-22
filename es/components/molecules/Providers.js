@@ -82,6 +82,8 @@ export default class Providers extends Shadow() {
         clearTimeout(timeoutId)
         this.renderData(await lastProvidersEventGetData(), await (await this.roomPromise).room)
         this.iconStatesEl.removeAttribute('updating')
+        // the graph has to be refreshed when dialog opens
+        if (this.lastP2pGraphData) Providers.renderP2pGraph(this.providersGraph, await this.lastP2pGraphData, this.lastSeparator, true)
       }
     }
     this.providerDialogShowEventEventListener = event => this.openDialog(event)

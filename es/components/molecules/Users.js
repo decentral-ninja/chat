@@ -41,6 +41,12 @@ export default class Users extends Shadow() {
         clearTimeout(timeoutId)
         this.renderData(await lastUsersEventGetData(), lastSeparator).then(() => this.scrollActiveIntoView())
         this.iconStatesEl.removeAttribute('updating')
+        // the graph has to be refreshed when dialog opens
+        // @ts-ignore
+        const getArgs = this.isUserGraphTabActive
+          ? async () => [this.usersGraph, (await lastUsersEventGetData()).usersConnectedWithSelf, lastSeparator, this.getAttribute('active'), undefined, true]
+          : async () => [this.usersGraphHistory, (await lastUsersEventGetData()).allUsers, lastSeparator, this.getAttribute('active'), true, true]
+        Users.renderP2pGraph(...(await getArgs()))
       }
     }
     this.userDialogShowEventEventListener = event => {
@@ -71,8 +77,8 @@ export default class Users extends Shadow() {
       } else if (event.composedPath().some(node => typeof (activeNode = node).hasAttribute === 'function' && node.hasAttribute('data-tab')) && lastUsersEventGetData) {
         // @ts-ignore
         const getArgs = activeNode.matches('#usersGraph') || this.isUserGraphTabActive
-          ? async () => [this.usersGraph, (await lastUsersEventGetData()).usersConnectedWithSelf, lastSeparator, undefined, undefined, true]
-          : async () => [this.usersGraphHistory, (await lastUsersEventGetData()).allUsers, lastSeparator, undefined, true, true]
+          ? async () => [this.usersGraph, (await lastUsersEventGetData()).usersConnectedWithSelf, lastSeparator, this.getAttribute('active'), undefined, true]
+          : async () => [this.usersGraphHistory, (await lastUsersEventGetData()).allUsers, lastSeparator, this.getAttribute('active'), true, true]
         Users.renderP2pGraph(...(await getArgs()))
       }
     }
