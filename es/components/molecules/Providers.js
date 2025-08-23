@@ -342,6 +342,9 @@ export default class Providers extends Shadow() {
             border: 1px dashed var(--color-secondary);
             position: relative;
           }
+          :host(:not([online])) > dialog > #providers > #providers-graph {
+            display: none;
+          }
           :host > dialog > #providers > #providers-graph:has(~ chat-m-provider[updating])::after {
             animation: updating 3s ease infinite;
             content: "";
