@@ -381,6 +381,7 @@ export default class Rooms extends Shadow() {
         }
       ])
     ]).then(async ([{ room }, getRoomsResult]) => {
+      // TODO: Consider to only rerender the necessary parts like renderRoomList but keep the dialog
       let roomName
       this.html = ''
       this.shareDialogMap = new Map()
@@ -550,7 +551,7 @@ export default class Rooms extends Shadow() {
               <div>${key}</div>
               <div class=aka>${rooms.value[key].aka ? rooms.value[key].aka : ''}</div>
             </a>
-            <chat-m-notifications room="${key}" no-click${i + 1 === arr.length ? ' on-connected-request-notifications' : ''} allow-mute span-cursor=pointer></chat-m-notifications>
+            <chat-m-notifications room="${key}" no-click on-connected-request-notifications allow-mute span-cursor=pointer></chat-m-notifications>
             <wct-icon-mdx title="share" share="${key}" icon-url="../../../../../../img/icons/share-3.svg" size="2em"></wct-icon-mdx>
             <wct-icon-mdx title="edit aka" edit="${key}" li-count=${i} icon-url="../../../../../../img/icons/pencil.svg" size="2em"></wct-icon-mdx>
             <wct-icon-mdx title="delete" delete="${key.replace(/"/g, "'")}" href="${rooms.value[key].locationHref}" icon-url="../../../../../../img/icons/trash.svg" size="2em"></wct-icon-mdx>
