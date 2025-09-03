@@ -422,7 +422,7 @@ export default class Provider extends Shadow() {
       }
       if (selected) this.spanPort.textContent = urlContainer.url.port ? urlContainer.url.port : ''
       let currentKeepAlive
-      if ((selected && keepAlive === this.keepAliveDefaultValue) && (currentKeepAlive = Number(urlContainer.url.searchParams.get('keep-alive')))) keepAlive = currentKeepAlive
+      if ((selected && keepAlive === this.keepAliveDefaultValue) && (currentKeepAlive = Number(urlContainer.url.searchParams.get('keep-alive'))) !== undefined) keepAlive = currentKeepAlive
     })
     this.inputKeepAliveChangeEventListener({ target: { value: (this.inputKeepAlive.value = keepAlive) } }, true)
   }
