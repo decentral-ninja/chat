@@ -357,9 +357,10 @@ export default class Provider extends Shadow() {
    * @param {import('./Providers.js').Provider} data
    * @param {number} order
    * @param {boolean} [updateOrder=false]
+   * @param {boolean} [removeDataUpdating=true]
    * @returns {void}
    */
-  update (data, order, updateOrder = false) {
+  update (data, order, updateOrder = false, removeDataUpdating = true) {
     this.data = data
     this.order = order
     if (updateOrder) this.customStyle.innerText = /* css */`
@@ -373,17 +374,17 @@ export default class Provider extends Shadow() {
     } else {
       this.removeAttribute('connected')
     }
-    let removeUpdating = true
+    let removeIconStateUpdating = true
     if (data.status.includes('connected')) {
       this.iconStatesEl.setAttribute('state', 'connected')
     } else if (data.status.includes('active')) {
       this.iconStatesEl.setAttribute('state', 'connecting')
       this.iconStatesEl.setAttribute('updating', '')
-      removeUpdating = false
+      removeIconStateUpdating = false
     } else {
       this.iconStatesEl.setAttribute('state', 'disconnected')
     }
-    if (this.hasAttribute('updating')) {
+    if (removeDataUpdating && this.hasAttribute('updating')) {
       this.dispatchEvent(new CustomEvent('yjs-request-notifications', {
         detail: { force: true },
         bubbles: true,
@@ -392,7 +393,7 @@ export default class Provider extends Shadow() {
       }))
       this.removeAttribute('updating')
     }
-    if (removeUpdating) this.iconStatesEl.removeAttribute('updating')
+    if (removeIconStateUpdating) this.iconStatesEl.removeAttribute('updating')
     // avoid updating when inputs got changed
     if (this.hasAttribute('touched')) return
     let keepAlive = this.keepAliveDefaultValue

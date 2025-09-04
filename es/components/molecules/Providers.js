@@ -62,13 +62,13 @@ export default class Providers extends Shadow() {
       clearTimeout(timeoutId)
       timeoutId = setTimeout(async () => {
         if (this.isDialogOpen()) {
-          this.renderData(await event.detail.getData(), await (await this.roomPromise).room)
+          this.renderData(await event.detail.getData(), await (await this.roomPromise).room, true)
         } else {
           Providers.toggleIconStates(this.iconStatesEl, await event.detail.getData(), this.hasAttribute('online'))
         }
         this.iconStatesEl.removeAttribute('updating')
         // @ts-ignore
-      }, this.isDialogOpen() ? 2000 : self.Environment.awarenessEventListenerDelay)
+      }, self.Environment.awarenessEventListenerDelay || 1000)
     }
 
     this.providersChangeEventListener = event => {
@@ -80,8 +80,7 @@ export default class Providers extends Shadow() {
       this.dialog.show('show-modal')
       if (lastProvidersEventGetData) {
         clearTimeout(timeoutId)
-        this.renderData(await lastProvidersEventGetData(), await (await this.roomPromise).room)
-        this.iconStatesEl.removeAttribute('updating')
+        this.renderData(await lastProvidersEventGetData(), await (await this.roomPromise).room, false)
         // the graph has to be refreshed when dialog opens
         if (this.lastP2pGraphData) Providers.renderP2pGraph(this.providersGraph, await this.lastP2pGraphData, this.lastSeparator, true)
       }
@@ -472,7 +471,7 @@ export default class Providers extends Shadow() {
     ])
   }
 
-  renderData (data, roomName) {
+  renderData (data, roomName, force) {
     this.lastSeparator = data.separator
     new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-providers', {
       detail: {
@@ -485,15 +484,27 @@ export default class Providers extends Shadow() {
       this.websocketUrl = websocketUrl
       this.webrtcUrl = webrtcUrl
       Providers.toggleIconStates(this.iconStatesEl, data, this.hasAttribute('online'))
-      this.lastP2pGraphData = Providers.renderProvidersList(this.providersDiv, data, roomName, websocketUrl, webrtcUrl, this.providersGraph, this.providerDialogWasClosed)
+      this.lastP2pGraphData = Providers.renderProvidersList(this.providersDiv, data, roomName, this.providersGraph, this.providerDialogWasClosed, force)
       this.providerDialogWasClosed = false
       // TODO: ******************************* Below only reproduces the old behavior *******************************
       /** @type {HTMLInputElement | any} */
       let websocketInput
-      if ((websocketInput = this.websocketInput) && websocketUrl !== websocketInput.value && !websocketInput.matches(':focus')) websocketInput.value = websocketUrl
+      if ((websocketInput = this.websocketInput) && websocketUrl !== websocketInput.value) {
+        if (websocketInput.matches(':focus')) {
+          websocketInput.addEventListener('blur', event => (websocketInput.value = websocketUrl), {once: true})
+        } else {
+          websocketInput.value = websocketUrl
+        }
+      }
       /** @type {HTMLInputElement | any} */
       let webrtcInput
-      if ((webrtcInput = this.webrtcInput) && webrtcUrl !== webrtcInput.value && !webrtcInput.matches(':focus')) webrtcInput.value = webrtcUrl
+      if ((webrtcInput = this.webrtcInput) && webrtcUrl !== webrtcInput.value) {
+        if (webrtcInput.matches(':focus')) {
+          webrtcInput.addEventListener('blur', event => (webrtcInput.value = webrtcUrl), {once: true})
+        } else {
+          webrtcInput.value = webrtcUrl
+        }
+      }
     })
   }
 
@@ -512,68 +523,10 @@ export default class Providers extends Shadow() {
     }
   }
 
-  static async renderProvidersList (div, data, roomName, websocketUrl, webrtcUrl, providersGraph, providerDialogWasClosed) {
-    /** @type {ProvidersContainer} */
-    const providers = new Map()
-    // Note: WebWorkers 900ms are slower than this 240ms, tested 06/25/25
-    // important, keep order not that less information overwrites the more precise information at mergeProvider
-    Providers.fillProvidersWithProvidersFromCrdt(providers, data.allProviders)
-    Providers.fillProvidersWithProvidersFromRooms(providers, await data.getProvidersFromRooms(), data.separator)
-    Providers.fillProvidersWithProvidersFromCrdt(providers, data.providers, 'once-established')
-    // @ts-ignore
-    Providers.fillProvidersWithProvidersFromEnvironment(providers, self.Environment)
-    Providers.fillProvidersWithSessionProvidersByStatus(providers, await data.getSessionProvidersByStatus(data.separator), data.separator)
-    // @ts-ignore
-    Providers.fillProvidersWithPermanentFallbacksFromEnvironment(providers, self.Environment)
-    const mapHostname = url => {
-      try {
-        return (new URL(url)).hostname
-      } catch (error) {
-        return null
-      }
-    }
-    const websocketHostnames = (websocketUrl || '').split(',').map(mapHostname)
-    const webrtcHostnames = (webrtcUrl || '').split(',').map(mapHostname)
-    const mapOrigin = url => {
-      try {
-        return (new URL(url)).origin
-      } catch (error) {
-        return null
-      }
-    }
-    const websocketOrigins = (websocketUrl || '').split(',').map(mapOrigin)
-    const webrtcOrigins = (webrtcUrl || '').split(',').map(mapOrigin)
-    // check if the provider is active
-    providers.forEach((provider, key) => {
-      if (websocketHostnames?.includes(key) || webrtcHostnames?.includes(key)) {
-        provider.status.push('active')
-        provider.urls.forEach((urlContainer, key) => {
-          if ((urlContainer.name === 'websocket' ? websocketOrigins : webrtcOrigins || '').includes(urlContainer.url.origin)) urlContainer.status = 'active'
-        })
-      }
-    })
-    // Sorting 'connected' | 'disconnected' | 'default' | 'once-established' | 'active' | 'unknown'; the lower the number the higher ranked
-    const statusPriority = {
-      active: 1,
-      connected: 2,
-      disconnected: 3,
-      default: 4,
-      'once-established': 5,
-      unknown: 6
-    }
-    const lowestPriority = 6
+  static async renderProvidersList (div, data, roomName, providersGraph, providerDialogWasClosed, force) {
+    const providers = Array.from(await data.getCompleteProviders(force))
     const tempDiv = document.createElement('div')
-    tempDiv.innerHTML = Array.from(providers).map(([name, providerData]) => {
-      // calc the status number; the lower the number the higher it shall rank in the ascending list
-      providerData.statusCount = providerData.status.reduce((acc, curr, i) => {
-        acc[i] = statusPriority[curr] ? statusPriority[curr] : lowestPriority
-        return acc
-        // prefill the array with 5 elements, since it gets filled 5 times above, if all found
-      }, new Array(5).fill(lowestPriority)).reduce((acc, curr) => acc + curr, 0)
-      return [name, providerData]
-      // Note: A negative value indicates that a should come before b
-      // @ts-ignore
-    }).sort(([aName, aProviderData], [bName, bProviderData]) => aProviderData.statusCount - bProviderData.statusCount).reduce((acc, [name, providerData], i) => {
+    tempDiv.innerHTML = providers.reduce((acc, [name, providerData], i) => {
       /// / render or update
       // @ts-ignore
       const id = `${self.Environment?.providerNamespace || 'p_'}${name.replaceAll('.', '-')}` // string <ident> without dots https://developer.mozilla.org/en-US/docs/Web/CSS/ident
@@ -581,7 +534,7 @@ export default class Providers extends Shadow() {
       let provider
       if ((provider = div.querySelector(`#${id}`))) {
         if (typeof provider.update === 'function') {
-          provider.update(providerData, i, providerDialogWasClosed)
+          provider.update(providerData, i, providerDialogWasClosed, force)
         } else {
           provider.outerHTML = renderProvider()
         }
@@ -591,126 +544,13 @@ export default class Providers extends Shadow() {
       return acc
     }, '')
     Array.from(tempDiv.children).forEach(child => div.appendChild(child))
-    const p2pGraphData = Array.from(providers).reduce((acc, [hostname, provider]) => {
+    const p2pGraphData = providers.reduce((acc, [hostname, provider]) => {
       // @ts-ignore
       if (provider.status.includes('connected')) acc.push([hostname, provider])
       return acc
     }, [])
     Providers.renderP2pGraph(providersGraph, p2pGraphData, data.separator)
     return p2pGraphData
-  }
-
-  static fillProvidersWithProvidersFromCrdt (providers, data, status = 'unknown') {
-    Array.from(data).forEach(([name, providersMap]) => Array.from(providersMap).forEach(([url, users]) => {
-      try {
-        url = new URL(url)
-      } catch (error) {
-        return providers
-      }
-      providers.set(url.hostname, Providers.mergeProvider(providers.get(url.hostname), {
-        status: [status],
-        urls: new Map([[url.origin, { name, url, status, origin: 'crdt' }]]),
-        origins: ['crdt']
-      }))
-    }))
-    return providers
-  }
-
-  static fillProvidersWithProvidersFromRooms (providers, data, separator) {
-    Array.from(data).forEach(({ room, url, prop, providerFallbacks }) => {
-      let [name, realUrl] = url.split(separator)
-      // incase no separator is found (fallback for old room provider array)
-      if (!realUrl) {
-        realUrl = name
-        name = undefined
-      }
-      try {
-        url = new URL(realUrl)
-      } catch (error) {
-        return providers
-      }
-      const status = prop === 'providers' ? 'once-established' : 'unknown'
-      providers.set(url.hostname, Providers.mergeProvider(providers.get(url.hostname), {
-        status: [status],
-        urls: new Map([[url.origin, { name, url, status, origin: room }]]),
-        origins: [room],
-        providerFallbacks: new Map(providerFallbacks[url.hostname]?.urls)
-      }))
-    })
-    return providers
-  }
-
-  static fillProvidersWithProvidersFromEnvironment (providers, data, status = 'default') {
-    data.providers.forEach(provider => {
-      const url = new URL(provider.url)
-      providers.set(url.hostname, Providers.mergeProvider(providers.get(url.hostname), {
-        status: [status],
-        urls: new Map([[url.origin, { name: provider.name, url, status, origin: 'environment' }]]),
-        origins: ['environment']
-      }))
-    })
-    return providers
-  }
-
-  static fillProvidersWithSessionProvidersByStatus (providers, data, separator) {
-    const loopProviders = (providersArr, key) => providersArr.forEach(url => {
-      const [name, realUrl] = url.split(separator)
-      url = new URL(realUrl)
-      providers.set(url.hostname, Providers.mergeProvider(providers.get(url.hostname), {
-        status: [key],
-        urls: new Map([[url.origin, { name, url, status: key, origin: 'session' }]]),
-        origins: ['session']
-      }))
-    })
-    // keep strictly this order, that the connected overwrites the disconnected
-    loopProviders(data.disconnected, 'disconnected')
-    loopProviders(data.connected, 'connected')
-    return providers
-  }
-
-  static fillProvidersWithPermanentFallbacksFromEnvironment (providers, data) {
-    Array.from(data.permanentFallbacks).forEach(([provider, fallback]) => {
-      const url = new URL(provider)
-      if (providers.has(url.hostname)) {
-        providers.set(url.hostname, Providers.mergeProvider(providers.get(url.hostname), {
-          permanentFallback: fallback
-        }))
-      }
-    })
-    return providers
-  }
-
-  static mergeProvider (providerA, providerB) {
-    if (!providerA) return providerB
-    const providerNew = {}
-    if (providerA.origins && providerB.origins) providerNew.origins = Array.from(new Set(providerA.origins.concat(providerB.origins)))
-    if (providerA.status && providerB.status) providerNew.status = Array.from(new Set(providerA.status.concat(providerB.status)))
-    providerNew.urls = Providers.mergeMap(providerA.urls, providerB.urls)
-    providerNew.providerFallbacks = Providers.mergeMap(providerA.providerFallbacks, providerB.providerFallbacks)
-    return Object.assign(providerA, providerB, providerNew)
-  }
-
-  static mergeMap (mapA, mapB) {
-    if (!mapA) return mapB
-    if (!mapB) return mapA
-    const reduce = arr => Array.from(arr).reduce((acc, [key, value]) => {
-      acc.push(key)
-      return acc
-    }, [])
-    const keys = Array.from(new Set(reduce(mapA).concat(reduce(mapB))))
-    return keys.reduce((acc, key) => {
-      const valueA = mapA.get(key)
-      const valueB = mapB.get(key)
-      acc.set(key, !valueA
-        ? valueB
-        : !valueB
-            ? valueA
-            : Array.isArray(valueA) && Array.isArray(valueB)
-              ? Array.from(new Set(valueA.concat(valueB)))
-              : Object.assign(valueA, valueB)
-      ).get(key)
-      return acc
-    }, new Map())
   }
 
   static renderP2pGraph (graph, data, separator, force = false) {

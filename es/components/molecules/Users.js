@@ -31,7 +31,7 @@ export default class Users extends Shadow() {
         }
         this.iconStatesEl.removeAttribute('updating')
         // @ts-ignore
-      }, this.isDialogOpen() ? 2000 : self.Environment.awarenessEventListenerDelay)
+      }, self.Environment.awarenessEventListenerDelay || 1000)
     }
 
     this.openDialog = async event => {
