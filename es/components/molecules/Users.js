@@ -1,6 +1,6 @@
 // @ts-check
 import { Shadow } from '../../../../event-driven-web-components-prototypes/src/Shadow.js'
-import { getHexColor } from '../../../../Helpers.js'
+import { getHexColor, jsonStringifyMapUrlReplacer } from '../../../../Helpers.js'
 
 /* global self */
 /* global Environment */
@@ -58,7 +58,7 @@ export default class Users extends Shadow() {
     this.dialogClickEventListener = async event => {
       // card click
       let activeNode
-      if (event.composedPath().some(node => (activeNode = node).tagName === 'LI' && node.classList.contains('active') && typeof node.hasAttribute === 'function' && !node.hasAttribute('data-tab'))) {
+      if (event.composedPath().some(node => (activeNode = node).tagName === 'CHAT-M-USER' && node.classList.contains('active') && typeof node.hasAttribute === 'function' && !node.hasAttribute('data-tab'))) {
         // @ts-ignore
         this.setActive(activeNode.getAttribute('uid'), this.usersOl, false)
         // @ts-ignore
@@ -248,146 +248,8 @@ export default class Users extends Shadow() {
           :host ol > wct-load-template-tag {
             min-height: 25em;
           }
-          :host ol > li {
-            --box-shadow-color: var(--color-user);
-            --box-shadow-default: var(--box-shadow-length-one) var(--box-shadow-color), var(--box-shadow-length-two) var(--box-shadow-color);
-            border: 1px solid var(--color-user);
-            word-break: break-all;
-            margin-bottom: var(--spacing);
-            box-shadow: var(--box-shadow-default);
-            padding: 0.25em;
-            padding-left: 0.25em !important;
-            border-radius: var(--border-radius);
-            overflow: auto;
-            scrollbar-color: var(--color) var(--background-color);
-            scrollbar-width: thin;
-            transition: padding 0.05s ease-out;
-          }
-          :host ol > li, :host ol > wct-load-template-tag {
+          :host ol > chat-m-user, :host ol > wct-load-template-tag {
             width: calc(50% - 0.5em);
-          }
-          :host ol > li.self {
-            --box-shadow-color: var(--color-secondary);
-            --box-shadow-default: var(--box-shadow-length-one) var(--box-shadow-color), var(--box-shadow-length-two) var(--box-shadow-color);
-            border: 1px solid var(--color-secondary);
-          }
-          :host ol > li.active {
-            cursor: pointer;
-          }
-          :host ol > li:active {
-            padding: 0;
-            padding-left: 0 !important;
-          }
-          :host ol > li:active > * {
-            padding: 1em;
-          }
-          :host ol > li > * {
-            padding: var(--card-padding, 0.75em);
-            margin: 0;
-            transition: padding 0.05s ease-out;
-          }
-          :host ol > li:where([self], .active) > * {
-            --color: var(--background-color);
-            --a-color: var(--background-color);
-            --h2-color: var(--background-color);
-            --h3-color: var(--background-color);
-            --h4-color: var(--background-color);
-            --box-shadow-default: var(--box-shadow-length-one) var(--box-shadow-color), var(--box-shadow-length-two) var(--box-shadow-color);
-            color: var(--background-color);
-            border-radius: var(--border-radius);
-          }
-          :host ol > li[self] > * {
-            border: 1px solid var(--color-secondary);
-            background-color: var(--background-color-rgba-50);
-            box-shadow: 0px 0px 0.5em var(--color-secondary);
-          }
-          :host ol > li.active > * {
-            background-color: var(--color-active);
-          }
-          :host ol > li > div {
-            height: 100%;
-          }
-          :host ol > li > div > table {
-            margin: 0;
-          }
-          :host ol > li > div > table > tbody {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            margin: 0;
-          }
-          :host ol > li > div > table > tbody > tr {
-            display: contents;
-          }
-          :host ol > li:where(.updated, .outdated) > div > table > tbody > tr.time-status {
-            padding-bottom: var(--h-margin-bottom, 1em);
-          }
-          :host ol > li:where(.updated, .outdated) > div > table > tbody > tr.time-status > td {
-            font-style: italic;
-            margin-bottom: var(--h-margin-bottom, 1em);
-          }
-          :host ol > li:not(.active, [self]).updated > div > h2 {
-            border-bottom: 1px solid var(--color-green-full);
-          }
-          :host ol > li:not(.active, [self]).updated > div > table > tbody > tr.time-status > td.time-status-icons {
-            --color: var(--color-green-full);
-          }
-          :host ol > li.updated > div > table > tbody > tr.time-status > td {
-            border-bottom: 1px dotted var(--color-green-full);
-          }
-          :host ol > li:not(.active, [self]).outdated > div > h2 {
-            border-bottom: 1px solid var(--color-error);
-          }
-          :host ol > li:not(.active, [self]).outdated > div > table > tbody > tr.time-status > td.time-status-icons {
-            --color: var(--color-error);
-          }
-          :host ol > li.outdated > div > table > tbody > tr.time-status > td {
-            border-bottom: 1px dotted var(--color-error);
-          }
-          :host ol > li > div > table > tbody > tr > td {
-            overflow-wrap: anywhere;
-          }
-          :host ol > li > div > table > tbody > tr.nickname {
-            font-weight: bold;
-          }
-          :host ol > li.self > div > table > tbody > tr.nickname {
-            color: var(--color-secondary);
-            font-weight: bold;
-          }
-          :host ol > li > div > h2 {
-            --color-hover: var(--color);
-            --cursor-hover: auto;
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid var(--color);
-            overflow-wrap: anywhere;
-          }
-          :host ol > li > div > h2 > span.user-icon {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-          }
-          :host ol > li > div > h2 > span.user-icon > .tiny{
-            font-family: var(--font-family);
-            color: var(--color);
-            font-size: 0.25em;
-            line-height: 0.5em;
-            margin-bottom: 1.75em;
-          }
-          :host ol > li.active > div > h2 {
-            --color: var(--background-color);
-            --color-hover: var(--color);
-          }
-          :host ol > li.active > div > h2 > span.user-icon > .tiny{
-            color: var(--background-color);
-          }
-          :host ol > li.active > div > h2 {
-            --cursor-hover: pointer;
-            border-bottom: 1px solid var(--background-color);
-          }
-          :host chat-a-nick-name {
-            display: inline-block;
           }
           :host > dialog {
             scrollbar-color: var(--color) var(--background-color);
@@ -422,17 +284,17 @@ export default class Users extends Shadow() {
             color: var(--color-secondary);
           }
           @media only screen and (max-width: ${this.mobileBreakpoint}) {
-            :host ol > li, :host ol > wct-load-template-tag {
+            :host ol > chat-m-user, :host ol > wct-load-template-tag {
               width: 100%;
             }
           }
           @media only screen and (min-width: 1500px) {
-            :host ol > li, :host ol > wct-load-template-tag {
+            :host ol > chat-m-user, :host ol > wct-load-template-tag {
               width: calc(33.3% - 0.66em);
             }
           }
           @media only screen and (min-width: 2500px) {
-            :host ol > li, :host ol > wct-load-template-tag {
+            :host ol > chat-m-user, :host ol > wct-load-template-tag {
               width: calc(25% - 0.75em);
             }
           }
@@ -463,7 +325,6 @@ export default class Users extends Shadow() {
               <h4 class="title connected">Connected Users</h4>
               <ol id="users"></ol>
             </div>
-            <p class="no-connections">No active connections!</p>
             <br>
             <hr>
             <br>
@@ -529,6 +390,11 @@ export default class Users extends Shadow() {
         // @ts-ignore
         path: `${this.importMetaUrl}./dialogs/NickNameDialog.js?${Environment?.version || ''}`,
         name: 'chat-m-nick-name-dialog'
+      },
+      {
+        // @ts-ignore
+        path: `${this.importMetaUrl}./User.js?${Environment?.version || ''}`,
+        name: 'chat-m-user'
       }
     ])
   }
@@ -554,15 +420,15 @@ export default class Users extends Shadow() {
   }
 
   setActive (uid, ol, active = true, scroll = true) {
-    Array.from(ol.querySelectorAll('li.active, wct-load-template-tag.active')).forEach(li => li.classList.remove('active'))
-    let li
-    if (active && (li = ol.querySelector(`li[uid='${uid}'], wct-load-template-tag[uid='${uid}']`))) li.classList.add('active')
+    Array.from(ol.querySelectorAll('chat-m-user.active, wct-load-template-tag.active')).forEach(node => node.classList.remove('active'))
+    let node
+    if (active && (node = ol.querySelector(`chat-m-user[uid='${uid}'], wct-load-template-tag[uid='${uid}']`))) node.classList.add('active')
     if (active && scroll) this.scrollActiveIntoView()
   }
 
   scrollActiveIntoView (smooth = false, counter = 0) {
     counter++
-    const getLiActiveEl = () => this.usersOl.querySelector('li.active, wct-load-template-tag.active') || this.allUsersOl.querySelector('li.active, wct-load-template-tag.active')
+    const getLiActiveEl = () => this.usersOl.querySelector('chat-m-user.active, wct-load-template-tag.active') || this.allUsersOl.querySelector('chat-m-user.active, wct-load-template-tag.active')
     const scrollEl = getLiActiveEl()
     if (!scrollEl) return
     scrollEl.scrollIntoView({ behavior: smooth ? 'smooth' : 'instant', block: 'nearest' })
@@ -609,99 +475,26 @@ export default class Users extends Shadow() {
   }
 
   static async renderUserTableList (ol, users, allUsers, newestMessage, areConnectedUsers, activeUid) {
-    let isUpToDate
-    // TODO: Proper update diffing logic, only render the users which have changes, to avoid blitz on multiple updates
+    // TODO: sort/order also into different ol if active/inactive
+    // TODO: decide if render or update function same as at provider molecules renderProvidersList
+    // const renderUser = () => /* html */`<wct-load-template-tag id=${id} no-css style="order: ${i};"><template><chat-m-provider><template>${JSON.stringify({ id, name, data: providerData, order: i, roomName }, jsonStringifyMapUrlReplacer)}</template></chat-m-provider></template></wct-load-template-tag>`
+    //   let provider
+    //   if ((provider = div.querySelector(`#${id}`))) {
+    //     if (typeof provider.update === 'function') {
+    //       provider.update(providerData, i, providerDialogWasClosed, force)
+    //     } else {
+    //       provider.outerHTML = renderUser()
+    //     }
+    //   } else {
+    //     return acc + renderUser()
+    //   }
     ol.innerHTML = await Array.from(users).reduce(async (acc, [key, user]) => /* html */`
       ${await acc}
       <wct-load-template-tag uid='${user.uid}'${activeUid === user.uid ? ' class=active' : ''} no-css copy-class-list>
         <template>
-          <li uid='${user.uid}'${user.isSelf ? ' self' : ''} class="${(isUpToDate = areConnectedUsers || user.uid === newestMessage?.uid || JSON.parse(user.awarenessEpoch || user.epoch).epoch >= newestMessage?.timestamp) ? 'updated' : 'outdated' /* eslint-disable-line */}" style="--box-shadow-color: ${(await getHexColor(user.uid))};border-color: ${(await getHexColor(user.uid))};">
-            <div>
-              <h2>
-                <span>${user.nickname || 'none'}</span>
-                <span class=user-icon>
-                  <wct-icon-mdx title="${user.isSelf ? 'Yourself' : 'Other user'}" icon-url="../../../../../../img/icons/${user.isSelf ? 'user-self' : 'user-other'}.svg" size="0.75em"></wct-icon-mdx>
-                  <span class=tiny>${user.isSelf ? 'Yourself' : 'Other user'}</span>
-                </span>
-              </h2>
-              <table>
-                <tbody>
-                  ${user.isSelf
-                    ? ''
-                    : /* html */`
-                      <tr class="time-status">
-                        <td>${isUpToDate
-                          ? 'is up to date:'
-                          : 'is outdated:'
-                        }</td>
-                        <td class="time-status-icons">${isUpToDate
-                          ? '<wct-icon-mdx title="is up to date" no-hover icon-url="../../../../../../img/icons/message-check.svg" size="1.5em"></wct-icon-mdx>'
-                          : '<wct-icon-mdx title="is outdated" no-hover icon-url="../../../../../../img/icons/message-x.svg" size="1.5em"></wct-icon-mdx>'
-                        }</td>
-                      </tr>
-                    `
-                  }
-                  ${Object.keys(user).reduce((acc, key) => {
-                    const ignoredKeys = ['connectedUsersCount', 'mutuallyConnectedUsersCount', 'sessionEpoch', 'isSelf']
-                    if (user.awarenessEpoch) ignoredKeys.push('epoch') // backward compatible to old chats/user, which did not have awarenessEpoch, then just use epoch
-                    if (ignoredKeys.includes(key)) return acc
-                    return /* html */`
-                      ${['localEpoch', 'awarenessEpoch', 'nickname'].includes(key) ? '' : acc}
-                      <tr ${key === 'nickname' ? 'class=nickname' : ''}>
-                        <td>${key === 'nickname'
-                          ? user.isSelf
-                            ? 'Your nickname:'
-                            : 'User nickname:'
-                          : key === 'localEpoch'
-                          ? 'first time visited:'
-                          : key === 'awarenessEpoch' || key === 'epoch'
-                          ? 'last time visited:'
-                          : key === 'mutuallyConnectedUsers'
-                          ? 'active connected users:'
-                          : key === 'connectedUsers'
-                          ? 'once connected users:'
-                          : key === 'uid'
-                          ? 'unique id:'
-                          : `${key}:`
-                        }</td>
-                        <td>${key === 'mutuallyConnectedUsers' || key === 'connectedUsers'
-                          ? Object.keys(user[key]).reduce((acc, providerName) => {
-                            const addedConnectedUsersUid = []
-                            return /* html */`
-                              ${acc}
-                              ${Array.isArray(user[key][providerName])
-                                ? user[key][providerName].reduce((acc, mutuallyConnectedUser) => {
-                                  const fullUser = allUsers.get(mutuallyConnectedUser?.uid)
-                                  if (!fullUser) return acc
-                                  if (addedConnectedUsersUid.includes(fullUser.uid)) return acc
-                                  addedConnectedUsersUid.push(fullUser.uid)
-                                  return `${acc}${fullUser ? /* html */`
-                                    <details onclick="event.stopPropagation()">
-                                      <summary><chat-a-nick-name uid='${fullUser.uid}' nickname="${fullUser.nickname}"${fullUser.isSelf ? ' self' : ''}></chat-a-nick-name></summary>
-                                      ${providerName}
-                                    </details>
-                                  ` : ''}`
-                                  }, '').trim()
-                                : 'none'
-                              }
-                            `
-                          }, '').trim() || 'none'
-                          : key === 'nickname'
-                          ? `<chat-a-nick-name uid='${user.uid}' nickname="${user.nickname}"${user.isSelf ? ' self' : ''}></chat-a-nick-name>`
-                          : typeof user[key] === 'string' && user[key].includes('epoch') && key !== 'uid'
-                          ? new Date(JSON.parse(user[key]).epoch).toLocaleString(navigator.language)
-                          : typeof user[key] === 'object'
-                            ? JSON.stringify(user[key])
-                            : user[key]
-                        }</td>
-                      </tr>
-                      ${['localEpoch', 'awarenessEpoch', 'nickname'].includes(key) ? acc : ''}
-                    `
-                  }, '')}
-                </tbody>
-              </table>
-            </div>
-          </li>
+          <chat-m-user uid='${user.uid}'${user.isSelf ? ' self' : ''}${activeUid === user.uid ? ' class=active' : ''}${areConnectedUsers || user.uid === newestMessage?.uid || JSON.parse(user.awarenessEpoch || user.epoch).epoch >= newestMessage?.timestamp ? ' is-up-to-date' : ''} hex-color="${(await getHexColor(user.uid))}">
+            <template>${JSON.stringify({ user, allUsers }, jsonStringifyMapUrlReplacer)}</template>
+          </chat-m-user>
         </template>
       </wct-load-template-tag>
     `, '')

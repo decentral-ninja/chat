@@ -126,12 +126,12 @@ export default class JitsiDialog extends Dialog {
         <a href="${this.iframeSrc}" target="_blank">If the video call does not work 100%, click this link!</a>
       </dialog>
     `
-    // alternative: https://meet.hostpoint.ch/
+    // alternative: https://meet.mgrs.dev/
     this.roomPromise.then(async ({ locationHref, room }) => {
       this.root.querySelector('dialog').insertAdjacentHTML('beforeend', /* html */`
         <wct-iframe>
           <template>
-            <iframe width="${self.innerWidth}" height="${self.innerHeight}" src="${this.iframeSrc || (this.iframeSrc = `https://meet.hostpoint.ch/${await room}`)}" frameborder="0" allow="autoplay; display-capture; encrypted-media; picture-in-picture; fullscreen; allow-top-navigation; screen-wake-lock; microphone; camera; window-management;"></iframe>
+            <iframe width="${self.innerWidth}" height="${self.innerHeight}" src="${this.iframeSrc || (this.iframeSrc = `https://meet.mgrs.dev/${await room}`)}" frameborder="0" allow="autoplay; display-capture; encrypted-media; picture-in-picture; fullscreen; allow-top-navigation; screen-wake-lock; microphone; camera; window-management;"></iframe>
           </template>
         </wct-iframe>
       `)
