@@ -415,8 +415,8 @@ export default class Users extends Shadow() {
       cancelable: true,
       composed: true
     }))).then(chatEventDetail => chatEventDetail.getAll()).then(textObjs => textObjs.sort((a, b) => a.timestamp - b.timestamp).slice(-1)[0]))
-    await Users.renderUserTableList(this.usersOl, data.usersConnectedWithSelf, data.allUsers, newestMessage, true, this.getAttribute('active'))
-    await Users.renderUserTableList(this.allUsersOl, new Map(Array.from(data.allUsers).filter(([key, user]) => !data.usersConnectedWithSelf.get(key)).sort((a, b) => JSON.parse(b[1].awarenessEpoch || b[1].epoch).epoch - JSON.parse(a[1].awarenessEpoch || a[1].epoch).epoch)), data.allUsers, newestMessage, false, this.getAttribute('active'))
+    await Users.renderUserTableList(this.usersOl, this.allUsersOl, data.usersConnectedWithSelf, data.allUsers, newestMessage, true, this.getAttribute('active'))
+    await Users.renderUserTableList(this.allUsersOl, this.usersOl, new Map(Array.from(data.allUsers).filter(([key, user]) => !data.usersConnectedWithSelf.get(key)).sort((a, b) => JSON.parse(b[1].awarenessEpoch || b[1].epoch).epoch - JSON.parse(a[1].awarenessEpoch || a[1].epoch).epoch)), data.allUsers, newestMessage, false, this.getAttribute('active'))
   }
 
   setActive (uid, ol, active = true, scroll = true) {
@@ -474,30 +474,35 @@ export default class Users extends Shadow() {
     }
   }
 
-  static async renderUserTableList (ol, users, allUsers, newestMessage, areConnectedUsers, activeUid) {
-    // TODO: sort/order also into different ol if active/inactive
-    // TODO: decide if render or update function same as at provider molecules renderProvidersList
-    // const renderUser = () => /* html */`<wct-load-template-tag id=${id} no-css style="order: ${i};"><template><chat-m-provider><template>${JSON.stringify({ id, name, data: providerData, order: i, roomName }, jsonStringifyMapUrlReplacer)}</template></chat-m-provider></template></wct-load-template-tag>`
-    //   let provider
-    //   if ((provider = div.querySelector(`#${id}`))) {
-    //     if (typeof provider.update === 'function') {
-    //       provider.update(providerData, i, providerDialogWasClosed, force)
-    //     } else {
-    //       provider.outerHTML = renderUser()
-    //     }
-    //   } else {
-    //     return acc + renderUser()
-    //   }
-    ol.innerHTML = await Array.from(users).reduce(async (acc, [key, user]) => /* html */`
-      ${await acc}
-      <wct-load-template-tag uid='${user.uid}'${activeUid === user.uid ? ' class=active' : ''} no-css copy-class-list>
-        <template>
-          <chat-m-user uid='${user.uid}'${user.isSelf ? ' self' : ''}${activeUid === user.uid ? ' class=active' : ''}${areConnectedUsers || user.uid === newestMessage?.uid || JSON.parse(user.awarenessEpoch || user.epoch).epoch >= newestMessage?.timestamp ? ' is-up-to-date' : ''} hex-color="${(await getHexColor(user.uid))}">
-            <template>${JSON.stringify({ user, allUsers }, jsonStringifyMapUrlReplacer)}</template>
-          </chat-m-user>
-        </template>
-      </wct-load-template-tag>
-    `, '')
+  static async renderUserTableList (targetList, otherList, users, allUsers, newestMessage, areConnectedUsers, activeUid) {
+    // TODO: sort/order also into different targetList if active/inactive
+    const tempDiv = document.createElement('div')
+    tempDiv.innerHTML = await Array.from(users).reduce(async (acc, [key, user], i) => {
+      const isUpToDate = areConnectedUsers || user.uid === newestMessage?.uid || JSON.parse(user.awarenessEpoch || user.epoch).epoch >= newestMessage?.timestamp
+      /// / render or update
+      const renderUser = async () => /* html */`
+        <wct-load-template-tag uid='${user.uid}'${activeUid === user.uid ? ' class=active' : ''} no-css copy-class-list>
+          <template>
+            <chat-m-user uid='${user.uid}'${user.isSelf ? ' self' : ''}${activeUid === user.uid ? ' class=active' : ''}${isUpToDate ? ' is-up-to-date' : ''} hex-color="${(await getHexColor(user.uid))}">
+              <template>${JSON.stringify({ user, allUsers }, jsonStringifyMapUrlReplacer)}</template>
+            </chat-m-user>
+          </template>
+        </wct-load-template-tag>
+      `
+      let userNode
+      if ((userNode = targetList.querySelector(`[uid='${user.uid}']`) || otherList.querySelector(`[uid='${user.uid}']`))) {
+        if (!targetList.contains(userNode)) targetList.appendChild(userNode)
+        if (typeof userNode.update === 'function') {
+          userNode.update(user, allUsers, isUpToDate, i)
+        } else {
+          userNode.outerHTML = await renderUser()
+        }
+      } else {
+        return await acc + await renderUser()
+      }
+      return await acc
+    }, '')
+    Array.from(tempDiv.children).forEach(child => targetList.appendChild(child))
   }
 
   get iconStatesEl () {

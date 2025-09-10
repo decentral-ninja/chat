@@ -123,29 +123,35 @@ export default class User extends Shadow() {
       :host > li > div > table > tbody > tr {
         display: contents;
       }
-      :host > li > div > table > tbody > tr#time-status {
+      :host > li > div > table > tbody > tr.time-status {
         padding-bottom: var(--h-margin-bottom, 1em);
       }
-      :host > li > div > table > tbody > tr#time-status > td {
+      :host > li > div > table > tbody > tr.time-status > td {
         font-style: italic;
         margin-bottom: var(--h-margin-bottom, 1em);
       }
       :host(:not(.active, [self])[is-up-to-date]) > li > div > h2 {
         border-bottom: 1px solid var(--color-green-full);
       }
-      :host(:not(.active, [self])[is-up-to-date]) > li > div > table > tbody > tr#time-status > td.time-status-icons {
+      :host .is-up-to-date, :host([is-up-to-date]) .is-outdated {
+        display: none;
+      }
+      :host([is-up-to-date]) .is-up-to-date {
+        display: block;
+      }
+      :host(:not(.active, [self])[is-up-to-date]) > li > div > table > tbody > tr.time-status > td.time-status-icons {
         --color: var(--color-green-full);
       }
-      :host([is-up-to-date]) > li > div > table > tbody > tr#time-status > td {
+      :host([is-up-to-date]) > li > div > table > tbody > tr.time-status > td {
         border-bottom: 1px dotted var(--color-green-full);
       }
       :host(:not(.active, [self], [is-up-to-date])) > li > div > h2 {
         border-bottom: 1px solid var(--color-error);
       }
-      :host(:not(.active, [self], [is-up-to-date])) > li > div > table > tbody > tr#time-status > td.time-status-icons {
+      :host(:not(.active, [self], [is-up-to-date])) > li > div > table > tbody > tr.time-status > td.time-status-icons {
         --color: var(--color-error);
       }
-      :host(:not([is-up-to-date])) > li > div > table > tbody > tr#time-status > td {
+      :host(:not([is-up-to-date])) > li > div > table > tbody > tr.time-status > td {
         border-bottom: 1px dotted var(--color-error);
       }
       :host > li > div > table > tbody > tr > td {
@@ -233,14 +239,12 @@ export default class User extends Shadow() {
                 ? ''
                 : /* html */`
                   <tr class="time-status">
-                    <td>${this.hasAttribute('is-up-to-date')
-                      ? 'is up to date:'
-                      : 'is outdated:'
-                    }</td>
-                    <td class="time-status-icons">${this.hasAttribute('is-up-to-date')
-                      ? '<wct-icon-mdx title="is up to date" no-hover icon-url="../../../../../../img/icons/message-check.svg" size="1.5em"></wct-icon-mdx>'
-                      : '<wct-icon-mdx title="is outdated" no-hover icon-url="../../../../../../img/icons/message-x.svg" size="1.5em"></wct-icon-mdx>'
-                    }</td>
+                    <td class=is-up-to-date>is up to date:</td>
+                    <td class=is-outdated>is outdated:</td>
+                    <td class="time-status-icons">
+                      <wct-icon-mdx class=is-up-to-date title="is up to date" no-hover icon-url="../../../../../../img/icons/message-check.svg" size="1.5em"></wct-icon-mdx>
+                      <wct-icon-mdx class=is-outdated title="is outdated" no-hover icon-url="../../../../../../img/icons/message-x.svg" size="1.5em"></wct-icon-mdx>
+                    </td>
                   </tr>
                 `
               }
@@ -277,6 +281,7 @@ export default class User extends Shadow() {
         </div>
       </li>
     `
+    this.html = this.customStyle
     return this.fetchModules([
       {
         // @ts-ignore
@@ -295,12 +300,23 @@ export default class User extends Shadow() {
    * Update components
    * @param {import('../../../../event-driven-web-components-yjs/src/es/controllers/Users.js').User} user
    * @param {import('../../../../event-driven-web-components-yjs/src/es/controllers/Users.js').UsersContainer} allUsers
+   * @param {boolean} isUpToDate
+   * @param {number} order
    * @returns {void}
    */
-  update (user, allUsers) {
-    console.log('*********', 'update', { user, allUsers })
-    // TODO: renderHTML nodes with id must be dynamic
+  update (user, allUsers, isUpToDate, order) {
+    if (isUpToDate) {
+      this.setAttribute('is-up-to-date', '')
+    } else {
+      this.removeAttribute('is-up-to-date')
+    }
+    this.customStyle.innerText = /* css */`
+      :host {
+        order: ${order};
+      }
+    `
     if (this.nicknameNode) this.nicknameNode.outerHTML = User.renderNickname(user.nickname)
+    if (this.awarenessEpochNode) this.awarenessEpochNode.outerHTML = User.renderConnectedUser('awarenessEpoch', user, allUsers)
     if (this.connectedUsersNode) this.connectedUsersNode.outerHTML = User.renderConnectedUser('connectedUsers', user, allUsers)
     if (this.mutuallyConnectedUsersNode) this.mutuallyConnectedUsersNode.outerHTML = User.renderConnectedUser('mutuallyConnectedUsers', user, allUsers)
   }
@@ -352,6 +368,10 @@ export default class User extends Shadow() {
     return this.root.querySelector('#nickname')
   }
 
+  get awarenessEpochNode () {
+    return this.root.querySelector('#awarenessEpoch')
+  }
+
   get connectedUsersNode () {
     return this.root.querySelector('#connectedUsers')
   }
@@ -362,5 +382,16 @@ export default class User extends Shadow() {
 
   get template () {
     return this.root.querySelector('template')
+  }
+
+  get customStyle () {
+    return (
+      this._customStyle ||
+        (this._customStyle = (() => {
+          const style = document.createElement('style')
+          style.setAttribute('protected', 'true')
+          return style
+        })())
+    )
   }
 }
