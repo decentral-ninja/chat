@@ -322,7 +322,9 @@ export default class User extends Shadow() {
     if (this.awarenessEpochNode) this.awarenessEpochNode.outerHTML = User.renderConnectedUser('awarenessEpoch', user, allUsers)
     if (this.connectedUsersNode) {
       if (typeof this.connectedUsersNode.children?.[0].update === 'function') {
-        User.enrichUserWithFullUser(user.connectedUsers, allUsers)
+        console.log('****before*****', JSON.parse(JSON.stringify(user.connectedUsers)))
+        User.enrichUserWithFullUserNickname(user.connectedUsers, allUsers)
+        console.log('****after*****', JSON.parse(JSON.stringify(user.connectedUsers)))
         this.connectedUsersNode.children[0].update(user.connectedUsers)
       } else {
         this.connectedUsersNode.outerHTML = User.renderConnectedUser('connectedUsers', user, allUsers)
@@ -330,7 +332,7 @@ export default class User extends Shadow() {
     }
     if (this.mutuallyConnectedUsersNode) {
       if (typeof this.mutuallyConnectedUsersNode.children?.[0].update === 'function') {
-        User.enrichUserWithFullUser(user.mutuallyConnectedUsers, allUsers)
+        User.enrichUserWithFullUserNickname(user.mutuallyConnectedUsers, allUsers)
         this.mutuallyConnectedUsersNode.children[0].update(user.mutuallyConnectedUsers)
       } else {
         this.mutuallyConnectedUsersNode.outerHTML = User.renderConnectedUser('mutuallyConnectedUsers', user, allUsers)
@@ -343,7 +345,7 @@ export default class User extends Shadow() {
   }
 
   static renderConnectedUser (key, user, allUsers) {
-    if (key === 'mutuallyConnectedUsers' || key === 'connectedUsers') User.enrichUserWithFullUser(user[key], allUsers)
+    if (key === 'mutuallyConnectedUsers' || key === 'connectedUsers') User.enrichUserWithFullUserNickname(user[key], allUsers)
     return /* html */`
       <td id="${key}">${key === 'mutuallyConnectedUsers' || key === 'connectedUsers'
         ? /* html */`
@@ -369,11 +371,11 @@ export default class User extends Shadow() {
    * @param {import('../../../../event-driven-web-components-yjs/src/es/controllers/Users.js').UsersContainer} allUsers
    * @returns {void}
    */
-  static enrichUserWithFullUser (connectedUsers, allUsers) {
+  static enrichUserWithFullUserNickname (connectedUsers, allUsers) {
     Object.keys(connectedUsers).forEach(providerName => {
       if (Array.isArray(connectedUsers[providerName])) connectedUsers[providerName].forEach((connectedUser, i) => {
         let fullUser
-        if ((fullUser = allUsers.get(connectedUser?.uid))) connectedUsers[providerName].splice(i, 1, structuredClone(fullUser))
+        if ((fullUser = allUsers.get(connectedUser?.uid))) connectedUser.nickname = fullUser.nickname
       })
     })
   }
