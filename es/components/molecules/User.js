@@ -1,5 +1,5 @@
 // @ts-check
-import { Shadow } from '../../../../web-components-toolbox/src/es/components/prototypes/Shadow.js'
+import { Intersection } from '../../../../web-components-toolbox/src/es/components/prototypes/Intersection.js'
 import { jsonParseMapUrlReviver } from '../../../../Helpers.js'
 
 /* global Environment */
@@ -9,26 +9,37 @@ import { jsonParseMapUrlReviver } from '../../../../Helpers.js'
 * @class User
 * @type {CustomElementConstructor}
 */
-export default class User extends Shadow() {
-  constructor (user, allUsers, options = {}, ...args) {
-    super({ importMetaUrl: import.meta.url, ...options }, ...args)
+export default class User extends Intersection() {
+  constructor (user, allUsers, order, options = {}, ...args) {
+    super({ importMetaUrl: import.meta.url, intersectionObserverInit: {}, ...options }, ...args)
 
     if (this.template) {
-      ({ user: this.user, allUsers: this.allUsers } = JSON.parse(this.template.content.textContent, jsonParseMapUrlReviver))
+      ({ user: this.user, allUsers: this.allUsers, order: this.order } = JSON.parse(this.template.content.textContent, jsonParseMapUrlReviver))
     } else {
       /** @type {import('../../../../event-driven-web-components-yjs/src/es/controllers/Users.js').User} */
       this.user = user
       /** @type {import('../../../../event-driven-web-components-yjs/src/es/controllers/Users.js').UsersContainer} */
       this.allUsers = allUsers
+      this.order = order
     }
   }
 
   connectedCallback () {
+    super.connectedCallback()
     this.hidden = true
     const showPromises = []
     if (this.shouldRenderCSS()) showPromises.push(this.renderCSS())
     if (this.shouldRenderHTML()) showPromises.push(this.renderHTML())
     Promise.all(showPromises).then(() => (this.hidden = false))
+  }
+
+  intersectionCallback (entries, observer) {
+    if (this.areEntriesIntersecting(entries)) {
+      this.setAttribute('intersecting', '')
+      if (this.doOnIntersection) this.doOnIntersection()
+      return
+    }
+    this.removeAttribute('intersecting')
   }
 
   /**
@@ -278,6 +289,7 @@ export default class User extends Shadow() {
       </li>
     `
     this.html = this.customStyle
+    this.updateOrder(this.order)
     return this.fetchModules([
       {
         // @ts-ignore
@@ -308,36 +320,43 @@ export default class User extends Shadow() {
   update (user, allUsers, isUpToDate, order) {
     this.user = user
     this.allUsers = allUsers
+    this.order = order
     if (isUpToDate) {
       this.setAttribute('is-up-to-date', '')
     } else {
       this.removeAttribute('is-up-to-date')
     }
+    this.updateOrder(order)
+    this.doOnIntersection = () => {
+      if (this.nicknameNode) this.nicknameNode.outerHTML = User.renderNickname(user.nickname)
+      if (this.awarenessEpochNode) this.awarenessEpochNode.outerHTML = User.renderConnectedUser('awarenessEpoch', user, allUsers)
+      if (this.connectedUsersNode) {
+        if (typeof this.connectedUsersNode.children?.[0].update === 'function') {
+          User.enrichUserWithFullUserNickname(user.connectedUsers, allUsers)
+          this.connectedUsersNode.children[0].update(user.connectedUsers)
+        } else {
+          this.connectedUsersNode.outerHTML = User.renderConnectedUser('connectedUsers', user, allUsers)
+        }
+      }
+      if (this.mutuallyConnectedUsersNode) {
+        if (typeof this.mutuallyConnectedUsersNode.children?.[0].update === 'function') {
+          User.enrichUserWithFullUserNickname(user.mutuallyConnectedUsers, allUsers)
+          this.mutuallyConnectedUsersNode.children[0].update(user.mutuallyConnectedUsers)
+        } else {
+          this.mutuallyConnectedUsersNode.outerHTML = User.renderConnectedUser('mutuallyConnectedUsers', user, allUsers)
+        }
+      }
+      this.doOnIntersection = null
+    }
+    if (this.hasAttribute('intersecting')) this.doOnIntersection()
+  }
+
+  updateOrder (order) {
     this.customStyle.innerText = /* css */`
       :host {
         order: ${order};
       }
     `
-    if (this.nicknameNode) this.nicknameNode.outerHTML = User.renderNickname(user.nickname)
-    if (this.awarenessEpochNode) this.awarenessEpochNode.outerHTML = User.renderConnectedUser('awarenessEpoch', user, allUsers)
-    if (this.connectedUsersNode) {
-      if (typeof this.connectedUsersNode.children?.[0].update === 'function') {
-        console.log('****before*****', JSON.parse(JSON.stringify(user.connectedUsers)))
-        User.enrichUserWithFullUserNickname(user.connectedUsers, allUsers)
-        console.log('****after*****', JSON.parse(JSON.stringify(user.connectedUsers)))
-        this.connectedUsersNode.children[0].update(user.connectedUsers)
-      } else {
-        this.connectedUsersNode.outerHTML = User.renderConnectedUser('connectedUsers', user, allUsers)
-      }
-    }
-    if (this.mutuallyConnectedUsersNode) {
-      if (typeof this.mutuallyConnectedUsersNode.children?.[0].update === 'function') {
-        User.enrichUserWithFullUserNickname(user.mutuallyConnectedUsers, allUsers)
-        this.mutuallyConnectedUsersNode.children[0].update(user.mutuallyConnectedUsers)
-      } else {
-        this.mutuallyConnectedUsersNode.outerHTML = User.renderConnectedUser('mutuallyConnectedUsers', user, allUsers)
-      }
-    }
   }
 
   static renderNickname (nickname) {

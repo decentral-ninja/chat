@@ -79,14 +79,14 @@ export default class ConnectedUsers extends Shadow() {
    * Render HTML
    * @returns Promise<void>
    */
-  renderHTML (update = true) {
+  renderHTML () {
     this.html = Object.keys(this.connectedUsers).reduce((acc, providerName) => {
       const addedConnectedUsersUid = []
       return /* html */`
         ${acc}
         ${Array.isArray(this.connectedUsers[providerName])
           ? this.connectedUsers[providerName].reduce((acc, connectedUser) => {
-            if (addedConnectedUsersUid.includes(connectedUser.uid)) return acc
+            if (!connectedUser || addedConnectedUsersUid.includes(connectedUser.uid)) return acc
             addedConnectedUsersUid.push(connectedUser.uid)
             return `${acc}${connectedUser ? /* html */`
               <details onclick="event.stopPropagation()">
@@ -110,7 +110,8 @@ export default class ConnectedUsers extends Shadow() {
     //     </details>
     //   </wct-details>
     // `
-    if (update) this.update(this.connectedUsers)
+    // TODO: setup html and update with data
+    // this.update(this.connectedUsers)
     return this.fetchModules([
       {
         // @ts-ignore
@@ -132,10 +133,10 @@ export default class ConnectedUsers extends Shadow() {
    */
   update (connectedUsers) {
     this.connectedUsers = connectedUsers
-    console.log('update', connectedUsers)
+    //console.log('update', this, connectedUsers)
     // TODO: Render only the changed parts (cluster providers per username), don't renderHTML, renderHTML only once to setup html nodes, then particular updates
     this.html = ''
-    this.renderHTML(false)
+    this.renderHTML()
   }
 
   get details () {

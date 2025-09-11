@@ -49,8 +49,13 @@ export default class Users extends Shadow() {
         Users.renderP2pGraph(...(await getArgs()))
       }
     }
+    
     this.userDialogShowEventEventListener = event => {
-      if (event.detail?.uid) this.setAttribute('active', event.detail.uid)
+      if (event.detail?.uid) {
+        this.setAttribute('active', event.detail.uid)
+        this.setActive(event.detail.uid, this.usersOl)
+        this.setActive(event.detail.uid, this.allUsersOl)
+      }
       this.openDialog(event)
     }
 
@@ -480,10 +485,10 @@ export default class Users extends Shadow() {
       const isUpToDate = areConnectedUsers || user.uid === newestMessage?.uid || JSON.parse(user.awarenessEpoch || user.epoch).epoch >= newestMessage?.timestamp
       // render or update
       const renderUser = async () => /* html */`
-        <wct-load-template-tag uid='${user.uid}'${activeUid === user.uid ? ' class=active' : ''} no-css copy-class-list>
+        <wct-load-template-tag uid='${user.uid}'${activeUid === user.uid ? ' class=active' : ''} no-css style="order: ${i};" copy-class-list>
           <template>
             <chat-m-user uid='${user.uid}'${user.isSelf ? ' self' : ''}${activeUid === user.uid ? ' class=active' : ''}${isUpToDate ? ' is-up-to-date' : ''} hex-color="${(await getHexColor(user.uid))}">
-              <template>${JSON.stringify({ user, allUsers }, jsonStringifyMapUrlReplacer)}</template>
+              <template>${JSON.stringify({ user, allUsers, order: i }, jsonStringifyMapUrlReplacer)}</template>
             </chat-m-user>
           </template>
         </wct-load-template-tag>

@@ -1,5 +1,5 @@
 // @ts-check
-import { Shadow } from '../../../../web-components-toolbox/src/es/components/prototypes/Shadow.js'
+import { Intersection } from '../../../../web-components-toolbox/src/es/components/prototypes/Intersection.js'
 import { jsonParseMapUrlReviver } from '../../../../Helpers.js'
 
 /* global Environment */
@@ -9,9 +9,9 @@ import { jsonParseMapUrlReviver } from '../../../../Helpers.js'
 * @class Provider
 * @type {CustomElementConstructor}
 */
-export default class Provider extends Shadow() {
+export default class Provider extends Intersection() {
   constructor (id, name, data, order, roomName, options = {}, ...args) {
-    super({ importMetaUrl: import.meta.url, ...options }, ...args)
+    super({ importMetaUrl: import.meta.url, intersectionObserverInit: {}, ...options }, ...args)
 
     if (this.template) {
       ({ id: this.id, name: this.name, data: this.data, order: this.order, roomName: this.roomName } = JSON.parse(this.template.content.textContent, jsonParseMapUrlReviver))
@@ -81,6 +81,7 @@ export default class Provider extends Shadow() {
   }
 
   connectedCallback () {
+    super.connectedCallback()
     this.hidden = true
     const showPromises = []
     if (this.shouldRenderCSS()) showPromises.push(this.renderCSS())
@@ -95,12 +96,22 @@ export default class Provider extends Shadow() {
   }
 
   disconnectedCallback () {
+    super.disconnectedCallback()
     this.inputKeepAlive.removeEventListener('change', this.inputKeepAliveChangeEventListener)
     this.selectName.removeEventListener('change', this.selectNameChangeEventListener)
     this.selectProtocol.removeEventListener('change', this.selectProtocolChangeEventListener)
     this.removeEventListener('connect', this.connectEventListener)
     this.removeEventListener('disconnect', this.disconnectEventListener)
     this.removeEventListener('undo', this.undoEventListener)
+  }
+
+  intersectionCallback (entries, observer) {
+    if (this.areEntriesIntersecting(entries)) {
+      this.setAttribute('intersecting', '')
+      if (this.doOnIntersection) this.doOnIntersection()
+      return
+    }
+    this.removeAttribute('intersecting')
   }
 
   /**
@@ -368,64 +379,68 @@ export default class Provider extends Shadow() {
         order: ${order};
       }
     `
-    this.notifications.setAttribute('hostname', Array.from(this.data?.urls || [])?.[0]?.[1].url.hostname || '')
-    if (data.status.includes('connected') || data.status.includes('active')) {
-      this.setAttribute('connected', '')
-    } else {
-      this.removeAttribute('connected')
-    }
-    let removeIconStateUpdating = true
-    if (data.status.includes('connected')) {
-      this.iconStatesEl.setAttribute('state', 'connected')
-    } else if (data.status.includes('active')) {
-      this.iconStatesEl.setAttribute('state', 'connecting')
-      this.iconStatesEl.setAttribute('updating', '')
-      removeIconStateUpdating = false
-    } else {
-      this.iconStatesEl.setAttribute('state', 'disconnected')
-    }
-    if (removeDataUpdating && this.hasAttribute('updating')) {
-      this.dispatchEvent(new CustomEvent('yjs-request-notifications', {
-        detail: { force: true },
-        bubbles: true,
-        cancelable: true,
-        composed: true
-      }))
-      this.removeAttribute('updating')
-    }
-    if (removeIconStateUpdating) this.iconStatesEl.removeAttribute('updating')
-    // avoid updating when inputs got changed
-    if (this.hasAttribute('touched')) return
-    let keepAlive = this.keepAliveDefaultValue
-    this.selectName.disabled = data.status.includes('active') || data.status.includes('connected')
-    // reset the selected options
-    Provider.resetSelect(this.selectName)
-    Provider.resetSelect(this.selectProtocol)
-    this.spanPort.textContent = ''
-    let hasSelected = false
-    Array.from(data.urls).forEach(([origin, urlContainer], i) => {
-      let selected = data.status.includes('active')
-        ? urlContainer.status === 'active'
-        : urlContainer.status === 'connected' || urlContainer.status === 'disconnected'
-      if (selected) {
-        hasSelected = true
-      } else if (!hasSelected) {
-        selected = urlContainer.status === 'once-established' || urlContainer.status === 'default'
-        if (selected) hasSelected = true
+    this.doOnIntersection = () => {
+      this.notifications.setAttribute('hostname', Array.from(this.data?.urls || [])?.[0]?.[1].url.hostname || '')
+      if (data.status.includes('connected') || data.status.includes('active')) {
+        this.setAttribute('connected', '')
+      } else {
+        this.removeAttribute('connected')
       }
-      Provider.updateSelect(this.selectName, urlContainer.name || 'websocket', selected)
-      this.selectName.setAttribute('value', this.selectName.value)
-      Provider.updateSelect(this.selectProtocol, urlContainer.url.protocol, selected)
-      this.selectProtocol.setAttribute('value', this.selectProtocol.value)
-      if (i === 0) {
-        this.titleEl.textContent = urlContainer.url.hostname
-        this.spanHostname.textContent = urlContainer.url.hostname
+      let removeIconStateUpdating = true
+      if (data.status.includes('connected')) {
+        this.iconStatesEl.setAttribute('state', 'connected')
+      } else if (data.status.includes('active')) {
+        this.iconStatesEl.setAttribute('state', 'connecting')
+        this.iconStatesEl.setAttribute('updating', '')
+        removeIconStateUpdating = false
+      } else {
+        this.iconStatesEl.setAttribute('state', 'disconnected')
       }
-      if (selected) this.spanPort.textContent = urlContainer.url.port ? urlContainer.url.port : ''
-      let currentKeepAlive
-      if ((selected && keepAlive === this.keepAliveDefaultValue) && (currentKeepAlive = Number(urlContainer.url.searchParams.get('keep-alive'))) !== undefined) keepAlive = currentKeepAlive
-    })
-    this.inputKeepAliveChangeEventListener({ target: { value: (this.inputKeepAlive.value = keepAlive) } }, true)
+      if (removeDataUpdating && this.hasAttribute('updating')) {
+        this.dispatchEvent(new CustomEvent('yjs-request-notifications', {
+          detail: { force: true },
+          bubbles: true,
+          cancelable: true,
+          composed: true
+        }))
+        this.removeAttribute('updating')
+      }
+      if (removeIconStateUpdating) this.iconStatesEl.removeAttribute('updating')
+      // avoid updating when inputs got changed
+      if (this.hasAttribute('touched')) return
+      let keepAlive = this.keepAliveDefaultValue
+      this.selectName.disabled = data.status.includes('active') || data.status.includes('connected')
+      // reset the selected options
+      Provider.resetSelect(this.selectName)
+      Provider.resetSelect(this.selectProtocol)
+      this.spanPort.textContent = ''
+      let hasSelected = false
+      Array.from(data.urls).forEach(([origin, urlContainer], i) => {
+        let selected = data.status.includes('active')
+          ? urlContainer.status === 'active'
+          : urlContainer.status === 'connected' || urlContainer.status === 'disconnected'
+        if (selected) {
+          hasSelected = true
+        } else if (!hasSelected) {
+          selected = urlContainer.status === 'once-established' || urlContainer.status === 'default'
+          if (selected) hasSelected = true
+        }
+        Provider.updateSelect(this.selectName, urlContainer.name || 'websocket', selected)
+        this.selectName.setAttribute('value', this.selectName.value)
+        Provider.updateSelect(this.selectProtocol, urlContainer.url.protocol, selected)
+        this.selectProtocol.setAttribute('value', this.selectProtocol.value)
+        if (i === 0) {
+          this.titleEl.textContent = urlContainer.url.hostname
+          this.spanHostname.textContent = urlContainer.url.hostname
+        }
+        if (selected) this.spanPort.textContent = urlContainer.url.port ? urlContainer.url.port : ''
+        let currentKeepAlive
+        if ((selected && keepAlive === this.keepAliveDefaultValue) && (currentKeepAlive = Number(urlContainer.url.searchParams.get('keep-alive'))) !== undefined) keepAlive = currentKeepAlive
+      })
+      this.inputKeepAliveChangeEventListener({ target: { value: (this.inputKeepAlive.value = keepAlive) } }, true)
+      this.doOnIntersection = null
+    }
+    if (this.hasAttribute('intersecting')) this.doOnIntersection()
   }
 
   static resetSelect (select) {
