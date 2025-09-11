@@ -475,11 +475,10 @@ export default class Users extends Shadow() {
   }
 
   static async renderUserTableList (targetList, otherList, users, allUsers, newestMessage, areConnectedUsers, activeUid) {
-    // TODO: sort/order also into different targetList if active/inactive
     const tempDiv = document.createElement('div')
     tempDiv.innerHTML = await Array.from(users).reduce(async (acc, [key, user], i) => {
       const isUpToDate = areConnectedUsers || user.uid === newestMessage?.uid || JSON.parse(user.awarenessEpoch || user.epoch).epoch >= newestMessage?.timestamp
-      /// / render or update
+      // render or update
       const renderUser = async () => /* html */`
         <wct-load-template-tag uid='${user.uid}'${activeUid === user.uid ? ' class=active' : ''} no-css copy-class-list>
           <template>

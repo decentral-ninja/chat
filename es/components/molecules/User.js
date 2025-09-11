@@ -58,9 +58,6 @@ export default class User extends Shadow() {
       :host {
         display: list-item;
       }
-      :host chat-a-nick-name {
-        display: inline-block;
-      }
       :host > li {
         --box-shadow-color: ${this.getAttribute('hex-color') || 'var(--color-user)'};
         --box-shadow-default: var(--box-shadow-length-one) var(--box-shadow-color), var(--box-shadow-length-two) var(--box-shadow-color);
@@ -222,7 +219,6 @@ export default class User extends Shadow() {
    * @returns Promise<void>
    */
   renderHTML () {
-    // keep-alive max=10days, value=1day, step=1h
     this.html = /* html */`
       <li>
         <div>
@@ -264,9 +260,9 @@ export default class User extends Shadow() {
                       : key === 'awarenessEpoch' || key === 'epoch'
                       ? 'last time visited:'
                       : key === 'mutuallyConnectedUsers'
-                      ? 'active connected users:'
+                      ? 'actively connected users:'
                       : key === 'connectedUsers'
-                      ? 'once connected users:'
+                      ? 'historically connected users:'
                       : key === 'uid'
                       ? 'unique id:'
                       : `${key}:`
@@ -292,6 +288,11 @@ export default class User extends Shadow() {
         // @ts-ignore
         path: `${this.importMetaUrl}../atoms/nickName/NickName.js?${Environment?.version || ''}`,
         name: 'chat-a-nick-name'
+      },
+      {
+        // @ts-ignore
+        path: `${this.importMetaUrl}./ConnectedUsers.js?${Environment?.version || ''}`,
+        name: 'chat-m-connected-users'
       }
     ])
   }
@@ -305,6 +306,8 @@ export default class User extends Shadow() {
    * @returns {void}
    */
   update (user, allUsers, isUpToDate, order) {
+    this.user = user
+    this.allUsers = allUsers
     if (isUpToDate) {
       this.setAttribute('is-up-to-date', '')
     } else {
@@ -317,8 +320,22 @@ export default class User extends Shadow() {
     `
     if (this.nicknameNode) this.nicknameNode.outerHTML = User.renderNickname(user.nickname)
     if (this.awarenessEpochNode) this.awarenessEpochNode.outerHTML = User.renderConnectedUser('awarenessEpoch', user, allUsers)
-    if (this.connectedUsersNode) this.connectedUsersNode.outerHTML = User.renderConnectedUser('connectedUsers', user, allUsers)
-    if (this.mutuallyConnectedUsersNode) this.mutuallyConnectedUsersNode.outerHTML = User.renderConnectedUser('mutuallyConnectedUsers', user, allUsers)
+    if (this.connectedUsersNode) {
+      if (typeof this.connectedUsersNode.children?.[0].update === 'function') {
+        User.enrichUserWithFullUser(user.connectedUsers, allUsers)
+        this.connectedUsersNode.children[0].update(user.connectedUsers)
+      } else {
+        this.connectedUsersNode.outerHTML = User.renderConnectedUser('connectedUsers', user, allUsers)
+      }
+    }
+    if (this.mutuallyConnectedUsersNode) {
+      if (typeof this.mutuallyConnectedUsersNode.children?.[0].update === 'function') {
+        User.enrichUserWithFullUser(user.mutuallyConnectedUsers, allUsers)
+        this.mutuallyConnectedUsersNode.children[0].update(user.mutuallyConnectedUsers)
+      } else {
+        this.mutuallyConnectedUsersNode.outerHTML = User.renderConnectedUser('mutuallyConnectedUsers', user, allUsers)
+      }
+    }
   }
 
   static renderNickname (nickname) {
@@ -326,31 +343,16 @@ export default class User extends Shadow() {
   }
 
   static renderConnectedUser (key, user, allUsers) {
+    if (key === 'mutuallyConnectedUsers' || key === 'connectedUsers') User.enrichUserWithFullUser(user[key], allUsers)
     return /* html */`
       <td id="${key}">${key === 'mutuallyConnectedUsers' || key === 'connectedUsers'
-        ? Object.keys(user[key]).reduce((acc, providerName) => {
-          const addedConnectedUsersUid = []
-          return /* html */`
-            ${acc}
-            ${Array.isArray(user[key][providerName])
-              ? user[key][providerName].reduce((acc, mutuallyConnectedUser) => {
-                const fullUser = allUsers.get(mutuallyConnectedUser?.uid)
-                if (!fullUser) return acc
-                if (addedConnectedUsersUid.includes(fullUser.uid)) return acc
-                addedConnectedUsersUid.push(fullUser.uid)
-                return `${acc}${fullUser ? /* html */`
-                  <details onclick="event.stopPropagation()">
-                    <summary><chat-a-nick-name uid='${fullUser.uid}' nickname="${fullUser.nickname}"${fullUser.isSelf ? ' self' : ''}></chat-a-nick-name></summary>
-                    ${providerName}
-                  </details>
-                ` : ''}`
-                }, '').trim()
-              : 'none'
-            }
-          `
-        }, '').trim() || 'none'
+        ? /* html */`
+          <chat-m-connected-users>
+            <template>${JSON.stringify({ connectedUsers: user[key] })}</template>
+          </chat-m-connected-users>
+        `
         : key === 'nickname'
-        ? `<chat-a-nick-name uid='${user.uid}' nickname="${user.nickname}"${user.isSelf ? ' self' : ''}></chat-a-nick-name>`
+        ? /* html */`<chat-a-nick-name uid='${user.uid}' nickname="${user.nickname}"${user.isSelf ? ' self' : ''}></chat-a-nick-name>`
         : typeof user[key] === 'string' && user[key].includes('epoch') && key !== 'uid'
         ? new Date(JSON.parse(user[key]).epoch).toLocaleString(navigator.language)
         : typeof user[key] === 'object'
@@ -358,6 +360,22 @@ export default class User extends Shadow() {
           : user[key]
       }</td>
     `
+  }
+
+  /**
+   * Enrich initial user value with the full user
+   * 
+   * @param {import('../../../../event-driven-web-components-yjs/src/es/controllers/Users.js').ConnectedUsers} connectedUsers
+   * @param {import('../../../../event-driven-web-components-yjs/src/es/controllers/Users.js').UsersContainer} allUsers
+   * @returns {void}
+   */
+  static enrichUserWithFullUser (connectedUsers, allUsers) {
+    Object.keys(connectedUsers).forEach(providerName => {
+      if (Array.isArray(connectedUsers[providerName])) connectedUsers[providerName].forEach((connectedUser, i) => {
+        let fullUser
+        if ((fullUser = allUsers.get(connectedUser?.uid))) connectedUsers[providerName].splice(i, 1, structuredClone(fullUser))
+      })
+    })
   }
 
   get li () {
