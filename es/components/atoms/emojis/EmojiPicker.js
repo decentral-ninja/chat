@@ -144,16 +144,18 @@ export default class EmojiPicker extends Shadow() {
   renderCSS () {
     this.css = /* css */`
     :host {
+      font-size: max(12px, 0.5em);
       position: absolute;
-      bottom: 5em;
+      bottom: 0;
       width: 100%;
       height: 58vh;
-      width: 30vw;
+      width: 40dvw;
       background: white;
       box-shadow: 0px -5px 10px rgba(0, 0, 0, 0.1);
       display: none;
       tap-highlight-color: transparent;
       --webkit-tap-highlight-color: transparent;
+      z-index: 1;
     }
     
     :host(.visible) {
@@ -200,8 +202,8 @@ export default class EmojiPicker extends Shadow() {
     }
     @media only screen and (max-width: _max-width_) {
       :host{
-        width: 20rem;
-        bottom: 5.5em;
+        width: 75dvw;
+        bottom: 0;
       }
     }
     

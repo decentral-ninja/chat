@@ -1,5 +1,5 @@
 // @ts-check
-import { Shadow } from '../../../../../web-components-toolbox/src/es/components/prototypes/Shadow.js'
+import { Intersection } from '../../../../../web-components-toolbox/src/es/components/prototypes/Intersection.js'
 import { getHexColor } from '../../../../../Helpers.js'
 
 /* global self */
@@ -10,20 +10,41 @@ import { getHexColor } from '../../../../../Helpers.js'
 * @class P2pGraph
 * @type {CustomElementConstructor}
 */
-export default class P2pGraph extends Shadow() {
+export default class P2pGraph extends Intersection() {
   constructor (options = {}, ...args) {
-    super({ importMetaUrl: import.meta.url, ...options }, ...args)
+    super({ importMetaUrl: import.meta.url, intersectionObserverInit: {}, ...options }, ...args)
+
+    // this updates the min-height on resize, see updateHeight function for more info
+    let resizeTimeout = null
+    this.resizeEventListener = event => {
+      clearTimeout(resizeTimeout)
+      resizeTimeout = setTimeout(async () => this.updateHeight(), 200)
+    }
   }
 
   connectedCallback () {
+    super.connectedCallback()
     this.hidden = true
     const showPromises = []
     if (this.shouldRenderCSS()) showPromises.push(this.renderCSS())
     if (this.shouldRenderHTML()) showPromises.push(this.renderHTML())
     Promise.all(showPromises).then(() => (this.hidden = false))
+    self.addEventListener('resize', this.resizeEventListener)
   }
 
-  disconnectedCallback () {}
+  disconnectedCallback () {
+    super.disconnectedCallback()
+    self.removeEventListener('resize', this.resizeEventListener)
+  }
+
+  intersectionCallback (entries, observer) {
+    if (this.areEntriesIntersecting(entries)) {
+      this.setAttribute('intersecting', '')
+      if (this.doOnIntersection) this.doOnIntersection()
+      return
+    }
+    this.removeAttribute('intersecting')
+  }
 
   /**
    * evaluates if a render is necessary
@@ -49,6 +70,12 @@ export default class P2pGraph extends Shadow() {
    */
   renderCSS () {
     this.css = /* css */`
+      :host {
+        display: block;
+      }
+      :host([has-height]:not([intersecting])) > * {
+        display: none;
+      }
       :host > div, :host > div > svg {
         overflow: visible;
       }
@@ -73,79 +100,85 @@ export default class P2pGraph extends Shadow() {
    * @returns Promise<void>
    */
   renderHTML () {
-    this.html = /* html */'<div></div>'
-    // @ts-ignore
-    return this.loadDependency('P2PGraph', `${this.importMetaUrl}./p2p-graph.js?${Environment?.version || ''}`).then(P2PGraph => {
-      /** @type {[string, import("../../../../../event-driven-web-components-yjs/src/es/controllers/Users.js").User][]} */
-      const users = JSON.parse(this.template.content.textContent)
-      // this.template.remove() // Note: Don't remove the template, since it could be needed (did trigger an error by quick room navigation)
-      // https://github.com/feross/p2p-graph?tab=readme-ov-file
-      const graph = new P2PGraph(this.div)
-      const nodes = []
-      const providersSelfId = 'Self-777-MySelf'
-      if (this.hasAttribute('providers')) {
-        nodes.push(providersSelfId)
-        this.add(graph, this.svg, {
-          id: providersSelfId,
-          fixed: true,
-          name: 'YOU'
-        }).svgNode.classList.add('is-self')
-      }
-      users.forEach(([key, user]) => {
-        if (nodes.includes(key)) return
-        nodes.push(key)
-        const graphUserObj = this.add(graph, this.svg, {
-          id: key,
-          fixed: false,
-          name: user.nickname || key
-        })
+    this.doOnIntersection = () => {
+      this.html = /* html */'<div></div>'
+      this.html = this.customStyleHeight
+      // @ts-ignore
+      return this.loadDependency('P2PGraph', `${this.importMetaUrl}./p2p-graph.js?${Environment?.version || ''}`).then(P2PGraph => {
+        /** @type {[string, import("../../../../../event-driven-web-components-yjs/src/es/controllers/Users.js").User][]} */
+        const users = JSON.parse(this.template.content.textContent)
+        // this.template.remove() // Note: Don't remove the template, since it could be needed (did trigger an error by quick room navigation)
+        // https://github.com/feross/p2p-graph?tab=readme-ov-file
+        const graph = new P2PGraph(this.div)
+        const nodes = []
+        const providersSelfId = 'Self-777-MySelf'
         if (this.hasAttribute('providers')) {
-          graph.connect(providersSelfId, key)
-          return
+          nodes.push(providersSelfId)
+          this.add(graph, this.svg, {
+            id: providersSelfId,
+            fixed: true,
+            name: 'YOU'
+          }).svgNode.classList.add('is-self')
         }
-        graphUserObj.svgNode.classList.add(user.isSelf ? 'is-self' : 'other')
-        graphUserObj.svgNode.addEventListener('click', event => this.dispatchEvent(new CustomEvent('p2p-graph-click', {
-          detail: { graphUserObj, isActive: !!this.svg.querySelector('[style="opacity: 0.2;"]') },
-          bubbles: true,
-          cancelable: true,
-          composed: true
-        })))
-        // trigger click on node when the id is the same as the active attribute
-        if (this.getAttribute('active') === graphUserObj.id) setTimeout(() => graphUserObj.svgNode.querySelector('circle')?.dispatchEvent(new CustomEvent('click', { bubbles: true, cancelable: true, composed: true })))
-        // only show providers with mutually connected users
-        const separator = this.getAttribute('separator') || '<>'
-        for (const providerName in user[this.hasAttribute('connected-users') ? 'connectedUsers' : 'mutuallyConnectedUsers']) {
-          const graphProviderObj = nodes.includes(providerName)
-            ? null
-            : this.add(graph, this.svg, {
-              id: providerName,
-              fixed: true,
-              name: providerName.split(separator)[1] || providerName
-            })
-          if (graphProviderObj) {
-            nodes.push(providerName)
-            graphProviderObj.svgNode.classList.add('provider')
-            graphProviderObj.svgNode.classList.add(providerName.split(separator)[0])
-            graphProviderObj.svgNode.addEventListener('click', event => this.dispatchEvent(new CustomEvent('p2p-graph-click', {
-              detail: { graphProviderObj, isActive: !!this.svg.querySelector('[style="opacity: 0.2;"]') },
-              bubbles: true,
-              cancelable: true,
-              composed: true
-            })))
+        users.forEach(([key, user]) => {
+          if (nodes.includes(key)) return
+          nodes.push(key)
+          const graphUserObj = this.add(graph, this.svg, {
+            id: key,
+            fixed: false,
+            name: user.nickname || key
+          })
+          if (this.hasAttribute('providers')) {
+            graph.connect(providersSelfId, key)
+            return
           }
-          graph.connect(providerName, key)
+          graphUserObj.svgNode.classList.add(user.isSelf ? 'is-self' : 'other')
+          graphUserObj.svgNode.addEventListener('click', event => this.dispatchEvent(new CustomEvent('p2p-graph-click', {
+            detail: { graphUserObj, isActive: !!this.svg.querySelector('[style="opacity: 0.2;"]') },
+            bubbles: true,
+            cancelable: true,
+            composed: true
+          })))
+          // trigger click on node when the id is the same as the active attribute
+          if (this.getAttribute('active') === graphUserObj.id) setTimeout(() => graphUserObj.svgNode.querySelector('circle')?.dispatchEvent(new CustomEvent('click', { bubbles: true, cancelable: true, composed: true })))
+          // only show providers with mutually connected users
+          const separator = this.getAttribute('separator') || '<>'
+          for (const providerName in user[this.hasAttribute('connected-users') ? 'connectedUsers' : 'mutuallyConnectedUsers']) {
+            const graphProviderObj = nodes.includes(providerName)
+              ? null
+              : this.add(graph, this.svg, {
+                id: providerName,
+                fixed: true,
+                name: providerName.split(separator)[1] || providerName
+              })
+            if (graphProviderObj) {
+              nodes.push(providerName)
+              graphProviderObj.svgNode.classList.add('provider')
+              graphProviderObj.svgNode.classList.add(providerName.split(separator)[0])
+              graphProviderObj.svgNode.addEventListener('click', event => this.dispatchEvent(new CustomEvent('p2p-graph-click', {
+                detail: { graphProviderObj, isActive: !!this.svg.querySelector('[style="opacity: 0.2;"]') },
+                bubbles: true,
+                cancelable: true,
+                composed: true
+              })))
+            }
+            graph.connect(providerName, key)
+          }
+        })
+        if (!nodes.length) {
+          this.setAttribute('no-data', '')
+          this.dispatchEvent(new CustomEvent('p2p-graph-no-data', {
+            bubbles: true,
+            cancelable: true,
+            composed: true
+          }))
+          this.div.remove()
         }
+        this.updateHeight()
+        this.doOnIntersection = null
       })
-      if (!nodes.length) {
-        this.setAttribute('no-data', '')
-        this.dispatchEvent(new CustomEvent('p2p-graph-no-data', {
-          bubbles: true,
-          cancelable: true,
-          composed: true
-        }))
-        this.div.remove()
-      }
-    })
+    }
+    if (this.hasAttribute('intersecting')) this.doOnIntersection()
   }
 
   /**
@@ -196,6 +229,20 @@ export default class P2pGraph extends Shadow() {
     return obj
   }
 
+  // Due to performance issues, dialog open took around 1300ms (after this change ca. 350ms) on a chat with many users. This eliminated the recalculate style thanks to :host([has-height]:not([intersecting])) > li: display: none; for not intersecting user components but also keeps the height, to avoid weird scrolling effects.
+  updateHeight (clear = false) {
+    this.removeAttribute('has-height')
+    this.customStyleHeight.innerText = ''
+    if (!clear) self.requestAnimationFrame(timeStamp => {
+      this.setAttribute('has-height', '')
+      this.customStyleHeight.innerText = /* css */`
+        :host {
+          min-height: ${this.clientHeight}px;
+        }
+      `
+    })
+  }
+
   get div () {
     return this.root.querySelector('div')
   }
@@ -206,5 +253,16 @@ export default class P2pGraph extends Shadow() {
 
   get template () {
     return this.root.querySelector('template')
+  }
+
+  get customStyleHeight () {
+    return (
+      this._customStyleHeight ||
+        (this._customStyleHeight = (() => {
+          const style = document.createElement('style')
+          style.setAttribute('protected', 'true')
+          return style
+        })())
+    )
   }
 }

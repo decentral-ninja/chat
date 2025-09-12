@@ -22,6 +22,13 @@ export default class User extends Intersection() {
       this.allUsers = allUsers
       this.order = order
     }
+
+    // this updates the min-height on resize, see updateHeight function for more info
+    let resizeTimeout = null
+    this.resizeEventListener = event => {
+      clearTimeout(resizeTimeout)
+      resizeTimeout = setTimeout(async () => this.updateHeight(), 200)
+    }
   }
 
   connectedCallback () {
@@ -30,7 +37,16 @@ export default class User extends Intersection() {
     const showPromises = []
     if (this.shouldRenderCSS()) showPromises.push(this.renderCSS())
     if (this.shouldRenderHTML()) showPromises.push(this.renderHTML())
-    Promise.all(showPromises).then(() => (this.hidden = false))
+    Promise.all(showPromises).then(() => {
+      this.hidden = false
+      this.updateHeight()
+    })
+    self.addEventListener('resize', this.resizeEventListener)
+  }
+  
+  disconnectedCallback () {
+    super.disconnectedCallback()
+    self.removeEventListener('resize', this.resizeEventListener)
   }
 
   intersectionCallback (entries, observer) {
@@ -69,6 +85,9 @@ export default class User extends Intersection() {
       :host {
         display: list-item;
       }
+      :host([has-height]:not([intersecting])) > li {
+        display: none;
+      }
       :host > li {
         --box-shadow-color: ${this.getAttribute('hex-color') || 'var(--color-user)'};
         --box-shadow-default: var(--box-shadow-length-one) var(--box-shadow-color), var(--box-shadow-length-two) var(--box-shadow-color);
@@ -83,7 +102,6 @@ export default class User extends Intersection() {
         padding: 0.25em;
         scrollbar-color: var(--color) var(--background-color);
         scrollbar-width: thin;
-        transition: padding 0.05s ease-out;
         word-break: break-all;
       }
       :host(.self) > li {
@@ -97,7 +115,6 @@ export default class User extends Intersection() {
       :host > li > * {
         padding: var(--card-padding, 0.75em);
         margin: 0;
-        transition: padding 0.05s ease-out;
       }
       :host(:where([self], .active)) > li > * {
         --color: var(--background-color);
@@ -288,7 +305,8 @@ export default class User extends Intersection() {
         </div>
       </li>
     `
-    this.html = this.customStyle
+    this.html = this.customStyleOrder
+    this.html = this.customStyleHeight
     this.updateOrder(this.order)
     return this.fetchModules([
       {
@@ -346,17 +364,32 @@ export default class User extends Intersection() {
           this.mutuallyConnectedUsersNode.outerHTML = User.renderConnectedUser('mutuallyConnectedUsers', user, allUsers)
         }
       }
+      this.updateHeight()
       this.doOnIntersection = null
     }
     if (this.hasAttribute('intersecting')) this.doOnIntersection()
   }
 
   updateOrder (order) {
-    this.customStyle.innerText = /* css */`
+    this.customStyleOrder.innerText = /* css */`
       :host {
         order: ${order};
       }
     `
+  }
+
+  // Due to performance issues, dialog open took around 1300ms (after this change ca. 350ms) on a chat with many users. This eliminated the recalculate style thanks to :host([has-height]:not([intersecting])) > li: display: none; for not intersecting user components but also keeps the height, to avoid weird scrolling effects.
+  updateHeight (clear = false) {
+    this.removeAttribute('has-height')
+    this.customStyleHeight.innerText = ''
+    if (!clear) self.requestAnimationFrame(timeStamp => {
+      this.setAttribute('has-height', '')
+      this.customStyleHeight.innerText = /* css */`
+        :host {
+          min-height: ${this.clientHeight}px;
+        }
+      `
+    })
   }
 
   static renderNickname (nickname) {
@@ -423,10 +456,21 @@ export default class User extends Intersection() {
     return this.root.querySelector('template')
   }
 
-  get customStyle () {
+  get customStyleOrder () {
     return (
-      this._customStyle ||
-        (this._customStyle = (() => {
+      this._customStyleOrder ||
+        (this._customStyleOrder = (() => {
+          const style = document.createElement('style')
+          style.setAttribute('protected', 'true')
+          return style
+        })())
+    )
+  }
+
+  get customStyleHeight () {
+    return (
+      this._customStyleHeight ||
+        (this._customStyleHeight = (() => {
           const style = document.createElement('style')
           style.setAttribute('protected', 'true')
           return style

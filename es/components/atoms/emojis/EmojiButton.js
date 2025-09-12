@@ -60,7 +60,10 @@ export default class EmojiButton extends Shadow() {
         display: inline-block;
         position: relative;
       }
-      :host > button {
+      :host > div {
+        position: relative;
+      }
+      :host > div > button {
         background: none;
         border: none;
         cursor: pointer;
@@ -78,8 +81,10 @@ export default class EmojiButton extends Shadow() {
    */
   renderHTML () {
     this.html = /* html */`
-      <button id='emojiPickerToggler'>&#128515;</button> <!-- Unicode for smiling face emoji -->
-      <emoji-picker></emoji-picker>
+      <div>
+        <button id='emojiPickerToggler'>&#128515;</button> <!-- Unicode for smiling face emoji -->
+        <emoji-picker></emoji-picker>
+      </div>
     `
     return this.fetchModules([
       {
