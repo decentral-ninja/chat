@@ -8,7 +8,7 @@ import { Hover } from '../../../../event-driven-web-components-prototypes/src/Ho
  * The notifications view
  *
  * @export
- * @class Providers
+ * @class Notifications
  */
 export default class Notifications extends Hover() {
   constructor (options = {}, ...args) {

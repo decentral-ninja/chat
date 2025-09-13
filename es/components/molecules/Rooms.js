@@ -513,11 +513,13 @@ export default class Rooms extends Shadow() {
         display: contents;
       }
       :host ul > li > div > a {
+        margin: 0;
+      }
+      :host ul > li > div > a:not(:has(> chat-m-notifications)) {
         display: flex;
         flex-direction: column;
         flex-grow: 1;
         flex-shrink: 10;
-        margin: 0;
         max-width: calc(100% - 3em);
       }
       :host ul > li > div > wct-icon-mdx {
@@ -526,7 +528,7 @@ export default class Rooms extends Shadow() {
       :host ul > li > div > wct-icon-mdx[share], :host ul > li > div > wct-icon-mdx[edit] {
         --color: unset;
       }
-      :host ul > li[disabled] > div > chat-m-notifications {
+      :host ul > li[disabled] > div chat-m-notifications {
         color: var(--color-disabled);
       }
       :host ul > li > div > a > div.aka {
@@ -551,7 +553,13 @@ export default class Rooms extends Shadow() {
               <div>${key}</div>
               <div class=aka>${rooms.value[key].aka ? rooms.value[key].aka : ''}</div>
             </a>
-            <chat-m-notifications room="${key}" no-click on-connected-request-notifications allow-mute span-cursor=pointer></chat-m-notifications>
+            ${key === activeRoomName
+              ? /* html */`<chat-m-notifications room="${key}" no-click on-connected-request-notifications allow-mute span-cursor=pointer></chat-m-notifications>`
+              : /* html */`
+                <a route href="${rooms.value[key].locationHref}">
+                  <chat-m-notifications room="${key}" no-click on-connected-request-notifications allow-mute span-cursor=pointer></chat-m-notifications>
+                </a>
+              `}
             <wct-icon-mdx title="share" share="${key}" icon-url="../../../../../../img/icons/share-3.svg" size="2em"></wct-icon-mdx>
             <wct-icon-mdx title="edit aka" edit="${key}" li-count=${i} icon-url="../../../../../../img/icons/pencil.svg" size="2em"></wct-icon-mdx>
             <wct-icon-mdx title="delete" delete="${key.replace(/"/g, "'")}" href="${rooms.value[key].locationHref}" icon-url="../../../../../../img/icons/trash.svg" size="2em"></wct-icon-mdx>
