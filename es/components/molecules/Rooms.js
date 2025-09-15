@@ -547,7 +547,7 @@ export default class Rooms extends Shadow() {
     <ul>
       ${Object.keys(rooms.value)
         .sort((a, b) => rooms.value[b].entered?.[0] - rooms.value[a].entered?.[0])
-        .reduce((acc, key, i, arr) => acc + /* html */`<wct-load-template-tag no-css><template><li id="${key}"${key === activeRoomName ? ' disabled' : ''}>
+        .reduce((acc, key, i, arr) => acc + /* html */`<wct-load-template-tag no-css copy-class-list><template><li id="${key}"${key === activeRoomName ? ' disabled' : ''}>
           <div>
             <a route href="${rooms.value[key].locationHref}">
               <div>${key}</div>
