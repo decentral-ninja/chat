@@ -44,6 +44,7 @@ export default class Provider extends Intersection() {
       changeEventListener(event)
     }
     this.selectProtocolChangeEventListener = event => changeEventListener(event)
+    this.inputPortChangeEventListener = event => changeEventListener(event)
 
     this.connectEventListener = event => {
       event.stopPropagation()
@@ -90,6 +91,7 @@ export default class Provider extends Intersection() {
     this.inputKeepAlive.addEventListener('change', this.inputKeepAliveChangeEventListener)
     this.selectName.addEventListener('change', this.selectNameChangeEventListener)
     this.selectProtocol.addEventListener('change', this.selectProtocolChangeEventListener)
+    this.inputPort.addEventListener('change', this.inputPortChangeEventListener)
     this.addEventListener('connect', this.connectEventListener)
     this.addEventListener('disconnect', this.disconnectEventListener)
     this.addEventListener('undo', this.undoEventListener)
@@ -100,6 +102,7 @@ export default class Provider extends Intersection() {
     this.inputKeepAlive.removeEventListener('change', this.inputKeepAliveChangeEventListener)
     this.selectName.removeEventListener('change', this.selectNameChangeEventListener)
     this.selectProtocol.removeEventListener('change', this.selectProtocolChangeEventListener)
+    this.inputPort.removeEventListener('change', this.inputPortChangeEventListener)
     this.removeEventListener('connect', this.connectEventListener)
     this.removeEventListener('disconnect', this.disconnectEventListener)
     this.removeEventListener('undo', this.undoEventListener)
@@ -205,8 +208,11 @@ export default class Provider extends Intersection() {
       :host > section > chat-m-notifications:has(~ div#url > select[value=websocket]) {
         display: flex;
       }
-      :host > section > div#url > span:has(+ span#port:empty) {
+      :host > section > div#url > span:has(+ input#port:placeholder-shown) {
         display: none;
+      }
+      :host > section > div#url > input#port {
+        width: 7em;
       }
       :host > section > div:where(#url, #keep-alive) {
         display: flex;
@@ -321,7 +327,7 @@ export default class Provider extends Intersection() {
           <span>//</span>
           <span id=hostname></span>
           <span>:</span>
-          <span id=port></span>
+          <input id=port type=number min=0 max=99999 placeholder=":[add port]" />
           <span id=keep-alive-name>?keep-alive=</span>
           <span id=keep-alive-counter></span>
         </div>
@@ -413,7 +419,7 @@ export default class Provider extends Intersection() {
       // reset the selected options
       Provider.resetSelect(this.selectName)
       Provider.resetSelect(this.selectProtocol)
-      this.spanPort.textContent = ''
+      this.inputPort.value = ''
       let hasSelected = false
       Array.from(data.urls).forEach(([origin, urlContainer], i) => {
         let selected = data.status.includes('active')
@@ -433,9 +439,9 @@ export default class Provider extends Intersection() {
           this.titleEl.textContent = urlContainer.url.hostname
           this.spanHostname.textContent = urlContainer.url.hostname
         }
-        if (selected) this.spanPort.textContent = urlContainer.url.port ? urlContainer.url.port : ''
+        if (selected) this.inputPort.value = urlContainer.url.port ? urlContainer.url.port : ''
         let currentKeepAlive
-        if ((selected && keepAlive === this.keepAliveDefaultValue) && (currentKeepAlive = Number(urlContainer.url.searchParams.get('keep-alive'))) !== undefined) keepAlive = currentKeepAlive
+        if (selected && keepAlive === this.keepAliveDefaultValue && urlContainer.url.searchParams.get('keep-alive') !== null && !isNaN(currentKeepAlive = Number(urlContainer.url.searchParams.get('keep-alive')))) keepAlive = currentKeepAlive
       })
       this.inputKeepAliveChangeEventListener({ target: { value: (this.inputKeepAlive.value = keepAlive) } }, true)
       this.doOnIntersection = null
@@ -463,7 +469,7 @@ export default class Provider extends Intersection() {
     try {
       url = new URL(urlsArr[0][1].url.href)
       if (this.selectProtocol.value) url.protocol =  this.selectProtocol.value
-      if (this.spanPort.textContent) url.port = this.spanPort.textContent
+      if (this.inputPort.value) url.port = this.inputPort.value
     } catch (error) {
       return null
     }
@@ -499,8 +505,8 @@ export default class Provider extends Intersection() {
     return this.root.querySelector('span[id=hostname]')
   }
 
-  get spanPort () {
-    return this.root.querySelector('span[id=port]')
+  get inputPort () {
+    return this.root.querySelector('input[id=port]')
   }
 
   get spanKeepAliveCounter () {
