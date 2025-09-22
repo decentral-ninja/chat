@@ -86,7 +86,7 @@ export default class ConnectedUsers extends Shadow() {
    * @returns Promise<void>
    */
   renderHTML () {
-    this.html = '<div class=placeholder>---</div>'
+    if (!this.placeholder) this.html = '<div class=placeholder>---</div>'
     // go through all connections and create the needed summary/details
     Object.keys(this.connectedUsers).forEach(providerName => {
       if (Array.isArray(this.connectedUsers[providerName])) this.connectedUsers[providerName].forEach(connectedUser => {
