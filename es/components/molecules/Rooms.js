@@ -275,25 +275,25 @@ export default class Rooms extends Shadow() {
   renderCSS () {
     this.css = /* css */`
       :host {
-        --button-primary-width: 100%;
-        --button-primary-height: 100%;
-        --wct-input-input-height: 100%;
-        --wct-input-height: var(--wct-input-input-height);
-        --wct-input-border-radius: var(--border-radius) 0 0 var(--border-radius);
-        --wct-middle-input-input-height: var(--wct-input-input-height);
-        --wct-middle-input-height: var(--wct-middle-input-input-height);
-        --wct-middle-input-border-radius: 0;
         --button-primary-border-radius: 0 var(--border-radius) var(--border-radius) 0;
-        --dialog-left-slide-in-ul-padding-left: 0;
-        --dialog-left-slide-in-ul-margin: 0;
-        --dialog-left-slide-in-ul-list-style: none;
+        --button-primary-height: 100%;
+        --button-primary-width: 100%;
         --dialog-left-slide-in-hr-margin: 0.5em 0 -0.5em;
         --dialog-left-slide-in-ul-display: flex;
-        --dialog-top-slide-in-ul-padding-left: 0;
-        --dialog-top-slide-in-ul-margin: 0;
-        --dialog-top-slide-in-ul-list-style: none;
+        --dialog-left-slide-in-ul-list-style: none;
+        --dialog-left-slide-in-ul-margin: 0;
+        --dialog-left-slide-in-ul-padding-left: 0;
         --dialog-top-slide-in-hr-margin: 0.5em 0 -0.5em;
         --dialog-top-slide-in-ul-display: flex;
+        --dialog-top-slide-in-ul-list-style: none;
+        --dialog-top-slide-in-ul-margin: 0;
+        --dialog-top-slide-in-ul-padding-left: 0;
+        --wct-input-border-radius: var(--border-radius) 0 0 var(--border-radius);
+        --wct-input-height: var(--wct-input-input-height);
+        --wct-input-input-height: 100%;
+        --wct-middle-input-border-radius: 0;
+        --wct-middle-input-height: var(--wct-middle-input-input-height);
+        --wct-middle-input-input-height: var(--wct-input-input-height);
       }
     `
     return this.fetchTemplate()
@@ -391,8 +391,13 @@ export default class Rooms extends Shadow() {
           <wct-dialog
             namespace="dialog-left-slide-in-"
           >
+            <style protected=true>
+              :host > dialog > wct-menu-icon {
+                margin-left: calc(-0.5 * var(--dialog-left-slide-in-padding-custom));
+              }
+            </style>
             <dialog>
-              <wct-menu-icon id="close" no-aria class="open sticky" namespace="menu-icon-close-" no-click></wct-menu-icon>
+              <wct-menu-icon id="close" no-aria class="open sticky" namespace="menu-icon-close-" no-click background style="--outline-style-focus-visible: none;"></wct-menu-icon>
               <h4>Enter room name or link:</h4>
               <wct-grid auto-fill="20%">
                 <style protected=true>
@@ -429,6 +434,11 @@ export default class Rooms extends Shadow() {
             open-on-every-connect
             no-backdrop-close
           >
+            <style protected=true>
+              :host {
+                --dialog-top-slide-in-hr-margin: 1em 0 0;
+              }
+            </style>
             <dialog>
               <h4>Enter room name or link:</h4>
               <wct-grid auto-fill="20%">

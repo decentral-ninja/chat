@@ -85,6 +85,9 @@ export default class User extends Intersection() {
       :host {
         display: list-item;
       }
+      :host(.active) {
+        --summary-child-color-hover: var(--background-color);
+      }
       :host([has-height]:not([intersecting])) > li {
         display: none;
       }

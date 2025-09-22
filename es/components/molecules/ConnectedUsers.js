@@ -18,6 +18,8 @@ export default class ConnectedUsers extends Shadow() {
       /** @type {import('../../../../event-driven-web-components-yjs/src/es/controllers/Users.js').ConnectedUsers} */
       this.connectedUsers = connectedUsers
     }
+
+    this.clickEventListener = event => event.stopPropagation()
   }
 
   connectedCallback () {
@@ -26,6 +28,11 @@ export default class ConnectedUsers extends Shadow() {
     if (this.shouldRenderCSS()) showPromises.push(this.renderCSS())
     if (this.shouldRenderHTML()) showPromises.push(this.renderHTML())
     Promise.all(showPromises).then(() => (this.hidden = false))
+    this.addEventListener('click', this.clickEventListener)
+  }
+
+  disconnectedCallback () {
+    this.removeEventListener('click', this.clickEventListener)
   }
 
   /**

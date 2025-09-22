@@ -59,7 +59,7 @@ export default class SetStringDialog extends Dialog {
     this.html = /* html */`
       <dialog>
         ${prependDialog}
-        <wct-menu-icon id="close" no-aria class="open sticky" namespace="menu-icon-close-" no-click></wct-menu-icon>
+        <wct-menu-icon id="close" no-aria class="open sticky" namespace="menu-icon-close-" no-click background style="--outline-style-focus-visible: none;"></wct-menu-icon>
         ${appendDialog}
       </dialog>
     `

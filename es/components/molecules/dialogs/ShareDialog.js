@@ -133,7 +133,7 @@ export default class ShareDialog extends Dialog {
   renderCustomHTML () {
     this.html = /* html */`
       <dialog>
-        <wct-menu-icon id="close" no-aria class="open sticky" namespace="menu-icon-close-" no-click></wct-menu-icon>
+        <wct-menu-icon id="close" no-aria class="open sticky" namespace="menu-icon-close-" no-click background style="--outline-style-focus-visible: none;"></wct-menu-icon>
         <h4>Share: "<span class="bold">${this.getAttribute('room-name') || document.title}</span>"${this.getAttribute('title-append') || ''}</h4>
       </dialog>
     `

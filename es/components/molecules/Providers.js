@@ -368,7 +368,7 @@ export default class Providers extends Shadow() {
           }
         </style>
         <dialog>
-          <wct-menu-icon id="close" no-aria class="open sticky" namespace="menu-icon-close-" no-click></wct-menu-icon>
+          <wct-menu-icon id="close" no-aria class="open sticky" namespace="menu-icon-close-" no-click background style="--outline-style-focus-visible: none;"></wct-menu-icon>
           <h4>Provider Data:</h4>
           <p id="offline">You are offline!</p>
           <div id=providers>

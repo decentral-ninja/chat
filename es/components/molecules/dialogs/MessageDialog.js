@@ -146,7 +146,7 @@ export default class MessageDialog extends Dialog {
     this.template.remove()
     this.html = /* html */`
       <dialog>
-        <wct-menu-icon id="close" no-aria class="open sticky" namespace="menu-icon-close-" no-click></wct-menu-icon>
+        <wct-menu-icon id="close" no-aria class="open sticky" namespace="menu-icon-close-" no-click background style="--outline-style-focus-visible: none;"></wct-menu-icon>
         <h4>Message:</h4>
         <div id="controls">
           <div id="reply"><wct-icon-mdx reply title="reply to message" icon-url="../../../../../../img/icons/arrow-back-up.svg" size="2em"></wct-icon-mdx></div>
