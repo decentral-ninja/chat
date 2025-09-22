@@ -43,7 +43,7 @@ export default class ConnectedUsers extends Shadow() {
    * @return {boolean}
    */
   shouldRenderHTML () {
-    return !this.details
+    return !this.detail
   }
 
   /**
@@ -52,8 +52,11 @@ export default class ConnectedUsers extends Shadow() {
    */
   renderCSS () {
     this.css = /* css */`
-      :host chat-a-nick-name {
-        display: inline-block;
+      :host wct-details {
+        --padding: 0;
+        --text-align: left;
+        --icon-justify-content: space-between;
+        --summary-transform-hover: none;
       }
     `
     return this.fetchTemplate()
@@ -80,38 +83,46 @@ export default class ConnectedUsers extends Shadow() {
    * @returns Promise<void>
    */
   renderHTML () {
-    this.html = Object.keys(this.connectedUsers).reduce((acc, providerName) => {
-      const addedConnectedUsersUid = []
-      return /* html */`
-        ${acc}
-        ${Array.isArray(this.connectedUsers[providerName])
-          ? this.connectedUsers[providerName].reduce((acc, connectedUser) => {
-            if (!connectedUser || addedConnectedUsersUid.includes(connectedUser.uid)) return acc
-            addedConnectedUsersUid.push(connectedUser.uid)
-            return `${acc}${connectedUser ? /* html */`
-              <details onclick="event.stopPropagation()">
-                <summary><chat-a-nick-name uid='${connectedUser.uid}' nickname="${connectedUser.nickname}"${connectedUser.isSelf ? ' self' : ''}></chat-a-nick-name></summary>
-                ${providerName}
+    // go through all connections and create the needed summary/details
+    const keys = Object.keys(this.connectedUsers)
+    if (!keys.length) this.html = '---'
+    keys.forEach(providerName => {
+      if (Array.isArray(this.connectedUsers[providerName])) this.connectedUsers[providerName].forEach(connectedUser => {
+        if (!connectedUser) return
+        // @ts-ignore
+        const providerId = `${self.Environment?.providerNamespace || 'p_'}${providerName.replace(/[\.\:<>/]/g, '-')}` // string <ident> without dots https://developer.mozilla.org/en-US/docs/Web/CSS/ident
+        const liString = /* html */`<li id="${providerId}">${providerName}</li>`
+        let detail
+        if ((detail = this.details.find(detail => detail.getAttribute('uid') === connectedUser.uid))) {
+          if (!detail.root.querySelector(`li#${providerId}`)) {
+            const div = document.createElement('div')
+            div.innerHTML = liString
+            detail.details.appendChild(div.children[0])
+          }
+        } else {
+          this.html = /* html */`
+            <wct-details uid='${connectedUser.uid}' open-event-name='connected-users-details-open-${connectedUser.uid}'>
+              <details>
+                <summary>
+                  <chat-a-nick-name uid='${connectedUser.uid}' nickname="${connectedUser.nickname}"${connectedUser.isSelf ? ' self' : ''}></chat-a-nick-name>
+                </summary>
+                ${liString}
               </details>
-            ` : ''}`
-            }, '').trim()
-          : 'none'
+            </wct-details>
+          `
         }
-      `
-    }, '').trim() || 'none'
-    // TODO: Render into wct-details
-    // this.html = /* html */`
-    //   <wct-details>
-    //     <details>
-    //       <summary>
-    //         <h4>Summary</h4>
-    //       </summary>
-    //       <div>Detail</div>
-    //     </details>
-    //   </wct-details>
-    // `
-    // TODO: setup html and update with data
-    // this.update(this.connectedUsers)
+      })
+    })
+    // remove any details which are not in the connected
+    this.details.forEach(detail => {
+      if (Object.keys(this.connectedUsers).some(providerName => this.connectedUsers[providerName].find(connectedUser => detail.getAttribute('uid') === connectedUser?.uid))) {
+        Array.from(detail.root.querySelectorAll('li')).forEach(li => {
+          if (!this.connectedUsers[li.textContent]?.some(connectedUser => detail.getAttribute('uid') === connectedUser?.uid)) li.remove()
+        })
+      } else {
+        detail.remove()
+      }
+    })
     return this.fetchModules([
       {
         // @ts-ignore
@@ -133,14 +144,15 @@ export default class ConnectedUsers extends Shadow() {
    */
   update (connectedUsers) {
     this.connectedUsers = connectedUsers
-    //console.log('update', this, connectedUsers)
-    // TODO: Render only the changed parts (cluster providers per username), don't renderHTML, renderHTML only once to setup html nodes, then particular updates
-    this.html = ''
     this.renderHTML()
   }
 
-  get details () {
+  get detail () {
     return this.root.querySelector('wct-details')
+  }
+
+  get details () {
+    return Array.from(this.root.querySelectorAll('wct-details'))
   }
 
   get template () {

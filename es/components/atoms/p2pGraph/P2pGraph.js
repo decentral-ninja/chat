@@ -175,6 +175,11 @@ export default class P2pGraph extends Intersection() {
           this.div.remove()
         }
         this.updateHeight()
+        this.dispatchEvent(new CustomEvent('p2p-graph-load', {
+          bubbles: true,
+          cancelable: true,
+          composed: true
+        }))
         this.doOnIntersection = null
       })
     }
@@ -230,14 +235,14 @@ export default class P2pGraph extends Intersection() {
   }
 
   // Due to performance issues, dialog open took around 1300ms (after this change ca. 350ms) on a chat with many users. This eliminated the recalculate style thanks to :host([has-height]:not([intersecting])) > li: display: none; for not intersecting user components but also keeps the height, to avoid weird scrolling effects.
-  updateHeight (clear = false) {
+  updateHeight (height, clear = false) {
     this.removeAttribute('has-height')
     this.customStyleHeight.innerText = ''
     if (!clear) self.requestAnimationFrame(timeStamp => {
       this.setAttribute('has-height', '')
       this.customStyleHeight.innerText = /* css */`
         :host {
-          min-height: ${this.clientHeight}px;
+          min-height: ${height || this.clientHeight}px;
         }
       `
     })
