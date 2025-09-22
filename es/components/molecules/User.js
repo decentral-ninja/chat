@@ -295,7 +295,7 @@ export default class User extends Intersection() {
                       ? 'unique id:'
                       : `${key}:`
                     }</td>
-                    ${User.renderConnectedUser(key, this.user, this.allUsers)}
+                    ${User.renderConnectedUser(key, this.user, this.allUsers, this.getAttribute('uid'))}
                   </tr>
                   ${['localEpoch', 'awarenessEpoch', 'nickname'].includes(key) ? acc : ''}
                 `
@@ -347,13 +347,13 @@ export default class User extends Intersection() {
     this.updateOrder(order)
     this.doOnIntersection = () => {
       if (this.nicknameNode) this.nicknameNode.outerHTML = User.renderNickname(user.nickname)
-      if (this.awarenessEpochNode) this.awarenessEpochNode.outerHTML = User.renderConnectedUser('awarenessEpoch', user, allUsers)
+      if (this.awarenessEpochNode) this.awarenessEpochNode.outerHTML = User.renderConnectedUser('awarenessEpoch', user, allUsers, this.getAttribute('uid'))
       if (this.connectedUsersNode) {
         if (typeof this.connectedUsersNode.children?.[0].update === 'function') {
           User.enrichUserWithFullUserNickname(user.connectedUsers, allUsers)
           this.connectedUsersNode.children[0].update(user.connectedUsers)
         } else {
-          this.connectedUsersNode.outerHTML = User.renderConnectedUser('connectedUsers', user, allUsers)
+          this.connectedUsersNode.outerHTML = User.renderConnectedUser('connectedUsers', user, allUsers, this.getAttribute('uid'))
         }
       }
       if (this.mutuallyConnectedUsersNode) {
@@ -361,7 +361,7 @@ export default class User extends Intersection() {
           User.enrichUserWithFullUserNickname(user.mutuallyConnectedUsers, allUsers)
           this.mutuallyConnectedUsersNode.children[0].update(user.mutuallyConnectedUsers)
         } else {
-          this.mutuallyConnectedUsersNode.outerHTML = User.renderConnectedUser('mutuallyConnectedUsers', user, allUsers)
+          this.mutuallyConnectedUsersNode.outerHTML = User.renderConnectedUser('mutuallyConnectedUsers', user, allUsers, this.getAttribute('uid'))
         }
       }
       this.updateHeight()
@@ -396,12 +396,12 @@ export default class User extends Intersection() {
     return /* html */`<span id=nickname>${nickname || 'none'}</span>`
   }
 
-  static renderConnectedUser (key, user, allUsers) {
+  static renderConnectedUser (key, user, allUsers, selfUid) {
     if (key === 'mutuallyConnectedUsers' || key === 'connectedUsers') User.enrichUserWithFullUserNickname(user[key], allUsers)
     return /* html */`
       <td id="${key}">${key === 'mutuallyConnectedUsers' || key === 'connectedUsers'
         ? /* html */`
-          <chat-m-connected-users>
+          <chat-m-connected-users uid='${selfUid}'>
             <template>${JSON.stringify({ connectedUsers: user[key] })}</template>
           </chat-m-connected-users>
         `

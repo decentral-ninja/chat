@@ -43,7 +43,7 @@ export default class ConnectedUsers extends Shadow() {
    * @return {boolean}
    */
   shouldRenderHTML () {
-    return !this.detail
+    return !this.placeholder
   }
 
   /**
@@ -57,6 +57,9 @@ export default class ConnectedUsers extends Shadow() {
         --text-align: left;
         --icon-justify-content: space-between;
         --summary-transform-hover: none;
+      }
+      :host:has(> wct-details) > .placeholder {
+        display: none;
       }
     `
     return this.fetchTemplate()
@@ -83,10 +86,9 @@ export default class ConnectedUsers extends Shadow() {
    * @returns Promise<void>
    */
   renderHTML () {
+    this.html = '<div class=placeholder>---</div>'
     // go through all connections and create the needed summary/details
-    const keys = Object.keys(this.connectedUsers)
-    if (!keys.length) this.html = '---'
-    keys.forEach(providerName => {
+    Object.keys(this.connectedUsers).forEach(providerName => {
       if (Array.isArray(this.connectedUsers[providerName])) this.connectedUsers[providerName].forEach(connectedUser => {
         if (!connectedUser) return
         // @ts-ignore
@@ -101,7 +103,7 @@ export default class ConnectedUsers extends Shadow() {
           }
         } else {
           this.html = /* html */`
-            <wct-details uid='${connectedUser.uid}' open-event-name='connected-users-details-open-${connectedUser.uid}'>
+            <wct-details uid='${connectedUser.uid}' open-event-name='connected-users-details-open-${this.getAttribute('uid')}'>
               <details>
                 <summary>
                   <chat-a-nick-name uid='${connectedUser.uid}' nickname="${connectedUser.nickname}"${connectedUser.isSelf ? ' self' : ''}></chat-a-nick-name>
@@ -147,8 +149,8 @@ export default class ConnectedUsers extends Shadow() {
     this.renderHTML()
   }
 
-  get detail () {
-    return this.root.querySelector('wct-details')
+  get placeholder () {
+    return this.root.querySelector('.placeholder')
   }
 
   get details () {
