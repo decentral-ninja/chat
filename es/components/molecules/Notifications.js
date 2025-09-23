@@ -132,7 +132,7 @@ export default class Notifications extends Hover() {
       this.muteEl.addEventListener('click', this.muteEventListener)
       this.unmuteEl.addEventListener('click', this.unmuteEventListener)
     }
-    this.connectedCallbackOnce()
+    if (this.isConnected) this.connectedCallbackOnce()
   }
 
   connectedCallbackOnce () {

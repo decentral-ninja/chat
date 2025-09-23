@@ -233,7 +233,7 @@ export default class Rooms extends Shadow() {
     this.addEventListener('submit-room-name', this.roomNameEventListener)
     this.addEventListener('room-name-aka', this.roomNameAkaEventListener)
     this.globalEventTarget.addEventListener('open-room', this.openRoomListener)
-    this.connectedCallbackOnce()
+    if (this.isConnected) this.connectedCallbackOnce()
   }
 
   async connectedCallbackOnce () {

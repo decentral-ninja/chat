@@ -48,7 +48,7 @@ export default class NickNameDialog extends SetStringDialog {
     const result = super.connectedCallback()
     this.addEventListener('submit-input', this.setInputEventListener)
     this.addEventListener('submit-search', this.setInputEventListener)
-    this.connectedCallbackOnce()
+    if (this.isConnected) this.connectedCallbackOnce()
     this.globalEventTarget.addEventListener('yjs-nickname', this.nicknameEventListener)
     return result
   }

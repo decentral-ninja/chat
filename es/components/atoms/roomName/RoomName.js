@@ -49,7 +49,7 @@ export default class RoomName extends Shadow() {
     if (this.shouldRenderHTML()) this.renderHTML()
     this.addEventListener('click', this.clickEventListener)
     this.globalEventTarget.addEventListener('room-name-aka', this.roomNameAkaEventListener)
-    this.connectedCallbackOnce()
+    if (this.isConnected) this.connectedCallbackOnce()
   }
 
   connectedCallbackOnce () {

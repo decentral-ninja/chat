@@ -47,7 +47,7 @@ export default class JitsiDialog extends Dialog {
   connectedCallback () {
     if (this.shouldRenderCustomHTML()) this.renderCustomHTML()
     const result = super.connectedCallback()
-    this.connectedCallbackOnce()
+    if (this.isConnected) this.connectedCallbackOnce()
     this.startIcon.addEventListener('click', this.startClickEventListener)
     this.stopIcon.addEventListener('click', this.stopClickEventListener)
     this.link.addEventListener('click', this.linkClickEventListener)

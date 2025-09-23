@@ -80,7 +80,7 @@ export default class Message extends WebWorker(Intersection()) {
 
   connectedCallback () {
     super.connectedCallback()
-    this.connectedCallbackOnce()
+    if (this.isConnected) this.connectedCallbackOnce()
     if (this.shouldRenderCSS()) this.renderCSS()
     const htmlReadyFunc = () => {
       this.addEventListeners()
@@ -126,6 +126,7 @@ export default class Message extends WebWorker(Intersection()) {
       this.textObj.hasError = true
       console.error('Could not parse message:', { message: this, error })
     }
+    this.connectedCallbackOnce = () => {}
   }
 
   async addEventListeners () {

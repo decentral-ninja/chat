@@ -1,48 +1,36 @@
 // @ts-check
 import { Shadow } from '../../../../../web-components-toolbox/src/es/components/prototypes/Shadow.js'
 import { getHexColor } from '../../../../../Helpers.js'
+import { separator } from '../../../../../event-driven-web-components-yjs/src/es/controllers/Users.js'
 
 /* global self */
 /* global Environment */
 
 /**
 * @export
-* @class NickName
+* @class ProviderName
 * @type {CustomElementConstructor}
 */
-export default class NickName extends Shadow() {
+export default class ProviderName extends Shadow() {
   constructor (options = {}, ...args) {
     super({ importMetaUrl: import.meta.url, ...options }, ...args)
 
     this.hTagName = this.getAttribute('h-tag-name') || 'h4'
+    this.dataName = this.root.querySelector('[name]')?.textContent
 
     this.clickEventListener = event => {
       event.preventDefault()
       event.stopPropagation()
-      if (this.hasAttribute('user-dialog-show-event')) {
-        this.dispatchEvent(new CustomEvent('user-dialog-show-event', {
-          detail: { uid: this.getAttribute('uid') },
-          bubbles: true,
-          cancelable: true,
-          composed: true
-        }))
-      } else if (this.hasAttribute('user-dialog-show-event-only-on-avatar') && event.composedPath().some(node => node.classList?.contains('avatar'))) {
-        this.dispatchEvent(new CustomEvent('user-dialog-show-event', {
-          detail: { uid: this.getAttribute('uid') },
-          bubbles: true,
-          cancelable: true,
-          composed: true
-        }))
-      } else if (this.hasAttribute('self') && !event.composedPath().some(node => node.classList?.contains('avatar'))) {
-        this.dispatchEvent(new CustomEvent('open-nickname', {
-          detail: { command: 'show-modal' },
+      if (this.hasAttribute('provider-dialog-show-event')) {
+        this.dispatchEvent(new CustomEvent('provider-dialog-show-event', {
+          detail: { name: this.dataName },
           bubbles: true,
           cancelable: true,
           composed: true
         }))
       } else {
-        this.dispatchEvent(new CustomEvent('nickname-click', {
-          detail: { uid: this.getAttribute('uid') },
+        this.dispatchEvent(new CustomEvent('provider-name-click', {
+          detail: { name: this.dataName },
           bubbles: true,
           cancelable: true,
           composed: true
@@ -50,21 +38,16 @@ export default class NickName extends Shadow() {
       }
     }
 
-    this.nicknameEventListener = event => this.renderHTML(event.detail.nickname)
-
     let timeoutId = null
-    this.usersEventListener = async event => {
+    this.providerEventListener = async event => {
       clearTimeout(timeoutId)
       timeoutId = setTimeout(async () => {
-        const data = await event.detail.getData()
-        let user
-        if ((user = data.allUsers.get(this.getAttribute('uid')))) {
-          if ((user.isSelf && data.usersConnectedWithSelf.size) || data.usersConnectedWithSelf.has(this.getAttribute('uid'))) {
-            this.setAttribute('is-connected-with-self', '')
-          } else {
-            this.removeAttribute('is-connected-with-self')
-          }
-          this.renderHTML(user.nickname || '')
+        const providers = (await event.detail.getData()).providers
+        const [providerName, providerUrl] = this.dataName.split(separator)
+        if (providers.get(providerName)?.has(providerUrl)) {
+          this.setAttribute('is-connected-with-self', '')
+        } else {
+          this.removeAttribute('is-connected-with-self')
         }
         // @ts-ignore
       }, self.Environment.awarenessEventListenerDelay)
@@ -75,25 +58,23 @@ export default class NickName extends Shadow() {
     if (this.shouldRenderCSS()) this.renderCSS()
     if (this.shouldRenderHTML()) this.renderHTML()
     this.addEventListener('click', this.clickEventListener)
-    this.globalEventTarget.addEventListener('yjs-users', this.usersEventListener)
-    if (this.hasAttribute('self')) this.globalEventTarget.addEventListener('yjs-nickname', this.nicknameEventListener)
+    this.globalEventTarget.addEventListener('yjs-providers-data', this.providerEventListener)
     if (this.isConnected) this.connectedCallbackOnce()
   }
 
   connectedCallbackOnce () {
-    new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-users-event-detail', {
+    new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-providers-event-detail', {
       detail: { resolve },
       bubbles: true,
       cancelable: true,
       composed: true
-    }))).then(detail => this.usersEventListener({ detail }))
+    }))).then(detail => this.providerEventListener({ detail }))
     this.connectedCallbackOnce = () => {}
   }
 
   disconnectedCallback () {
     this.removeEventListener('click', this.clickEventListener)
-    this.globalEventTarget.removeEventListener('yjs-users', this.usersEventListener)
-    if (this.hasAttribute('self')) this.globalEventTarget.removeEventListener('yjs-nickname', this.nicknameEventListener)
+    this.globalEventTarget.removeEventListener('yjs-providers-data', this.providerEventListener)
   }
 
   /**
@@ -128,6 +109,7 @@ export default class NickName extends Shadow() {
         --${this.hTagName}-font-size: 1em;
         --${this.hTagName}-margin: 0;
         --${this.hTagName}-padding: 0.2em 0 0 0;
+        display: block;
         cursor: pointer;
       }
       *:focus {
@@ -144,7 +126,7 @@ export default class NickName extends Shadow() {
         display: flex;
       }
       :host > a > ${this.hTagName}, :host > span {
-        white-space: nowrap;
+        text-align: left;
         overflow: hidden;
         text-overflow: ellipsis;
         text-decoration: underline;
@@ -190,23 +172,20 @@ export default class NickName extends Shadow() {
 
   /**
    * Render HTML
-   * @prop {string} nickname
+   * @prop {string} providerName
    * @returns Promise<void>
    */
-  renderHTML (nickname = this.getAttribute('nickname')) {
-    if (this.lastNickname === nickname) return Promise.resolve()
-    this.lastNickname = nickname
+  renderHTML () {
     this.html = ''
     this.html = /* html */`
       <a href="#">
         <span class=avatar>
           <wct-icon-mdx hover-on-parent-shadow-root-host id=connected title=connected icon-url="../../../../../../img/icons/mobiledata.svg" size="0.75em"></wct-icon-mdx>
         </span>
-        <${this.hTagName}>${nickname || this.getAttribute('nickname') || 'None'}</${this.hTagName}>
-        ${this.hasAttribute('self') ? '<wct-icon-mdx hover-on-parent-element id="show-modal" title="edit nickname" icon-url="../../../../../../img/icons/pencil.svg" size="1em"></wct-icon-mdx>' : ''}
+        <${this.hTagName}>${this.dataName?.split(separator)[1] || 'None'}</${this.hTagName}>
       </a>
     `
-    getHexColor(this.getAttribute('uid')).then(hex => this.avatar.setAttribute('style', `background-color: ${hex}`))
+    getHexColor(this.dataName).then(hex => this.avatar.setAttribute('style', `background-color: ${hex}`))
     return this.fetchModules([
       {
         // @ts-ignore

@@ -100,22 +100,38 @@ export default class ConnectedUsers extends Shadow() {
         if (!connectedUser) return
         // @ts-ignore
         const providerId = `${self.Environment?.providerNamespace || 'p_'}${providerName.replace(/[\.\:<>/]/g, '-')}` // string <ident> without dots https://developer.mozilla.org/en-US/docs/Web/CSS/ident
-        const liString = /* html */`<li id="${providerId}">${providerName}</li>`
+        const providerNameString = /* html */`<chat-a-provider-name id="${providerId}"><span name>${providerName}</span></chat-a-provider-name>`
         let detail
         if ((detail = this.details.find(detail => detail.getAttribute('uid') === connectedUser.uid))) {
-          if (!detail.root.querySelector(`li#${providerId}`)) {
+          if (!detail.root.querySelector(`chat-a-provider-name#${providerId}`)) {
             const div = document.createElement('div')
-            div.innerHTML = liString
+            div.innerHTML = providerNameString
             detail.details.appendChild(div.children[0])
           }
         } else {
           this.html = /* html */`
             <wct-details uid='${connectedUser.uid}' open-event-name='connected-users-details-open-${this.getAttribute('uid')}'>
+              <style protected>
+                :host {
+                  --child-margin: 0 0 0 1em;
+                }
+                :host .title {
+                  display: flex;
+                  gap: 1em;
+                  justify-content: space-between;
+                  width: 100%;
+                }
+                :host .counter {
+                  white-space: nowrap;
+                }
+              </style>
               <details>
                 <summary>
-                  <chat-a-nick-name uid='${connectedUser.uid}' nickname="${connectedUser.nickname}"${connectedUser.isSelf ? ' self' : ''}></chat-a-nick-name>
+                  <div class=title>
+                    <chat-a-nick-name uid='${connectedUser.uid}' nickname="${connectedUser.nickname}"${connectedUser.isSelf ? ' self' : ''}></chat-a-nick-name>
+                  </div>
                 </summary>
-                ${liString}
+                ${providerNameString}
               </details>
             </wct-details>
           `
@@ -125,9 +141,17 @@ export default class ConnectedUsers extends Shadow() {
     // remove any details which are not in the connected
     this.details.forEach(detail => {
       if (Object.keys(this.connectedUsers).some(providerName => this.connectedUsers[providerName].find(connectedUser => detail.getAttribute('uid') === connectedUser?.uid))) {
-        Array.from(detail.root.querySelectorAll('li')).forEach(li => {
-          if (!this.connectedUsers[li.textContent]?.some(connectedUser => detail.getAttribute('uid') === connectedUser?.uid)) li.remove()
+        const getProviderNames = () => Array.from(detail.root.querySelectorAll('chat-a-provider-name'))
+        getProviderNames().forEach(providerName => {
+          if (!this.connectedUsers[providerName.dataName || providerName.textContent]?.some(connectedUser => detail.getAttribute('uid') === connectedUser?.uid)) providerName.remove()
         })
+        let counter = detail.summary.querySelector('.counter')
+        if (!counter) {
+          counter = document.createElement('span')
+          counter.classList.add('counter');
+          detail.summary.querySelector('chat-a-nick-name').after(counter)
+        }
+        counter.textContent = `(${getProviderNames().length})`
       } else {
         detail.remove()
       }
@@ -142,6 +166,11 @@ export default class ConnectedUsers extends Shadow() {
         // @ts-ignore
         path: `${this.importMetaUrl}../atoms/nickName/NickName.js?${Environment?.version || ''}`,
         name: 'chat-a-nick-name'
+      },
+      {
+        // @ts-ignore
+        path: `${this.importMetaUrl}../atoms/providerName/ProviderName.js?${Environment?.version || ''}`,
+        name: 'chat-a-provider-name'
       }
     ])
   }

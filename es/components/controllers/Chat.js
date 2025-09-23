@@ -223,7 +223,7 @@ export const Chat = (ChosenHTMLElement = WebWorker()) => class Chat extends Chos
     this.globalEventTarget.addEventListener('yjs-users', this.usersEventListener)
     this.globalEventTarget.addEventListener('yjs-chat-observe', this.chatObserveEventListener)
     this.globalEventTarget.addEventListener('yjs-nickname', this.nicknameEventListener)
-    this.connectedCallbackOnce()
+    if (this.isConnected) this.connectedCallbackOnce()
   }
 
   connectedCallbackOnce () {
