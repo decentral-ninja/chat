@@ -293,7 +293,7 @@ export default class User extends Intersection() {
                       : key === 'mutuallyConnectedUsers'
                       ? 'actively connected users:'
                       : key === 'connectedUsers'
-                      ? 'historically connected users:'
+                      ? 'connected users:'
                       : key === 'uid'
                       ? 'unique id:'
                       : `${key}:`
