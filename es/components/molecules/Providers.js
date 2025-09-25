@@ -85,7 +85,15 @@ export default class Providers extends Shadow() {
         if (this.lastP2pGraphData) Providers.renderP2pGraph(this.providersGraph, await this.lastP2pGraphData, this.lastSeparator, true)
       }
     }
-    this.providerDialogShowEventEventListener = event => this.openDialog(event)
+    this.providerDialogShowEventEventListener = event => {
+      this.dialog.close()
+      this.openDialog(event)
+      if (event.detail?.name) {
+        this.setAttribute('active', event.detail.name)
+        this.setActive(event.detail.name, this.usersOl)
+        this.setActive(event.detail.name, this.allUsersOl)
+      }
+    }
 
     this.submitWebsocketUrlEventListener = event => {
       event.stopPropagation()
@@ -506,6 +514,16 @@ export default class Providers extends Shadow() {
         }
       }
     })
+  }
+
+  setActive (uid, ol, active = true, scroll = true) {
+    console.log('****setActive*****', {uid, ol, active, scroll})
+    /*
+    Array.from(ol.querySelectorAll('chat-m-user.active, wct-load-template-tag.active')).forEach(node => node.classList.remove('active'))
+    let node
+    if (active && (node = ol.querySelector(`chat-m-user[uid='${uid}'], wct-load-template-tag[uid='${uid}']`))) node.classList.add('active')
+    if (active && scroll) scrollElIntoView(() => this.usersOl.querySelector('chat-m-user.active, wct-load-template-tag.active') || this.allUsersOl.querySelector('chat-m-user.active, wct-load-template-tag.active'), null, this.dialog, { behavior: 'smooth', block: 'nearest' })
+    */
   }
 
   static async toggleIconStates (iconStatesEl, data, online) {

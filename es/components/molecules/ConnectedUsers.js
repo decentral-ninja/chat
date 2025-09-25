@@ -100,7 +100,7 @@ export default class ConnectedUsers extends Shadow() {
         if (!connectedUser) return
         // @ts-ignore
         const providerId = `${self.Environment?.providerNamespace || 'p_'}${providerName.replace(/[\.\:<>/]/g, '-')}` // string <ident> without dots https://developer.mozilla.org/en-US/docs/Web/CSS/ident
-        const providerNameString = /* html */`<chat-a-provider-name id="${providerId}"><span name>${providerName}</span></chat-a-provider-name>`
+        const providerNameString = /* html */`<chat-a-provider-name id="${providerId}" provider-dialog-show-event><span name>${providerName}</span></chat-a-provider-name>`
         let detail
         if ((detail = this.details.find(detail => detail.getAttribute('uid') === connectedUser.uid))) {
           if (!detail.root.querySelector(`chat-a-provider-name#${providerId}`)) {

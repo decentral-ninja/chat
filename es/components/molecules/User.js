@@ -386,12 +386,12 @@ export default class User extends Intersection() {
     this.removeAttribute('has-height')
     this.customStyleHeight.innerText = ''
     if (!clear) self.requestAnimationFrame(timeStamp => {
-      this.setAttribute('has-height', '')
       this.customStyleHeight.innerText = /* css */`
         :host {
           min-height: ${this.clientHeight}px;
         }
       `
+      this.setAttribute('has-height', '')
     })
   }
 

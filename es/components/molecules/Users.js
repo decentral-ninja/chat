@@ -1,6 +1,7 @@
 // @ts-check
 import { Shadow } from '../../../../event-driven-web-components-prototypes/src/Shadow.js'
 import { getHexColor, jsonStringifyMapUrlReplacer } from '../../../../Helpers.js'
+import { scrollElIntoView } from '../../../../event-driven-web-components-prototypes/src/helpers/Helpers.js'
 
 /* global self */
 /* global Environment */
@@ -39,7 +40,7 @@ export default class Users extends Shadow() {
       this.dialog.show('show-modal')
       if (lastUsersEventGetData) {
         clearTimeout(timeoutId)
-        this.renderData(await lastUsersEventGetData(), lastSeparator).then(() => this.scrollActiveIntoView())
+        this.renderData(await lastUsersEventGetData(), lastSeparator)
         this.iconStatesEl.removeAttribute('updating')
         // the graph has to be refreshed when dialog opens
         // @ts-ignore
@@ -51,12 +52,13 @@ export default class Users extends Shadow() {
     }
     
     this.userDialogShowEventEventListener = event => {
+      this.dialog.close()
+      this.openDialog(event)
       if (event.detail?.uid) {
         this.setAttribute('active', event.detail.uid)
         this.setActive(event.detail.uid, this.usersOl)
         this.setActive(event.detail.uid, this.allUsersOl)
       }
-      this.openDialog(event)
     }
 
     // listens to the dialog node but reacts on active list elements to be deactivated
@@ -428,27 +430,7 @@ export default class Users extends Shadow() {
     Array.from(ol.querySelectorAll('chat-m-user.active, wct-load-template-tag.active')).forEach(node => node.classList.remove('active'))
     let node
     if (active && (node = ol.querySelector(`chat-m-user[uid='${uid}'], wct-load-template-tag[uid='${uid}']`))) node.classList.add('active')
-    if (active && scroll) this.scrollActiveIntoView()
-  }
-
-  scrollActiveIntoView (smooth = false, counter = 0) {
-    counter++
-    const getLiActiveEl = () => this.usersOl.querySelector('chat-m-user.active, wct-load-template-tag.active') || this.allUsersOl.querySelector('chat-m-user.active, wct-load-template-tag.active')
-    const scrollEl = getLiActiveEl()
-    if (!scrollEl) return
-    scrollEl.scrollIntoView({ behavior: smooth ? 'smooth' : 'instant', block: 'nearest' })
-    setTimeout(() => {
-      const scrollEl = getLiActiveEl()
-      if (!scrollEl) return
-      const boundingClientRect = scrollEl.getBoundingClientRect()
-      if (boundingClientRect.y < 0 && boundingClientRect.y + boundingClientRect.height > this.dialogEl?.clientHeight && counter < 15) {
-        this.scrollActiveIntoView(counter > 2 ? false : smooth, counter)
-      } else {
-        scrollEl.scrollIntoView({ behavior: 'instant', block: 'nearest' })
-        // trying to have scroll down work more reliable
-        setTimeout(() => scrollEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50)
-      }
-    }, 200)
+    if (active && scroll) scrollElIntoView(() => ol.querySelector('chat-m-user.active, wct-load-template-tag.active'), null, this.dialogEl, { behavior: 'smooth', block: 'nearest' })
   }
 
   static updateIconStatesEl (iconStatesEl, data, online) {
