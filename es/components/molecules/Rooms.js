@@ -423,7 +423,7 @@ export default class Rooms extends Shadow() {
                 </section>
               </wct-grid>
               <hr>
-              ${Rooms.renderRoomList(getRoomsResult, roomName)}
+              ${Rooms.renderRoomList(getRoomsResult, roomName, false)}
             </dialog>
           </wct-dialog>
         `
@@ -449,7 +449,7 @@ export default class Rooms extends Shadow() {
                 </section>
               </wct-grid>
               <hr>
-              ${Rooms.renderRoomList(getRoomsResult)}
+              ${Rooms.renderRoomList(getRoomsResult, undefined, true)}
             </dialog>
           </wct-dialog>
         `
@@ -462,9 +462,10 @@ export default class Rooms extends Shadow() {
    *
    * @param {{value: {string: any}}} rooms
    * @param {string} [activeRoomName=undefined]
+   * @param {boolean} [enteringNewRoom=undefined]
    * @return {string}
    */
-  static renderRoomList (rooms, activeRoomName) {
+  static renderRoomList (rooms, activeRoomName, enteringNewRoom) {
     return /* html */`<style protected="true">
       :host {
         --color-hover: var(--color-yellow);
@@ -563,13 +564,16 @@ export default class Rooms extends Shadow() {
               <div>${key}</div>
               <div class=aka>${rooms.value[key].aka ? rooms.value[key].aka : ''}</div>
             </a>
-            ${key === activeRoomName
-              ? /* html */`<chat-m-notifications room="${key}" no-click on-connected-request-notifications allow-mute span-cursor=pointer></chat-m-notifications>`
-              : /* html */`
-                <a route href="${rooms.value[key].locationHref}">
-                  <chat-m-notifications room="${key}" no-click on-connected-request-notifications allow-mute span-cursor=pointer></chat-m-notifications>
-                </a>
-              `}
+            ${enteringNewRoom
+              ? ''
+              : key === activeRoomName
+                ? /* html */`<chat-m-notifications room="${key}" no-click on-connected-request-notifications allow-mute span-cursor=pointer></chat-m-notifications>`
+                : /* html */`
+                  <a route href="${rooms.value[key].locationHref}">
+                    <chat-m-notifications room="${key}" no-click on-connected-request-notifications allow-mute span-cursor=pointer></chat-m-notifications>
+                  </a>
+                `
+            }
             <wct-icon-mdx title="share" share="${key}" icon-url="../../../../../../img/icons/share-3.svg" size="2em"></wct-icon-mdx>
             <wct-icon-mdx title="edit aka" edit="${key}" li-count=${i} icon-url="../../../../../../img/icons/pencil.svg" size="2em"></wct-icon-mdx>
             <wct-icon-mdx title="delete" delete="${key.replace(/"/g, "'")}" href="${rooms.value[key].locationHref}" icon-url="../../../../../../img/icons/trash.svg" size="2em"></wct-icon-mdx>
