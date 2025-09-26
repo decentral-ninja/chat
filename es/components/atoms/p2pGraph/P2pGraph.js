@@ -128,17 +128,17 @@ export default class P2pGraph extends Intersection() {
             fixed: false,
             name: user.nickname || key
           })
-          if (this.hasAttribute('providers')) {
-            graph.connect(providersSelfId, key)
-            return
-          }
-          graphUserObj.svgNode.classList.add(user.isSelf ? 'is-self' : 'other')
           graphUserObj.svgNode.addEventListener('click', event => this.dispatchEvent(new CustomEvent('p2p-graph-click', {
             detail: { graphUserObj, isActive: !!this.svg.querySelector('[style="opacity: 0.2;"]') },
             bubbles: true,
             cancelable: true,
             composed: true
           })))
+          if (this.hasAttribute('providers')) {
+            graph.connect(providersSelfId, key)
+            return
+          }
+          graphUserObj.svgNode.classList.add(user.isSelf ? 'is-self' : 'other')
           // trigger click on node when the id is the same as the active attribute
           if (this.getAttribute('active') === graphUserObj.id) setTimeout(() => graphUserObj.svgNode.querySelector('circle')?.dispatchEvent(new CustomEvent('click', { bubbles: true, cancelable: true, composed: true })))
           // only show providers with mutually connected users

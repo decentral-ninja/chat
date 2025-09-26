@@ -1,5 +1,6 @@
 // @ts-check
 import { Shadow } from '../../../../web-components-toolbox/src/es/components/prototypes/Shadow.js'
+import { separator } from '../../../../event-driven-web-components-yjs/src/es/controllers/Users.js'
 
 /* global Environment */
 
@@ -99,7 +100,7 @@ export default class ConnectedUsers extends Shadow() {
       if (Array.isArray(this.connectedUsers[providerName])) this.connectedUsers[providerName].forEach(connectedUser => {
         if (!connectedUser) return
         // @ts-ignore
-        const providerId = `${self.Environment?.providerNamespace || 'p_'}${providerName.replace(/[\.\:<>/]/g, '-')}` // string <ident> without dots https://developer.mozilla.org/en-US/docs/Web/CSS/ident
+        const providerId = `${self.Environment?.providerNamespace || 'p_'}${new URL(providerName.split(separator)[1]).hostname.replaceAll('.', '-')}` // string <ident> without dots https://developer.mozilla.org/en-US/docs/Web/CSS/ident
         const providerNameString = /* html */`<chat-a-provider-name id="${providerId}" provider-dialog-show-event><span name>${providerName}</span></chat-a-provider-name>`
         let detail
         if ((detail = this.details.find(detail => detail.getAttribute('uid') === connectedUser.uid))) {

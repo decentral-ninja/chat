@@ -40,7 +40,7 @@ export default class Users extends Shadow() {
       this.dialog.show('show-modal')
       if (lastUsersEventGetData) {
         clearTimeout(timeoutId)
-        this.renderData(await lastUsersEventGetData(), lastSeparator)
+        await this.renderData(await lastUsersEventGetData(), lastSeparator)
         this.iconStatesEl.removeAttribute('updating')
         // the graph has to be refreshed when dialog opens
         // @ts-ignore
@@ -53,12 +53,9 @@ export default class Users extends Shadow() {
     
     this.userDialogShowEventEventListener = event => {
       this.dialog.close()
-      this.openDialog(event)
-      if (event.detail?.uid) {
-        this.setAttribute('active', event.detail.uid)
-        this.setActive(event.detail.uid, this.usersOl)
-        this.setActive(event.detail.uid, this.allUsersOl)
-      }
+      this.openDialog(event).then(() => {
+        if (event.detail?.uid) this.setActive('uid', event.detail.uid, [this.usersOl, this.allUsersOl])
+      })
     }
 
     // listens to the dialog node but reacts on active list elements to be deactivated
@@ -67,10 +64,7 @@ export default class Users extends Shadow() {
       let activeNode
       if (event.composedPath().some(node => (activeNode = node).tagName === 'CHAT-M-USER' && node.classList.contains('active') && typeof node.hasAttribute === 'function' && !node.hasAttribute('data-tab'))) {
         // @ts-ignore
-        this.setActive(activeNode.getAttribute('uid'), this.usersOl, false)
-        // @ts-ignore
-        this.setActive(activeNode.getAttribute('uid'), this.allUsersOl, false)
-        this.removeAttribute('active')
+        this.setActive('uid', activeNode.getAttribute('uid'), [this.usersOl, this.allUsersOl], false)
         if (lastUsersEventGetData) {
           // @ts-ignore
           const getArgs = activeNode.matches('#usersGraph') || this.isUserGraphTabActive
@@ -91,21 +85,11 @@ export default class Users extends Shadow() {
     }
 
     this.p2pGraphClickEventListener = event => {
-      if (event.detail.graphUserObj) {
-        this.setActive(event.detail.graphUserObj.id, this.usersOl, event.detail.isActive)
-        this.setActive(event.detail.graphUserObj.id, this.allUsersOl, event.detail.isActive)
-        if (event.detail.isActive) {
-          this.setAttribute('active', event.detail.graphUserObj.id)
-        } else {
-          this.removeAttribute('active')
-        }
-      }
+      if (event.detail.graphUserObj) this.setActive('uid', event.detail.graphUserObj.id, [this.usersOl, this.allUsersOl], event.detail.isActive)
     }
 
     this.nickNameClickEventListener = async event => {
-      this.setActive(event.detail.uid, this.usersOl, true)
-      this.setActive(event.detail.uid, this.allUsersOl, true)
-      this.setAttribute('active', event.detail.uid)
+      this.setActive('uid', event.detail.uid, [this.usersOl, this.allUsersOl])
       if (lastUsersEventGetData) {
         // @ts-ignore
         const getArgs = this.isUserGraphTabActive
@@ -426,11 +410,23 @@ export default class Users extends Shadow() {
     await Users.renderUserTableList(this.allUsersOl, this.usersOl, new Map(Array.from(data.allUsers).filter(([key, user]) => !data.usersConnectedWithSelf.get(key)).sort((a, b) => JSON.parse(b[1].awarenessEpoch || b[1].epoch).epoch - JSON.parse(a[1].awarenessEpoch || a[1].epoch).epoch)), data.allUsers, newestMessage, false, this.getAttribute('active'))
   }
 
-  setActive (uid, ol, active = true, scroll = true) {
-    Array.from(ol.querySelectorAll('chat-m-user.active, wct-load-template-tag.active')).forEach(node => node.classList.remove('active'))
+  setActive (attributeName, attributeValue, parentNodes, active = true, scroll = true) {
+    parentNodes.reduce((acc, parentNode) => [...acc, ...(parentNode.querySelectorAll('.active') || [])], []).forEach(node => node.classList.remove('active'))
     let node
-    if (active && (node = ol.querySelector(`chat-m-user[uid='${uid}'], wct-load-template-tag[uid='${uid}']`))) node.classList.add('active')
-    if (active && scroll) scrollElIntoView(() => ol.querySelector('chat-m-user.active, wct-load-template-tag.active'), null, this.dialogEl, { behavior: 'smooth', block: 'nearest' })
+    if (active) {
+      // @ts-ignore
+      if (parentNodes.some(parentNode => (node = parentNode.querySelector(`[${attributeName}='${attributeValue}']`)))) node.classList.add('active')
+      if (scroll) scrollElIntoView(() => {
+        let node
+        if(parentNodes.some(parentNode => (node = parentNode.querySelector('.active')))) return node
+        return null
+      }, null, this.dialogEl, { behavior: 'smooth', block: 'nearest' })
+    }
+    if (node) {
+      this.setAttribute('active', attributeValue)
+    } else {
+      this.removeAttribute('active')
+    }
   }
 
   static updateIconStatesEl (iconStatesEl, data, online) {

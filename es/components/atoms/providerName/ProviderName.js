@@ -23,7 +23,10 @@ export default class ProviderName extends Shadow() {
       event.stopPropagation()
       if (this.hasAttribute('provider-dialog-show-event')) {
         this.dispatchEvent(new CustomEvent('provider-dialog-show-event', {
-          detail: { name: this.dataName },
+          detail: {
+            id: this.getAttribute('id'),
+            name: this.dataName
+          },
           bubbles: true,
           cancelable: true,
           composed: true

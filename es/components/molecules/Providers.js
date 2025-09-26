@@ -1,6 +1,7 @@
 // @ts-check
 import { Shadow } from '../../../../event-driven-web-components-prototypes/src/Shadow.js'
 import { jsonStringifyMapUrlReplacer } from '../../../../Helpers.js'
+import { scrollElIntoView } from '../../../../event-driven-web-components-prototypes/src/helpers/Helpers.js'
 
 /* global Environment */
 /* global self */
@@ -80,19 +81,16 @@ export default class Providers extends Shadow() {
       this.dialog.show('show-modal')
       if (lastProvidersEventGetData) {
         clearTimeout(timeoutId)
-        this.renderData(await lastProvidersEventGetData(), await (await this.roomPromise).room, false)
+        await this.renderData(await lastProvidersEventGetData(), await (await this.roomPromise).room, false)
         // the graph has to be refreshed when dialog opens
         if (this.lastP2pGraphData) Providers.renderP2pGraph(this.providersGraph, await this.lastP2pGraphData, this.lastSeparator, true)
       }
     }
     this.providerDialogShowEventEventListener = event => {
       this.dialog.close()
-      this.openDialog(event)
-      if (event.detail?.name) {
-        this.setAttribute('active', event.detail.name)
-        this.setActive(event.detail.name, this.usersOl)
-        this.setActive(event.detail.name, this.allUsersOl)
-      }
+      this.openDialog(event).then(() => {
+        if (event.detail?.id) this.setActive('id', event.detail.id, [this.providersDiv])
+      })
     }
 
     this.submitWebsocketUrlEventListener = event => {
@@ -186,6 +184,11 @@ export default class Providers extends Shadow() {
       }))
     }
 
+    this.p2pGraphClickEventListener = event => {
+      // @ts-ignore
+      if (event.detail.graphUserObj) this.setActive('id', `${self.Environment?.providerNamespace || 'p_'}${event.detail.graphUserObj.id}`, [this.providersDiv], event.detail.isActive)
+    }
+
     this.onlineEventListener = async event => {
       this.setAttribute('online', '')
       this.dialog?.setAttribute('online', '')
@@ -229,6 +232,7 @@ export default class Providers extends Shadow() {
     this.globalEventTarget.addEventListener('yjs-providers-change', this.providersChangeEventListener)
     this.globalEventTarget.addEventListener('provider-dialog-show-event', this.providerDialogShowEventEventListener)
     this.iconStatesEl.addEventListener('click', this.openDialog)
+    this.addEventListener('p2p-graph-click', this.p2pGraphClickEventListener)
     self.addEventListener('online', this.onlineEventListener)
     self.addEventListener('offline', this.offlineEventListener)
     self.addEventListener('resize', this.resizeEventListener)
@@ -259,6 +263,7 @@ export default class Providers extends Shadow() {
     this.globalEventTarget.removeEventListener('yjs-providers-change', this.providersChangeEventListener)
     this.globalEventTarget.removeEventListener('provider-dialog-show-event', this.providerDialogShowEventEventListener)
     this.iconStatesEl.removeEventListener('click', this.openDialog)
+    this.removeEventListener('p2p-graph-click', this.p2pGraphClickEventListener)
     self.removeEventListener('online', this.onlineEventListener)
     self.removeEventListener('offline', this.offlineEventListener)
     self.removeEventListener('resize', this.resizeEventListener)
@@ -481,7 +486,7 @@ export default class Providers extends Shadow() {
 
   renderData (data, roomName, force) {
     this.lastSeparator = data.separator
-    new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-providers', {
+    return new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-providers', {
       detail: {
         resolve
       },
@@ -516,14 +521,23 @@ export default class Providers extends Shadow() {
     })
   }
 
-  setActive (uid, ol, active = true, scroll = true) {
-    console.log('****setActive*****', {uid, ol, active, scroll})
-    /*
-    Array.from(ol.querySelectorAll('chat-m-user.active, wct-load-template-tag.active')).forEach(node => node.classList.remove('active'))
+  setActive (attributeName, attributeValue, parentNodes, active = true, scroll = true) {
+    parentNodes.reduce((acc, parentNode) => [...acc, ...(parentNode.querySelectorAll('.active') || [])], []).forEach(node => node.classList.remove('active'))
     let node
-    if (active && (node = ol.querySelector(`chat-m-user[uid='${uid}'], wct-load-template-tag[uid='${uid}']`))) node.classList.add('active')
-    if (active && scroll) scrollElIntoView(() => this.usersOl.querySelector('chat-m-user.active, wct-load-template-tag.active') || this.allUsersOl.querySelector('chat-m-user.active, wct-load-template-tag.active'), null, this.dialog, { behavior: 'smooth', block: 'nearest' })
-    */
+    if (active) {
+      // @ts-ignore
+      if (parentNodes.some(parentNode => (node = parentNode.querySelector(`[${attributeName}='${attributeValue}']`)))) node.classList.add('active')
+      if (scroll) scrollElIntoView(() => {
+        let node
+        if(parentNodes.some(parentNode => (node = parentNode.querySelector('.active')))) return node
+        return null
+      }, null, this.dialogEl, { behavior: 'smooth', block: 'nearest' })
+    }
+    if (node) {
+      this.setAttribute('active', attributeValue)
+    } else {
+      this.removeAttribute('active')
+    }
   }
 
   static async toggleIconStates (iconStatesEl, data, online) {
