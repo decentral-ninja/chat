@@ -392,6 +392,7 @@ export default class Users extends Shadow() {
 
   async renderData (data, separator) {
     Users.updateIconStatesEl(this.iconStatesEl, data, this.hasAttribute('online'))
+    const anyUsersGraphIsIntersecting = this.usersGraph.querySelector('[intersecting]') || this.usersGraphHistory.querySelector('[intersecting]')
     // @ts-ignore
     const getArgs = this.isUserGraphTabActive
       ? async () => [this.usersGraph, data.usersConnectedWithSelf, separator, this.getAttribute('active')]
@@ -406,8 +407,8 @@ export default class Users extends Shadow() {
       cancelable: true,
       composed: true
     }))).then(chatEventDetail => chatEventDetail.getAll()).then(textObjs => textObjs.sort((a, b) => a.timestamp - b.timestamp).slice(-1)[0]))
-    await Users.renderUserTableList(this.usersOl, this.allUsersOl, data.usersConnectedWithSelf, data.allUsers, newestMessage, true, this.getAttribute('active'))
-    await Users.renderUserTableList(this.allUsersOl, this.usersOl, new Map(Array.from(data.allUsers).filter(([key, user]) => !data.usersConnectedWithSelf.get(key)).sort((a, b) => JSON.parse(b[1].awarenessEpoch || b[1].epoch).epoch - JSON.parse(a[1].awarenessEpoch || a[1].epoch).epoch)), data.allUsers, newestMessage, false, this.getAttribute('active'))
+    await Users.renderUserTableList(this.usersOl, this.allUsersOl, data.usersConnectedWithSelf, data.allUsers, newestMessage, true, this.getAttribute('active'), anyUsersGraphIsIntersecting)
+    await Users.renderUserTableList(this.allUsersOl, this.usersOl, new Map(Array.from(data.allUsers).filter(([key, user]) => !data.usersConnectedWithSelf.get(key)).sort((a, b) => JSON.parse(b[1].awarenessEpoch || b[1].epoch).epoch - JSON.parse(a[1].awarenessEpoch || a[1].epoch).epoch)), data.allUsers, newestMessage, false, this.getAttribute('active'), anyUsersGraphIsIntersecting)
   }
 
   setActive (attributeName, attributeValue, parentNodes, active = true, scroll = true) {
@@ -459,7 +460,7 @@ export default class Users extends Shadow() {
     }
   }
 
-  static async renderUserTableList (targetList, otherList, users, allUsers, newestMessage, areConnectedUsers, activeUid) {
+  static async renderUserTableList (targetList, otherList, users, allUsers, newestMessage, areConnectedUsers, activeUid, anyUsersGraphIsIntersecting) {
     const tempDiv = document.createElement('div')
     tempDiv.innerHTML = await Array.from(users).reduce(async (acc, [key, user], i) => {
       const isUpToDate = areConnectedUsers || user.uid === newestMessage?.uid || JSON.parse(user.awarenessEpoch || user.epoch).epoch >= newestMessage?.timestamp
@@ -476,9 +477,9 @@ export default class Users extends Shadow() {
       let userNode
       if ((userNode = targetList.querySelector(`[uid='${user.uid}']`) || otherList.querySelector(`[uid='${user.uid}']`))) {
         if (!targetList.contains(userNode)) {
-          const intersectingEl = otherList.querySelector('[intersecting]') || targetList.querySelector('[intersecting]')
+          const intersectingEl = otherList.querySelector(`[intersecting]:not([uid='${user.uid}'])`) || targetList.querySelector(`[intersecting]:not([uid='${user.uid}'])`)
           targetList.appendChild(userNode)
-          scrollElIntoView(() => intersectingEl, null, this.dialogEl, { behavior: 'instant', block: 'nearest' }, 0, undefined, 1)
+          if (!anyUsersGraphIsIntersecting) scrollElIntoView(() => intersectingEl, null, this.dialogEl, { behavior: 'instant', block: 'nearest' }, 0, undefined, 1)
         }
         if (typeof userNode.update === 'function') {
           userNode.update(user, allUsers, isUpToDate, i)
