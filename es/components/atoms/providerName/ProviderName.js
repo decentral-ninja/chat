@@ -47,7 +47,7 @@ export default class ProviderName extends Shadow() {
       timeoutId = setTimeout(async () => {
         const providers = (await event.detail.getData()).providers
         const [providerName, providerUrl] = this.dataName.split(separator)
-        if (providers.get(providerName)?.has(providerUrl)) {
+        if (providers.get(providerName)?.get(providerUrl)?.find(user => user.isSelf)) {
           this.setAttribute('is-connected-with-self', '')
         } else {
           this.removeAttribute('is-connected-with-self')

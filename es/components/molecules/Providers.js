@@ -185,8 +185,23 @@ export default class Providers extends Shadow() {
     }
 
     this.p2pGraphClickEventListener = event => {
-      // @ts-ignore
-      if (event.detail.graphUserObj) this.setActive('id', `${self.Environment?.providerNamespace || 'p_'}${event.detail.graphUserObj.id}`, [this.providersDiv], event.detail.isActive)
+      // check if the event comes from an other p2p-graph or the one included inside this
+      if (event.composedPath().includes(this)) {
+        // graphUserObj.id expl.: localhost
+        // @ts-ignore
+        if (event.detail.graphUserObj) this.setActive('id', `${self.Environment?.providerNamespace || 'p_'}${event.detail.graphUserObj.id.replaceAll('.', '-')}`, [this.providersDiv], event.detail.isActive)
+      } else if (event.detail.graphProviderObj && event.detail.isActive) {
+        this.dialog.close()
+        this.openDialog(event).then(() => {
+          try {
+            // the graphProviderObj.id is supplied in form of expl.: websocket<>ws://localhost:1234
+            // @ts-ignore
+            this.setActive('id', `${self.Environment?.providerNamespace || 'p_'}${new URL(event.detail.graphProviderObj.id.split(this.lastSeparator)[1]).hostname.replaceAll('.', '-')}`, [this.providersDiv], event.detail.isActive)
+          } catch (error) {
+            console.warn('p2pGraphClickEventListener received a invalid event.detail.graphProviderObj.id', event.detail, error)
+          }
+        })
+      }
     }
 
     this.onlineEventListener = async event => {
@@ -232,7 +247,7 @@ export default class Providers extends Shadow() {
     this.globalEventTarget.addEventListener('yjs-providers-change', this.providersChangeEventListener)
     this.globalEventTarget.addEventListener('provider-dialog-show-event', this.providerDialogShowEventEventListener)
     this.iconStatesEl.addEventListener('click', this.openDialog)
-    this.addEventListener('p2p-graph-click', this.p2pGraphClickEventListener)
+    this.globalEventTarget.addEventListener('p2p-graph-click', this.p2pGraphClickEventListener)
     self.addEventListener('online', this.onlineEventListener)
     self.addEventListener('offline', this.offlineEventListener)
     self.addEventListener('resize', this.resizeEventListener)
@@ -263,7 +278,7 @@ export default class Providers extends Shadow() {
     this.globalEventTarget.removeEventListener('yjs-providers-change', this.providersChangeEventListener)
     this.globalEventTarget.removeEventListener('provider-dialog-show-event', this.providerDialogShowEventEventListener)
     this.iconStatesEl.removeEventListener('click', this.openDialog)
-    this.removeEventListener('p2p-graph-click', this.p2pGraphClickEventListener)
+    this.globalEventTarget.removeEventListener('p2p-graph-click', this.p2pGraphClickEventListener)
     self.removeEventListener('online', this.onlineEventListener)
     self.removeEventListener('offline', this.offlineEventListener)
     self.removeEventListener('resize', this.resizeEventListener)

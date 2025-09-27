@@ -475,7 +475,11 @@ export default class Users extends Shadow() {
       `
       let userNode
       if ((userNode = targetList.querySelector(`[uid='${user.uid}']`) || otherList.querySelector(`[uid='${user.uid}']`))) {
-        if (!targetList.contains(userNode)) targetList.appendChild(userNode)
+        if (!targetList.contains(userNode)) {
+          const intersectingEl = otherList.querySelector('[intersecting]') || targetList.querySelector('[intersecting]')
+          targetList.appendChild(userNode)
+          scrollElIntoView(() => intersectingEl, null, this.dialogEl, { behavior: 'instant', block: 'nearest' }, 0, undefined, 1)
+        }
         if (typeof userNode.update === 'function') {
           userNode.update(user, allUsers, isUpToDate, i)
         } else {

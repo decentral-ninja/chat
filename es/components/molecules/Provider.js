@@ -79,6 +79,10 @@ export default class Provider extends Intersection() {
       this.removeAttribute('touched')
       this.update(this.data, this.order)
     }
+
+    this.titleElClickEventListener = event => {
+      if (this.classList.contains('active')) this.classList.remove('active')
+    }
   }
 
   connectedCallback () {
@@ -95,6 +99,7 @@ export default class Provider extends Intersection() {
     this.addEventListener('connect', this.connectEventListener)
     this.addEventListener('disconnect', this.disconnectEventListener)
     this.addEventListener('undo', this.undoEventListener)
+    this.titleEl.addEventListener('click', this.titleElClickEventListener)
   }
 
   disconnectedCallback () {
@@ -106,6 +111,7 @@ export default class Provider extends Intersection() {
     this.removeEventListener('connect', this.connectEventListener)
     this.removeEventListener('disconnect', this.disconnectEventListener)
     this.removeEventListener('undo', this.undoEventListener)
+    this.titleEl.removeEventListener('click', this.titleElClickEventListener)
   }
 
   intersectionCallback (entries, observer) {
@@ -152,6 +158,10 @@ export default class Provider extends Intersection() {
         --color-hover: var(--color-yellow);
         --h2-word-break: break-all;
         position: relative;
+      }
+      :host(.active) > section > h2 {
+        cursor: pointer;
+        text-decoration: underline;
       }
       :host([updating]) > section > wct-button {
         --button-primary-background-color-custom: var(--color-gray);
