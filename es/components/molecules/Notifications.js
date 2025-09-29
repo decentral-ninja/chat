@@ -24,8 +24,8 @@ export default class Notifications extends Hover() {
       this.notificationsEventListener = event => {
         const roomName = this.getAttribute('room')
         const hostname = this.getAttribute('hostname')
-        let notifications = (event.detail.notifications[roomName] || []).filter(notification => !isMuted(event.detail.notificationMutes, event.detail.origins, roomName, notification.host))
-        if (hostname) notifications = notifications.filter(notification => notification.host === hostname)
+        let notifications = (event.detail.notifications[roomName] || []).filter(notification => !isMuted(event.detail.notificationMutes, event.detail.origins, roomName, notification.hostname))
+        if (hostname) notifications = notifications.filter(notification => notification.hostname === hostname)
         if (!this.hasAttribute('allow-mute')) this.hidden = !notifications.length
         if (notifications.length) {
           this.iconStatesEl.setAttribute('counter', notifications.length > this.notificationsMax ? `${this.notificationsMax}+` : notifications.length)
@@ -56,7 +56,7 @@ export default class Notifications extends Hover() {
           return acc + (event.detail.rooms.value[key]
             ? event.detail.notifications[key].filter(notification => {
               if (timestamps.includes(notification.timestamp)) return false
-              if (isMuted(event.detail.notificationMutes, event.detail.origins, key, notification.host)) return false
+              if (isMuted(event.detail.notificationMutes, event.detail.origins, key, notification.hostname)) return false
               timestamps.push(notification.timestamp)
               return true
             }).length
