@@ -81,7 +81,7 @@ export default class Providers extends Shadow() {
       this.dialog.show('show-modal')
       if (lastProvidersEventGetData) {
         clearTimeout(timeoutId)
-        await this.renderData(await lastProvidersEventGetData(), await (await this.roomPromise).room, false)
+        await this.renderData(await lastProvidersEventGetData(false), await (await this.roomPromise).room, false)
         // the graph has to be refreshed when dialog opens
         if (this.lastP2pGraphData) Providers.renderP2pGraph(this.providersGraph, await this.lastP2pGraphData, this.lastSeparator, true)
       }
@@ -175,6 +175,8 @@ export default class Providers extends Shadow() {
     this.providerDialogWasClosed = false
     this.providerDialogClosed = event => (this.providerDialogWasClosed = true)
 
+    this.getProviderDataResult = event => event.detail.resolve(lastProvidersEventGetData ? { lastProvidersEventGetData } : null)
+
     this.openUserDialogClickListener = event => {
       event.preventDefault()
       this.dispatchEvent(new CustomEvent('user-dialog-show-event', {
@@ -207,12 +209,12 @@ export default class Providers extends Shadow() {
     this.onlineEventListener = async event => {
       this.setAttribute('online', '')
       this.dialog?.setAttribute('online', '')
-      if (lastProvidersEventGetData) Providers.toggleIconStates(this.iconStatesEl, await lastProvidersEventGetData(), this.hasAttribute('online'))
+      if (lastProvidersEventGetData) Providers.toggleIconStates(this.iconStatesEl, await lastProvidersEventGetData(false), this.hasAttribute('online'))
     }
     this.offlineEventListener = async event => {
       this.removeAttribute('online')
       this.dialog?.removeAttribute('online')
-      if (lastProvidersEventGetData) Providers.toggleIconStates(this.iconStatesEl, await lastProvidersEventGetData(), this.hasAttribute('online'))
+      if (lastProvidersEventGetData) Providers.toggleIconStates(this.iconStatesEl, await lastProvidersEventGetData(false), this.hasAttribute('online'))
     }
     if (navigator.onLine) {
       this.onlineEventListener()
@@ -243,6 +245,7 @@ export default class Providers extends Shadow() {
     this.addEventListener('connect-provider', this.connectProviderEventListener)
     this.addEventListener('disconnect-provider', this.disconnectProviderEventListener)
     this.addEventListener('provider-dialog-closed', this.providerDialogClosed)
+    this.addEventListener('get-provider-data-result', this.getProviderDataResult)
     this.globalEventTarget.addEventListener('yjs-providers-data', this.providersEventListener)
     this.globalEventTarget.addEventListener('yjs-providers-change', this.providersChangeEventListener)
     this.globalEventTarget.addEventListener('provider-dialog-show-event', this.providerDialogShowEventEventListener)
@@ -273,6 +276,7 @@ export default class Providers extends Shadow() {
     this.removeEventListener('connect-provider', this.connectProviderEventListener)
     this.removeEventListener('disconnect-provider', this.disconnectProviderEventListener)
     this.removeEventListener('provider-dialog-closed', this.providerDialogClosed)
+    this.removeEventListener('get-provider-data-result', this.getProviderDataResult)
     this.dialog.dialogPromise.then(dialog => this.usersDialogLink.removeEventListener('click', this.openUserDialogClickListener))
     this.globalEventTarget.removeEventListener('yjs-providers-data', this.providersEventListener)
     this.globalEventTarget.removeEventListener('yjs-providers-change', this.providersChangeEventListener)
@@ -546,7 +550,7 @@ export default class Providers extends Shadow() {
         let node
         if(parentNodes.some(parentNode => (node = parentNode.querySelector('.active')))) return node
         return null
-      }, null, this.dialogEl, { behavior: 'smooth', block: 'nearest' })
+      }, null, this.dialogEl, { behavior: 'smooth', block: 'nearest' }, 500)
     }
     if (node) {
       this.setAttribute('active', attributeValue)

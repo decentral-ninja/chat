@@ -10,6 +10,10 @@ import { jsonParseMapUrlReviver } from '../../../../Helpers.js'
 * @type {CustomElementConstructor}
 */
 export default class Provider extends Intersection() {
+  static get observedAttributes () {
+    return ['class']
+  }
+
   constructor (id, name, data, order, roomName, options = {}, ...args) {
     super({ importMetaUrl: import.meta.url, intersectionObserverInit: {}, ...options }, ...args)
 
@@ -83,6 +87,13 @@ export default class Provider extends Intersection() {
     this.titleElClickEventListener = event => {
       if (this.classList.contains('active')) this.classList.remove('active')
     }
+
+    this.openDetailsEventListener = event => new Promise(resolve => this.dispatchEvent(new CustomEvent('get-provider-data-result', {
+      detail: { resolve },
+      bubbles: true,
+      cancelable: true,
+      composed: true
+    }))).then(detail => detail.lastProvidersEventGetData(false)).then(data => data.getWebsocketInfo(Array.from(this.data.urls.keys())[0])).then(info => (this.detailsContent.textContent = info.customMessage || info.error))
   }
 
   connectedCallback () {
@@ -100,6 +111,7 @@ export default class Provider extends Intersection() {
     this.addEventListener('disconnect', this.disconnectEventListener)
     this.addEventListener('undo', this.undoEventListener)
     this.titleEl.addEventListener('click', this.titleElClickEventListener)
+    this.addEventListener('open', this.openDetailsEventListener)
   }
 
   disconnectedCallback () {
@@ -112,6 +124,15 @@ export default class Provider extends Intersection() {
     this.removeEventListener('disconnect', this.disconnectEventListener)
     this.removeEventListener('undo', this.undoEventListener)
     this.titleEl.removeEventListener('click', this.titleElClickEventListener)
+    this.removeEventListener('open', this.openDetailsEventListener)
+  }
+
+  attributeChangedCallback (name, oldValue, newValue) {
+    if (this.classList.contains('active')) {
+      this.details.details.setAttribute('open', '')
+    } else {
+      this.details.details.removeAttribute('open', '')
+    }
   }
 
   intersectionCallback (entries, observer) {
@@ -159,7 +180,7 @@ export default class Provider extends Intersection() {
         --h2-word-break: break-all;
         position: relative;
       }
-      :host(.active) > section > h2 {
+      :host(.active) > section > wct-details::part(title) {
         cursor: pointer;
         text-decoration: underline;
       }
@@ -329,7 +350,14 @@ export default class Provider extends Intersection() {
           <wct-icon-mdx state="connecting" hover-on-parent-shadow-root-host id=connecting title="trying to connect" style="--color: var(--color-orange);" no-hover icon-url="../../../../../../img/icons/plug-connected.svg" size="2em"></wct-icon-mdx>
           <wct-icon-mdx state="disconnected" hover-on-parent-shadow-root-host id=disconnected title=disconnected style="--color: var(--color-secondary);" no-hover icon-url="../../../../../../img/icons/plug-connected-x.svg" size="2em"></wct-icon-mdx>
         </a-icon-states>
-        <h2 style="grid-area: title">Title</h2>
+        <wct-details style="grid-area: title">
+          <details>
+            <summary>
+              <h2 part=title>Title</h2>
+            </summary>
+            <div>fetching...</div>
+          </details>
+        </wct-details>
         <chat-m-notifications style="grid-area: notification" room="${this.roomName}" hostname="${Array.from(this.data?.urls || [])?.[0]?.[1].url.hostname || ''}" on-connected-request-notifications allow-mute no-click no-hover></chat-m-notifications>
         <div id=url style="grid-area: url">
           <select id=name></select>
@@ -365,6 +393,11 @@ export default class Provider extends Intersection() {
         // @ts-ignore
         path: `${this.importMetaUrl}../../../../web-components-toolbox/src/es/components/atoms/button/Button.js?${Environment?.version || ''}`,
         name: 'wct-button'
+      },
+      {
+        // @ts-ignore
+        path: `${this.importMetaUrl}../../../../web-components-toolbox/src/es/components/molecules/details/Details.js?${Environment?.version || ''}`,
+        name: 'wct-details'
       },
       {
         // @ts-ignore
@@ -495,8 +528,16 @@ export default class Provider extends Intersection() {
     return this.root.querySelector('a-icon-states')
   }
 
+  get details () {
+    return this.root.querySelector('wct-details')
+  }
+
+  get detailsContent () {
+    return this.details?.content
+  }
+
   get titleEl () {
-    return this.root.querySelector('h2')
+    return this.details?.root.querySelector('h2')
   }
 
   get section () {
