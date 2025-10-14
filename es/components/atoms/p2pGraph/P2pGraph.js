@@ -92,6 +92,11 @@ export default class P2pGraph extends Intersection() {
         filter: drop-shadow(0px 0px 0.5em var(--color-secondary));
       }
     `
+    self.requestAnimationFrame(timeStamp => this.css = /* css */`
+      :host(:not([has-height])) {
+        min-height: ${Math.round(this.clientWidth / 1.89)}px;
+      }
+    `)
     return Promise.resolve()
   }
 

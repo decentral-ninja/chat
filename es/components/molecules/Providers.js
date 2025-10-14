@@ -175,8 +175,6 @@ export default class Providers extends Shadow() {
     this.providerDialogWasClosed = false
     this.providerDialogClosed = event => (this.providerDialogWasClosed = true)
 
-    this.getProviderDataResult = event => event.detail.resolve(lastProvidersEventGetData ? { lastProvidersEventGetData } : null)
-
     this.openUserDialogClickListener = event => {
       event.preventDefault()
       this.dispatchEvent(new CustomEvent('user-dialog-show-event', {
@@ -245,7 +243,6 @@ export default class Providers extends Shadow() {
     this.addEventListener('connect-provider', this.connectProviderEventListener)
     this.addEventListener('disconnect-provider', this.disconnectProviderEventListener)
     this.addEventListener('provider-dialog-closed', this.providerDialogClosed)
-    this.addEventListener('get-provider-data-result', this.getProviderDataResult)
     this.globalEventTarget.addEventListener('yjs-providers-data', this.providersEventListener)
     this.globalEventTarget.addEventListener('yjs-providers-change', this.providersChangeEventListener)
     this.globalEventTarget.addEventListener('provider-dialog-show-event', this.providerDialogShowEventEventListener)
@@ -276,7 +273,6 @@ export default class Providers extends Shadow() {
     this.removeEventListener('connect-provider', this.connectProviderEventListener)
     this.removeEventListener('disconnect-provider', this.disconnectProviderEventListener)
     this.removeEventListener('provider-dialog-closed', this.providerDialogClosed)
-    this.removeEventListener('get-provider-data-result', this.getProviderDataResult)
     this.dialog.dialogPromise.then(dialog => this.usersDialogLink.removeEventListener('click', this.openUserDialogClickListener))
     this.globalEventTarget.removeEventListener('yjs-providers-data', this.providersEventListener)
     this.globalEventTarget.removeEventListener('yjs-providers-change', this.providersChangeEventListener)

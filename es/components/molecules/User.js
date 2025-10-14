@@ -151,6 +151,9 @@ export default class User extends Intersection() {
       :host > li > div > table > tbody > tr {
         display: contents;
       }
+      :host > li > div > table > tbody > tr > td {
+        overflow-wrap: anywhere;
+      }
       :host > li > div > table > tbody > tr.time-status {
         padding-bottom: var(--h-margin-bottom, 1em);
       }
@@ -181,9 +184,6 @@ export default class User extends Intersection() {
       }
       :host(:not([is-up-to-date])) > li > div > table > tbody > tr.time-status > td {
         border-bottom: 1px dotted var(--color-error);
-      }
-      :host > li > div > table > tbody > tr > td {
-        overflow-wrap: anywhere;
       }
       :host > li > div > table > tbody > tr.nickname {
         font-weight: bold;

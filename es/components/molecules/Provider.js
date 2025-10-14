@@ -88,12 +88,17 @@ export default class Provider extends Intersection() {
       if (this.classList.contains('active')) this.classList.remove('active')
     }
 
-    this.openDetailsEventListener = event => new Promise(resolve => this.dispatchEvent(new CustomEvent('get-provider-data-result', {
-      detail: { resolve },
-      bubbles: true,
-      cancelable: true,
-      composed: true
-    }))).then(detail => detail.lastProvidersEventGetData(false)).then(data => data.getWebsocketInfo(Array.from(this.data.urls.keys())[0])).then(info => (this.detailsContent.textContent = info.customMessage || info.error))
+    this.openDetailsEventListener = () => this.renderProviderInfo(true)
+
+    // this updates the min-height on resize, see updateHeight function for more info
+    let resizeTimeout = null
+    this.resizeEventListener = event => {
+      clearTimeout(resizeTimeout)
+      resizeTimeout = setTimeout(async () => {
+        // TODO: updateHeight on close open details-summary | same at user.js
+        if (!this.details.details.hasAttribute('open'))this.updateHeight()
+      }, 200)
+    }
   }
 
   connectedCallback () {
@@ -102,7 +107,10 @@ export default class Provider extends Intersection() {
     const showPromises = []
     if (this.shouldRenderCSS()) showPromises.push(this.renderCSS())
     if (this.shouldRenderHTML()) showPromises.push(this.renderHTML())
-    Promise.all(showPromises).then(() => (this.hidden = false))
+    Promise.all(showPromises).then(() => {
+      this.hidden = false
+      this.updateHeight()
+    })
     this.inputKeepAlive.addEventListener('change', this.inputKeepAliveChangeEventListener)
     this.selectName.addEventListener('change', this.selectNameChangeEventListener)
     this.selectProtocol.addEventListener('change', this.selectProtocolChangeEventListener)
@@ -112,6 +120,7 @@ export default class Provider extends Intersection() {
     this.addEventListener('undo', this.undoEventListener)
     this.titleEl.addEventListener('click', this.titleElClickEventListener)
     this.addEventListener('open', this.openDetailsEventListener)
+    self.addEventListener('resize', this.resizeEventListener)
   }
 
   disconnectedCallback () {
@@ -125,6 +134,7 @@ export default class Provider extends Intersection() {
     this.removeEventListener('undo', this.undoEventListener)
     this.titleEl.removeEventListener('click', this.titleElClickEventListener)
     this.removeEventListener('open', this.openDetailsEventListener)
+    self.removeEventListener('resize', this.resizeEventListener)
   }
 
   attributeChangedCallback (name, oldValue, newValue) {
@@ -138,6 +148,7 @@ export default class Provider extends Intersection() {
   intersectionCallback (entries, observer) {
     if (this.areEntriesIntersecting(entries)) {
       this.setAttribute('intersecting', '')
+      this.renderProviderInfo()
       if (this.doOnIntersection) this.doOnIntersection()
       return
     }
@@ -179,6 +190,12 @@ export default class Provider extends Intersection() {
         --color-hover: var(--color-yellow);
         --h2-word-break: break-all;
         position: relative;
+      }
+      :host {
+        display: block;
+      }
+      :host([has-height]:not([intersecting])) > section#grid {
+        display: none;
       }
       :host(.active) > section > wct-details::part(title) {
         cursor: pointer;
@@ -350,12 +367,56 @@ export default class Provider extends Intersection() {
           <wct-icon-mdx state="connecting" hover-on-parent-shadow-root-host id=connecting title="trying to connect" style="--color: var(--color-orange);" no-hover icon-url="../../../../../../img/icons/plug-connected.svg" size="2em"></wct-icon-mdx>
           <wct-icon-mdx state="disconnected" hover-on-parent-shadow-root-host id=disconnected title=disconnected style="--color: var(--color-secondary);" no-hover icon-url="../../../../../../img/icons/plug-connected-x.svg" size="2em"></wct-icon-mdx>
         </a-icon-states>
-        <wct-details style="grid-area: title">
+        <wct-details style="grid-area: title" no-auto-close>
+          <style protected>
+            :host > details > table {
+              margin: 0;
+            }
+            :host > details > table > tbody {
+              display: grid;
+              grid-template-columns: 1fr 1fr;
+              margin: 0;
+            }
+            :host > details > table > tbody > tr {
+              display: contents;
+            }
+            :host > details > table > tbody > tr > td {
+              border-bottom: 1px solid var(--color);
+              overflow-wrap: anywhere;
+            }
+            :host > details > table > tbody > tr > td:last-child {
+              font-family: monospace;
+            }
+            :host > details > table > tbody > tr > td#fallbacks > div {
+              align-items: center;
+              display: flex;
+              font-family: var(--font-family);
+            }
+            :host > details > table > tbody > tr > td#fallbacks > div > span {
+              font-size: 0.75em;
+              white-space: nowrap;
+            }
+          </style>
           <details>
             <summary>
               <h2 part=title>Title</h2>
             </summary>
-            <div>fetching...</div>
+            <table>
+              <tbody>
+                <tr>
+                  <td>Provider hostname:</td>
+                  <td id=title>fetching...</td>
+                </tr>
+                <tr>
+                  <td>Provider response:</td>
+                  <td id=custom-message>fetching...</td>
+                </tr>
+                <tr>
+                  <td>Fallbacks:</td>
+                  <td id=fallbacks>fetching...</td>
+                </tr>
+              </tbody>
+            </table>
           </details>
         </wct-details>
         <chat-m-notifications style="grid-area: notification" room="${this.roomName}" hostname="${Array.from(this.data?.urls || [])?.[0]?.[1].url.hostname || ''}" on-connected-request-notifications allow-mute no-click no-hover></chat-m-notifications>
@@ -381,6 +442,7 @@ export default class Provider extends Intersection() {
       </section>
     `
     this.html = this.customStyle
+    this.html = this.customStyleHeight
     this.inputKeepAliveChangeEventListener({ target: { value: this.inputKeepAlive.value } }, true)
     this.update(this.data, this.order, true)
     return this.fetchModules([
@@ -408,6 +470,11 @@ export default class Provider extends Intersection() {
         // @ts-ignore
         path: `${this.importMetaUrl}./Notifications.js?${Environment?.version || ''}`,
         name: 'chat-m-notifications'
+      },
+      {
+        // @ts-ignore
+        path: `${this.importMetaUrl}../atoms/providerName/ProviderName.js?${Environment?.version || ''}`,
+        name: 'chat-a-provider-name'
       }
     ])
   }
@@ -487,6 +554,7 @@ export default class Provider extends Intersection() {
         if (selected && keepAlive === this.keepAliveDefaultValue && urlContainer.url.searchParams.get('keep-alive') !== null && !isNaN(currentKeepAlive = Number(urlContainer.url.searchParams.get('keep-alive')))) keepAlive = currentKeepAlive
       })
       this.inputKeepAliveChangeEventListener({ target: { value: (this.inputKeepAlive.value = keepAlive) } }, true)
+      this.updateHeight()
       this.doOnIntersection = null
     }
     if (this.hasAttribute('intersecting')) this.doOnIntersection()
@@ -504,6 +572,71 @@ export default class Provider extends Intersection() {
       select.appendChild(option)
     }
     if (!option.selected) option.selected = selected
+  }
+
+  // Due to performance issues, dialog open took around 1300ms (after this change ca. 350ms) on a chat with many users. This eliminated the recalculate style thanks to :host([has-height]:not([intersecting])) > li: display: none; for not intersecting user components but also keeps the height, to avoid weird scrolling effects.
+  updateHeight (clear = false) {
+    this.removeAttribute('has-height')
+    this.customStyleHeight.innerText = ''
+    if (!clear) self.requestAnimationFrame(timeStamp => {
+      this.customStyleHeight.innerText = /* css */`
+        :host {
+          min-height: ${this.clientHeight}px;
+        }
+      `
+      this.setAttribute('has-height', '')
+    })
+  }
+
+  renderProviderInfo (force) {
+    return this.getProvidersEventDetail().then(providersEventDetail => providersEventDetail.getData(false)).then(data => {
+      const urlInfo = Array.from(this.data.urls).reduce((acc, [origin, urlContainer]) => {
+        if (urlContainer.name === 'websocket') acc.hasWebsocket = true
+        if (urlContainer.url.hostname) acc.hostname = urlContainer.url.hostname
+        return acc
+      }, {
+        hostname: '',
+        hasWebsocket: false
+      })
+      // TODO: when urlInfo.hasWebsocket === false, then ping instead
+      // TODO: update icon
+      data.getWebsocketInfo(Array.from(this.data.urls.keys())[0], force).then(info => {
+        // TODO: add os.cpus etc. calc and show icon when performance below threshold
+        this.detailsCustomTitle.textContent = urlInfo.hostname
+        if (info.error) {
+          // TODO: on error ping instead
+          this.detailsCustomMessage.textContent = this.detailsFallbacks.textContent = info.error
+        } else {
+          this.detailsCustomMessage.textContent = info.customMessage
+          // TODO: by click add received providerFallback provider-dialog-show-event rendering it with renderProvidersList
+          if (Array.isArray(info.providerFallbacks)) {
+            const tempDiv = document.createElement('div')
+            tempDiv.innerHTML = info.providerFallbacks.reduce((acc, [name, providers]) => {
+              return acc + providers.reduce((acc, href) => {
+                // render or update
+                const hostname = new URL(href).hostname
+                // @ts-ignore
+                const id = `${self.Environment?.providerNamespace || 'p_'}${hostname.replaceAll('.', '-')}` // string <ident> without dots https://developer.mozilla.org/en-US/docs/Web/CSS/ident
+                const renderProviderName = () => /* html */`<div><chat-a-provider-name id="${id}" provider-dialog-show-event><span name>${name}<>${hostname}</span></chat-a-provider-name><span>&nbsp;(${name})</span></div>`
+                if (!this.detailsFallbacks.querySelector(`#${id}`) && urlInfo.hostname !== hostname) return acc + renderProviderName()
+                return acc
+              }, '')
+            }, '')
+            if (!this.detailsFallbacks.children.length) this.detailsFallbacks.textContent = ''
+            Array.from(tempDiv.children).forEach(child => this.detailsFallbacks.appendChild(child))
+          }
+        }
+      })
+    })
+  }
+
+  getProvidersEventDetail (force) {
+    return (!force && this._providersEventDetail) || (this._providersEventDetail = new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-providers-event-detail', {
+      detail: { resolve },
+      bubbles: true,
+      cancelable: true,
+      composed: true
+    }))))
   }
 
   getUrlHrefObj () {
@@ -532,12 +665,20 @@ export default class Provider extends Intersection() {
     return this.root.querySelector('wct-details')
   }
 
-  get detailsContent () {
-    return this.details?.content
-  }
-
   get titleEl () {
     return this.details?.root.querySelector('h2')
+  }
+
+  get detailsCustomTitle () {
+    return this.details?.root.querySelector('#title')
+  }
+
+  get detailsCustomMessage () {
+    return this.details?.root.querySelector('#custom-message')
+  }
+
+  get detailsFallbacks () {
+    return this.details?.root.querySelector('#fallbacks')
   }
 
   get section () {
@@ -583,6 +724,17 @@ export default class Provider extends Intersection() {
     return (
       this._customStyle ||
         (this._customStyle = (() => {
+          const style = document.createElement('style')
+          style.setAttribute('protected', 'true')
+          return style
+        })())
+    )
+  }
+
+  get customStyleHeight () {
+    return (
+      this._customStyleHeight ||
+        (this._customStyleHeight = (() => {
           const style = document.createElement('style')
           style.setAttribute('protected', 'true')
           return style
