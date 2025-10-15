@@ -359,7 +359,7 @@ export default class Input extends Shadow() {
       <div>
         <emoji-button></emoji-button>
         <textarea enterkeyhint="enter" placeholder="type your message..." rows="2"></textarea>
-        <wct-button id=send namespace="button-primary-" click-no-toggle-active>
+        <wct-button id=send title=send namespace="button-primary-" click-no-toggle-active>
           <wct-icon-mdx title=send icon-url="../../../../../../img/icons/send-2.svg" size="1.5em"></wct-icon-mdx>
         </wct-button>
         <wct-icon-mdx id=wormhole title="Upload your files at wormhole and copy/paste the link into the chat to share..." icon-url="../../../../../../img/icons/file-upload.svg" size="3em"></wct-icon-mdx>

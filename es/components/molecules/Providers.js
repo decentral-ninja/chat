@@ -89,7 +89,7 @@ export default class Providers extends Shadow() {
     this.providerDialogShowEventEventListener = event => {
       this.dialog.close()
       this.openDialog(event).then(() => {
-        if (event.detail?.id) this.setActive('id', event.detail.id, [this.providersDiv])
+        if (event.detail?.id) this.setActive('id', event.detail.id, [this.providersDiv], undefined, undefined, event.detail.name, event.detail.href)
       })
     }
 
@@ -536,12 +536,37 @@ export default class Providers extends Shadow() {
     })
   }
 
-  setActive (attributeName, attributeValue, parentNodes, active = true, scroll = true) {
+  /**
+   * Description
+   * 
+   * @async
+   * @param {string} attributeName
+   * @param {string} attributeValue
+   * @param {any[]} parentNodes
+   * @param {boolean} [active=true]
+   * @param {boolean} [scroll=true]
+   * @param {import("../../../../event-driven-web-components-yjs/src/es/EventDrivenYjs.js").ProviderNames | null} [name=null]
+   * @param {string | null} [href=null]
+   * @returns {Promise<void>}
+   */
+  async setActive (attributeName, attributeValue, parentNodes, active = true, scroll = true, name = null, href = null) {
     parentNodes.reduce((acc, parentNode) => [...acc, ...(parentNode.querySelectorAll('.active') || [])], []).forEach(node => node.classList.remove('active'))
     let node
     if (active) {
       // @ts-ignore
       if (parentNodes.some(parentNode => (node = parentNode.querySelector(`[${attributeName}='${attributeValue}']`)))) node.classList.add('active')
+      // generate provider in case this provider is not present
+      if (!node && name && href) {
+        const url = new URL(href)
+        const tempDiv = document.createElement('div')
+        tempDiv.innerHTML = Providers.renderProvider(attributeValue, name, 0, {
+          origins: ['get-info'],
+          status: ['fallback'],
+          // @ts-ignore
+          urls: new Map([[url.origin, { name, url, status: ['unknown'], origins: ['get-info'] }]])
+        }, await (await this.roomPromise).room, true)
+        Array.from(tempDiv.children).forEach(child => this.providersDiv.appendChild(child))
+      }
       if (scroll) scrollElIntoView(() => {
         let node
         if(parentNodes.some(parentNode => (node = parentNode.querySelector('.active')))) return node
@@ -577,7 +602,7 @@ export default class Providers extends Shadow() {
       /// / render or update
       // @ts-ignore
       const id = `${self.Environment?.providerNamespace || 'p_'}${name.replaceAll('.', '-')}` // string <ident> without dots https://developer.mozilla.org/en-US/docs/Web/CSS/ident
-      const renderProvider = () => /* html */`<wct-load-template-tag id=${id} no-css style="order: ${i};" copy-class-list><template><chat-m-provider><template>${JSON.stringify({ id, name, data: providerData, order: i, roomName }, jsonStringifyMapUrlReplacer)}</template></chat-m-provider></template></wct-load-template-tag>`
+      const renderProvider = () => Providers.renderProvider(id, name, i, providerData, roomName)
       let provider
       if ((provider = div.querySelector(`#${id}`))) {
         if (typeof provider.update === 'function') {
@@ -598,6 +623,22 @@ export default class Providers extends Shadow() {
     }, [])
     Providers.renderP2pGraph(providersGraph, p2pGraphData, data.separator)
     return p2pGraphData
+  }
+
+  /**
+   * Render a provider component
+   * 
+   * @static
+   * @param {string} id
+   * @param {string} name
+   * @param {number} i
+   * @param {import("../../../../event-driven-web-components-yjs/src/es/controllers/Providers.js").Provider} providerData
+   * @param {string} roomName
+   * @param {boolean} [active=false]
+   * @returns {string}
+   */
+  static renderProvider (id, name, i, providerData, roomName, active = false) {
+    return /* html */`<wct-load-template-tag id=${id} no-css style="order: ${i};" copy-class-list ${active ? 'class=active' : ''}><template><chat-m-provider ${active ? 'class=active' : ''}><template>${JSON.stringify({ id, name, data: providerData, order: i, roomName }, jsonStringifyMapUrlReplacer)}</template></chat-m-provider></template></wct-load-template-tag>`
   }
 
   static renderP2pGraph (graph, data, separator, force = false) {

@@ -25,7 +25,8 @@ export default class ProviderName extends Shadow() {
         this.dispatchEvent(new CustomEvent('provider-dialog-show-event', {
           detail: {
             id: this.getAttribute('id'),
-            name: this.dataName
+            name: this.dataName?.split(separator)[0],
+            href: this.dataName?.split(separator)[1]
           },
           bubbles: true,
           cancelable: true,
@@ -188,7 +189,12 @@ export default class ProviderName extends Shadow() {
         <${this.hTagName}>${this.dataName?.split(separator)[1] || 'None'}</${this.hTagName}>
       </a>
     `
-    getHexColor(this.dataName).then(hex => this.avatar.setAttribute('style', `background-color: ${hex}`))
+    try {
+      const url = new URL(this.dataName?.split(separator)[1])
+      getHexColor(url.host).then(hex => this.avatar.setAttribute('style', `background-color: ${hex}`))
+    } catch (error) {
+      getHexColor(this.dataName).then(hex => this.avatar.setAttribute('style', `background-color: ${hex}`))
+    }
     return this.fetchModules([
       {
         // @ts-ignore

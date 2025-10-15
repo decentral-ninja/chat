@@ -23,6 +23,10 @@ export default class User extends Intersection() {
       this.order = order
     }
 
+    this.closeDetailsEventListener = event => this.updateHeight(true)
+
+    this.detailsAnimationendEventListener = event => this.updateHeight()
+
     // this updates the min-height on resize, see updateHeight function for more info
     let resizeTimeout = null
     this.resizeEventListener = event => {
@@ -41,11 +45,15 @@ export default class User extends Intersection() {
       this.hidden = false
       this.updateHeight()
     })
+    this.addEventListener('close', this.closeDetailsEventListener)
+    this.addEventListener('wct-details-animationend', this.detailsAnimationendEventListener)
     self.addEventListener('resize', this.resizeEventListener)
   }
   
   disconnectedCallback () {
     super.disconnectedCallback()
+    this.removeEventListener('close', this.closeDetailsEventListener)
+    this.removeEventListener('wct-details-animationend', this.detailsAnimationendEventListener)
     self.removeEventListener('resize', this.resizeEventListener)
   }
 
@@ -291,9 +299,9 @@ export default class User extends Intersection() {
                       : key === 'awarenessEpoch' || key === 'epoch'
                       ? 'last time visited:'
                       : key === 'mutuallyConnectedUsers'
-                      ? 'actively connected users:'
-                      : key === 'connectedUsers'
                       ? 'connected users:'
+                      : key === 'connectedUsers'
+                      ? 'last connected users:'
                       : key === 'uid'
                       ? 'unique id:'
                       : `${key}:`
@@ -383,16 +391,21 @@ export default class User extends Intersection() {
 
   // Due to performance issues, dialog open took around 1300ms (after this change ca. 350ms) on a chat with many users. This eliminated the recalculate style thanks to :host([has-height]:not([intersecting])) > li: display: none; for not intersecting user components but also keeps the height, to avoid weird scrolling effects.
   updateHeight (clear = false) {
-    this.removeAttribute('has-height')
-    this.customStyleHeight.innerText = ''
-    if (!clear) self.requestAnimationFrame(timeStamp => {
-      this.customStyleHeight.innerText = /* css */`
-        :host {
-          min-height: ${this.clientHeight}px;
-        }
-      `
-      this.setAttribute('has-height', '')
-    })
+    // wct-details has an animation, which is triggered when intersecting, this animation is typically 300ms when not specified by attribute open-duration
+    // set --animation: none; if this has still side effects
+    clearTimeout(this._timeoutUpdateHeight)
+    this._timeoutUpdateHeight = setTimeout(() => {
+      this.removeAttribute('has-height')
+      this.customStyleHeight.innerText = ''
+      if (!clear) self.requestAnimationFrame(timeStamp => {
+        this.customStyleHeight.innerText = /* css */`
+          :host {
+            min-height: ${this.clientHeight}px;
+          }
+        `
+        this.setAttribute('has-height', '')
+      })
+    }, clear ? 0 : 350)
   }
 
   static renderNickname (nickname) {

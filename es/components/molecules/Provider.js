@@ -1,6 +1,7 @@
 // @ts-check
 import { Intersection } from '../../../../web-components-toolbox/src/es/components/prototypes/Intersection.js'
 import { jsonParseMapUrlReviver } from '../../../../Helpers.js'
+import { separator } from '../../../../event-driven-web-components-yjs/src/es/controllers/Users.js'
 
 /* global Environment */
 
@@ -54,7 +55,7 @@ export default class Provider extends Intersection() {
       event.stopPropagation()
       this.removeAttribute('touched')
       this.setAttribute('updating', '')
-      this.iconStatesEl.setAttribute('updating', '')
+      this.iconConnectionState.setAttribute('updating', '')
       this.dispatchEvent(new CustomEvent('connect-provider', {
         detail: {
           urlHrefObj: this.getUrlHrefObj()
@@ -68,7 +69,7 @@ export default class Provider extends Intersection() {
       event.stopPropagation()
       this.removeAttribute('touched')
       this.setAttribute('updating', '')
-      this.iconStatesEl.setAttribute('updating', '')
+      this.iconConnectionState.setAttribute('updating', '')
       this.dispatchEvent(new CustomEvent('disconnect-provider', {
         detail: {
           urlHrefObj: this.getUrlHrefObj()
@@ -88,16 +89,25 @@ export default class Provider extends Intersection() {
       if (this.classList.contains('active')) this.classList.remove('active')
     }
 
-    this.openDetailsEventListener = () => this.renderProviderInfo(true)
+    this.iconPingStateClickEventListener = event => {
+      if (this.details.details.hasAttribute('open')) {
+        this.details.details.removeAttribute('open')
+      } else {
+        this.details.details.setAttribute('open', '')
+      }
+    }
+
+    this.openDetailsEventListener = event => this.renderProviderInfo(true)
+
+    this.closeDetailsEventListener = event => this.updateHeight(true)
+
+    this.detailsAnimationendEventListener = event => this.updateHeight()
 
     // this updates the min-height on resize, see updateHeight function for more info
     let resizeTimeout = null
     this.resizeEventListener = event => {
       clearTimeout(resizeTimeout)
-      resizeTimeout = setTimeout(async () => {
-        // TODO: updateHeight on close open details-summary | same at user.js
-        if (!this.details.details.hasAttribute('open'))this.updateHeight()
-      }, 200)
+      resizeTimeout = setTimeout(async () => this.updateHeight(), 200)
     }
   }
 
@@ -119,7 +129,10 @@ export default class Provider extends Intersection() {
     this.addEventListener('disconnect', this.disconnectEventListener)
     this.addEventListener('undo', this.undoEventListener)
     this.titleEl.addEventListener('click', this.titleElClickEventListener)
+    this.iconPingState.addEventListener('click', this.iconPingStateClickEventListener)
     this.addEventListener('open', this.openDetailsEventListener)
+    this.addEventListener('close', this.closeDetailsEventListener)
+    this.addEventListener('wct-details-animationend', this.detailsAnimationendEventListener)
     self.addEventListener('resize', this.resizeEventListener)
   }
 
@@ -133,7 +146,10 @@ export default class Provider extends Intersection() {
     this.removeEventListener('disconnect', this.disconnectEventListener)
     this.removeEventListener('undo', this.undoEventListener)
     this.titleEl.removeEventListener('click', this.titleElClickEventListener)
+    this.iconPingState.removeEventListener('click', this.iconPingStateClickEventListener)
     this.removeEventListener('open', this.openDetailsEventListener)
+    this.removeEventListener('close', this.closeDetailsEventListener)
+    this.removeEventListener('wct-details-animationend', this.detailsAnimationendEventListener)
     self.removeEventListener('resize', this.resizeEventListener)
   }
 
@@ -188,7 +204,9 @@ export default class Provider extends Intersection() {
         --button-secondary-height: 100%;
         --color: var(--a-color);
         --color-hover: var(--color-yellow);
-        --h2-word-break: break-all;
+        --h2-word-break: break-word;
+        --h2-font-family: var(--font-family);
+        --h2-font-size: 2em;
         position: relative;
       }
       :host {
@@ -243,10 +261,14 @@ export default class Provider extends Intersection() {
         align-items: center;
         gap: var(--grid-gap, 0.5em);
       }
-      :host > section > a-icon-states {
-        display: block;
+      :host > section > div.icons {
+        display: flex;
         align-self: start;
         justify-self: start;
+        gap: 1em;
+      }
+      :host > section > div.icons > #ping-state {
+        cursor: pointer;
       }
       :host > section > chat-m-notifications {
         display: none;
@@ -362,14 +384,23 @@ export default class Provider extends Intersection() {
     // keep-alive max=10days, value=1day, step=1h
     this.html = /* html */`
       <section id=grid>
-        <a-icon-states state="disconnected" style="grid-area: connectionStateIcon">
-          <wct-icon-mdx state="connected" hover-on-parent-shadow-root-host id=connected title=connected style="--color: var(--color-green-full);" no-hover icon-url="../../../../../../img/icons/plug-connected.svg" size="2em"></wct-icon-mdx>
-          <wct-icon-mdx state="connecting" hover-on-parent-shadow-root-host id=connecting title="trying to connect" style="--color: var(--color-orange);" no-hover icon-url="../../../../../../img/icons/plug-connected.svg" size="2em"></wct-icon-mdx>
-          <wct-icon-mdx state="disconnected" hover-on-parent-shadow-root-host id=disconnected title=disconnected style="--color: var(--color-secondary);" no-hover icon-url="../../../../../../img/icons/plug-connected-x.svg" size="2em"></wct-icon-mdx>
-        </a-icon-states>
-        <wct-details style="grid-area: title" no-auto-close>
+        <div class=icons style="grid-area: connectionStateIcon">
+          <a-icon-states id=ping-state>
+            <wct-icon-mdx state="default" title="pinging..." icon-url="../../../../../../img/icons/network.svg" size="2em"></wct-icon-mdx>
+            <wct-icon-mdx state="fetch-success" title="fetch successful!" style="color:var(--color-green-full)" icon-url="../../../../../../img/icons/network.svg" size="2em"></wct-icon-mdx>
+            <wct-icon-mdx state="ping-success" title="ping successful!" style="color:var(--color-orange)" icon-url="../../../../../../img/icons/network.svg" size="2em"></wct-icon-mdx>
+            <wct-icon-mdx state="error" title="not able to fetch nor ping the provider" style="color:var(--color-error)" icon-url="../../../../../../img/icons/network-off.svg" size="2em"></wct-icon-mdx>
+          </a-icon-states>
+          <a-icon-states id=connection-state state="disconnected">
+            <wct-icon-mdx state="connected" hover-on-parent-shadow-root-host id=connected title=connected style="--color: var(--color-green-full);" no-hover icon-url="../../../../../../img/icons/plug-connected.svg" size="2em"></wct-icon-mdx>
+            <wct-icon-mdx state="connecting" hover-on-parent-shadow-root-host id=connecting title="trying to connect" style="--color: var(--color-orange);" no-hover icon-url="../../../../../../img/icons/plug-connected.svg" size="2em"></wct-icon-mdx>
+            <wct-icon-mdx state="disconnected" hover-on-parent-shadow-root-host id=disconnected title=disconnected style="--color: var(--color-error);" no-hover icon-url="../../../../../../img/icons/plug-connected-x.svg" size="2em"></wct-icon-mdx>
+          </a-icon-states>
+        </div>
+        <wct-details style="grid-area: title" animationend-event-name=wct-details-animationend>
           <style protected>
             :host > details > table {
+              --h3-margin: 1.143rem auto 0;
               margin: 0;
             }
             :host > details > table > tbody {
@@ -404,8 +435,7 @@ export default class Provider extends Intersection() {
             <table>
               <tbody>
                 <tr>
-                  <td>Provider hostname:</td>
-                  <td id=title>fetching...</td>
+                  <td style="grid-column: span 2;" colspan="2"><h3 id=title>...</h3></td>
                 </tr>
                 <tr>
                   <td>Provider response:</td>
@@ -414,6 +444,14 @@ export default class Provider extends Intersection() {
                 <tr>
                   <td>Fallbacks:</td>
                   <td id=fallbacks>fetching...</td>
+                </tr>
+                <tr>
+                  <td>Origins:</td>
+                  <td id=origins></td>
+                </tr>
+                <tr>
+                  <td>Status:</td>
+                  <td id=status></td>
                 </tr>
               </tbody>
             </table>
@@ -504,13 +542,13 @@ export default class Provider extends Intersection() {
       }
       let removeIconStateUpdating = true
       if (data.status.includes('connected')) {
-        this.iconStatesEl.setAttribute('state', 'connected')
+        this.iconConnectionState.setAttribute('state', 'connected')
       } else if (data.status.includes('active')) {
-        this.iconStatesEl.setAttribute('state', 'connecting')
-        this.iconStatesEl.setAttribute('updating', '')
+        this.iconConnectionState.setAttribute('state', 'connecting')
+        this.iconConnectionState.setAttribute('updating', '')
         removeIconStateUpdating = false
       } else {
-        this.iconStatesEl.setAttribute('state', 'disconnected')
+        this.iconConnectionState.setAttribute('state', 'disconnected')
       }
       if (removeDataUpdating && this.hasAttribute('updating')) {
         this.dispatchEvent(new CustomEvent('yjs-request-notifications', {
@@ -521,7 +559,7 @@ export default class Provider extends Intersection() {
         }))
         this.removeAttribute('updating')
       }
-      if (removeIconStateUpdating) this.iconStatesEl.removeAttribute('updating')
+      if (removeIconStateUpdating) this.iconConnectionState.removeAttribute('updating')
       // avoid updating when inputs got changed
       if (this.hasAttribute('touched')) return
       let keepAlive = this.keepAliveDefaultValue
@@ -576,19 +614,25 @@ export default class Provider extends Intersection() {
 
   // Due to performance issues, dialog open took around 1300ms (after this change ca. 350ms) on a chat with many users. This eliminated the recalculate style thanks to :host([has-height]:not([intersecting])) > li: display: none; for not intersecting user components but also keeps the height, to avoid weird scrolling effects.
   updateHeight (clear = false) {
-    this.removeAttribute('has-height')
-    this.customStyleHeight.innerText = ''
-    if (!clear) self.requestAnimationFrame(timeStamp => {
-      this.customStyleHeight.innerText = /* css */`
-        :host {
-          min-height: ${this.clientHeight}px;
-        }
-      `
-      this.setAttribute('has-height', '')
-    })
+    // wct-details has an animation, which is triggered when intersecting, this animation is typically 300ms when not specified by attribute open-duration
+    // set --animation: none; if this has still side effects
+    clearTimeout(this._timeoutUpdateHeight)
+    this._timeoutUpdateHeight = setTimeout(() => {
+      this.removeAttribute('has-height')
+      this.customStyleHeight.innerText = ''
+      if (!clear) self.requestAnimationFrame(timeStamp => {
+        this.customStyleHeight.innerText = /* css */`
+          :host {
+            min-height: ${this.clientHeight}px;
+          }
+        `
+        this.setAttribute('has-height', '')
+      })
+    }, clear ? 0 : 350)
   }
 
   renderProviderInfo (force) {
+    this.iconPingState.setAttribute('updating', '')
     return this.getProvidersEventDetail().then(providersEventDetail => providersEventDetail.getData(false)).then(data => {
       const urlInfo = Array.from(this.data.urls).reduce((acc, [origin, urlContainer]) => {
         if (urlContainer.name === 'websocket') acc.hasWebsocket = true
@@ -598,35 +642,51 @@ export default class Provider extends Intersection() {
         hostname: '',
         hasWebsocket: false
       })
-      // TODO: when urlInfo.hasWebsocket === false, then ping instead
-      // TODO: update icon
-      data.getWebsocketInfo(Array.from(this.data.urls.keys())[0], force).then(info => {
-        // TODO: add os.cpus etc. calc and show icon when performance below threshold
-        this.detailsCustomTitle.textContent = urlInfo.hostname
-        if (info.error) {
-          // TODO: on error ping instead
-          this.detailsCustomMessage.textContent = this.detailsFallbacks.textContent = info.error
+      this.detailsCustomTitle.textContent = urlInfo.hostname
+      const url = Array.from(this.data.urls.keys())[0]
+      this.detailsOrigins.textContent = this.data.origins.join(', ')
+      this.detailsStatus.textContent = this.data.status.join(', ')
+      const pingProvider = errorMessage => data.pingProvider(url, force).then(response => {
+        this.iconPingState.removeAttribute('updating')
+        if (response.status === 'success') {
+          this.detailsCustomMessage.textContent = 'Ping: success!'
+          this.iconPingState.setAttribute('state', 'ping-success')
         } else {
-          this.detailsCustomMessage.textContent = info.customMessage
-          // TODO: by click add received providerFallback provider-dialog-show-event rendering it with renderProvidersList
-          if (Array.isArray(info.providerFallbacks)) {
-            const tempDiv = document.createElement('div')
-            tempDiv.innerHTML = info.providerFallbacks.reduce((acc, [name, providers]) => {
-              return acc + providers.reduce((acc, href) => {
-                // render or update
-                const hostname = new URL(href).hostname
-                // @ts-ignore
-                const id = `${self.Environment?.providerNamespace || 'p_'}${hostname.replaceAll('.', '-')}` // string <ident> without dots https://developer.mozilla.org/en-US/docs/Web/CSS/ident
-                const renderProviderName = () => /* html */`<div><chat-a-provider-name id="${id}" provider-dialog-show-event><span name>${name}<>${hostname}</span></chat-a-provider-name><span>&nbsp;(${name})</span></div>`
-                if (!this.detailsFallbacks.querySelector(`#${id}`) && urlInfo.hostname !== hostname) return acc + renderProviderName()
-                return acc
-              }, '')
-            }, '')
-            if (!this.detailsFallbacks.children.length) this.detailsFallbacks.textContent = ''
-            Array.from(tempDiv.children).forEach(child => this.detailsFallbacks.appendChild(child))
-          }
+          this.detailsCustomMessage.textContent = `${errorMessage}; ping: failed!`
+          this.iconPingState.setAttribute('state', 'error')
         }
       })
+      if (urlInfo.hasWebsocket) {
+        data.getWebsocketInfo(url, force).then(info => {
+          if (info.error) {
+            this.detailsCustomMessage.textContent = this.detailsFallbacks.textContent = info.error
+            pingProvider(info.error)
+          } else {
+            this.detailsCustomMessage.textContent = info.customMessage
+            if (Array.isArray(info.providerFallbacks)) {
+              const tempDiv = document.createElement('div')
+              tempDiv.innerHTML = info.providerFallbacks.reduce((acc, [name, providers]) => {
+                return acc + providers.reduce((acc, href) => {
+                  // render or update
+                  const url = new URL(href)
+                  // @ts-ignore
+                  const id = `${self.Environment?.providerNamespace || 'p_'}${url.hostname.replaceAll('.', '-')}` // string <ident> without dots https://developer.mozilla.org/en-US/docs/Web/CSS/ident
+                  const renderProviderName = () => /* html */`<div><chat-a-provider-name id="${id}" provider-dialog-show-event><span name>${name}${separator}${url.origin}</span></chat-a-provider-name><span>&nbsp;(${name})</span></div>`
+                  if (!this.detailsFallbacks.querySelector(`#${id}`) && urlInfo.hostname !== url.hostname) return acc + renderProviderName()
+                  return acc
+                }, '')
+              }, '')
+              if (!this.detailsFallbacks.children.length) this.detailsFallbacks.textContent = ''
+              Array.from(tempDiv.children).forEach(child => this.detailsFallbacks.appendChild(child))
+            }
+            this.iconPingState.removeAttribute('updating')
+            this.iconPingState.setAttribute('state', 'fetch-success')
+          }
+        })
+      } else {
+        pingProvider('Server')
+        this.detailsFallbacks.textContent = 'None'
+      }
     })
   }
 
@@ -657,8 +717,12 @@ export default class Provider extends Intersection() {
     return { url, href: url.href, name: this.selectName.value }
   }
 
-  get iconStatesEl () {
-    return this.root.querySelector('a-icon-states')
+  get iconConnectionState () {
+    return this.root.querySelector('#connection-state')
+  }
+
+  get iconPingState () {
+    return this.root.querySelector('#ping-state')
   }
 
   get details () {
@@ -679,6 +743,14 @@ export default class Provider extends Intersection() {
 
   get detailsFallbacks () {
     return this.details?.root.querySelector('#fallbacks')
+  }
+
+  get detailsOrigins () {
+    return this.details?.root.querySelector('#origins')
+  }
+
+  get detailsStatus () {
+    return this.details?.root.querySelector('#status')
   }
 
   get section () {

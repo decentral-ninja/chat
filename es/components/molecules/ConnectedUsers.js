@@ -117,7 +117,7 @@ export default class ConnectedUsers extends Shadow() {
           }
         } else {
           this.html = /* html */`
-            <wct-details uid='${connectedUser.uid}' open-event-name='connected-users-details-open-${this.getAttribute('uid')}'>
+            <wct-details uid='${connectedUser.uid}' open-event-name='connected-users-details-open-${this.getAttribute('uid')}' animationend-event-name=wct-details-animationend>
               <style protected>
                 :host {
                   --child-margin: 0 0 0 1em;

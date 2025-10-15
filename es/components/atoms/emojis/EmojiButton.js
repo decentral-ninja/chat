@@ -82,7 +82,7 @@ export default class EmojiButton extends Shadow() {
   renderHTML () {
     this.html = /* html */`
       <div>
-        <button id='emojiPickerToggler'>&#128515;</button> <!-- Unicode for smiling face emoji -->
+        <button id='emojiPickerToggler' title=emoji>&#128515;</button> <!-- Unicode for smiling face emoji -->
         <emoji-picker></emoji-picker>
       </div>
     `
