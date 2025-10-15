@@ -421,7 +421,7 @@ export default class Users extends Shadow() {
         let node
         if(parentNodes.some(parentNode => (node = parentNode.querySelector('.active')))) return node
         return null
-      }, null, this.dialogEl, { behavior: 'smooth', block: 'nearest' })
+      }, ':not([intersecting])', this.dialogEl, { behavior: 'smooth', block: 'nearest' })
     }
     if (node) {
       this.setAttribute('active', attributeValue)

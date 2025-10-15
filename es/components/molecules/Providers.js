@@ -571,7 +571,7 @@ export default class Providers extends Shadow() {
         let node
         if(parentNodes.some(parentNode => (node = parentNode.querySelector('.active')))) return node
         return null
-      }, null, this.dialogEl, { behavior: 'smooth', block: 'nearest' }, 500)
+      }, ':not([intersecting])', this.dialogEl, { behavior: 'smooth', block: 'nearest' }, 500)
     }
     if (node) {
       this.setAttribute('active', attributeValue)
