@@ -103,6 +103,21 @@ export default class Provider extends Intersection() {
 
     this.detailsAnimationendEventListener = event => this.updateHeight()
 
+    this.onlineEventListener = async event => {
+      this.iconConnectionState.setAttribute('updating', '')
+      if (this.hasAttribute('intersecting')) this.renderProviderInfo(true)
+    }
+    this.renderProviderInfoForce = false
+    this.offlineEventListener = async event => {
+      this.iconConnectionState.setAttribute('state', 'offline')
+      this.renderProviderInfoForce = true
+    }
+    if (navigator.onLine) {
+      this.onlineEventListener()
+    } else {
+      this.offlineEventListener()
+    }
+
     // this updates the min-height on resize, see updateHeight function for more info
     let resizeTimeout = null
     this.resizeEventListener = event => {
@@ -133,6 +148,8 @@ export default class Provider extends Intersection() {
     this.addEventListener('open', this.openDetailsEventListener)
     this.addEventListener('close', this.closeDetailsEventListener)
     this.addEventListener('wct-details-animationend', this.detailsAnimationendEventListener)
+    self.addEventListener('online', this.onlineEventListener)
+    self.addEventListener('offline', this.offlineEventListener)
     self.addEventListener('resize', this.resizeEventListener)
   }
 
@@ -150,6 +167,8 @@ export default class Provider extends Intersection() {
     this.removeEventListener('open', this.openDetailsEventListener)
     this.removeEventListener('close', this.closeDetailsEventListener)
     this.removeEventListener('wct-details-animationend', this.detailsAnimationendEventListener)
+    self.removeEventListener('online', this.onlineEventListener)
+    self.removeEventListener('offline', this.offlineEventListener)
     self.removeEventListener('resize', this.resizeEventListener)
   }
 
@@ -164,7 +183,10 @@ export default class Provider extends Intersection() {
   intersectionCallback (entries, observer) {
     if (this.areEntriesIntersecting(entries)) {
       this.setAttribute('intersecting', '')
-      this.renderProviderInfo()
+      if (navigator.onLine) {
+        this.renderProviderInfo(this.renderProviderInfoForce)
+        this.renderProviderInfoForce = false
+      }
       if (this.doOnIntersection) this.doOnIntersection()
       return
     }
@@ -267,15 +289,14 @@ export default class Provider extends Intersection() {
         justify-self: start;
         gap: 1em;
       }
-      :host > section > div.icons > #ping-state {
-        cursor: pointer;
-      }
-      :host > section > chat-m-notifications {
-        display: none;
+      :host > section > div.icons:has(> chat-m-notifications) {
         align-self: start;
         justify-self: end;
       }
-      :host > section > chat-m-notifications:has(~ div#url > select[value=websocket]) {
+      :host > section > div.icons > chat-m-notifications {
+        display: none;
+      }
+      :host > section > div.icons:has(~ div#url > select[value=websocket]) > chat-m-notifications {
         display: flex;
       }
       :host > section > div#url > span:has(+ input#port:placeholder-shown) {
@@ -324,7 +345,7 @@ export default class Provider extends Intersection() {
         height: 100%;
         word-break: break-word;
       }
-      :host > section :where(wct-icon-mdx, wct-button) {
+      :host > section wct-button {
         display: none;
       }
       :host(:not([connected])) > section wct-button#connect, :host([connected]) > section wct-button#disconnect {
@@ -392,9 +413,10 @@ export default class Provider extends Intersection() {
             <wct-icon-mdx state="error" title="not able to fetch nor ping the provider" style="color:var(--color-error)" icon-url="../../../../../../img/icons/network-off.svg" size="2em"></wct-icon-mdx>
           </a-icon-states>
           <a-icon-states id=connection-state state="disconnected">
-            <wct-icon-mdx state="connected" hover-on-parent-shadow-root-host id=connected title=connected style="--color: var(--color-green-full);" no-hover icon-url="../../../../../../img/icons/plug-connected.svg" size="2em"></wct-icon-mdx>
-            <wct-icon-mdx state="connecting" hover-on-parent-shadow-root-host id=connecting title="trying to connect" style="--color: var(--color-orange);" no-hover icon-url="../../../../../../img/icons/plug-connected.svg" size="2em"></wct-icon-mdx>
-            <wct-icon-mdx state="disconnected" hover-on-parent-shadow-root-host id=disconnected title=disconnected style="--color: var(--color-error);" no-hover icon-url="../../../../../../img/icons/plug-connected-x.svg" size="2em"></wct-icon-mdx>
+            <wct-icon-mdx state="connected" id=connected title=connected style="--color: var(--color-green-full);" no-hover icon-url="../../../../../../img/icons/plug-connected.svg" size="2em"></wct-icon-mdx>
+            <wct-icon-mdx state="connecting" id=connecting title="trying to connect" style="--color: var(--color-orange);" no-hover icon-url="../../../../../../img/icons/plug-connected.svg" size="2em"></wct-icon-mdx>
+            <wct-icon-mdx state="disconnected" id=disconnected title=disconnected style="--color: var(--color-error);" no-hover icon-url="../../../../../../img/icons/plug-connected-x.svg" size="2em"></wct-icon-mdx>
+            <wct-icon-mdx state="offline" title="You are offline!" style="color:var(--color-error)" no-hover icon-url="../../../../../../img/icons/plug-connected-x.svg" size="2em"></wct-icon-mdx>
           </a-icon-states>
         </div>
         <wct-details style="grid-area: title" animationend-event-name=wct-details-animationend>
@@ -457,7 +479,10 @@ export default class Provider extends Intersection() {
             </table>
           </details>
         </wct-details>
-        <chat-m-notifications style="grid-area: notification" room="${this.roomName}" hostname="${Array.from(this.data?.urls || [])?.[0]?.[1].url.hostname || ''}" on-connected-request-notifications allow-mute no-click no-hover></chat-m-notifications>
+        <div class=icons style="grid-area: notification">
+          <chat-m-notifications room="${this.roomName}" hostname="${Array.from(this.data?.urls || [])?.[0]?.[1].url.hostname || ''}" on-connected-request-notifications allow-mute no-click no-hover></chat-m-notifications>
+          <wct-icon-mdx style="display: none;" title="share" icon-url="../../../../../../img/icons/share-3.svg" size="2em"></wct-icon-mdx>
+        </div>
         <div id=url style="grid-area: url">
           <select id=name></select>
           <select id=protocol></select>
@@ -541,14 +566,18 @@ export default class Provider extends Intersection() {
         this.removeAttribute('connected')
       }
       let removeIconStateUpdating = true
-      if (data.status.includes('connected')) {
-        this.iconConnectionState.setAttribute('state', 'connected')
-      } else if (data.status.includes('active')) {
-        this.iconConnectionState.setAttribute('state', 'connecting')
-        this.iconConnectionState.setAttribute('updating', '')
-        removeIconStateUpdating = false
+      if (navigator.onLine) {
+        if (data.status.includes('connected')) {
+          this.iconConnectionState.setAttribute('state', 'connected')
+        } else if (data.status.includes('active')) {
+          this.iconConnectionState.setAttribute('state', 'connecting')
+          this.iconConnectionState.setAttribute('updating', '')
+          removeIconStateUpdating = false
+        } else {
+          this.iconConnectionState.setAttribute('state', 'disconnected')
+        }
       } else {
-        this.iconConnectionState.setAttribute('state', 'disconnected')
+        this.iconConnectionState.setAttribute('state', 'offline')
       }
       if (removeDataUpdating && this.hasAttribute('updating')) {
         this.dispatchEvent(new CustomEvent('yjs-request-notifications', {
@@ -643,9 +672,9 @@ export default class Provider extends Intersection() {
         hasWebsocket: false
       })
       this.detailsCustomTitle.textContent = urlInfo.hostname
-      const url = Array.from(this.data.urls.keys())[0]
       this.detailsOrigins.textContent = this.data.origins.join(', ')
       this.detailsStatus.textContent = this.data.status.join(', ')
+      const url = Array.from(this.data.urls.keys())[0]
       const pingProvider = errorMessage => data.pingProvider(url, force).then(response => {
         this.iconPingState.removeAttribute('updating')
         if (response.status === 'success') {
@@ -656,28 +685,43 @@ export default class Provider extends Intersection() {
           this.iconPingState.setAttribute('state', 'error')
         }
       })
+      const renderProviderFallbacks = providerFallbacks => {
+        const tempDiv = document.createElement('div')
+        tempDiv.innerHTML = providerFallbacks.reduce((acc, [name, providers]) => {
+          return acc + providers.reduce((acc, href) => {
+            // render or update
+            const url = new URL(href)
+            // @ts-ignore
+            const id = `${self.Environment?.providerNamespace || 'p_'}${url.hostname.replaceAll('.', '-')}` // string <ident> without dots https://developer.mozilla.org/en-US/docs/Web/CSS/ident
+            const renderProviderName = () => /* html */`<div><chat-a-provider-name id="${id}" provider-dialog-show-event><span name>${name}${separator}${url.origin}</span></chat-a-provider-name><span>&nbsp;(${name})</span></div>`
+            if (!this.detailsFallbacks.querySelector(`#${id}`) && urlInfo.hostname !== url.hostname) return acc + renderProviderName()
+            return acc
+          }, '')
+        }, '')
+        if (!this.detailsFallbacks.children.length) this.detailsFallbacks.textContent = ''
+        Array.from(tempDiv.children).forEach(child => this.detailsFallbacks.appendChild(child))
+      }
       if (urlInfo.hasWebsocket) {
         data.getWebsocketInfo(url, force).then(info => {
           if (info.error) {
-            this.detailsCustomMessage.textContent = this.detailsFallbacks.textContent = info.error
+            this.detailsCustomMessage.textContent = info.error
+            let providerFallbacks
+            if ((providerFallbacks = this.data.providerFallbacks?.get('websocket'))?.length) {
+              renderProviderFallbacks([providerFallbacks.reduce((acc, providerFallback) => {
+                // @ts-ignore
+                acc[1].push(providerFallback)
+                return acc
+              }, ['websocket', []])])
+            } else {
+              this.detailsFallbacks.textContent = info.error
+            }
             pingProvider(info.error)
           } else {
             this.detailsCustomMessage.textContent = info.customMessage
             if (Array.isArray(info.providerFallbacks)) {
-              const tempDiv = document.createElement('div')
-              tempDiv.innerHTML = info.providerFallbacks.reduce((acc, [name, providers]) => {
-                return acc + providers.reduce((acc, href) => {
-                  // render or update
-                  const url = new URL(href)
-                  // @ts-ignore
-                  const id = `${self.Environment?.providerNamespace || 'p_'}${url.hostname.replaceAll('.', '-')}` // string <ident> without dots https://developer.mozilla.org/en-US/docs/Web/CSS/ident
-                  const renderProviderName = () => /* html */`<div><chat-a-provider-name id="${id}" provider-dialog-show-event><span name>${name}${separator}${url.origin}</span></chat-a-provider-name><span>&nbsp;(${name})</span></div>`
-                  if (!this.detailsFallbacks.querySelector(`#${id}`) && urlInfo.hostname !== url.hostname) return acc + renderProviderName()
-                  return acc
-                }, '')
-              }, '')
-              if (!this.detailsFallbacks.children.length) this.detailsFallbacks.textContent = ''
-              Array.from(tempDiv.children).forEach(child => this.detailsFallbacks.appendChild(child))
+              renderProviderFallbacks(info.providerFallbacks)
+            } else {
+              this.detailsFallbacks.textContent = 'None'
             }
             this.iconPingState.removeAttribute('updating')
             this.iconPingState.setAttribute('state', 'fetch-success')

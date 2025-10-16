@@ -42,19 +42,24 @@ export default class ProviderName extends Shadow() {
       }
     }
 
+    let lastProvidersEventGetData = null
     let timeoutId = null
     this.providerEventListener = async event => {
+      lastProvidersEventGetData = event.detail.getData
       clearTimeout(timeoutId)
       timeoutId = setTimeout(async () => {
-        const providers = (await event.detail.getData(false)).providers
-        const [providerName, providerUrl] = this.dataName.split(separator)
-        if (providers.get(providerName)?.get(providerUrl)?.find(user => user.isSelf)) {
+        const providers = (await (await event.detail.getData(false)).getSessionProvidersByStatus()).connected
+        if (providers.find(provider => provider.includes(this.dataName))) {
           this.setAttribute('is-connected-with-self', '')
         } else {
           this.removeAttribute('is-connected-with-self')
         }
         // @ts-ignore
       }, self.Environment.awarenessEventListenerDelay)
+    }
+
+    this.providersChangeEventListener = event => {
+      if (lastProvidersEventGetData) this.providerEventListener({ detail: { getData: lastProvidersEventGetData } })
     }
   }
 
@@ -63,6 +68,7 @@ export default class ProviderName extends Shadow() {
     if (this.shouldRenderHTML()) this.renderHTML()
     this.addEventListener('click', this.clickEventListener)
     this.globalEventTarget.addEventListener('yjs-providers-data', this.providerEventListener)
+    this.globalEventTarget.addEventListener('yjs-providers-change', this.providersChangeEventListener)
     if (this.isConnected) this.connectedCallbackOnce()
   }
 
@@ -79,6 +85,7 @@ export default class ProviderName extends Shadow() {
   disconnectedCallback () {
     this.removeEventListener('click', this.clickEventListener)
     this.globalEventTarget.removeEventListener('yjs-providers-data', this.providerEventListener)
+    this.globalEventTarget.removeEventListener('yjs-providers-change', this.providersChangeEventListener)
   }
 
   /**
