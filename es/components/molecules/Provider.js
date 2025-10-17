@@ -97,25 +97,52 @@ export default class Provider extends Intersection() {
       }
     }
 
+    this.iconShareClickEventListener = event => {
+      this.fetchModules([{
+        // @ts-ignore
+        path: `${this.importMetaUrl}../molecules/dialogs/ShareDialog.js?${Environment?.version || ''}`,
+        name: 'chat-m-share-dialog'
+      }]).then(async () => {
+        const urlHrefObj = this.getUrlHrefObj()
+        const shareValue = `${urlHrefObj?.name || this.selectName.value}${separator}${urlHrefObj?.url.origin || Array.from(this.data.urls.keys())[0]}`
+        if (this.shareDialog) {
+          this.shareDialog.setAttribute('href', shareValue)
+          this.shareDialog.setAttribute('href-title', `provider - ${shareValue}`)
+          // @ts-ignore
+          this.shareDialog.show('show-modal')
+        } else {
+          const div = document.createElement('div')
+          div.innerHTML = /* html */`
+            <chat-m-share-dialog
+              namespace="dialog-top-slide-in-"
+              open="show-modal"
+              href="${shareValue}"
+              href-title="provider - ${shareValue}"
+              chat-add-type="share-provider"
+              chat-add-id="${this.getAttribute('id')}"
+              no-navigator-share
+            ></chat-m-share-dialog>
+          `
+          this.shareDialog = div.children[0]
+          this.root.appendChild(div.children[0])
+        }
+      })
+    }
+
     this.openDetailsEventListener = event => this.renderProviderInfo(true)
 
     this.closeDetailsEventListener = event => this.updateHeight(true)
 
     this.detailsAnimationendEventListener = event => this.updateHeight()
 
+    this.renderProviderInfoForce = false
     this.onlineEventListener = async event => {
       this.iconConnectionState.setAttribute('updating', '')
-      if (this.hasAttribute('intersecting')) this.renderProviderInfo(true)
+      if (this.hasAttribute('intersecting')) this.renderProviderInfo(this.renderProviderInfoForce)
     }
-    this.renderProviderInfoForce = false
     this.offlineEventListener = async event => {
       this.iconConnectionState.setAttribute('state', 'offline')
       this.renderProviderInfoForce = true
-    }
-    if (navigator.onLine) {
-      this.onlineEventListener()
-    } else {
-      this.offlineEventListener()
     }
 
     // this updates the min-height on resize, see updateHeight function for more info
@@ -134,6 +161,11 @@ export default class Provider extends Intersection() {
     if (this.shouldRenderHTML()) showPromises.push(this.renderHTML())
     Promise.all(showPromises).then(() => {
       this.hidden = false
+      if (navigator.onLine) {
+        this.onlineEventListener()
+      } else {
+        this.offlineEventListener()
+      }
       this.updateHeight()
     })
     this.inputKeepAlive.addEventListener('change', this.inputKeepAliveChangeEventListener)
@@ -145,6 +177,7 @@ export default class Provider extends Intersection() {
     this.addEventListener('undo', this.undoEventListener)
     this.titleEl.addEventListener('click', this.titleElClickEventListener)
     this.iconPingState.addEventListener('click', this.iconPingStateClickEventListener)
+    this.iconShare.addEventListener('click', this.iconShareClickEventListener)
     this.addEventListener('open', this.openDetailsEventListener)
     this.addEventListener('close', this.closeDetailsEventListener)
     this.addEventListener('wct-details-animationend', this.detailsAnimationendEventListener)
@@ -164,6 +197,7 @@ export default class Provider extends Intersection() {
     this.removeEventListener('undo', this.undoEventListener)
     this.titleEl.removeEventListener('click', this.titleElClickEventListener)
     this.iconPingState.removeEventListener('click', this.iconPingStateClickEventListener)
+    this.iconShare.removeEventListener('click', this.iconShareClickEventListener)
     this.removeEventListener('open', this.openDetailsEventListener)
     this.removeEventListener('close', this.closeDetailsEventListener)
     this.removeEventListener('wct-details-animationend', this.detailsAnimationendEventListener)
@@ -173,10 +207,12 @@ export default class Provider extends Intersection() {
   }
 
   attributeChangedCallback (name, oldValue, newValue) {
-    if (this.classList.contains('active')) {
-      this.details.details.setAttribute('open', '')
-    } else {
-      this.details.details.removeAttribute('open', '')
+    if (this.details) {
+      if (this.classList.contains('active')) {
+        this.details.details.setAttribute('open', '')
+      } else {
+        this.details.details.removeAttribute('open', '')
+      }
     }
   }
 
@@ -481,7 +517,7 @@ export default class Provider extends Intersection() {
         </wct-details>
         <div class=icons style="grid-area: notification">
           <chat-m-notifications room="${this.roomName}" hostname="${Array.from(this.data?.urls || [])?.[0]?.[1].url.hostname || ''}" on-connected-request-notifications allow-mute no-click no-hover></chat-m-notifications>
-          <wct-icon-mdx style="display: none;" title="share" icon-url="../../../../../../img/icons/share-3.svg" size="2em"></wct-icon-mdx>
+          <wct-icon-mdx id=share title=share icon-url="../../../../../../img/icons/share-3.svg" size="2em"></wct-icon-mdx>
         </div>
         <div id=url style="grid-area: url">
           <select id=name></select>
@@ -743,13 +779,20 @@ export default class Provider extends Intersection() {
     }))))
   }
 
+  /**
+   * @returns {{ url: URL; href: string; name: any; } | null}
+   */
   getUrlHrefObj () {
     const urlsArr = Array.from(this.data.urls)
     let url
     try {
       url = new URL(urlsArr[0][1].url.href)
       if (this.selectProtocol.value) url.protocol =  this.selectProtocol.value
-      if (this.inputPort.value) url.port = this.inputPort.value
+      if (this.inputPort.value) {
+        url.port = this.inputPort.value
+      } else {
+        url.port = ''
+      }
     } catch (error) {
       return null
     }
@@ -767,6 +810,10 @@ export default class Provider extends Intersection() {
 
   get iconPingState () {
     return this.root.querySelector('#ping-state')
+  }
+
+  get iconShare () {
+    return this.root.querySelector('#share')
   }
 
   get details () {

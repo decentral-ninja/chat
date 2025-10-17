@@ -10,12 +10,17 @@ import Dialog from '../../../../../web-components-toolbox/src/es/components/mole
 * @type {CustomElementConstructor}
 */
 export default class ShareDialog extends Dialog {
+  static get observedAttributes () {
+    return ['href', 'href-title']
+  }
+
   constructor (options = {}, ...args) {
     super({ ...options }, ...args)
 
     this.inputEventListener = event => {
       this.qrCodeSvg.setAttribute('data', this.textarea.value)
       this.dialogClipboard.setAttribute('data', this.textarea.value)
+      this.titleValue.textContent = this.textarea.value
     }
 
     this.shareApiIconClickEventListener = async event => {
@@ -30,15 +35,22 @@ export default class ShareDialog extends Dialog {
       }
     }
 
-    this.shareChatIconClickEventListener = event => this.dispatchEvent(new CustomEvent('chat-add', {
-      detail: {
-        input: this.textarea,
-        clear: false
-      },
-      bubbles: true,
-      cancelable: true,
-      composed: true
-    }))
+    this.shareChatIconClickEventListener = event => {
+      this.dispatchEvent(new CustomEvent('chat-add', {
+        detail: {
+          input: this.textarea,
+          clear: false,
+          type: this.getAttribute('chat-add-type'),
+          id: this.getAttribute('chat-add-id')
+        },
+        bubbles: true,
+        cancelable: true,
+        composed: true
+      }))
+      this.dialogClipboard.setAttribute('copied-text', 'Added to chat: ')
+      this.dialogClipboard.show()
+      this.dialogClipboard.setAttribute('copied-text', 'Copied: ')
+    }
   }
 
   connectedCallback () {
@@ -65,6 +77,17 @@ export default class ShareDialog extends Dialog {
     return result
   }
 
+  attributeChangedCallback (name, oldValue, newValue) {
+    if (oldValue === null) return
+    if (name === 'href') {
+      this.qrCodeSvg.setAttribute('data', newValue)
+      this.dialogClipboard.setAttribute('data', newValue)
+      this.textarea.value = newValue
+    } else {
+      this.titleValue.textContent = newValue
+    }
+  }
+
   /**
      * evaluates if a render is necessary
      *
@@ -82,6 +105,7 @@ export default class ShareDialog extends Dialog {
     this.setCss(/* css */`
       :host {
         --dialog-top-slide-in-hr-margin: 0 0 var(--content-spacing);
+        --qr-code-svg-default-max-height: 60dvh;
       }
       :host > dialog {
         --dialog-top-slide-in-a-text-decoration: underline;
@@ -134,7 +158,7 @@ export default class ShareDialog extends Dialog {
     this.html = /* html */`
       <dialog>
         <wct-menu-icon id="close" no-aria class="open sticky" namespace="menu-icon-close-" no-click background style="--outline-style-focus-visible: none;"></wct-menu-icon>
-        <h4>Share: "<span class="bold">${this.getAttribute('room-name') || document.title}</span>"${this.getAttribute('title-append') || ''}</h4>
+        <h4>Share: "<span id="title-value" class="bold">${this.getAttribute('room-name') || this.getAttribute('href-title') || document.title}</span>"${this.getAttribute('title-append') || ''}</h4>
       </dialog>
     `
     return Promise.all([
@@ -159,7 +183,7 @@ export default class ShareDialog extends Dialog {
               <template>${locationHref}</template>
             </wct-dialog-clipboard>
             ${this.hasAttribute('is-active-room') || this.hasAttribute('no-share-in-chat') ? '' : '<wct-icon-mdx id=share-chat title="share in this chat" icon-url="../../../../../../img/icons/message-2-share.svg" size="2em"></wct-icon-mdx>'}
-            ${typeof navigator.share === 'function' ? '<wct-icon-mdx id=share-api title="share" icon-url="../../../../../../img/icons/share-3.svg" size="2em"></wct-icon-mdx>' : ''}
+            ${typeof navigator.share === 'function' && !this.hasAttribute('no-navigator-share') ? '<wct-icon-mdx id=share-api title="share" icon-url="../../../../../../img/icons/share-3.svg" size="2em"></wct-icon-mdx>' : ''}
           </div>
           <!--
           <hr>
@@ -185,6 +209,10 @@ export default class ShareDialog extends Dialog {
         }
       ])
     ])
+  }
+
+  get titleValue () {
+    return this.root.querySelector('#title-value')
   }
 
   get textarea () {

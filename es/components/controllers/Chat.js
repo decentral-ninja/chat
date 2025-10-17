@@ -81,6 +81,14 @@ export const Chat = (ChosenHTMLElement = WebWorker()) => class Chat extends Chos
             text: event.detail.type
           }])
           return
+        case 'share-provider':
+          (await this.array).push([{
+            ...mandatoryData,
+            type: event.detail.type,
+            id: event.detail.id,
+            text: event.detail.input.value
+          }])
+          return
         default:
           if (event.detail.input.value) {
             const textObj = {

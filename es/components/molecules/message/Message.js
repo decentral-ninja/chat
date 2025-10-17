@@ -238,17 +238,21 @@ export default class Message extends WebWorker(Intersection()) {
       :host li > span.text {
         white-space: pre-line;
       }
-      :host li > span.text > wct-button, :host li > span.text > wct-icon-mdx {
+      :host li > span.text > wct-button, :host li > span.text > wct-icon-mdx, :host li > span.text > chat-a-provider-name {
         display: block;
       }
       :host li > span.text > wct-button{
         --button-primary-background-color: var(--color-jitsi);
         --button-primary-border-color: var(--color-jitsi);
       }
-      :host li > span.text > wct-icon-mdx {
+      :host li > span.text > wct-icon-mdx, :host li > span.text > chat-a-provider-name {
         text-align: center;
         margin: 2em auto;
         cursor: auto;
+      }
+      :host li > span.text > chat-a-provider-name {
+        margin: 1em auto;
+        width: fit-content;
       }
       :host li > span.text > span.loading {
         font-style: italic;
@@ -336,6 +340,11 @@ export default class Message extends WebWorker(Intersection()) {
         // @ts-ignore
           path: `${this.importMetaUrl}../../../../../web-components-toolbox/src/es/components/atoms/button/Button.js?${Environment?.version || ''}`,
           name: 'wct-button'
+        },
+        {
+          // @ts-ignore
+          path: `${this.importMetaUrl}../../atoms/providerName/ProviderName.js?${Environment?.version || ''}`,
+          name: 'chat-a-provider-name'
         }
       ])])
   }
@@ -402,6 +411,9 @@ export default class Message extends WebWorker(Intersection()) {
         break
       case 'jitsi-video-stopped':
         textObj.text = /* html */`<span>just left the video conference room: ${textObj.src}</span><wct-icon-mdx title="Left voice call" icon-url="../../../../../../img/icons/video-off.svg" size="3em"></wct-icon-mdx>`
+        break
+      case 'share-provider':
+        textObj.text = /* html */`<span>shared the following provider: </span><chat-a-provider-name id="${textObj.id}" provider-dialog-show-event><span name>${textObj.text}</span></chat-a-provider-name>`
         break
       default:
         if (!textObj.text.includes('<')) textObj.text = textObj.text?.replace(/(https?:\/\/[^\s]+)/g, url => /* html */`<a href="${url}"${url.includes(location.host) && url.includes('room=') ? ' route' : ''} target="${url.includes(location.host) ? '_self' : '_blank'}">${url}</a>`)
