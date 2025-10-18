@@ -127,7 +127,7 @@ export default class Providers extends Shadow() {
     this.connectProviderEventListener = event => {
       if (event.detail.urlHrefObj) {
         const isWebsocket = event.detail.urlHrefObj.name === 'websocket'
-        const urls = (isWebsocket ? this.websocketUrl : this.webrtcUrl || '').split(',').filter(urlStr => {
+        const urls = ((isWebsocket ? this.websocketUrl : this.webrtcUrl) || '').split(',').filter(urlStr => {
           try {
             const url = new URL(urlStr) // eslint-disable-line
             if (url.hostname === event.detail.urlHrefObj.url.hostname) return false
@@ -151,7 +151,7 @@ export default class Providers extends Shadow() {
     this.disconnectProviderEventListener = event => {
       if (event.detail.urlHrefObj) {
         const isWebsocket = event.detail.urlHrefObj.name === 'websocket'
-        const urls = (isWebsocket ? this.websocketUrl : this.webrtcUrl || '').split(',').filter(urlStr => {
+        const urls = ((isWebsocket ? this.websocketUrl : this.webrtcUrl) || '').split(',').filter(urlStr => {
           try {
             const url = new URL(urlStr) // eslint-disable-line
             if (url.hostname === event.detail.urlHrefObj.url.hostname) return false
@@ -336,6 +336,7 @@ export default class Providers extends Shadow() {
         <wct-icon-mdx state="connected" title="Network providers connected" style="color:var(--color-green-full)" icon-url="../../../../../../img/icons/network.svg" size="2em"></wct-icon-mdx>
         <wct-icon-mdx state="disconnected" title="No connection to Network providers" style="color:var(--color-error)" icon-url="../../../../../../img/icons/network-off.svg" size="2em"></wct-icon-mdx>
         <wct-icon-mdx state="offline" title="You are offline!" style="color:var(--color-error)" icon-url="../../../../../../img/icons/network-off.svg" size="2em"></wct-icon-mdx>
+        <wct-icon-mdx state="no-active" title="No network providers is actively trying to connect!" style="color:var(--color-error)" icon-url="../../../../../../img/icons/plug-connected-x.svg" size="2em"></wct-icon-mdx>
       </a-icon-states>
       <wct-dialog namespace="dialog-top-slide-in-"${this.hasAttribute('online') ? ' online' : ''} closed-event-name="provider-dialog-closed">
         <style protected>
@@ -582,10 +583,14 @@ export default class Providers extends Shadow() {
 
   static async toggleIconStates (iconStatesEl, data, online) {
     let counter = 0
+    const sessionProvidersByStatus = await data.getSessionProvidersByStatus()
+    // no-active only works when no connection was made at all, like opening a room without any providers, since it is too hard right now to evaluate if providers are trying to connect
     iconStatesEl.setAttribute('state', online
-      ? (counter = (await data.getSessionProvidersByStatus()).connected.length)
+      ? (counter = sessionProvidersByStatus.connected.length)
           ? 'connected'
-          : 'disconnected'
+          : sessionProvidersByStatus.disconnected.length
+            ? 'disconnected'
+            : 'no-active'
       : 'offline'
     )
     if (counter) {
