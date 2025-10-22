@@ -455,7 +455,7 @@ export default class Provider extends Intersection() {
             <wct-icon-mdx state="offline" title="You are offline!" style="color:var(--color-error)" no-hover icon-url="../../../../../../img/icons/plug-connected-x.svg" size="2em"></wct-icon-mdx>
           </a-icon-states>
         </div>
-        <wct-details style="grid-area: title" animationend-event-name=wct-details-animationend>
+        <wct-details style="grid-area: title" animationend-event-name=wct-details-animationend scroll-into-view=totally>
           <style protected>
             :host > details > table {
               --h3-margin: 1.143rem auto 0;
@@ -484,6 +484,25 @@ export default class Provider extends Intersection() {
             :host > details > table > tbody > tr > td#fallbacks > div > span {
               font-size: 0.75em;
               white-space: nowrap;
+            }
+            :host > details > table > tbody > tr > td:where(#origins, #status) {
+              display: flex;
+              flex-wrap: wrap;
+              overflow: auto;
+              scrollbar-color: var(--color) var(--background-color);
+              scrollbar-width: thin;
+            }
+            :host > details > table > tbody > tr > td:where(#origins, #status) > span {
+              margin-right: 1em;
+              white-space: nowrap;
+            }
+            :host > details > table > tbody > tr > td:where(#origins, #status) > span:where(.is-active-room, .once-established, .connected, .active) {
+              color: var(--color-green-full);
+              order: 1;
+              text-decoration: underline;
+            }
+            :host > details > table > tbody > tr > td:where(#origins, #status) > span:not(:where(.is-active-room, .once-established, .connected, .active)) {
+              order: 2;
             }
           </style>
           <details>
@@ -708,8 +727,8 @@ export default class Provider extends Intersection() {
         hasWebsocket: false
       })
       this.detailsCustomTitle.textContent = urlInfo.hostname
-      this.detailsOrigins.textContent = this.data.origins.join(', ')
-      this.detailsStatus.textContent = this.data.status.join(', ')
+      this.detailsOrigins.innerHTML = this.data.origins.reduce((acc, origin) => /* html */`${acc}<span ${origin === this.roomName ? 'class=is-active-room title="currently active room"': ''}>${origin}</span>`, '')
+      this.detailsStatus.innerHTML = this.data.status.reduce((acc, status) => /* html */`${acc}<span class="${status}">${status}</span>`, '')
       const url = Array.from(this.data.urls.keys())[0]
       const pingProvider = errorMessage => data.pingProvider(url, force).then(response => {
         this.iconPingState.removeAttribute('updating')

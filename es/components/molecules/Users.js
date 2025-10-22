@@ -313,14 +313,14 @@ export default class Users extends Shadow() {
             <hr>
             <br>
             <div>
-              <h4 class="title connected">Connected Users</h4>
+              <h4 class="title connected">Connected Users (<span class=counter></span>)</h4>
               <ol id="users"></ol>
             </div>
             <br>
             <hr>
             <br>
             <div>
-              <h4 class="title not-connected">Not Connected Users</h4>
+              <h4 class="title not-connected">Not Connected Users (<span class=counter></span>)</h4>
               <ol id="all-users"></ol>
             </div>
           </div>
@@ -408,7 +408,9 @@ export default class Users extends Shadow() {
       composed: true
     }))).then(chatEventDetail => chatEventDetail.getAll()).then(textObjs => textObjs.sort((a, b) => a.timestamp - b.timestamp).slice(-1)[0]))
     await Users.renderUserTableList(this.usersOl, this.allUsersOl, data.usersConnectedWithSelf, data.allUsers, newestMessage, true, this.getAttribute('active'), anyUsersGraphIsIntersecting)
+    this.usersTitleCounter.textContent = this.usersOl.children.length
     await Users.renderUserTableList(this.allUsersOl, this.usersOl, new Map(Array.from(data.allUsers).filter(([key, user]) => !data.usersConnectedWithSelf.get(key)).sort((a, b) => JSON.parse(b[1].awarenessEpoch || b[1].epoch).epoch - JSON.parse(a[1].awarenessEpoch || a[1].epoch).epoch)), data.allUsers, newestMessage, false, this.getAttribute('active'), anyUsersGraphIsIntersecting)
+    this.allUsersTitleCounter.textContent = this.allUsersOl.children.length
   }
 
   setActive (attributeName, attributeValue, parentNodes, active = true, scroll = true) {
@@ -522,8 +524,16 @@ export default class Users extends Shadow() {
     return this.dialog?.root.querySelector('#users-graph-history')
   }
 
+  get usersTitleCounter () {
+    return this.dialog?.root.querySelector('.title.connected > .counter')
+  }
+
   get usersOl () {
     return this.dialog?.root.querySelector('#users')
+  }
+
+  get allUsersTitleCounter () {
+    return this.dialog?.root.querySelector('.title.not-connected > .counter')
   }
 
   get allUsersOl () {
