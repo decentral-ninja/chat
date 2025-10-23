@@ -395,9 +395,9 @@ export default class Users extends Shadow() {
     const anyUsersGraphIsIntersecting = this.usersGraph.querySelector('[intersecting]') || this.usersGraphHistory.querySelector('[intersecting]')
     // @ts-ignore
     const getArgs = this.isUserGraphTabActive
-      ? async () => [this.usersGraph, data.usersConnectedWithSelf, separator, this.getAttribute('active')]
-      : async () => [this.usersGraphHistory, data.allUsers, separator, this.getAttribute('active'), true]
-    Users.renderP2pGraph(...(await getArgs()))
+      ? () => [this.usersGraph, data.usersConnectedWithSelf, separator, this.getAttribute('active')]
+      : () => [this.usersGraphHistory, data.allUsers, separator, this.getAttribute('active'), true]
+    Users.renderP2pGraph(...getArgs())
     // get the timestamp of the newest message
     const newestMessage = (await new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-chat-event-detail', {
       detail: {

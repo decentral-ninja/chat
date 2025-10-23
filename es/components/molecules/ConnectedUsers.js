@@ -69,6 +69,20 @@ export default class ConnectedUsers extends Shadow() {
       :host:has(> wct-details) > .placeholder {
         display: none;
       }
+      :host([show-lone-providers]) {
+        display: flex;
+        flex-direction: column;
+      }
+      :host > #lone-providers {
+        display: none;
+      }
+      :host([show-lone-providers]) > wct-details {
+        order: 0;
+      }
+      :host([show-lone-providers]) > #lone-providers {
+        display: block;
+        order: 1;
+      }
     `
     return this.fetchTemplate()
   }
@@ -94,11 +108,48 @@ export default class ConnectedUsers extends Shadow() {
    * @returns Promise<void>
    */
   renderHTML () {
+    const style = `
+      <style protected>
+        :host {
+          --child-margin: 0 0 0 1em;
+        }
+        :host .title {
+          display: flex;
+          gap: 1em;
+          justify-content: space-between;
+          width: 100%;
+        }
+        :host(:not([uid])) .title > div {
+          align-items: center;
+          display: flex;
+          gap: 0.2em;
+          text-decoration: underline;
+        }
+        :host .counter {
+          white-space: nowrap;
+        }
+      </style>
+    `
+    if (!this.loneProviders) this.html = /* html */`
+      <div id=lone-providers>
+        <wct-details open-event-name='connected-users-details-open-${this.getAttribute('uid')}' animationend-event-name=wct-details-animationend>
+          ${style}
+          <details>
+            <summary>
+              <div class=title>
+                <div>
+                  <wct-icon-mdx hover-on-parent-shadow-root-host title="historically connected providers" icon-url="../../../../../../img/icons/history.svg" size="1.5em"></wct-icon-mdx>historical providers
+                </div>
+              </div>
+            </summary>
+          </details>
+        </wct-details>
+      </div>
+    `
     if (!this.placeholder) this.html = '<div class=placeholder>---</div>'
     // go through all connections and create the needed summary/details
     Object.keys(this.connectedUsers).forEach(providerName => {
-      if (Array.isArray(this.connectedUsers[providerName])) this.connectedUsers[providerName].forEach(connectedUser => {
-        if (!connectedUser) return
+      if (Array.isArray(this.connectedUsers[providerName])) {
         let providerId
         try {
           // @ts-ignore
@@ -108,42 +159,53 @@ export default class ConnectedUsers extends Shadow() {
           providerId = `${self.Environment?.providerNamespace || 'p_'}${providerName.split(separator)[1].replaceAll('.', '-')}`
         }
         const providerNameString = /* html */`<chat-a-provider-name id="${providerId}" provider-dialog-show-event><span name>${providerName}</span></chat-a-provider-name>`
-        let detail
-        if ((detail = this.details.find(detail => detail.getAttribute('uid') === connectedUser.uid))) {
-          if (!detail.root.querySelector(`chat-a-provider-name#${providerId}`)) {
-            const div = document.createElement('div')
-            div.innerHTML = providerNameString
-            detail.details.appendChild(div.children[0])
+        if (this.connectedUsers[providerName].length) {
+          // get all connected users
+          this.connectedUsers[providerName].forEach(connectedUser => {
+            if (!connectedUser) return
+            let detail
+            if ((detail = this.details.find(detail => detail.getAttribute('uid') === connectedUser.uid))) {
+              if (!detail.root.querySelector(`chat-a-provider-name#${providerId}`)) {
+                const div = document.createElement('div')
+                div.innerHTML = providerNameString
+                detail.details.appendChild(div.children[0])
+              }
+            } else {
+              this.html = /* html */`
+                <wct-details uid='${connectedUser.uid}' open-event-name='connected-users-details-open-${this.getAttribute('uid')}' animationend-event-name=wct-details-animationend>
+                  ${style}
+                  <details>
+                    <summary>
+                      <div class=title>
+                        <chat-a-nick-name uid='${connectedUser.uid}' nickname="${connectedUser.nickname}"${connectedUser.isSelf ? ' self' : ''}></chat-a-nick-name>
+                      </div>
+                    </summary>
+                    ${providerNameString}
+                  </details>
+                </wct-details>
+              `
+            }
+          })
+        } else if (this.loneProviders) {
+          // get all providers only connected with self
+          let detail
+          if ((detail = this.loneProviders.querySelector('wct-details'))) {
+            if (!detail.root.querySelector(`chat-a-provider-name#${providerId}`)) {
+              const div = document.createElement('div')
+              div.innerHTML = providerNameString
+              detail.details.appendChild(div.children[0])
+            }
+            // count all the loneProviders
+            let counter = detail.summary.querySelector('.counter')
+            if (!counter) {
+              counter = document.createElement('span')
+              counter.classList.add('counter');
+              detail.summary.querySelector('.title').appendChild(counter)
+            }
+            counter.textContent = `(${detail.details.children.length - 1})`
           }
-        } else {
-          this.html = /* html */`
-            <wct-details uid='${connectedUser.uid}' open-event-name='connected-users-details-open-${this.getAttribute('uid')}' animationend-event-name=wct-details-animationend>
-              <style protected>
-                :host {
-                  --child-margin: 0 0 0 1em;
-                }
-                :host .title {
-                  display: flex;
-                  gap: 1em;
-                  justify-content: space-between;
-                  width: 100%;
-                }
-                :host .counter {
-                  white-space: nowrap;
-                }
-              </style>
-              <details>
-                <summary>
-                  <div class=title>
-                    <chat-a-nick-name uid='${connectedUser.uid}' nickname="${connectedUser.nickname}"${connectedUser.isSelf ? ' self' : ''}></chat-a-nick-name>
-                  </div>
-                </summary>
-                ${providerNameString}
-              </details>
-            </wct-details>
-          `
         }
-      })
+      }
     })
     // remove any details which are not in the connected
     this.details.forEach(detail => {
@@ -178,6 +240,11 @@ export default class ConnectedUsers extends Shadow() {
         // @ts-ignore
         path: `${this.importMetaUrl}../atoms/providerName/ProviderName.js?${Environment?.version || ''}`,
         name: 'chat-a-provider-name'
+      },
+      {
+        // @ts-ignore
+        path: `${this.importMetaUrl}../../../../web-components-toolbox/src/es/components/atoms/iconMdx/IconMdx.js?${Environment?.version || ''}`,
+        name: 'wct-icon-mdx'
       }
     ])
   }
@@ -197,7 +264,11 @@ export default class ConnectedUsers extends Shadow() {
   }
 
   get details () {
-    return Array.from(this.root.querySelectorAll('wct-details'))
+    return Array.from(this.root.querySelectorAll('wct-details[uid]'))
+  }
+
+  get loneProviders () {
+    return this.root.querySelector('#lone-providers')
   }
 
   get template () {

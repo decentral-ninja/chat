@@ -301,7 +301,7 @@ export default class User extends Intersection() {
                       : key === 'mutuallyConnectedUsers'
                       ? 'connected users:'
                       : key === 'connectedUsers'
-                      ? 'last connected users:'
+                      ? 'last connected users / providers:'
                       : key === 'uid'
                       ? 'unique id:'
                       : `${key}:`
@@ -417,7 +417,7 @@ export default class User extends Intersection() {
     return /* html */`
       <td id="${key}">${key === 'mutuallyConnectedUsers' || key === 'connectedUsers'
         ? /* html */`
-          <chat-m-connected-users uid='${selfUid}'>
+          <chat-m-connected-users uid='${selfUid}' ${key === 'connectedUsers' ? 'show-lone-providers' : ''}>
             <template>${JSON.stringify({ connectedUsers: user[key] })}</template>
           </chat-m-connected-users>
         `
