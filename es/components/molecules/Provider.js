@@ -2,6 +2,7 @@
 import { Intersection } from '../../../../web-components-toolbox/src/es/components/prototypes/Intersection.js'
 import { jsonParseMapUrlReviver } from '../../../../Helpers.js'
 import { separator } from '../../../../event-driven-web-components-yjs/src/es/controllers/Users.js'
+import { scrollElIntoView } from '../../../../event-driven-web-components-prototypes/src/helpers/Helpers.js'
 
 /* global Environment */
 
@@ -129,7 +130,11 @@ export default class Provider extends Intersection() {
       })
     }
 
-    this.openDetailsEventListener = event => this.renderProviderInfo(true)
+    this.openDetailsEventListener = event => {
+      this.renderProviderInfo(true)
+      // @ts-ignore
+      scrollElIntoView(() => (this), ':not([intersecting])')
+    }
 
     this.closeDetailsEventListener = event => this.updateHeight(true)
 
@@ -177,6 +182,7 @@ export default class Provider extends Intersection() {
     this.addEventListener('undo', this.undoEventListener)
     this.titleEl.addEventListener('click', this.titleElClickEventListener)
     this.iconPingState.addEventListener('click', this.iconPingStateClickEventListener)
+    this.iconDefault.addEventListener('click', this.iconPingStateClickEventListener)
     this.iconShare.addEventListener('click', this.iconShareClickEventListener)
     this.addEventListener('open', this.openDetailsEventListener)
     this.addEventListener('close', this.closeDetailsEventListener)
@@ -197,6 +203,7 @@ export default class Provider extends Intersection() {
     this.removeEventListener('undo', this.undoEventListener)
     this.titleEl.removeEventListener('click', this.titleElClickEventListener)
     this.iconPingState.removeEventListener('click', this.iconPingStateClickEventListener)
+    this.iconDefault.removeEventListener('click', this.iconPingStateClickEventListener)
     this.iconShare.removeEventListener('click', this.iconShareClickEventListener)
     this.removeEventListener('open', this.openDetailsEventListener)
     this.removeEventListener('close', this.closeDetailsEventListener)
@@ -335,6 +342,9 @@ export default class Provider extends Intersection() {
       :host > section > div.icons:has(~ div#url > select[value=websocket]) > chat-m-notifications {
         display: flex;
       }
+      :host(:not([default])) > section > div.icons > wct-icon-mdx#default {
+        display: none;
+      }
       :host > section > div#url > span:has(+ input#port:placeholder-shown) {
         display: none;
       }
@@ -442,6 +452,7 @@ export default class Provider extends Intersection() {
     this.html = /* html */`
       <section id=grid>
         <div class=icons style="grid-area: connectionStateIcon">
+          <wct-icon-mdx id="default" title="Decentral Ninja default provider" style="color:var(--color-green-full)" icon-url="../../../../../../img/icons/shield-check.svg" size="2em"></wct-icon-mdx>
           <a-icon-states id=ping-state>
             <wct-icon-mdx state="default" title="pinging..." icon-url="../../../../../../img/icons/network.svg" size="2em"></wct-icon-mdx>
             <wct-icon-mdx state="fetch-success" title="fetch successful!" style="color:var(--color-green-full)" icon-url="../../../../../../img/icons/network.svg" size="2em"></wct-icon-mdx>
@@ -455,7 +466,7 @@ export default class Provider extends Intersection() {
             <wct-icon-mdx state="offline" title="You are offline!" style="color:var(--color-error)" no-hover icon-url="../../../../../../img/icons/plug-connected-x.svg" size="2em"></wct-icon-mdx>
           </a-icon-states>
         </div>
-        <wct-details style="grid-area: title" animationend-event-name=wct-details-animationend scroll-into-view=totally>
+        <wct-details style="grid-area: title" animationend-event-name=wct-details-animationend>
           <style protected>
             :host > details > table {
               --h3-margin: 1.143rem auto 0;
@@ -619,6 +630,11 @@ export default class Provider extends Intersection() {
         this.setAttribute('connected', '')
       } else {
         this.removeAttribute('connected')
+      }
+      if (data.status.includes('default')) {
+        this.setAttribute('default', '')
+      } else {
+        this.removeAttribute('default')
       }
       let removeIconStateUpdating = true
       if (navigator.onLine) {
@@ -829,6 +845,10 @@ export default class Provider extends Intersection() {
 
   get iconPingState () {
     return this.root.querySelector('#ping-state')
+  }
+
+  get iconDefault () {
+    return this.root.querySelector('#default')
   }
 
   get iconShare () {
