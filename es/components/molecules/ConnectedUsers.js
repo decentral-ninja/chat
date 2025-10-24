@@ -132,7 +132,7 @@ export default class ConnectedUsers extends Shadow() {
     `
     if (!this.loneProviders) this.html = /* html */`
       <div id=lone-providers>
-        <wct-details open-event-name='connected-users-details-open-${this.getAttribute('uid')}' animationend-event-name=wct-details-animationend>
+        <wct-details open-event-name='connected-users-details-open-${this.getAttribute('uid')}' animationend-event-name=wct-details-animationend empty-hide>
           ${style}
           <details>
             <summary>
@@ -195,14 +195,6 @@ export default class ConnectedUsers extends Shadow() {
               div.innerHTML = providerNameString
               detail.details.appendChild(div.children[0])
             }
-            // count all the loneProviders
-            let counter = detail.summary.querySelector('.counter')
-            if (!counter) {
-              counter = document.createElement('span')
-              counter.classList.add('counter');
-              detail.summary.querySelector('.title').appendChild(counter)
-            }
-            counter.textContent = `(${detail.details.children.length - 1})`
           }
         }
       }
@@ -225,6 +217,22 @@ export default class ConnectedUsers extends Shadow() {
         detail.remove()
       }
     })
+    // clear loneProviders
+    let detail
+    if ((detail = this.loneProviders.querySelector('wct-details'))) {
+      detail.root.querySelectorAll('chat-a-provider-name').forEach(providerName => {
+        let keys
+        if (!(keys = Object.keys(this.connectedUsers)).includes(providerName.dataName) || this.connectedUsers[providerName.dataName]?.length) providerName.remove()
+      })
+      // count all the loneProviders
+      let counter = detail.summary.querySelector('.counter')
+      if (!counter) {
+        counter = document.createElement('span')
+        counter.classList.add('counter');
+        detail.summary.querySelector('.title').appendChild(counter)
+      }
+      counter.textContent = `(${detail.details.children.length - 1})`
+    }
     return this.fetchModules([
       {
         // @ts-ignore
