@@ -332,6 +332,11 @@ export default class Message extends WebWorker(Intersection()) {
           name: 'chat-a-nick-name'
         },
         {
+        // @ts-ignore
+          path: `${this.importMetaUrl}../../../../../components/atoms/iconCombinations/IconCombinations.js?${Environment?.version || ''}`,
+          name: 'a-icon-combinations'
+        },
+        {
           // @ts-ignore
           path: `${this.importMetaUrl}../../../../../web-components-toolbox/src/es/components/atoms/iconMdx/IconMdx.js?${Environment?.version || ''}`,
           name: 'wct-icon-mdx'
@@ -392,7 +397,16 @@ export default class Message extends WebWorker(Intersection()) {
           ${textObj.deleted ? '' : /* html */`<chat-a-nick-name class="user" uid='${textObj.uid}' nickname="${textObj.updatedNickname}"${textObj.isSelf ? ' self user-dialog-show-event-only-on-avatar' : ' user-dialog-show-event'}></chat-a-nick-name>`}
           ${hasAttributeNoDialog
             ? ''
-            : '<wct-icon-mdx title="view message" id="show-modal" rotate="-180deg" icon-url="../../../../../../img/icons/dots-circle-horizontal.svg" size="1.5em"></wct-icon-mdx>'
+            : '<wct-icon-mdx title="view message" id="show-modal" rotate="-180deg" scale="1.5" icon-url="../../../../../../img/icons/dots-circle-horizontal.svg" size="1.5em"></wct-icon-mdx>'
+          }
+          ${false // TODO: Encryption icons 
+            ? /* html */`
+              <a-icon-combinations keys>
+                <wct-icon-mdx title="Private key" scale="1.5" style="--color-hover: var(--color-red-full); color:var(--color-red);" icon-url="../../../../../../img/icons/key-filled.svg" size="1.5em"></wct-icon-mdx>
+                <wct-icon-mdx title="Public key" scale="1.5" style="--color-hover: var(--color-green-full); color:var(--color-green-dark);" icon-url="../../../../../../img/icons/key-filled.svg" size="1.5em"></wct-icon-mdx>
+              </a-icon-states>
+            ` 
+            : ''
           }
         </div>
         <span class="text${textObj.deleted ? ' italic' : ''}">${textObj.deleted ? 'Message got deleted!' : '<span class="loading">Loading...</span>'}</span>${textObj.deleted ? '' : /* html */`<time class="timestamp">${textObj.timestamp ? (new Date(textObj.timestamp)).toLocaleString(navigator.language) : ''}</time>`}
