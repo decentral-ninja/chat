@@ -57,11 +57,15 @@ export default class Providers extends Shadow() {
     let lastProvidersEventGetData = null
     this.lastSeparator = this.getAttribute('separator') || '<>'
     let timeoutId = null
+    const skipTimeoutClear = 5
+    let timeoutCounter = 1
     this.providersEventListener = (event, setUpdating = true) => {
       lastProvidersEventGetData = event.detail.getData
       if (!setUpdating) this.iconStatesEl.setAttribute('updating', '')
-      clearTimeout(timeoutId)
+      if (timeoutCounter % skipTimeoutClear) clearTimeout(timeoutId)
+      timeoutCounter++
       timeoutId = setTimeout(async () => {
+        timeoutCounter = 1
         if (this.isDialogOpen()) {
           this.renderData(await event.detail.getData(), await (await this.roomPromise).room, true)
         } else {

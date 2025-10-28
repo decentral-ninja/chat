@@ -44,10 +44,14 @@ export default class ProviderName extends Shadow() {
 
     let lastProvidersEventGetData = null
     let timeoutId = null
+    const skipTimeoutClear = 5
+    let timeoutCounter = 1
     this.providerEventListener = async event => {
       lastProvidersEventGetData = event.detail.getData
-      clearTimeout(timeoutId)
+      if (timeoutCounter % skipTimeoutClear) clearTimeout(timeoutId)
+      timeoutCounter++
       timeoutId = setTimeout(async () => {
+        timeoutCounter = 1
         const providers = (await (await event.detail.getData(false)).getSessionProvidersByStatus()).connected
         if (providers.find(provider => provider.includes(this.dataName))) {
           this.setAttribute('is-connected-with-self', '')

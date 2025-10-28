@@ -53,9 +53,13 @@ export default class NickName extends Shadow() {
     this.nicknameEventListener = event => this.renderHTML(event.detail.nickname)
 
     let timeoutId = null
+    const skipTimeoutClear = 5
+    let timeoutCounter = 1
     this.usersEventListener = async event => {
-      clearTimeout(timeoutId)
+      if (timeoutCounter % skipTimeoutClear) clearTimeout(timeoutId)
+      timeoutCounter++
       timeoutId = setTimeout(async () => {
+        timeoutCounter = 1
         const data = await event.detail.getData()
         let user
         if ((user = data.allUsers.get(this.getAttribute('uid')))) {

@@ -19,12 +19,16 @@ export default class Users extends Shadow() {
     let lastUsersEventGetData = null
     let lastSeparator = this.getAttribute('separator') || '<>'
     let timeoutId = null
+    const skipTimeoutClear = 5
+    let timeoutCounter = 1
     this.usersEventListener = async event => {
       lastUsersEventGetData = event.detail.getData
       lastSeparator = event.detail.separator
       this.iconStatesEl.setAttribute('updating', '')
-      clearTimeout(timeoutId)
+      if (timeoutCounter % skipTimeoutClear) clearTimeout(timeoutId)
+      timeoutCounter++
       timeoutId = setTimeout(async () => {
+        timeoutCounter = 1
         if (this.isDialogOpen()) {
           this.renderData(await event.detail.getData(), lastSeparator)
         } else {
