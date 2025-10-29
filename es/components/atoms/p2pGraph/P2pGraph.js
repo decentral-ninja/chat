@@ -170,7 +170,7 @@ export default class P2pGraph extends Intersection() {
             graph.connect(providerName, key)
           }
         })
-        if (!nodes.length) {
+        if (!nodes.length || !users.length) {
           this.setAttribute('no-data', '')
           this.dispatchEvent(new CustomEvent('p2p-graph-no-data', {
             bubbles: true,

@@ -390,6 +390,10 @@ export default class Providers extends Shadow() {
             background-size: 200% 200%;
             opacity: .5;
           }
+          :host > dialog > #providers > #providers-graph:empty,
+          :host > dialog > #providers > #providers-graph:has(chat-a-p2p-graph[no-data]) {
+            display: none;
+          }
           :host > dialog > #providers:has(> chat-m-provider[updating]) > chat-m-provider {
             pointer-events: none;
             cursor: not-allowed;
