@@ -48,6 +48,7 @@ export default class RoomNameAkaDialog extends SetStringDialog {
     super.disconnectedCallback()
     this.removeEventListener('submit-input', this.setInputEventListener)
     this.removeEventListener('submit-search', this.setInputEventListener)
+    this.close()
   }
 
   /**

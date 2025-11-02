@@ -165,10 +165,15 @@ export default class ConnectedUsers extends Shadow() {
             if (!connectedUser) return
             let detail
             if ((detail = this.details.find(detail => detail.getAttribute('uid') === connectedUser.uid))) {
-              if (!detail.root.querySelector(`chat-a-provider-name#${providerId}`)) {
-                const div = document.createElement('div')
-                div.innerHTML = providerNameString
-                detail.details.appendChild(div.children[0])
+              // create provider in case not found, do nothing by illegal query selector.
+              try {
+                if (!detail.root.querySelector(`chat-a-provider-name#${providerId}`)) {
+                  const div = document.createElement('div')
+                  div.innerHTML = providerNameString
+                  detail.details.appendChild(div.children[0])
+                }
+              } catch (error) {
+                console.warn('connected users has illegal or not allowed querySelector:', `chat-a-provider-name#${providerId}`, error)
               }
             } else {
               this.html = /* html */`
@@ -190,10 +195,15 @@ export default class ConnectedUsers extends Shadow() {
           // get all providers only connected with self
           let detail
           if ((detail = this.loneProviders.querySelector('wct-details'))) {
-            if (!detail.root.querySelector(`chat-a-provider-name#${providerId}`)) {
-              const div = document.createElement('div')
-              div.innerHTML = providerNameString
-              detail.details.appendChild(div.children[0])
+            // create provider in case not found, do nothing by illegal query selector.
+            try {
+              if (!detail.root.querySelector(`chat-a-provider-name#${providerId}`)) {
+                const div = document.createElement('div')
+                div.innerHTML = providerNameString
+                detail.details.appendChild(div.children[0])
+              }
+            } catch (error) {
+              console.warn('connected users has illegal or not allowed querySelector:', `chat-a-provider-name#${providerId}`, error)
             }
           }
         }

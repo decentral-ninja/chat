@@ -70,6 +70,7 @@ export default class NickNameDialog extends SetStringDialog {
     this.removeEventListener('submit-input', this.setInputEventListener)
     this.removeEventListener('submit-search', this.setInputEventListener)
     this.globalEventTarget.removeEventListener('yjs-nickname', this.nicknameEventListener)
+    this.close()
   }
 
   /**

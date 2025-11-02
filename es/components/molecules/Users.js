@@ -159,6 +159,7 @@ export default class Users extends Shadow() {
     self.removeEventListener('online', this.onlineEventListener)
     self.removeEventListener('offline', this.offlineEventListener)
     self.removeEventListener('resize', this.resizeEventListener)
+    this.dialog?.close()
   }
 
   /**

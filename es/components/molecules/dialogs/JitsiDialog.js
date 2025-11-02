@@ -72,6 +72,7 @@ export default class JitsiDialog extends Dialog {
     this.stopIcon.removeEventListener('click', this.stopClickEventListener)
     this.link.removeEventListener('click', this.linkClickEventListener)
     this.stop()
+    this.close()
   }
 
   /**

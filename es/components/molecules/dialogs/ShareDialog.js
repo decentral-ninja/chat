@@ -74,6 +74,7 @@ export default class ShareDialog extends Dialog {
     this.textarea.removeEventListener('input', this.inputEventListener)
     if (this.shareChatIcon) this.shareChatIcon.removeEventListener('click', this.shareChatIconClickEventListener)
     if (this.shareApiIcon) this.shareApiIcon.removeEventListener('click', this.shareApiIconClickEventListener)
+    this.close()
     return result
   }
 

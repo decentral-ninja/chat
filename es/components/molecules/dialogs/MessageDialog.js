@@ -75,6 +75,7 @@ export default class MessageDialog extends Dialog {
     if (this.replyEl) this.replyEl.removeEventListener('click', this.clickReplyEventListener)
     if (this.hasAttribute('self') && this.deleteEl) this.deleteEl.removeEventListener('click', this.clickDeleteEventListener)
     this.removeEventListener('message-rendered', this.messageRenderedEventListener)
+    this.close()
   }
 
   /**
