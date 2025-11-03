@@ -624,6 +624,15 @@ export default class Provider extends Intersection() {
         order: ${order};
       }
     `
+    if (removeDataUpdating && this.hasAttribute('updating')) {
+      this.dispatchEvent(new CustomEvent('yjs-request-notifications', {
+        detail: { force: true },
+        bubbles: true,
+        cancelable: true,
+        composed: true
+      }))
+      this.removeAttribute('updating')
+    }
     this.doOnIntersection = () => {
       this.notifications.setAttribute('hostname', Array.from(this.data?.urls || [])?.[0]?.[1].url.hostname || '')
       if (data.status.includes('connected') || data.status.includes('active')) {
@@ -649,15 +658,6 @@ export default class Provider extends Intersection() {
         }
       } else {
         this.iconConnectionState.setAttribute('state', 'offline')
-      }
-      if (removeDataUpdating && this.hasAttribute('updating')) {
-        this.dispatchEvent(new CustomEvent('yjs-request-notifications', {
-          detail: { force: true },
-          bubbles: true,
-          cancelable: true,
-          composed: true
-        }))
-        this.removeAttribute('updating')
       }
       if (removeIconStateUpdating) this.iconConnectionState.removeAttribute('updating')
       // avoid updating when inputs got changed
