@@ -54,6 +54,7 @@ export default class Providers extends Shadow() {
   constructor (options = {}, ...args) {
     super({ importMetaUrl: import.meta.url, ...options }, ...args)
 
+    let renderDataForce = false
     let lastProvidersEventGetData = null
     this.lastSeparator = this.getAttribute('separator') || '<>'
     let timeoutId = null
@@ -68,8 +69,10 @@ export default class Providers extends Shadow() {
         timeoutCounter = 1
         if (this.isDialogOpen()) {
           this.renderData(await event.detail.getData(), await (await this.roomPromise).room, true)
+          renderDataForce = false
         } else {
           Providers.toggleIconStates(this.iconStatesEl, await event.detail.getData(), this.hasAttribute('online'))
+          renderDataForce = true
         }
         this.iconStatesEl.removeAttribute('updating')
         // @ts-ignore
@@ -85,7 +88,8 @@ export default class Providers extends Shadow() {
       this.dialog.show('show-modal')
       if (lastProvidersEventGetData) {
         clearTimeout(timeoutId)
-        await this.renderData(await lastProvidersEventGetData(false), await (await this.roomPromise).room, false)
+        await this.renderData(await lastProvidersEventGetData(false), await (await this.roomPromise).room, renderDataForce)
+        renderDataForce = false
         // the graph has to be refreshed when dialog opens
         if (this.lastP2pGraphData) Providers.renderP2pGraph(this.providersGraph, await this.lastP2pGraphData, this.lastSeparator, true)
       }
