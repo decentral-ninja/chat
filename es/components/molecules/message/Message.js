@@ -402,9 +402,11 @@ export default class Message extends WebWorker(Intersection()) {
           ${false // TODO: Encryption icons 
             ? /* html */`
               <a-icon-combinations keys>
-                <wct-icon-mdx title="Private key" scale="1.5" style="--color-hover: var(--color-red-full); color:var(--color-red);" icon-url="../../../../../../img/icons/key-filled.svg" size="1.5em"></wct-icon-mdx>
-                <wct-icon-mdx title="Public key" scale="1.5" style="--color-hover: var(--color-green-full); color:var(--color-green-dark);" icon-url="../../../../../../img/icons/key-filled.svg" size="1.5em"></wct-icon-mdx>
-              </a-icon-states>
+                <template>
+                  <wct-icon-mdx title="Private key" scale="1.5" style="--color-hover: var(--color-red-full); color:var(--color-red);" icon-url="../../../../../../img/icons/key-filled.svg" size="1.5em"></wct-icon-mdx>
+                  <wct-icon-mdx title="Public key" scale="1.5" style="--color-hover: var(--color-green-full); color:var(--color-green-dark);" icon-url="../../../../../../img/icons/key-filled.svg" size="1.5em"></wct-icon-mdx>
+                </template>
+              </a-icon-combinations>
             ` 
             : ''
           }

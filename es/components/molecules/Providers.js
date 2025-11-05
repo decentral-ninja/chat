@@ -341,11 +341,13 @@ export default class Providers extends Shadow() {
   renderHTML () {
     this.html = /* html */`
       <a-icon-states show-counter-on-hover>
-        <wct-icon-mdx state="default" title="Network providers" icon-url="../../../../../../img/icons/network.svg" size="2em"></wct-icon-mdx>
-        <wct-icon-mdx state="connected" title="Network providers connected" style="color:var(--color-green-full)" icon-url="../../../../../../img/icons/network.svg" size="2em"></wct-icon-mdx>
-        <wct-icon-mdx state="disconnected" title="No connection to Network providers" style="color:var(--color-error)" icon-url="../../../../../../img/icons/network-off.svg" size="2em"></wct-icon-mdx>
-        <wct-icon-mdx state="offline" title="You are offline!" style="color:var(--color-error)" icon-url="../../../../../../img/icons/network-off.svg" size="2em"></wct-icon-mdx>
-        <wct-icon-mdx state="no-active" title="No network providers is actively trying to connect!" style="color:var(--color-error)" icon-url="../../../../../../img/icons/plug-connected-x.svg" size="2em"></wct-icon-mdx>
+        <template>
+          <wct-icon-mdx state="default" title="Network providers" icon-url="../../../../../../img/icons/network.svg" size="2em"></wct-icon-mdx>
+          <wct-icon-mdx state="connected" title="Network providers connected" style="color:var(--color-green-full)" icon-url="../../../../../../img/icons/network.svg" size="2em"></wct-icon-mdx>
+          <wct-icon-mdx state="disconnected" title="No connection to Network providers" style="color:var(--color-error)" icon-url="../../../../../../img/icons/network-off.svg" size="2em"></wct-icon-mdx>
+          <wct-icon-mdx state="offline" title="You are offline!" style="color:var(--color-error)" icon-url="../../../../../../img/icons/network-off.svg" size="2em"></wct-icon-mdx>
+          <wct-icon-mdx state="no-active" title="No network providers is actively trying to connect!" style="color:var(--color-error)" icon-url="../../../../../../img/icons/plug-connected-x.svg" size="2em"></wct-icon-mdx>
+        </template>
       </a-icon-states>
       <wct-dialog namespace="dialog-top-slide-in-"${this.hasAttribute('online') ? ' online' : ''} closed-event-name="provider-dialog-closed">
         <style protected>
@@ -369,6 +371,11 @@ export default class Providers extends Shadow() {
             display: flex;
             flex-direction: column;
             gap: var(--grid-gap, 0.5em);
+          }
+          :host > dialog > #providers > chat-m-provider {
+            align-self: center;
+            max-width: 1000px;
+            width: 100%;
           }
           :host > dialog > #providers > wct-load-template-tag {
             min-height: var(--chat-m-provider-min-height);

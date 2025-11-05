@@ -76,6 +76,7 @@ export default class P2pGraph extends Intersection() {
       :host([has-height]:not([intersecting])) > * {
         display: none;
       }
+      /* NOTE: svg size can not be controlled easily */
       :host > div, :host > div > svg {
         overflow: visible;
       }

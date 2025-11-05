@@ -234,12 +234,14 @@ export default class Notifications extends Hover() {
   renderHTML () {
     this.html = /* html */`
       <a-icon-states no-pointer-events-updating show-counter-on-hover mode=false id=icon-states>
-        ${this.hasAttribute('allow-mute')
-          ? '<wct-icon-mdx state="default-hover" no-counter title="turn notifications off" id="bell-off" icon-url="../../../../../../img/icons/bell-off.svg" size="2em"></wct-icon-mdx>'
-          : ''
-        }
-        <wct-icon-mdx state="muted" no-counter title="turn notifications on" id="bell-plus" icon-url="../../../../../../img/icons/bell-plus.svg" size="2em"></wct-icon-mdx>
-        <wct-icon-mdx state="default" id="show-modal" title=notifications icon-url="../../../../../../img/icons/bell.svg" size="2em" ${this.hasAttribute('no-hover') ? 'no-hover' : 'hover-on-parent-shadow-root-host'}></wct-icon-mdx>
+        <template>
+          ${this.hasAttribute('allow-mute')
+            ? '<wct-icon-mdx state="default-hover" no-counter title="turn notifications off" id="bell-off" icon-url="../../../../../../img/icons/bell-off.svg" size="2em"></wct-icon-mdx>'
+            : ''
+          }
+          <wct-icon-mdx state="muted" no-counter title="turn notifications on" id="bell-plus" icon-url="../../../../../../img/icons/bell-plus.svg" size="2em"></wct-icon-mdx>
+          <wct-icon-mdx state="default" id="show-modal" title=notifications icon-url="../../../../../../img/icons/bell.svg" size="2em" ${this.hasAttribute('no-hover') ? 'no-hover' : 'hover-on-parent-shadow-root-host'}></wct-icon-mdx>
+        </template>
       </a-icon-states>
       <span id="message"></span>
     `

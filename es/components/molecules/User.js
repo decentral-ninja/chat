@@ -161,6 +161,7 @@ export default class User extends Intersection() {
       }
       :host > li > div > table > tbody > tr > td {
         overflow-wrap: anywhere;
+        border-bottom: 1px solid var(--color);
       }
       :host > li > div > table > tbody > tr.time-status {
         padding-bottom: var(--h-margin-bottom, 1em);
@@ -201,7 +202,7 @@ export default class User extends Intersection() {
         font-weight: bold;
       }
       :host > li > div > table > tbody > tr > td:where(.public-key-left, .public-key-right) {
-        grid-row-start: 10;
+        grid-row-start: 100;
         max-height: 5em;
         overflow: auto;
         scrollbar-color: var(--color) var(--background-color);
@@ -209,6 +210,9 @@ export default class User extends Intersection() {
       }
       :host > li > div > table > tbody > tr > td.public-key-right {
         font-size: 0.75em;
+      }
+      :host([self]) > li > div > table > tbody > tr > td {
+        border-bottom: 1px solid var(--background-color);
       }
       :host([self]) > li > div > table > tbody > tr > td:where(.public-key-left, .public-key-right) {
         scrollbar-color: var(--color-secondary) var(--background-color);
@@ -245,6 +249,31 @@ export default class User extends Intersection() {
       :host(.active) > li > div > h2 {
         --cursor-hover: pointer;
         border-bottom: 1px solid var(--background-color);
+      }
+      @media only screen and (max-width: _max-width_) {
+        :host([self]) > li > div > table > tbody > tr > td, :host > li > div > table > tbody > tr > td, :host > li > div > table > tbody > tr.time-status > td {
+          grid-column: 1 span2;
+          border-bottom: 1px solid transparent;
+          margin-left: 1em;
+        }
+        :host > li > div > table > tbody > tr.time-status > td {
+          grid-column: 1 span1;
+        }
+        :host > li > div > table > tbody > tr.time-status > td:last-child {
+          grid-column: 2 span1;
+        }
+        :host > li > div > table > tbody > tr > td:first-child {
+          border-bottom: 1px solid var(--color);
+        }
+        :host([self]) > li > div > table > tbody > tr > td:first-child {
+          border-bottom: 1px solid var(--background-color);
+        }
+        :host > li > div > table > tbody > tr > td:not(.time-status-icons):last-child {
+          margin-left: 2em;
+        }
+        :host > li > div > table > tbody > tr > td.public-key-right {
+          grid-row-start: 101;
+        }
       }
     `
     return this.fetchTemplate()

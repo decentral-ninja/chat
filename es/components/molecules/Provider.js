@@ -454,16 +454,20 @@ export default class Provider extends Intersection() {
         <div class=icons style="grid-area: connectionStateIcon">
           <wct-icon-mdx id="default" title="Decentral Ninja default provider" style="color:var(--color-green-full)" icon-url="../../../../../../img/icons/shield-check.svg" size="2em"></wct-icon-mdx>
           <a-icon-states id=ping-state>
-            <wct-icon-mdx state="default" title="pinging..." icon-url="../../../../../../img/icons/network.svg" size="2em"></wct-icon-mdx>
-            <wct-icon-mdx state="fetch-success" title="fetch successful!" style="color:var(--color-green-full)" icon-url="../../../../../../img/icons/network.svg" size="2em"></wct-icon-mdx>
-            <wct-icon-mdx state="ping-success" title="ping successful!" style="color:var(--color-orange)" icon-url="../../../../../../img/icons/network.svg" size="2em"></wct-icon-mdx>
-            <wct-icon-mdx state="error" title="not able to fetch nor ping the provider" style="color:var(--color-error)" icon-url="../../../../../../img/icons/network-off.svg" size="2em"></wct-icon-mdx>
+            <template>
+              <wct-icon-mdx state="default" title="pinging..." icon-url="../../../../../../img/icons/network.svg" size="2em"></wct-icon-mdx>
+              <wct-icon-mdx state="fetch-success" title="fetch successful!" style="color:var(--color-green-full)" icon-url="../../../../../../img/icons/network.svg" size="2em"></wct-icon-mdx>
+              <wct-icon-mdx state="ping-success" title="ping successful!" style="color:var(--color-orange)" icon-url="../../../../../../img/icons/network.svg" size="2em"></wct-icon-mdx>
+              <wct-icon-mdx state="error" title="not able to fetch nor ping the provider" style="color:var(--color-error)" icon-url="../../../../../../img/icons/network-off.svg" size="2em"></wct-icon-mdx>
+            </template>
           </a-icon-states>
           <a-icon-states id=connection-state state="disconnected">
-            <wct-icon-mdx state="connected" id=connected title=connected style="--color: var(--color-green-full);" no-hover icon-url="../../../../../../img/icons/plug-connected.svg" size="2em"></wct-icon-mdx>
-            <wct-icon-mdx state="connecting" id=connecting title="trying to connect" style="--color: var(--color-orange);" no-hover icon-url="../../../../../../img/icons/plug-connected.svg" size="2em"></wct-icon-mdx>
-            <wct-icon-mdx state="disconnected" id=disconnected title=disconnected style="--color: var(--color-error);" no-hover icon-url="../../../../../../img/icons/plug-connected-x.svg" size="2em"></wct-icon-mdx>
-            <wct-icon-mdx state="offline" title="You are offline!" style="color:var(--color-error)" no-hover icon-url="../../../../../../img/icons/plug-connected-x.svg" size="2em"></wct-icon-mdx>
+            <template>
+              <wct-icon-mdx state="connected" id=connected title=connected style="--color: var(--color-green-full);" no-hover icon-url="../../../../../../img/icons/plug-connected.svg" size="2em"></wct-icon-mdx>
+              <wct-icon-mdx state="connecting" id=connecting title="trying to connect" style="--color: var(--color-orange);" no-hover icon-url="../../../../../../img/icons/plug-connected.svg" size="2em"></wct-icon-mdx>
+              <wct-icon-mdx state="disconnected" id=disconnected title=disconnected style="--color: var(--color-error);" no-hover icon-url="../../../../../../img/icons/plug-connected-x.svg" size="2em"></wct-icon-mdx>
+              <wct-icon-mdx state="offline" title="You are offline!" style="color:var(--color-error)" no-hover icon-url="../../../../../../img/icons/plug-connected-x.svg" size="2em"></wct-icon-mdx>
+            </template>
           </a-icon-states>
         </div>
         <wct-details style="grid-area: title" animationend-event-name=wct-details-animationend>
@@ -514,6 +518,22 @@ export default class Provider extends Intersection() {
             }
             :host > details > table > tbody > tr > td:where(#origins, #status) > span:not(:where(.is-active-room, .once-established, .connected, .active)) {
               order: 2;
+            }
+            @media only screen and (max-width: ${this.mobileBreakpoint}) {
+              :host > details > table > tbody > tr > td, :host > details > table > tbody > tr > td[style="grid-column: span 2;"] {
+                grid-column: 1/3 !important;
+                border-bottom: 1px solid transparent;
+                margin-left: 1em;
+              }
+              :host > details > table > tbody > tr > td[style="grid-column: span 2;"] {
+                margin-left: 0 !important;
+              }
+              :host > details > table > tbody > tr > td:first-child {
+                border-bottom: 1px solid var(--color);
+              }
+              :host > details > table > tbody > tr > td:last-child {
+                margin-left: 2em;
+              }
             }
           </style>
           <details>

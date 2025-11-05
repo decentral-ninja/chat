@@ -203,10 +203,12 @@ export default class Users extends Shadow() {
   renderHTML () {
     this.html = /* html */`
       <a-icon-states show-counter-on-hover>
-        <wct-icon-mdx state="default" title="Users" icon-url="../../../../../../img/icons/user-other.svg" size="2em"></wct-icon-mdx>
-        <wct-icon-mdx state="connected" title="Users active" style="color:var(--color-green-full)" icon-url="../../../../../../img/icons/user-other.svg" size="2em"></wct-icon-mdx>
-        <wct-icon-mdx state="disconnected" title="Not connected to users" style="color:var(--color-error)" icon-url="../../../../../../img/icons/user-off.svg" size="2em"></wct-icon-mdx>
-        <wct-icon-mdx state="offline" title="You are offline!" style="color:var(--color-error)" icon-url="../../../../../../img/icons/user-off.svg" size="2em"></wct-icon-mdx>
+        <template>
+          <wct-icon-mdx state="default" title="Users" icon-url="../../../../../../img/icons/user-other.svg" size="2em"></wct-icon-mdx>
+          <wct-icon-mdx state="connected" title="Users active" style="color:var(--color-green-full)" icon-url="../../../../../../img/icons/user-other.svg" size="2em"></wct-icon-mdx>
+          <wct-icon-mdx state="disconnected" title="Not connected to users" style="color:var(--color-error)" icon-url="../../../../../../img/icons/user-off.svg" size="2em"></wct-icon-mdx>
+          <wct-icon-mdx state="offline" title="You are offline!" style="color:var(--color-error)" icon-url="../../../../../../img/icons/user-off.svg" size="2em"></wct-icon-mdx>
+        </template>
       </a-icon-states>
       <wct-dialog namespace="dialog-top-slide-in-"${this.hasAttribute('online') ? ' online' : ''}>
         <style protected>
