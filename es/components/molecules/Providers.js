@@ -374,8 +374,8 @@ export default class Providers extends Shadow() {
           }
           :host > dialog > #providers > chat-m-provider {
             align-self: center;
-            max-width: 1000px;
-            width: 100%;
+            width: max(1000px, 80%);
+            max-width: 100%;
           }
           :host > dialog > #providers > wct-load-template-tag {
             min-height: var(--chat-m-provider-min-height);
