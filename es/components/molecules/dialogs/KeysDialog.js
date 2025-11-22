@@ -77,6 +77,7 @@ export default class KeysDialog extends Dialog {
       <dialog>
         <wct-menu-icon id="close" no-aria class="open sticky" namespace="menu-icon-close-" no-click background style="--outline-style-focus-visible: none;"></wct-menu-icon>
         <h4>Keys:</h4>
+        <p>keys...</p>
       </dialog>
     `
     return this.fetchModules([
