@@ -80,6 +80,14 @@ export default class KeysDialog extends Dialog {
         <p>keys...</p>
       </dialog>
     `
+    new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-keys', {
+      detail: {resolve},
+      bubbles: true,
+      cancelable: true,
+      composed: true
+    }))).then(keyContainers => (this.html = keyContainers.reduce((acc, keyContainer, i) => /* html */`
+      ${acc}<li>Key ${i + 1}: <input value='${JSON.stringify(keyContainer)}' type=password /></li>
+    `, '<ul>') + '</ul>'))
     return this.fetchModules([
       {
         // @ts-ignore
