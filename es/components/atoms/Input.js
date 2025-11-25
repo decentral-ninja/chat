@@ -224,6 +224,8 @@ export default class Input extends Shadow() {
   renderCSS () {
     this.css = /* css */`
       :host {
+        --menu-icon-close-background-color-hover: var(--color);
+        --menu-icon-close-background-color: var(--color);
         width: 100%;
       }
       :host > div {
