@@ -1,5 +1,6 @@
 // @ts-check
-import { Shadow } from '../../../../../web-components-toolbox/src/es/components/prototypes/Shadow.js'
+import { Shadow } from '../../../../../event-driven-web-components-prototypes/src/Shadow.js'
+import { escapeHTML } from '../../../../../event-driven-web-components-prototypes/src/helpers/Helpers.js'
 import { getHexColor } from '../../../../../Helpers.js'
 
 /* global self */
@@ -206,7 +207,7 @@ export default class NickName extends Shadow() {
         <span class=avatar>
           <wct-icon-mdx hover-on-parent-shadow-root-host id=connected title=connected icon-url="../../../../../../img/icons/mobiledata.svg" size="0.75em"></wct-icon-mdx>
         </span>
-        <${this.hTagName}>${nickname || this.getAttribute('nickname') || 'None'}</${this.hTagName}>
+        <${this.hTagName}>${escapeHTML(nickname) || this.getAttribute('nickname') || 'None'}</${this.hTagName}>
         ${this.hasAttribute('self') ? '<wct-icon-mdx hover-on-parent-element id="show-modal" title="edit nickname" icon-url="../../../../../../img/icons/pencil.svg" size="1em"></wct-icon-mdx>' : ''}
       </a>
     `

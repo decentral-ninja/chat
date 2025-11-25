@@ -62,6 +62,7 @@ export default class Providers extends Shadow() {
     let timeoutCounter = 1
     this.providersEventListener = (event, setUpdating = true) => {
       lastProvidersEventGetData = event.detail.getData
+      this.dialog.removeAttribute('updating')
       if (!setUpdating) this.iconStatesEl.setAttribute('updating', '')
       if (timeoutCounter % skipTimeoutClear) clearTimeout(timeoutId)
       timeoutCounter++
@@ -105,6 +106,7 @@ export default class Providers extends Shadow() {
       event.stopPropagation()
       let input
       if ((input = this.websocketInput)) {
+        this.dialog.setAttribute('updating', '')
         this.dispatchEvent(new CustomEvent('yjs-update-providers', {
           detail: {
             // @ts-ignore
@@ -120,6 +122,7 @@ export default class Providers extends Shadow() {
       event.stopPropagation()
       let input
       if ((input = this.webrtcInput)) {
+        this.dialog.setAttribute('updating', '')
         this.dispatchEvent(new CustomEvent('yjs-update-providers', {
           detail: {
             // @ts-ignore
@@ -389,7 +392,10 @@ export default class Providers extends Shadow() {
           :host(:not([online])) > dialog > #providers > #providers-graph {
             display: none;
           }
-          :host > dialog > #providers > #providers-graph:has(~ chat-m-provider[updating])::after {
+          :host > dialog > #providers > wct-details {
+            position: relative;
+          }
+          :host > dialog > #providers > #providers-graph:has(~ chat-m-provider[updating])::after, :host([updating]) > dialog > #providers > #providers-graph::after, :host([updating]) > dialog > #providers > wct-details > details::after {
             animation: updating 3s ease infinite;
             content: "";
             border-radius: var(--border-radius);
@@ -406,7 +412,7 @@ export default class Providers extends Shadow() {
           :host > dialog > #providers > #providers-graph:has(chat-a-p2p-graph[no-data]) {
             display: none;
           }
-          :host > dialog > #providers:has(> chat-m-provider[updating]) > chat-m-provider {
+          :host > dialog > #providers:has(> chat-m-provider[updating]) > chat-m-provider, :host([updating]) > dialog > #providers > chat-m-provider, :host([updating]) > dialog > #providers > wct-details {
             pointer-events: none;
             cursor: not-allowed;
           }

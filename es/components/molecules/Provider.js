@@ -1,5 +1,6 @@
 // @ts-check
-import { Intersection } from '../../../../web-components-toolbox/src/es/components/prototypes/Intersection.js'
+import { Intersection } from '../../../../event-driven-web-components-prototypes/src/Intersection.js'
+import { escapeHTML } from '../../../../event-driven-web-components-prototypes/src/helpers/Helpers.js'
 import { jsonParseMapUrlReviver } from '../../../../Helpers.js'
 import { separator } from '../../../../event-driven-web-components-yjs/src/es/controllers/Users.js'
 import { scrollElIntoView } from '../../../../event-driven-web-components-prototypes/src/helpers/Helpers.js'
@@ -566,7 +567,7 @@ export default class Provider extends Intersection() {
           </details>
         </wct-details>
         <div class=icons style="grid-area: notification">
-          <chat-m-notifications room="${this.roomName}" hostname="${Array.from(this.data?.urls || [])?.[0]?.[1].url.hostname || ''}" on-connected-request-notifications allow-mute no-click no-hover></chat-m-notifications>
+          <chat-m-notifications room="${escapeHTML(this.roomName)}" hostname="${Array.from(this.data?.urls || [])?.[0]?.[1].url.hostname || ''}" on-connected-request-notifications allow-mute no-click no-hover></chat-m-notifications>
           <wct-icon-mdx id=share title=share icon-url="../../../../../../img/icons/share-3.svg" size="2em"></wct-icon-mdx>
         </div>
         <div id=url style="grid-area: url">
@@ -763,7 +764,7 @@ export default class Provider extends Intersection() {
         hasWebsocket: false
       })
       this.detailsCustomTitle.textContent = urlInfo.hostname
-      this.detailsOrigins.innerHTML = this.data.origins.reduce((acc, origin) => /* html */`${acc}<span ${origin === this.roomName ? 'class=is-active-room title="currently active room"': ''}>${origin}</span>`, '')
+      this.detailsOrigins.innerHTML = this.data.origins.reduce((acc, origin) => /* html */`${acc}<span ${origin === this.roomName ? 'class=is-active-room title="currently active room"': ''}>${escapeHTML(origin)}</span>`, '')
       this.detailsStatus.innerHTML = this.data.status.reduce((acc, status) => /* html */`${acc}<span class="${status}">${status}</span>`, '')
       const url = Array.from(this.data.urls.keys())[0]
       const pingProvider = errorMessage => data.pingProvider(url, force).then(response => {

@@ -1,5 +1,5 @@
 // @ts-check
-import { Intersection } from '../../../../../web-components-toolbox/src/es/components/prototypes/Intersection.js'
+import { Intersection } from '../../../../../event-driven-web-components-prototypes/src/Intersection.js'
 import { getHexColor } from '../../../../../Helpers.js'
 
 /* global self */

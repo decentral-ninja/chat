@@ -1,5 +1,6 @@
 // @ts-check
-import { Intersection } from '../../../../web-components-toolbox/src/es/components/prototypes/Intersection.js'
+import { Intersection } from '../../../../event-driven-web-components-prototypes/src/Intersection.js'
+import { escapeHTML } from '../../../../event-driven-web-components-prototypes/src/helpers/Helpers.js'
 import { jsonParseMapUrlReviver } from '../../../../Helpers.js'
 
 /* global Environment */
@@ -304,7 +305,7 @@ export default class User extends Intersection() {
       <li>
         <div>
           <h2>
-            ${User.renderNickname(this.user.nickname)}
+            ${User.renderNickname(this.user.nickname, this.user.uid)}
             <span class=user-icon>
               <wct-icon-mdx title="${this.user.isSelf ? 'Yourself' : 'Other user'}" icon-url="../../../../../../img/icons/${this.user.isSelf ? 'user-self' : 'user-other'}.svg" size="0.75em"></wct-icon-mdx>
               <span class=tiny>${this.user.isSelf ? 'Yourself' : 'Other user'}</span>
@@ -450,8 +451,8 @@ export default class User extends Intersection() {
     }, clear ? 0 : 350)
   }
 
-  static renderNickname (nickname) {
-    return /* html */`<span id=nickname>${nickname || 'none'}</span>`
+  static renderNickname (nickname, fallbackName = 'none') {
+    return /* html */`<span id=nickname>${escapeHTML(nickname) || fallbackName}</span>`
   }
 
   static renderTableValue (key, user, allUsers, selfUid) {
@@ -464,7 +465,7 @@ export default class User extends Intersection() {
           </chat-m-connected-users>
         `
         : key === 'nickname'
-        ? /* html */`<chat-a-nick-name uid='${user.uid}' nickname="${user.nickname}"${user.isSelf ? ' self' : ''}></chat-a-nick-name>`
+        ? /* html */`<chat-a-nick-name uid='${user.uid}' nickname="${escapeHTML(user.nickname)}"${user.isSelf ? ' self' : ''}></chat-a-nick-name>`
         : typeof user[key] === 'string' && user[key].includes('epoch') && key !== 'uid' && key !== 'publicKey'
         ? new Date(JSON.parse(user[key]).epoch).toLocaleString(navigator.language)
         : typeof user[key] === 'object'

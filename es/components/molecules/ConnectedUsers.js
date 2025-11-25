@@ -1,5 +1,6 @@
 // @ts-check
-import { Shadow } from '../../../../web-components-toolbox/src/es/components/prototypes/Shadow.js'
+import { Shadow } from '../../../../event-driven-web-components-prototypes/src/Shadow.js'
+import { escapeHTML } from '../../../../event-driven-web-components-prototypes/src/helpers/Helpers.js'
 import { separator } from '../../../../event-driven-web-components-yjs/src/es/controllers/Users.js'
 
 /* global Environment */
@@ -182,7 +183,7 @@ export default class ConnectedUsers extends Shadow() {
                   <details>
                     <summary>
                       <div class=title>
-                        <chat-a-nick-name uid='${connectedUser.uid}' nickname="${connectedUser.nickname}"${connectedUser.isSelf ? ' self' : ''}></chat-a-nick-name>
+                        <chat-a-nick-name uid='${connectedUser.uid}' nickname="${escapeHTML(connectedUser.nickname)}"${connectedUser.isSelf ? ' self' : ''}></chat-a-nick-name>
                       </div>
                     </summary>
                     ${providerNameString}

@@ -19,7 +19,7 @@ export default class NickNameDialog extends SetStringDialog {
 
     this.nicknameEventListener = event => {
       this.nickname = Promise.resolve(event.detail.nickname)
-      if (this.getNicknameInput) this.getNicknameInput.setAttribute('placeholder', event.detail.nickname)
+      this.updateNickName(event.detail.nickname)
     }
 
     this.setInputEventListener = event => {
@@ -41,7 +41,10 @@ export default class NickNameDialog extends SetStringDialog {
     /** @type {(any)=>void} */
     this.nicknameResolve = map => map
     /** @type { Promise<string> } */
-    this.nickname = new Promise(resolve => (this.nicknameResolve = resolve)).then(({ nickname }) => nickname)
+    this.nickname = new Promise(resolve => (this.nicknameResolve = resolve)).then(({ nickname }) => {
+      this.updateNickName(nickname)
+      return nickname
+    })
   }
 
   connectedCallback () {
@@ -78,7 +81,8 @@ export default class NickNameDialog extends SetStringDialog {
    * @returns Promise<void>
    */
   renderCustomHTML () {
-    return super.renderCustomHTML(this.getAttribute('nickname'), localStorage.getItem(`${this.roomNamePrefix}default-nickname`) || '', '', /* html */`
+    const nickname = this.hasAttribute('nickname-is-random') ? localStorage.getItem(`${this.roomNamePrefix}default-nickname`) || this.getAttribute('nickname') || '' : this.getAttribute('nickname') || localStorage.getItem(`${this.roomNamePrefix}default-nickname`) || ''
+    return super.renderCustomHTML(nickname, nickname, '', /* html */`
         <h4>Change your nickname:</h4>
       `, '', /* html */`
         <style protected>
@@ -90,9 +94,21 @@ export default class NickNameDialog extends SetStringDialog {
           }
         </style>
         <div id=set-default-nickname-wrapper grid-column="1/6">
-          <input id=set-default-nickname type=checkbox checked/><label for="set-default-nickname" class=italic>Set as default proposed nickname?</label>
+          <input id=set-default-nickname type=checkbox ${this.hasAttribute('nickname-is-random') ? 'checked ' : ''}/><label for="set-default-nickname" class=italic>Set as default proposed nickname?</label>
         </div>
       `)
+  }
+
+  async updateNickName (nickname) {
+    await this.dialogPromise
+    if (this.getNicknameInput?.inputField) {
+      this.getNicknameInput.inputField.setAttribute('placeholder', nickname)
+      if (this.getNicknameInput.inputField.matches(':focus')) {
+        this.getNicknameInput.inputField.addEventListener('blur', event => (this.getNicknameInput.inputField.value = nickname), {once: true})
+      } else {
+        this.getNicknameInput.inputField.value = nickname
+      }
+    }
   }
 
   get grid () {

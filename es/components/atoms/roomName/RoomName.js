@@ -1,5 +1,6 @@
 // @ts-check
-import { Shadow } from '../../../../../web-components-toolbox/src/es/components/prototypes/Shadow.js'
+import { Shadow } from '../../../../../event-driven-web-components-prototypes/src/Shadow.js'
+import { escapeHTML } from '../../../../../event-driven-web-components-prototypes/src/helpers/Helpers.js'
 
 /* global Environment */
 /* global self */
@@ -170,13 +171,14 @@ export default class RoomName extends Shadow() {
    * @returns Promise<void>
    */
   renderHTML (roomName, getRoomsResult) {
+    roomName = roomName ? escapeHTML(roomName) : 'Loading...'
     this.html = ''
     this.html = /* html */`<a href="#">
       <div class=name>
         <wct-icon-mdx title="open rooms" hover-on-parent-element id="show-modal" rotate="180deg" icon-url="../../../../../../img/icons/chevron-left.svg" size="1.75em"></wct-icon-mdx>
-        <h1 title="${roomName || 'Loading...'}">${roomName || 'Loading...'}</h1>
+        <h1 title="${roomName}">${roomName}</h1>
       </div>
-      <div class=aka>${getRoomsResult?.value?.[roomName]?.aka ? getRoomsResult.value[roomName].aka : ''}</div>
+      <div class=aka>${getRoomsResult?.value?.[roomName]?.aka ? escapeHTML(getRoomsResult.value[roomName].aka) : ''}</div>
     </a>`
     return this.fetchModules([
       {

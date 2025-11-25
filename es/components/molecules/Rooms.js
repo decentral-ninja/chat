@@ -1,5 +1,6 @@
 // @ts-check
 import { Shadow } from '../../../../event-driven-web-components-prototypes/src/Shadow.js'
+import { escapeHTML } from '../../../../event-driven-web-components-prototypes/src/helpers/Helpers.js'
 
 /* global self */
 /* global Environment */
@@ -16,6 +17,7 @@ export default class Rooms extends Shadow() {
   constructor (options = {}, ...args) {
     super({ importMetaUrl: import.meta.url, ...options }, ...args)
 
+    this.roomKeys = []
     // @ts-ignore
     this.roomNamePrefix = self.Environment?.roomNamePrefix || 'chat-'
     this.shareDialogMap = new Map()
@@ -47,24 +49,25 @@ export default class Rooms extends Shadow() {
           path: `${this.importMetaUrl}../molecules/dialogs/ShareDialog.js?${Environment?.version || ''}`,
           name: 'chat-m-share-dialog'
         }]).then(async () => {
-          if (this.shareDialogMap.has(target.getAttribute('share'))) {
-            this.shareDialogMap.get(target.getAttribute('share')).show('show-modal')
+          const shareKey = this.roomKeys[target.getAttribute('share').replace('room-key-index-', '')] || target.getAttribute('share')
+          if (this.shareDialogMap.has(shareKey)) {
+            this.shareDialogMap.get(shareKey).show('show-modal')
           } else {
             const div = document.createElement('div')
             div.innerHTML = /* html */`
               <chat-m-share-dialog
                 namespace="dialog-top-slide-in-"
                 open="show-modal"
-                room-name="${target.getAttribute('share')}"
+                room-name="${escapeHTML(shareKey)}"
                 ${(await this.roomPromise).room.done
-                  ? await (await this.roomPromise).room === target.getAttribute('share')
+                  ? await (await this.roomPromise).room === shareKey
                     ? 'is-active-room'
                     : ''
                   : 'no-share-in-chat'
                 }
               ></chat-m-share-dialog>
             `
-            this.shareDialogMap.set(target.getAttribute('share'), div.children[0])
+            this.shareDialogMap.set(shareKey, div.children[0])
             this.root.appendChild(div.children[0])
           }
         })
@@ -84,29 +87,31 @@ export default class Rooms extends Shadow() {
             name: 'chat-m-room-name-aka-dialog'
           }])
         ]).then(([getRoomsResult]) => {
-          if (this.roomNameAkaDialogMap.has(target.getAttribute('edit'))) {
-            this.roomNameAkaDialogMap.get(target.getAttribute('edit')).show('show-modal')
+          const editKey = this.roomKeys[target.getAttribute('edit').replace('room-key-index-', '')] || target.getAttribute('edit')
+          if (this.roomNameAkaDialogMap.has(editKey)) {
+            this.roomNameAkaDialogMap.get(editKey).show('show-modal')
           } else {
             const div = document.createElement('div')
             div.innerHTML = /* html */`
               <chat-m-room-name-aka-dialog
                 namespace="dialog-top-slide-in-"
                 open="show-modal"
-                room-name="${target.getAttribute('edit')}"
+                room-name="${escapeHTML(editKey)}"
                 li-count="${target.getAttribute('li-count')}"
               >
                 <template>${JSON.stringify(getRoomsResult.value)}</template>
               </chat-m-room-name-aka-dialog>
             `
-            this.roomNameAkaDialogMap.set(target.getAttribute('edit'), div.children[0])
+            this.roomNameAkaDialogMap.set(editKey, div.children[0])
             this.root.appendChild(div.children[0])
           }
         })
       } else if ((target = event.composedPath().find(el => el.hasAttribute?.('delete')))) {
+        const deleteKey = this.roomKeys[target.getAttribute('delete').replace('room-key-index-', '')] || target.getAttribute('delete')
         new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-delete-room', {
           detail: {
             resolve,
-            name: target.getAttribute('delete')
+            name: deleteKey
           },
           bubbles: true,
           cancelable: true,
@@ -119,7 +124,7 @@ export default class Rooms extends Shadow() {
         })))
         this.dispatchEvent(new CustomEvent('yjs-unsubscribe-notifications', {
           detail: {
-            room: target.getAttribute('delete'),
+            room: deleteKey,
             locationHref: target.getAttribute('href')
           },
           bubbles: true,
@@ -145,7 +150,7 @@ export default class Rooms extends Shadow() {
         })))
         this.dispatchEvent(new CustomEvent('yjs-subscribe-notifications', {
           detail: {
-            room: target.getAttribute('undo'),
+            room: this.roomKeys[target.getAttribute('undo').replace('room-key-index-', '')] || target.getAttribute('undo'),
             locationHref: target.getAttribute('href')
           },
           bubbles: true,
@@ -204,7 +209,7 @@ export default class Rooms extends Shadow() {
     }
 
     this.roomNameAkaEventListener = event => {
-      const target = this.ul.querySelector(`#${event.detail.key}`)?.querySelector('.aka') || this.ul.children[event.detail.liCount]?.querySelector('.aka')
+      const target = this.ul.querySelector(`#${CSS.escape(event.detail.key)}`)?.querySelector('.aka') || this.ul.children[event.detail.liCount]?.querySelector('.aka')
       if (target) target.textContent = event.detail.aka ? event.detail.aka : ''
     }
 
@@ -423,7 +428,7 @@ export default class Rooms extends Shadow() {
                 </section>
               </wct-grid>
               <hr>
-              ${Rooms.renderRoomList(getRoomsResult, roomName, false)}
+              ${this.renderRoomList(getRoomsResult, roomName, false)}
             </dialog>
           </wct-dialog>
         `
@@ -449,7 +454,7 @@ export default class Rooms extends Shadow() {
                 </section>
               </wct-grid>
               <hr>
-              ${Rooms.renderRoomList(getRoomsResult, undefined, true)}
+              ${this.renderRoomList(getRoomsResult, undefined, true)}
             </dialog>
           </wct-dialog>
         `
@@ -465,7 +470,8 @@ export default class Rooms extends Shadow() {
    * @param {boolean} [enteringNewRoom=undefined]
    * @return {string}
    */
-  static renderRoomList (rooms, activeRoomName, enteringNewRoom) {
+  renderRoomList (rooms, activeRoomName, enteringNewRoom) {
+    this.roomKeys = []
     return /* html */`<style protected="true">
       :host {
         --color-hover: var(--color-yellow);
@@ -558,28 +564,35 @@ export default class Rooms extends Shadow() {
     <ul>
       ${Object.keys(rooms.value)
         .sort((a, b) => rooms.value[b].entered?.[0] - rooms.value[a].entered?.[0])
-        .reduce((acc, key, i, arr) => acc + /* html */`<wct-load-template-tag no-css copy-class-list><template><li id="${key}"${key === activeRoomName ? ' disabled' : ''}>
-          <div>
-            <a route href="${rooms.value[key].locationHref}">
-              <div>${key}</div>
-              <div class=aka>${rooms.value[key].aka ? rooms.value[key].aka : ''}</div>
-            </a>
-            ${enteringNewRoom
-              ? ''
-              : key === activeRoomName
-                ? /* html */`<chat-m-notifications room="${key}" no-click on-connected-request-notifications allow-mute span-cursor=pointer></chat-m-notifications>`
-                : /* html */`
-                  <a route href="${rooms.value[key].locationHref}">
-                    <chat-m-notifications room="${key}" no-click on-connected-request-notifications allow-mute span-cursor=pointer></chat-m-notifications>
-                  </a>
-                `
-            }
-            <wct-icon-mdx title="share" share="${key}" icon-url="../../../../../../img/icons/share-3.svg" size="2em"></wct-icon-mdx>
-            <wct-icon-mdx title="edit aka" edit="${key}" li-count=${i} icon-url="../../../../../../img/icons/pencil.svg" size="2em"></wct-icon-mdx>
-            <wct-icon-mdx title="delete" delete="${key.replace(/"/g, "'")}" href="${rooms.value[key].locationHref}" icon-url="../../../../../../img/icons/trash.svg" size="2em"></wct-icon-mdx>
-            <wct-icon-mdx title="undo" undo="${key}" href="${rooms.value[key].locationHref}" icon-url="../../../../../../img/icons/trash-off.svg" size="2em"></wct-icon-mdx>
-          </div>
-        </li></template></wct-load-template-tag>`, '')
+        .reduce((acc, key, i, arr) => {
+          const sanitizeKey = escapeHTML(key)
+          // keep the room keys after each render in a freshly created array. The keys get lost in the id, especially when using special html characters as room name
+          // @ts-ignore
+          this.roomKeys[i] = key
+          const roomKeyIndex = `room-key-index-${i}`
+          return acc + /* html */`<wct-load-template-tag no-css copy-class-list><template><li id="${roomKeyIndex}" ${key === activeRoomName ? ' disabled' : ''}>
+            <div>
+              <a route href="${rooms.value[key].locationHref}">
+                <div>${sanitizeKey}</div>
+                <div class=aka>${rooms.value[key].aka ? escapeHTML(rooms.value[key].aka) : ''}</div>
+              </a>
+              ${enteringNewRoom
+                ? ''
+                : key === activeRoomName
+                  ? /* html */`<chat-m-notifications room="${sanitizeKey}" no-click on-connected-request-notifications allow-mute span-cursor=pointer></chat-m-notifications>`
+                  : /* html */`
+                    <a route href="${rooms.value[key].locationHref}">
+                      <chat-m-notifications room="${sanitizeKey}" no-click on-connected-request-notifications allow-mute span-cursor=pointer></chat-m-notifications>
+                    </a>
+                  `
+              }
+              <wct-icon-mdx title="share" share="${roomKeyIndex}" icon-url="../../../../../../img/icons/share-3.svg" size="2em"></wct-icon-mdx>
+              <wct-icon-mdx title="edit aka" edit="${roomKeyIndex}" li-count=${i} icon-url="../../../../../../img/icons/pencil.svg" size="2em"></wct-icon-mdx>
+              <wct-icon-mdx title="delete" delete="${roomKeyIndex}" href="${rooms.value[key].locationHref}" icon-url="../../../../../../img/icons/trash.svg" size="2em"></wct-icon-mdx>
+              <wct-icon-mdx title="undo" undo="${roomKeyIndex}" href="${rooms.value[key].locationHref}" icon-url="../../../../../../img/icons/trash-off.svg" size="2em"></wct-icon-mdx>
+            </div>
+          </li></template></wct-load-template-tag>`
+        }, '')
       }
     </ul>`
   }

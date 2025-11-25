@@ -1,5 +1,6 @@
 // @ts-check
 import { WebWorker } from '../../../../../event-driven-web-components-prototypes/src/WebWorker.js'
+import { escapeHTML } from '../../../../../event-driven-web-components-prototypes/src/helpers/Helpers.js'
 import { Intersection } from '../../../../../event-driven-web-components-prototypes/src/Intersection.js'
 
 /* global Environment */
@@ -320,7 +321,7 @@ export default class Message extends WebWorker(Intersection()) {
   async renderHTML (textObj = this.textObj) {
     const textObjSync = await textObj
     this.html = Message.renderList(textObjSync, this.hasAttribute('no-dialog'))
-    if (!textObjSync.deleted) this.webWorker(Message.processText, textObjSync).then(textObj => (this.textSpan.innerHTML = textObj.text))
+    if (!textObjSync.deleted) this.webWorker(Message.processText, textObjSync).then(textObj => (this.textSpan.innerHTML = Message.htmlPurify(textObj.text)))
     return Promise.all([
       textObjSync.replyTo && this.hasAttribute('show-reply-to')
         ? this.renderReplyTo(textObjSync)
@@ -394,7 +395,7 @@ export default class Message extends WebWorker(Intersection()) {
     return /* html */`
       <li part="${part}"${textObj.deleted ? ' deleted' : ''}>
         <div>
-          ${textObj.deleted ? '' : /* html */`<chat-a-nick-name class="user" uid='${textObj.uid}' nickname="${textObj.updatedNickname}"${textObj.isSelf ? ' self user-dialog-show-event-only-on-avatar' : ' user-dialog-show-event'}></chat-a-nick-name>`}
+          ${textObj.deleted ? '' : /* html */`<chat-a-nick-name class="user" uid='${textObj.uid}' nickname="${escapeHTML(textObj.updatedNickname)}"${textObj.isSelf ? ' self user-dialog-show-event-only-on-avatar' : ' user-dialog-show-event'}></chat-a-nick-name>`}
           ${hasAttributeNoDialog
             ? ''
             : '<wct-icon-mdx title="view message" id="show-modal" rotate="-180deg" scale="1.5" icon-url="../../../../../../img/icons/dots-circle-horizontal.svg" size="1.5em"></wct-icon-mdx>'
