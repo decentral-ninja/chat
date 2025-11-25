@@ -143,7 +143,12 @@ export default class MessageDialog extends Dialog {
    * @returns Promise<void>
    */
   renderCustomHTML () {
-    const templateTextContent = this.template.content.textContent
+    let parsedTemplateTextContent
+    try {
+      parsedTemplateTextContent = JSON.parse(this.template.content.textContent)
+    } catch (error) {
+      parsedTemplateTextContent = {text: ''}
+    }
     this.template.remove()
     this.html = /* html */`
       <dialog>
@@ -157,7 +162,7 @@ export default class MessageDialog extends Dialog {
           </div>
           <wct-dialog-clipboard id=clipboard namespace="dialog-clipboard-default-">
             <wct-icon-mdx id="show-modal" title="copy" icon-url="../../../../../../img/icons/copy.svg" size="2em"></wct-icon-mdx>
-            <template>${JSON.parse(templateTextContent).text}</template>
+            <template>${parsedTemplateTextContent.text}</template>
           </wct-dialog-clipboard>
           <chat-m-share-dialog
             namespace="dialog-top-slide-in-"

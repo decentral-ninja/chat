@@ -1,5 +1,6 @@
 // @ts-check
 import Dialog from '../../../../../web-components-toolbox/src/es/components/molecules/dialog/Dialog.js'
+import { escapeHTML } from '../../../../../event-driven-web-components-prototypes/src/helpers/Helpers.js'
 
 /* global Environment */
 
@@ -159,7 +160,7 @@ export default class ShareDialog extends Dialog {
     this.html = /* html */`
       <dialog>
         <wct-menu-icon id="close" no-aria class="open sticky" namespace="menu-icon-close-" no-click background style="--outline-style-focus-visible: none;"></wct-menu-icon>
-        <h4>Share: "<span id="title-value" class="bold">${this.getAttribute('room-name') || this.getAttribute('href-title') || document.title}</span>"${this.getAttribute('title-append') || ''}</h4>
+        <h4>Share: "<span id="title-value" class="bold">${escapeHTML(this.getAttribute('room-name') || this.getAttribute('href-title') || document.title)}</span>"${this.getAttribute('title-append') || ''}</h4>
       </dialog>
     `
     return Promise.all([

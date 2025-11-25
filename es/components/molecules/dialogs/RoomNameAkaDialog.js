@@ -1,5 +1,6 @@
 // @ts-check
 import SetStringDialog from './prototypes/SetStringDialog.js'
+import { escapeHTML } from '../../../../../event-driven-web-components-prototypes/src/helpers/Helpers.js'
 
 /**
 * @export
@@ -58,8 +59,9 @@ export default class RoomNameAkaDialog extends SetStringDialog {
   renderCustomHTML () {
     const templateTextContent = this.template.content.textContent
     this.template.remove()
-    return super.renderCustomHTML(`${this.getAttribute('room-name') || ''} aka. ???`, JSON.parse(templateTextContent)?.[this.getAttribute('room-name')]?.aka || '', '', /* html */`
-        <h4>Set an aka. (also known as) room name for ${this.getAttribute('room-name') || ''}:</h4>
+    const roomName = escapeHTML(this.getAttribute('room-name') || '')
+    return super.renderCustomHTML(`${roomName} aka. ???`, escapeHTML(JSON.parse(templateTextContent)?.[this.getAttribute('room-name')]?.aka || ''), '', /* html */`
+        <h4>Set an aka. (also known as) room name for ${roomName}:</h4>
         <p>The given name is saved locally and not shared with anyone but helps you as a mental note.</p>
       `, '', '')
   }
