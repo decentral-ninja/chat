@@ -25,8 +25,21 @@ export default class Rooms extends Shadow() {
 
     this.clickEventListener = async event => {
       let target
-      if ((target = event.composedPath()[0]).hasAttribute('route')) {
-        if ((await this.roomPromise).room.done) {
+      if ((target = event.composedPath()[0])?.hasAttribute('route') || ((target = event.composedPath()[1]) && typeof target.hasAttribute === 'function' && target.hasAttribute('route'))) {
+        if (!target.hasAttribute('href')) {
+          event.stopPropagation()
+          event.preventDefault()
+          // workaround to get the href directly from rooms, since a room with sanitized XSS would not render out to the DOM
+          await new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-rooms', {
+            detail: {
+              resolve
+            },
+            bubbles: true,
+            cancelable: true,
+            composed: true
+          }))).then(getRoomsResult => target.setAttribute('href', getRoomsResult.value[this.roomKeys[target.getAttribute('route').replace('room-key-index-', '')]]?.locationHref || ''))
+          target.click()
+        } else if ((await this.roomPromise).room.done) {
           // enter new room
           this.dialog?.close()
         } else if (target.hasAttribute('room-name')) {
@@ -572,7 +585,7 @@ export default class Rooms extends Shadow() {
           const roomKeyIndex = `room-key-index-${i}`
           return acc + /* html */`<wct-load-template-tag no-css copy-class-list><template><li id="${roomKeyIndex}" ${key === activeRoomName ? ' disabled' : ''}>
             <div>
-              <a route href="${rooms.value[key].locationHref}">
+              <a route="${roomKeyIndex}">
                 <div>${sanitizeKey}</div>
                 <div class=aka>${rooms.value[key].aka ? escapeHTML(rooms.value[key].aka) : ''}</div>
               </a>
@@ -581,7 +594,7 @@ export default class Rooms extends Shadow() {
                 : key === activeRoomName
                   ? /* html */`<chat-m-notifications room="${sanitizeKey}" no-click on-connected-request-notifications allow-mute span-cursor=pointer></chat-m-notifications>`
                   : /* html */`
-                    <a route href="${rooms.value[key].locationHref}">
+                    <a route="${roomKeyIndex}">
                       <chat-m-notifications room="${sanitizeKey}" no-click on-connected-request-notifications allow-mute span-cursor=pointer></chat-m-notifications>
                     </a>
                   `
