@@ -1,154 +1,60 @@
 // @ts-check
 import { Intersection } from '../../../../event-driven-web-components-prototypes/src/Intersection.js'
 import { escapeHTML } from '../../../../event-driven-web-components-prototypes/src/helpers/Helpers.js'
-import { jsonParseMapUrlReviver } from '../../../../Helpers.js'
-import { separator } from '../../../../event-driven-web-components-yjs/src/es/controllers/Users.js'
 import { scrollElIntoView } from '../../../../event-driven-web-components-prototypes/src/helpers/Helpers.js'
 
 /* global Environment */
 
 /**
 * @export
-* @class Provider
+* @class Key
 * @type {CustomElementConstructor}
 */
-export default class Provider extends Intersection() {
-  static get observedAttributes () {
-    return ['class']
-  }
-
-  constructor (id, name, data, order, roomName, options = {}, ...args) {
+export default class Key extends Intersection() {
+  constructor (id, keyContainer, order, options = {}, ...args) {
     super({ importMetaUrl: import.meta.url, intersectionObserverInit: {}, ...options }, ...args)
 
     if (this.template) {
-      ({ id: this.id, name: this.name, data: this.data, order: this.order, roomName: this.roomName } = JSON.parse(this.template.content.textContent, jsonParseMapUrlReviver))
-      // revive url from href
-      /** @type {import('./Providers.js').Provider} */
-      this.data.urls.forEach((url, key) => {
-        if (typeof url.url === 'string') this.data.urls.set(key, { ...url, url: new URL(url.url) })
-      })
+      ({ id: this.id, keyContainer: this.keyContainer, order: this.order } = JSON.parse(this.template.content.textContent))
     } else {
       this.id = id
-      this.name = name
-      /** @type {import('./Providers.js').Provider} */
-      this.data = data
+      /** @type {import('../../../../event-driven-web-components-yjs/src/es/controllers/Keys.js').KEY_CONTAINER} */
+      this.keyContainer = keyContainer
       this.order = order
-      this.roomName = roomName
     }
     this.setAttribute('id', this.id)
 
-    this.keepAliveDefaultValue = 86400000 // has to be the same as on Servers Utils.js (delay) L: 333
-
-    const changeEventListener = event => this.setAttribute('touched', '')
-    let msCounter, daysCounter
-    this.inputKeepAliveChangeEventListener = (event, initialValue = false) => {
-      this.spanKeepAliveCounter.textContent = event.target.value
-      this.spanKeepAliveText.textContent = `(keep data on websocket for: ${msCounter = event.target.value / 1000 / 60 / 60} ${msCounter === 0 ? ' seconds = deleted immediately after the last client disconnects!' : `hours ≈ ${daysCounter = (msCounter / 24).toFixed(1)} day${Number(daysCounter) >= 2 ? 's' : ''}`})`
-      if (!initialValue) changeEventListener(event)
-    }
-    this.selectNameChangeEventListener = event => {
-      event.target.setAttribute('value', event.target.value)
-      changeEventListener(event)
-    }
-    this.selectProtocolChangeEventListener = event => changeEventListener(event)
-    this.inputPortChangeEventListener = event => changeEventListener(event)
-
-    this.connectEventListener = event => {
-      event.stopPropagation()
-      this.removeAttribute('touched')
-      this.setAttribute('updating', '')
-      this.iconConnectionState.setAttribute('updating', '')
-      this.dispatchEvent(new CustomEvent('connect-provider', {
-        detail: {
-          urlHrefObj: this.getUrlHrefObj()
-        },
-        bubbles: true,
-        cancelable: true,
-        composed: true
-      }))
-    }
-    this.disconnectEventListener = event => {
-      event.stopPropagation()
-      this.removeAttribute('touched')
-      this.setAttribute('updating', '')
-      this.iconConnectionState.setAttribute('updating', '')
-      this.dispatchEvent(new CustomEvent('disconnect-provider', {
-        detail: {
-          urlHrefObj: this.getUrlHrefObj()
-        },
-        bubbles: true,
-        cancelable: true,
-        composed: true
-      }))
-    }
-    this.undoEventListener = event => {
-      event.stopPropagation()
-      this.removeAttribute('touched')
-      this.update(this.data, this.order)
-    }
-
-    this.titleElClickEventListener = event => {
-      if (this.classList.contains('active')) this.classList.remove('active')
-    }
-
-    this.iconPingStateClickEventListener = event => {
-      if (this.details.details.hasAttribute('open')) {
-        this.details.details.removeAttribute('open')
-      } else {
-        this.details.details.setAttribute('open', '')
-      }
-    }
-
     this.iconShareClickEventListener = event => {
-      this.fetchModules([{
-        // @ts-ignore
-        path: `${this.importMetaUrl}../molecules/dialogs/ShareDialog.js?${Environment?.version || ''}`,
-        name: 'chat-m-share-dialog'
-      }]).then(async () => {
-        const urlHrefObj = this.getUrlHrefObj()
-        const shareValue = `${urlHrefObj?.name || this.selectName.value}${separator}${urlHrefObj?.url.origin || Array.from(this.data.urls.keys())[0]}`
-        if (this.shareDialog) {
-          this.shareDialog.setAttribute('href', shareValue)
-          this.shareDialog.setAttribute('href-title', `provider - ${shareValue}`)
-          // @ts-ignore
-          this.shareDialog.show('show-modal')
-        } else {
-          const div = document.createElement('div')
-          div.innerHTML = /* html */`
-            <chat-m-share-dialog
-              namespace="dialog-top-slide-in-"
-              open="show-modal"
-              href="${shareValue}"
-              href-title="provider - ${shareValue}"
-              chat-add-type="share-provider"
-              chat-add-id="${this.getAttribute('id')}"
-              no-navigator-share
-            ></chat-m-share-dialog>
-          `
-          this.shareDialog = div.children[0]
-          this.root.appendChild(div.children[0])
-        }
-      })
-    }
-
-    this.openDetailsEventListener = event => {
-      this.renderProviderInfo(true)
-      // @ts-ignore
-      scrollElIntoView(() => (this), ':not([intersecting])')
-    }
-
-    this.closeDetailsEventListener = event => this.updateHeight(true)
-
-    this.detailsAnimationendEventListener = event => this.updateHeight()
-
-    this.renderProviderInfoForce = false
-    this.onlineEventListener = async event => {
-      this.iconConnectionState.setAttribute('updating', '')
-      if (this.hasAttribute('intersecting')) this.renderProviderInfo(this.renderProviderInfoForce)
-    }
-    this.offlineEventListener = async event => {
-      this.iconConnectionState.setAttribute('state', 'offline')
-      this.renderProviderInfoForce = true
+      // TODO: Custom Key share dialog
+      // this.fetchModules([{
+      //   // @ts-ignore
+      //   path: `${this.importMetaUrl}../molecules/dialogs/ShareDialog.js?${Environment?.version || ''}`,
+      //   name: 'chat-m-share-dialog'
+      // }]).then(async () => {
+      //   const urlHrefObj = this.getUrlHrefObj()
+      //   const shareValue = `${urlHrefObj?.name || this.selectName.value}${separator}${urlHrefObj?.url.origin || Array.from(this.keyContainer.urls.keys())[0]}`
+      //   if (this.shareDialog) {
+      //     this.shareDialog.setAttribute('href', shareValue)
+      //     this.shareDialog.setAttribute('href-title', `key - ${shareValue}`)
+      //     // @ts-ignore
+      //     this.shareDialog.show('show-modal')
+      //   } else {
+      //     const div = document.createElement('div')
+      //     div.innerHTML = /* html */`
+      //       <chat-m-share-dialog
+      //         namespace="dialog-top-slide-in-"
+      //         open="show-modal"
+      //         href="${shareValue}"
+      //         href-title="key - ${shareValue}"
+      //         chat-add-type="share-key"
+      //         chat-add-id="${this.getAttribute('id')}"
+      //         no-navigator-share
+      //       ></chat-m-share-dialog>
+      //     `
+      //     this.shareDialog = div.children[0]
+      //     this.root.appendChild(div.children[0])
+      //   }
+      // })
     }
 
     // this updates the min-height on resize, see updateHeight function for more info
@@ -165,72 +71,20 @@ export default class Provider extends Intersection() {
     const showPromises = []
     if (this.shouldRenderCSS()) showPromises.push(this.renderCSS())
     if (this.shouldRenderHTML()) showPromises.push(this.renderHTML())
-    Promise.all(showPromises).then(() => {
-      this.hidden = false
-      if (navigator.onLine) {
-        this.onlineEventListener()
-      } else {
-        this.offlineEventListener()
-      }
-      this.updateHeight()
-    })
-    this.inputKeepAlive.addEventListener('change', this.inputKeepAliveChangeEventListener)
-    this.selectName.addEventListener('change', this.selectNameChangeEventListener)
-    this.selectProtocol.addEventListener('change', this.selectProtocolChangeEventListener)
-    this.inputPort.addEventListener('change', this.inputPortChangeEventListener)
-    this.addEventListener('connect', this.connectEventListener)
-    this.addEventListener('disconnect', this.disconnectEventListener)
-    this.addEventListener('undo', this.undoEventListener)
-    this.titleEl.addEventListener('click', this.titleElClickEventListener)
-    this.iconPingState.addEventListener('click', this.iconPingStateClickEventListener)
-    this.iconDefault.addEventListener('click', this.iconPingStateClickEventListener)
+    Promise.all(showPromises).then(() => this.updateHeight())
     this.iconShare.addEventListener('click', this.iconShareClickEventListener)
-    this.addEventListener('open', this.openDetailsEventListener)
-    this.addEventListener('close', this.closeDetailsEventListener)
-    this.addEventListener('wct-details-animationend', this.detailsAnimationendEventListener)
-    self.addEventListener('online', this.onlineEventListener)
-    self.addEventListener('offline', this.offlineEventListener)
     self.addEventListener('resize', this.resizeEventListener)
   }
 
   disconnectedCallback () {
     super.disconnectedCallback()
-    this.inputKeepAlive.removeEventListener('change', this.inputKeepAliveChangeEventListener)
-    this.selectName.removeEventListener('change', this.selectNameChangeEventListener)
-    this.selectProtocol.removeEventListener('change', this.selectProtocolChangeEventListener)
-    this.inputPort.removeEventListener('change', this.inputPortChangeEventListener)
-    this.removeEventListener('connect', this.connectEventListener)
-    this.removeEventListener('disconnect', this.disconnectEventListener)
-    this.removeEventListener('undo', this.undoEventListener)
-    this.titleEl.removeEventListener('click', this.titleElClickEventListener)
-    this.iconPingState.removeEventListener('click', this.iconPingStateClickEventListener)
-    this.iconDefault.removeEventListener('click', this.iconPingStateClickEventListener)
     this.iconShare.removeEventListener('click', this.iconShareClickEventListener)
-    this.removeEventListener('open', this.openDetailsEventListener)
-    this.removeEventListener('close', this.closeDetailsEventListener)
-    this.removeEventListener('wct-details-animationend', this.detailsAnimationendEventListener)
-    self.removeEventListener('online', this.onlineEventListener)
-    self.removeEventListener('offline', this.offlineEventListener)
     self.removeEventListener('resize', this.resizeEventListener)
-  }
-
-  attributeChangedCallback (name, oldValue, newValue) {
-    if (this.details) {
-      if (this.classList.contains('active')) {
-        this.details.details.setAttribute('open', '')
-      } else {
-        this.details.details.removeAttribute('open', '')
-      }
-    }
   }
 
   intersectionCallback (entries, observer) {
     if (this.areEntriesIntersecting(entries)) {
       this.setAttribute('intersecting', '')
-      if (navigator.onLine) {
-        this.renderProviderInfo(this.renderProviderInfoForce)
-        this.renderProviderInfoForce = false
-      }
       if (this.doOnIntersection) this.doOnIntersection()
       return
     }
@@ -312,7 +166,7 @@ export default class Provider extends Intersection() {
         border: var(--wct-input-border, 1px solid var(--color-black));
         border-radius: var(--border-radius);
         box-shadow: var(--box-shadow-length-one) var(--box-shadow-color), var(--box-shadow-length-two) var(--box-shadow-color);
-        min-height: var(--chat-m-provider-min-height, 5em); /* wct-load-template-tag requirement */
+        min-height: var(--chat-m-key-min-height, 5em); /* wct-load-template-tag requirement */
       }
       /* https://weedshaker.github.io/cssGridLayout/ */
       #grid {
@@ -453,13 +307,13 @@ export default class Provider extends Intersection() {
     this.html = /* html */`
       <section id=grid>
         <div class=icons style="grid-area: connectionStateIcon">
-          <wct-icon-mdx id="default" title="Decentral Ninja default provider" style="color:var(--color-green-full)" icon-url="../../../../../../img/icons/shield-check.svg" size="2em"></wct-icon-mdx>
+          <wct-icon-mdx id="default" title="Decentral Ninja default key" style="color:var(--color-green-full)" icon-url="../../../../../../img/icons/shield-check.svg" size="2em"></wct-icon-mdx>
           <a-icon-states id=ping-state>
             <template>
               <wct-icon-mdx state="default" title="pinging..." icon-url="../../../../../../img/icons/network.svg" size="2em"></wct-icon-mdx>
               <wct-icon-mdx state="fetch-success" title="fetch successful!" style="color:var(--color-green-full)" icon-url="../../../../../../img/icons/network.svg" size="2em"></wct-icon-mdx>
               <wct-icon-mdx state="ping-success" title="ping successful!" style="color:var(--color-orange)" icon-url="../../../../../../img/icons/network.svg" size="2em"></wct-icon-mdx>
-              <wct-icon-mdx state="error" title="not able to fetch nor ping the provider" style="color:var(--color-error)" icon-url="../../../../../../img/icons/network-off.svg" size="2em"></wct-icon-mdx>
+              <wct-icon-mdx state="error" title="not able to fetch nor ping the key" style="color:var(--color-error)" icon-url="../../../../../../img/icons/network-off.svg" size="2em"></wct-icon-mdx>
             </template>
           </a-icon-states>
           <a-icon-states id=connection-state state="disconnected">
@@ -547,7 +401,7 @@ export default class Provider extends Intersection() {
                   <td style="grid-column: span 2;" colspan="2"><h3 id=title>...</h3></td>
                 </tr>
                 <tr>
-                  <td>Provider response:</td>
+                  <td>Key response:</td>
                   <td id=custom-message>fetching...</td>
                 </tr>
                 <tr>
@@ -567,7 +421,7 @@ export default class Provider extends Intersection() {
           </details>
         </wct-details>
         <div class=icons style="grid-area: notification">
-          <chat-m-notifications room="${escapeHTML(this.roomName)}" hostname="${Array.from(this.data?.urls || [])?.[0]?.[1].url.hostname || ''}" on-connected-request-notifications allow-mute no-click no-hover></chat-m-notifications>
+          <chat-m-notifications hostname="${Array.from(this.keyContainer?.urls || [])?.[0]?.[1].url.hostname || ''}" on-connected-request-notifications allow-mute no-click no-hover></chat-m-notifications>
           <wct-icon-mdx id=share title=share icon-url="../../../../../../img/icons/share-3.svg" size="2em"></wct-icon-mdx>
         </div>
         <div id=url style="grid-area: url">
@@ -581,7 +435,6 @@ export default class Provider extends Intersection() {
           <span id=keep-alive-counter></span>
         </div>
         <div id=keep-alive style="grid-area: keep-alive">
-          <input id=keep-alive-input type=range min=0 max=864000000 value="${this.keepAliveDefaultValue}" step=3600000 />
           <span id=keep-alive-text></span>
         </div>
         <wct-button id=connect style="grid-area: connect-btn" namespace="button-primary-" request-event-name="connect" click-no-toggle-active>connect</wct-button>
@@ -594,7 +447,7 @@ export default class Provider extends Intersection() {
     this.html = this.customStyle
     this.html = this.customStyleHeight
     this.inputKeepAliveChangeEventListener({ target: { value: this.inputKeepAlive.value } }, true)
-    this.update(this.data, this.order, true)
+    this.update(this.keyContainer, this.order, true)
     return this.fetchModules([
       {
         // @ts-ignore
@@ -623,29 +476,29 @@ export default class Provider extends Intersection() {
       },
       {
         // @ts-ignore
-        path: `${this.importMetaUrl}../atoms/providerName/ProviderName.js?${Environment?.version || ''}`,
-        name: 'chat-a-provider-name'
+        path: `${this.importMetaUrl}../atoms/keyName/KeyName.js?${Environment?.version || ''}`,
+        name: 'chat-a-key-name'
       }
     ])
   }
 
   /**
    * Update components
-   * @param {import('./Providers.js').Provider} data
+   * @param {import('./Keys.js').Key} keyContainer
    * @param {number} order
    * @param {boolean} [updateOrder=false]
-   * @param {boolean} [removeDataUpdating=true]
+   * @param {boolean} [removedKeyContainerUpdating=true]
    * @returns {void}
    */
-  update (data, order, updateOrder = false, removeDataUpdating = true) {
-    this.data = data
+  update (keyContainer, order, updateOrder = false, removedKeyContainerUpdating = true) {
+    this.keyContainer = keyContainer
     this.order = order
     if (updateOrder) this.customStyle.innerText = /* css */`
       :host {
         order: ${order};
       }
     `
-    if (removeDataUpdating && this.hasAttribute('updating')) {
+    if (removedKeyContainerUpdating && this.hasAttribute('updating')) {
       this.dispatchEvent(new CustomEvent('yjs-request-notifications', {
         detail: { force: true },
         bubbles: true,
@@ -655,22 +508,22 @@ export default class Provider extends Intersection() {
       this.removeAttribute('updating')
     }
     this.doOnIntersection = () => {
-      this.notifications.setAttribute('hostname', Array.from(this.data?.urls || [])?.[0]?.[1].url.hostname || '')
-      if (data.status.includes('connected') || data.status.includes('active')) {
+      this.notifications.setAttribute('hostname', Array.from(this.keyContainer?.urls || [])?.[0]?.[1].url.hostname || '')
+      if (keyContainer.status.includes('connected') || keyContainer.status.includes('active')) {
         this.setAttribute('connected', '')
       } else {
         this.removeAttribute('connected')
       }
-      if (data.status.includes('default')) {
+      if (keyContainer.status.includes('default')) {
         this.setAttribute('default', '')
       } else {
         this.removeAttribute('default')
       }
       let removeIconStateUpdating = true
       if (navigator.onLine) {
-        if (data.status.includes('connected')) {
+        if (keyContainer.status.includes('connected')) {
           this.iconConnectionState.setAttribute('state', 'connected')
-        } else if (data.status.includes('active')) {
+        } else if (keyContainer.status.includes('active')) {
           this.iconConnectionState.setAttribute('state', 'connecting')
           this.iconConnectionState.setAttribute('updating', '')
           removeIconStateUpdating = false
@@ -683,15 +536,14 @@ export default class Provider extends Intersection() {
       if (removeIconStateUpdating) this.iconConnectionState.removeAttribute('updating')
       // avoid updating when inputs got changed
       if (this.hasAttribute('touched')) return
-      let keepAlive = this.keepAliveDefaultValue
-      this.selectName.disabled = data.status.includes('active') || data.status.includes('connected')
+      this.selectName.disabled = keyContainer.status.includes('active') || keyContainer.status.includes('connected')
       // reset the selected options
-      Provider.resetSelect(this.selectName)
-      Provider.resetSelect(this.selectProtocol)
+      Key.resetSelect(this.selectName)
+      Key.resetSelect(this.selectProtocol)
       this.inputPort.value = ''
       let hasSelected = false
-      Array.from(data.urls).forEach(([origin, urlContainer], i) => {
-        let selected = data.status.includes('active')
+      Array.from(keyContainer.urls).forEach(([origin, urlContainer], i) => {
+        let selected = keyContainer.status.includes('active')
           ? urlContainer.status === 'active'
           : urlContainer.status === 'connected' || urlContainer.status === 'disconnected'
         if (selected) {
@@ -700,9 +552,9 @@ export default class Provider extends Intersection() {
           selected = urlContainer.status === 'once-established' || urlContainer.status === 'default'
           if (selected) hasSelected = true
         }
-        Provider.updateSelect(this.selectName, urlContainer.name || 'websocket', selected)
+        Key.updateSelect(this.selectName, urlContainer.name || 'websocket', selected)
         this.selectName.setAttribute('value', this.selectName.value)
-        Provider.updateSelect(this.selectProtocol, urlContainer.url.protocol, selected)
+        Key.updateSelect(this.selectProtocol, urlContainer.url.protocol, selected)
         this.selectProtocol.setAttribute('value', this.selectProtocol.value)
         if (i === 0) {
           this.titleEl.textContent = urlContainer.url.hostname
@@ -710,7 +562,6 @@ export default class Provider extends Intersection() {
         }
         if (selected) this.inputPort.value = urlContainer.url.port ? urlContainer.url.port : ''
         let currentKeepAlive
-        if (selected && keepAlive === this.keepAliveDefaultValue && urlContainer.url.searchParams.get('keep-alive') !== null && !isNaN(currentKeepAlive = Number(urlContainer.url.searchParams.get('keep-alive')))) keepAlive = currentKeepAlive
       })
       this.inputKeepAliveChangeEventListener({ target: { value: (this.inputKeepAlive.value = keepAlive) } }, true)
       this.updateHeight()
@@ -752,10 +603,10 @@ export default class Provider extends Intersection() {
     }, clear ? 0 : 350)
   }
 
-  renderProviderInfo (force) {
+  renderKeyInfo (force) {
     this.iconPingState.setAttribute('updating', '')
-    return this.getProvidersEventDetail().then(providersEventDetail => providersEventDetail.getData(false)).then(data => {
-      const urlInfo = Array.from(this.data.urls).reduce((acc, [origin, urlContainer]) => {
+    return this.getKeysEventDetail().then(keysEventDetail => keysEventDetail.getdKeyContainer(false)).then(keyContainer => {
+      const urlInfo = Array.from(this.keyContainer.urls).reduce((acc, [origin, urlContainer]) => {
         if (urlContainer.name === 'websocket') acc.hasWebsocket = true
         if (urlContainer.url.hostname) acc.hostname = urlContainer.url.hostname
         return acc
@@ -764,10 +615,10 @@ export default class Provider extends Intersection() {
         hasWebsocket: false
       })
       this.detailsCustomTitle.textContent = urlInfo.hostname
-      this.detailsOrigins.innerHTML = this.data.origins.reduce((acc, origin) => /* html */`${acc}<span ${origin === this.roomName ? 'class=is-active-room title="currently active room"': ''}>${escapeHTML(origin)}</span>`, '')
-      this.detailsStatus.innerHTML = this.data.status.reduce((acc, status) => /* html */`${acc}<span class="${status}">${status}</span>`, '')
-      const url = Array.from(this.data.urls.keys())[0]
-      const pingProvider = errorMessage => data.pingProvider(url, force).then(response => {
+      this.detailsOrigins.innerHTML = this.keyContainer.origins.reduce((acc, origin) => /* html */`${acc}<span>${escapeHTML(origin)}</span>`, '')
+      this.detailsStatus.innerHTML = this.keyContainer.status.reduce((acc, status) => /* html */`${acc}<span class="${status}">${status}</span>`, '')
+      const url = Array.from(this.keyContainer.urls.keys())[0]
+      const pingKey = errorMessage => keyContainer.pingKey(url, force).then(response => {
         this.iconPingState.removeAttribute('updating')
         if (response.status === 'success') {
           this.detailsCustomMessage.textContent = 'Ping: success!'
@@ -777,16 +628,16 @@ export default class Provider extends Intersection() {
           this.iconPingState.setAttribute('state', 'error')
         }
       })
-      const renderProviderFallbacks = providerFallbacks => {
+      const renderKeyFallbacks = keyFallbacks => {
         const tempDiv = document.createElement('div')
-        tempDiv.innerHTML = providerFallbacks.reduce((acc, [name, providers]) => {
-          return acc + providers.reduce((acc, href) => {
+        tempDiv.innerHTML = keyFallbacks.reduce((acc, [name, keys]) => {
+          return acc + keys.reduce((acc, href) => {
             // render or update
             const url = new URL(href)
             // @ts-ignore
-            const id = `${self.Environment?.providerNamespace || 'p_'}${url.hostname.replaceAll('.', '-')}` // string <ident> without dots https://developer.mozilla.org/en-US/docs/Web/CSS/ident
-            const renderProviderName = () => /* html */`<div><chat-a-provider-name id="${id}" provider-dialog-show-event><span name>${name}${separator}${url.origin}</span></chat-a-provider-name><span>&nbsp;(${name})</span></div>`
-            if (!this.detailsFallbacks.querySelector(`#${id}`) && urlInfo.hostname !== url.hostname) return acc + renderProviderName()
+            const id = `${self.Environment?.keyNamespace || 'p_'}${url.hostname.replaceAll('.', '-')}` // string <ident> without dots https://developer.mozilla.org/en-US/docs/Web/CSS/ident
+            const renderKeyName = () => /* html */`<div><chat-a-key-name id="${id}" key-dialog-show-event><span name>${name}${separator}${url.origin}</span></chat-a-key-name><span>&nbsp;(${name})</span></div>`
+            if (!this.detailsFallbacks.querySelector(`#${id}`) && urlInfo.hostname !== url.hostname) return acc + renderKeyName()
             return acc
           }, '')
         }, '')
@@ -794,25 +645,24 @@ export default class Provider extends Intersection() {
         Array.from(tempDiv.children).forEach(child => this.detailsFallbacks.appendChild(child))
       }
       if (urlInfo.hasWebsocket) {
-        data.getWebsocketInfo(url, force).then(info => {
+        keyContainer.getWebsocketInfo(url, force).then(info => {
           if (info.error) {
             this.detailsCustomMessage.textContent = info.error
-            let providerFallbacks
-            if ((providerFallbacks = this.data.providerFallbacks?.get('websocket'))?.length) {
-              renderProviderFallbacks([providerFallbacks.reduce((acc, providerFallback) => {
+            let keyFallbacks
+            if ((keyFallbacks = this.keyContainer.keyFallbacks?.get('websocket'))?.length) {
+              renderKeyFallbacks([keyFallbacks.reduce((acc, keyFallback) => {
                 // @ts-ignore
-                acc[1].push(providerFallback)
+                acc[1].push(keyFallback)
                 return acc
               }, ['websocket', []])])
             } else {
               this.detailsFallbacks.textContent = info.error
             }
-            pingProvider(info.error)
+            pingKey(info.error)
           } else {
-            // purifyHTML from provider responses if using html
             this.detailsCustomMessage.textContent = info.customMessage
-            if (Array.isArray(info.providerFallbacks)) {
-              renderProviderFallbacks(info.providerFallbacks)
+            if (Array.isArray(info.keyFallbacks)) {
+              renderKeyFallbacks(info.keyFallbacks)
             } else {
               this.detailsFallbacks.textContent = 'None'
             }
@@ -821,14 +671,14 @@ export default class Provider extends Intersection() {
           }
         })
       } else {
-        pingProvider('Server')
+        pingKey('Server')
         this.detailsFallbacks.textContent = 'None'
       }
     })
   }
 
-  getProvidersEventDetail (force) {
-    return (!force && this._providersEventDetail) || (this._providersEventDetail = new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-providers-event-detail', {
+  getKeysEventDetail (force) {
+    return (!force && this._keysEventDetail) || (this._keysEventDetail = new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-keys-event-detail', {
       detail: { resolve },
       bubbles: true,
       cancelable: true,
@@ -840,7 +690,7 @@ export default class Provider extends Intersection() {
    * @returns {{ url: URL; href: string; name: any; } | null}
    */
   getUrlHrefObj () {
-    const urlsArr = Array.from(this.data.urls)
+    const urlsArr = Array.from(this.keyContainer.urls)
     let url
     try {
       url = new URL(urlsArr[0][1].url.href)

@@ -38,13 +38,6 @@ import { scrollElIntoView } from '../../../../event-driven-web-components-protot
 }} Provider
 
 /**
- * Provider container for rendering
- @typedef {
-  Map<string, Provider>
- } ProvidersContainer
-*/
-
-/**
  * The providers view
  *
  * @export
@@ -637,6 +630,7 @@ export default class Providers extends Shadow() {
       let provider
       if ((provider = div.querySelector(`#${id}`))) {
         if (typeof provider.update === 'function') {
+          // force triggers removeDataUpdating on provider, since it got fresh data when forced (renderDataForce) since this occurs on fresh data
           provider.update(providerData, i, providerDialogWasClosed, force)
         } else {
           provider.outerHTML = renderProvider()
