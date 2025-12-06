@@ -1,5 +1,6 @@
 // @ts-check
 import Dialog from '../../../../../web-components-toolbox/src/es/components/molecules/dialog/Dialog.js'
+import { scrollElIntoView } from '../../../../../event-driven-web-components-prototypes/src/helpers/Helpers.js'
 
 /* global self */
 /* global Environment */
@@ -25,9 +26,18 @@ export default class KeysDialog extends Dialog {
       return superShow(command)
     }
 
+    this._showEventListener = this.showEventListener
+    this.showEventListener = event => {
+      const result = this._showEventListener(event)
+      if (event.detail?.id) this.setActive('id', event.detail.id, [this.keysDiv], undefined, undefined)
+      return result
+    }
+
+    this.dialogWasClosed = false
     const superClose = this.close
     this.close = () => {
       // TODO: Dialog closed - return selected key
+      this.dialogWasClosed = true
       return superClose()
     }
 
@@ -140,25 +150,31 @@ export default class KeysDialog extends Dialog {
    * @returns {void}
    */
   renderData (keyContainers) {
-    console.log('*********', 'render')
-    this.keysDiv.innerHTML = keyContainers.reduce((acc, keyContainer, i) => /* html */`
-      ${acc}<li>Key ${i + 1}: <input value='${JSON.stringify(keyContainer)}' type=password /></li>
-    `, '<ul>') + '</ul>'
+    // TODO: Decide here, if the component will be info, select option for single encryption key (message) or select checkbox for multiple encryption keys (share with user)
+    KeysDialog.renderKeys(this.keysDiv, keyContainers, this.dialogWasClosed)
+    this.dialogWasClosed = false
   }
 
-  static async renderKeys (div, data, keyDialogWasClosed, force) {
-    const keys = Array.from(await data.getCompleteKeys(force))
+  /**
+   * Description
+   * 
+   * @param {any} div
+   * @param {import('../../../../../event-driven-web-components-yjs/src/es/controllers/Keys.js').KEY_CONTAINERS} keyContainers
+   * @param {boolean} dialogWasClosed
+   * @returns {void}
+   */
+  static renderKeys (div, keyContainers, dialogWasClosed) {
     const tempDiv = document.createElement('div')
-    tempDiv.innerHTML = keys.reduce((acc, [name, keyData], i) => {
+    tempDiv.innerHTML = keyContainers.reduce((acc, keyContainer, i) => {
       /// / render or update
       // @ts-ignore
-      const id = `${self.Environment?.keyNamespace || 'p_'}${name.replaceAll('.', '-')}` // string <ident> without dots https://developer.mozilla.org/en-US/docs/Web/CSS/ident
-      const renderKey = () => KeysDialog.renderKey(id, name, i, keyData)
+      const epoch = keyContainer.key.epoch
+      const renderKey = () => KeysDialog.renderKey(epoch, keyContainer, i)
       let key
-      if ((key = div.querySelector(`#${id}`))) {
+      if ((key = div.querySelector(`[epoch='${epoch}']`))) {
         if (typeof key.update === 'function') {
-          // force triggers removeDataUpdating on key, since it got fresh data when forced (renderDataForce) since this occurs on fresh data
-          key.update(keyData, i, keyDialogWasClosed, force)
+          // dialogWasClosed gives indication to provider updateOrder
+          key.update(keyContainer, i, dialogWasClosed)
         } else {
           key.outerHTML = renderKey()
         }
@@ -174,15 +190,44 @@ export default class KeysDialog extends Dialog {
    * Render a key component
    * 
    * @static
-   * @param {string} id
-   * @param {string} name
+   * @param {string} epoch
+   * @param {import('../../../../../event-driven-web-components-yjs/src/es/controllers/Keys.js').KEY_CONTAINER} keyContainer
    * @param {number} i
-   * @param {any} keyData
    * @param {boolean} [active=false]
    * @returns {string}
    */
-  static renderKey (id, name, i, keyData, active = false) {
-    return /* html */`<wct-load-template-tag id=${id} no-css style="order: ${i};" copy-class-list ${active ? 'class=active' : ''}><template><chat-m-key ${active ? 'class=active' : ''}><template>${JSON.stringify({ id, name, data: keyData, order: i })}</template></chat-m-key></template></wct-load-template-tag>`
+  static renderKey (epoch, keyContainer, i, active = false) {
+    return /* html */`<wct-load-template-tag epoch=${epoch} no-css style="order: ${i};" copy-class-list ${active ? 'class=active' : ''}><template><chat-m-key ${active ? 'class=active' : ''}><template>${JSON.stringify({ epoch, keyContainer, order: i })}</template></chat-m-key></template></wct-load-template-tag>`
+  }
+
+  /**
+   * Description
+   * 
+   * @async
+   * @param {string} attributeName
+   * @param {string} attributeValue
+   * @param {any[]} parentNodes
+   * @param {boolean} [active=true]
+   * @param {boolean} [scroll=true]
+   * @returns {Promise<void>}
+   */
+  async setActive (attributeName, attributeValue, parentNodes, active = true, scroll = true) {
+    parentNodes.reduce((acc, parentNode) => [...acc, ...(parentNode.querySelectorAll('.active') || [])], []).forEach(node => node.classList.remove('active'))
+    let node
+    if (active) {
+      // @ts-ignore
+      if (parentNodes.some(parentNode => (node = parentNode.querySelector(`[${attributeName}='${attributeValue}']`)))) node.classList.add('active')
+      if (scroll) scrollElIntoView(() => {
+        let node
+        if(parentNodes.some(parentNode => (node = parentNode.querySelector('.active')))) return node
+        return null
+      }, ':not([intersecting])', this.dialogEl, { behavior: 'smooth', block: 'nearest' }, 500)
+    }
+    if (node) {
+      this.setAttribute('active', attributeValue)
+    } else {
+      this.removeAttribute('active')
+    }
   }
 
   get keysDiv () {

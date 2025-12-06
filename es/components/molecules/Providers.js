@@ -630,6 +630,7 @@ export default class Providers extends Shadow() {
       let provider
       if ((provider = div.querySelector(`#${id}`))) {
         if (typeof provider.update === 'function') {
+          // providerDialogWasClosed gives indication to provider updateOrder
           // force triggers removeDataUpdating on provider, since it got fresh data when forced (renderDataForce) since this occurs on fresh data
           provider.update(providerData, i, providerDialogWasClosed, force)
         } else {

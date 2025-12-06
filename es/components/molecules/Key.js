@@ -11,20 +11,21 @@ import { scrollElIntoView } from '../../../../event-driven-web-components-protot
 * @type {CustomElementConstructor}
 */
 export default class Key extends Intersection() {
-  constructor (id, keyContainer, order, options = {}, ...args) {
+  constructor (epoch, keyContainer, order, options = {}, ...args) {
     super({ importMetaUrl: import.meta.url, intersectionObserverInit: {}, ...options }, ...args)
 
     if (this.template) {
-      ({ id: this.id, keyContainer: this.keyContainer, order: this.order } = JSON.parse(this.template.content.textContent))
+      ({ epoch: this.epoch, keyContainer: this.keyContainer, order: this.order } = JSON.parse(this.template.content.textContent))
     } else {
-      this.id = id
+      this.epoch = epoch
       /** @type {import('../../../../event-driven-web-components-yjs/src/es/controllers/Keys.js').KEY_CONTAINER} */
       this.keyContainer = keyContainer
       this.order = order
     }
-    this.setAttribute('id', this.id)
+    this.setAttribute('epoch', this.epoch)
 
     this.iconShareClickEventListener = event => {
+      console.log('*********', 'share')
       // TODO: Custom Key share dialog
       // this.fetchModules([{
       //   // @ts-ignore
@@ -116,51 +117,13 @@ export default class Key extends Intersection() {
   renderCSS () {
     this.css = /* css */`
       :host {
-        --button-primary-border-radius: var(--border-radius);
-        --button-primary-width: 100%;
-        --button-primary-height: 100%;
-        --button-secondary-border-radius: var(--border-radius);
-        --button-secondary-width: 100%;
-        --button-secondary-height: 100%;
-        --color: var(--a-color);
-        --color-hover: var(--color-yellow);
         --h2-word-break: break-word;
         --h2-font-family: var(--font-family);
         --h2-font-size: 2em;
-        position: relative;
-      }
-      :host {
         display: block;
       }
       :host([has-height]:not([intersecting])) > section#grid {
         display: none;
-      }
-      :host(.active) > section > wct-details::part(title) {
-        cursor: pointer;
-        text-decoration: underline;
-      }
-      :host([updating]) > section > wct-button {
-        --button-primary-background-color-custom: var(--color-gray);
-        --button-primary-border-color: var(--color-gray);
-        pointer-events: none;
-      }
-      :host([updating])::after {
-          animation: updating 3s ease infinite;
-          content: "";
-          border-radius: var(--border-radius);
-          position: absolute;
-          top: 0;
-          left: 0;
-          width: 100%;
-          height: 100%;
-          background: linear-gradient(120deg, var(--color-secondary), var(--background-color));
-          background-size: 200% 200%;
-          opacity: .5;
-      }
-      @keyframes updating { 
-        0%{background-position:10% 0%}
-        50%{background-position:91% 100%}
-        100%{background-position:10% 0%}
       }
       :host > section {
         border: var(--wct-input-border, 1px solid var(--color-black));
@@ -172,111 +135,18 @@ export default class Key extends Intersection() {
       #grid {
         display: grid;
         grid-template-areas:
-          "connectionStateIcon title title title title notification"
-          "url url url url url url"
-          "keep-alive keep-alive keep-alive keep-alive keep-alive keep-alive"
-          "set-btn set-btn undo-btn undo-btn connect-btn connect-btn";
-        grid-template-columns: repeat(6, 1fr);
+          "keyIcons title"
+          "text text";
         padding: var(--card-padding, 0.75em);
         align-items: center;
         gap: var(--grid-gap, 0.5em);
       }
-      :host > section > div.icons {
-        display: flex;
-        align-self: start;
-        justify-self: start;
-        gap: 1em;
-      }
-      :host > section > div.icons:has(> chat-m-notifications) {
-        align-self: start;
-        justify-self: end;
-      }
-      :host > section > div.icons > chat-m-notifications {
-        display: none;
-      }
-      :host > section > div.icons:has(~ div#url > select[value=websocket]) > chat-m-notifications {
-        display: flex;
-      }
-      :host(:not([default])) > section > div.icons > wct-icon-mdx#default {
-        display: none;
-      }
-      :host > section > div#url > span:has(+ input#port:placeholder-shown) {
-        display: none;
-      }
-      :host > section > div#url > input#port {
-        width: 7em;
-      }
-      :host > section > div:where(#url, #keep-alive) {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        justify-content: center;
-        background-color: var(--color-gray-lighter);
-        padding: 0.5em;
-        border: 1px solid var(--color-black);
-        border-radius: var(--border-radius);
-      }
-      :host > section > div#keep-alive {
-        gap: 1em;
-        justify-content: space-between;
-      }
-      :host > section > div#url > select {
-        --outline-color: transparent;
-        border: 0;
-        height: 2em;
-        font-size: 1em;
-        cursor: pointer;
-      }
-      :host > section > div#keep-alive, :host > section > div#url > :where(#keep-alive-name, #keep-alive-counter) {
-        display: none;
-      }
-      :host > section:has(> div#url > select[value=websocket]) > div#keep-alive {
-        display: flex;
-      }
-      :host > section:has(> div#url > select[value=websocket]) > div#url > :where(#keep-alive-name, #keep-alive-counter) {
-        display: inline;
-      }
-      :host > section > div#keep-alive > #keep-alive-input {
-        accent-color: var(--color-secondary);
-        max-width: 100%;
-        margin: 0;
-        flex-grow: 1;
-      }
-      :host > section > wct-button {
-        height: 100%;
-        word-break: break-word;
-      }
-      :host > section wct-button {
-        display: none;
-      }
-      :host(:not([connected])) > section wct-button#connect, :host([connected]) > section wct-button#disconnect {
-        display: block;
-      }
-      :host([touched][connected]) > section > :where(wct-button#set, wct-button#undo) {
-        display: block;
-      }
-      :host([touched]:not([connected])) > section > wct-button#connect, :host([touched]) > section > wct-button#disconnect {
-        display: none;
-      }
-      :host([touched]:not([connected])) > section > :where(wct-button#set-and-connect, wct-button#undo) {
-        display: block;
-      }
-      :host > section > wct-button:where(#connect, #set-and-connect, #set) {
-        --button-primary-background-color-custom: var(--color-green);
-        --button-primary-border-color: var(--color-green);
-        --button-secondary-color: var(--color-green);
-        --button-secondary-border-color: var(--color-green);
-      }
       @media only screen and (max-width: _max-width_) {
         #grid {
           grid-template-areas:
-            "connectionStateIcon connectionStateIcon connectionStateIcon notification notification notification"
-            "title title title title title title"
-            "url url url url url url"
-            "keep-alive keep-alive keep-alive keep-alive keep-alive keep-alive"
-            "set-btn set-btn set-btn undo-btn undo-btn undo-btn"
-            "connect-btn connect-btn connect-btn connect-btn connect-btn connect-btn";
-        }
+            "keyIcons title"
+            "text text";
+          }
       }
     `
     return this.fetchTemplate()
@@ -306,147 +176,17 @@ export default class Key extends Intersection() {
     // keep-alive max=10days, value=1day, step=1h
     this.html = /* html */`
       <section id=grid>
-        <div class=icons style="grid-area: connectionStateIcon">
-          <wct-icon-mdx id="default" title="Decentral Ninja default key" style="color:var(--color-green-full)" icon-url="../../../../../../img/icons/shield-check.svg" size="2em"></wct-icon-mdx>
-          <a-icon-states id=ping-state>
-            <template>
-              <wct-icon-mdx state="default" title="pinging..." icon-url="../../../../../../img/icons/network.svg" size="2em"></wct-icon-mdx>
-              <wct-icon-mdx state="fetch-success" title="fetch successful!" style="color:var(--color-green-full)" icon-url="../../../../../../img/icons/network.svg" size="2em"></wct-icon-mdx>
-              <wct-icon-mdx state="ping-success" title="ping successful!" style="color:var(--color-orange)" icon-url="../../../../../../img/icons/network.svg" size="2em"></wct-icon-mdx>
-              <wct-icon-mdx state="error" title="not able to fetch nor ping the key" style="color:var(--color-error)" icon-url="../../../../../../img/icons/network-off.svg" size="2em"></wct-icon-mdx>
-            </template>
-          </a-icon-states>
-          <a-icon-states id=connection-state state="disconnected">
-            <template>
-              <wct-icon-mdx state="connected" id=connected title=connected style="--color: var(--color-green-full);" no-hover icon-url="../../../../../../img/icons/plug-connected.svg" size="2em"></wct-icon-mdx>
-              <wct-icon-mdx state="connecting" id=connecting title="trying to connect" style="--color: var(--color-orange);" no-hover icon-url="../../../../../../img/icons/plug-connected.svg" size="2em"></wct-icon-mdx>
-              <wct-icon-mdx state="disconnected" id=disconnected title=disconnected style="--color: var(--color-error);" no-hover icon-url="../../../../../../img/icons/plug-connected-x.svg" size="2em"></wct-icon-mdx>
-              <wct-icon-mdx state="offline" title="You are offline!" style="color:var(--color-error)" no-hover icon-url="../../../../../../img/icons/plug-connected-x.svg" size="2em"></wct-icon-mdx>
-            </template>
-          </a-icon-states>
+        <div style="grid-area: keyIcons">
+          <div id=share></div>
         </div>
-        <wct-details style="grid-area: title" animationend-event-name=wct-details-animationend>
-          <style protected>
-            :host > details > table {
-              --h3-margin: 1.143rem auto 0;
-              margin: 0;
-            }
-            :host > details > table > tbody {
-              display: grid;
-              grid-template-columns: 1fr 1fr;
-              margin: 0;
-            }
-            :host > details > table > tbody > tr {
-              display: contents;
-            }
-            :host > details > table > tbody > tr > td {
-              border-bottom: 1px solid var(--color);
-              overflow-wrap: anywhere;
-            }
-            :host > details > table > tbody > tr > td:last-child {
-              font-family: monospace;
-            }
-            :host > details > table > tbody > tr > td#fallbacks > div {
-              align-items: center;
-              display: flex;
-              font-family: var(--font-family);
-            }
-            :host > details > table > tbody > tr > td#fallbacks > div > span {
-              font-size: 0.75em;
-              white-space: nowrap;
-            }
-            :host > details > table > tbody > tr > td:where(#origins, #status) {
-              display: flex;
-              flex-wrap: wrap;
-              overflow: auto;
-              scrollbar-color: var(--color) var(--background-color);
-              scrollbar-width: thin;
-            }
-            :host > details > table > tbody > tr > td:where(#origins, #status) > span {
-              margin-right: 1em;
-              white-space: nowrap;
-            }
-            :host > details > table > tbody > tr > td:where(#origins, #status) > span:where(.is-active-room, .once-established, .connected, .active) {
-              color: var(--color-green-full);
-              order: 1;
-              text-decoration: underline;
-            }
-            :host > details > table > tbody > tr > td:where(#origins, #status) > span:not(:where(.is-active-room, .once-established, .connected, .active)) {
-              order: 2;
-            }
-            @media only screen and (max-width: ${this.mobileBreakpoint}) {
-              :host > details > table > tbody > tr > td, :host > details > table > tbody > tr > td[style="grid-column: span 2;"] {
-                grid-column: 1/3 !important;
-                border-bottom: 1px solid transparent;
-                margin-left: 1em;
-              }
-              :host > details > table > tbody > tr > td[style="grid-column: span 2;"] {
-                margin-left: 0 !important;
-              }
-              :host > details > table > tbody > tr > td:first-child {
-                border-bottom: 1px solid var(--color);
-              }
-              :host > details > table > tbody > tr > td:last-child {
-                margin-left: 2em;
-              }
-            }
-          </style>
-          <details>
-            <summary>
-              <h2 part=title>Title</h2>
-            </summary>
-            <table>
-              <tbody>
-                <tr>
-                  <td style="grid-column: span 2;" colspan="2"><h3 id=title>...</h3></td>
-                </tr>
-                <tr>
-                  <td>Key response:</td>
-                  <td id=custom-message>fetching...</td>
-                </tr>
-                <tr>
-                  <td>Fallbacks:</td>
-                  <td id=fallbacks>fetching...</td>
-                </tr>
-                <tr>
-                  <td>Origins:</td>
-                  <td id=origins></td>
-                </tr>
-                <tr>
-                  <td>Status:</td>
-                  <td id=status></td>
-                </tr>
-              </tbody>
-            </table>
-          </details>
-        </wct-details>
-        <div class=icons style="grid-area: notification">
-          <chat-m-notifications hostname="${Array.from(this.keyContainer?.urls || [])?.[0]?.[1].url.hostname || ''}" on-connected-request-notifications allow-mute no-click no-hover></chat-m-notifications>
-          <wct-icon-mdx id=share title=share icon-url="../../../../../../img/icons/share-3.svg" size="2em"></wct-icon-mdx>
+        <div style="grid-area: title">
+          <h2></h2>
+          <h3></h3>
         </div>
-        <div id=url style="grid-area: url">
-          <select id=name></select>
-          <select id=protocol></select>
-          <span>//</span>
-          <span id=hostname></span>
-          <span>:</span>
-          <input id=port type=number min=0 max=99999 placeholder=":[add port]" />
-          <span id=keep-alive-name>?keep-alive=</span>
-          <span id=keep-alive-counter></span>
-        </div>
-        <div id=keep-alive style="grid-area: keep-alive">
-          <span id=keep-alive-text></span>
-        </div>
-        <wct-button id=connect style="grid-area: connect-btn" namespace="button-primary-" request-event-name="connect" click-no-toggle-active>connect</wct-button>
-        <wct-button id=disconnect style="grid-area: connect-btn" namespace="button-primary-" request-event-name="disconnect" click-no-toggle-active>disconnect</wct-button>
-        <wct-button id=set-and-connect style="grid-area: connect-btn" namespace="button-primary-" request-event-name="connect" click-no-toggle-active>save changes & connect</wct-button>
-        <wct-button id=set style="grid-area: connect-btn" namespace="button-secondary-" request-event-name="connect" click-no-toggle-active>save changes</wct-button>
-        <wct-button id=undo style="grid-area: undo-btn" namespace="button-secondary-" request-event-name="undo" click-no-toggle-active>undo</wct-button>
       </section>
     `
     this.html = this.customStyle
     this.html = this.customStyleHeight
-    this.inputKeepAliveChangeEventListener({ target: { value: this.inputKeepAlive.value } }, true)
     this.update(this.keyContainer, this.order, true)
     return this.fetchModules([
       {
@@ -484,13 +224,12 @@ export default class Key extends Intersection() {
 
   /**
    * Update components
-   * @param {import('./Keys.js').Key} keyContainer
+   * @param {import('../../../../event-driven-web-components-yjs/src/es/controllers/Keys.js').KEY_CONTAINER} keyContainer
    * @param {number} order
    * @param {boolean} [updateOrder=false]
-   * @param {boolean} [removedKeyContainerUpdating=true]
    * @returns {void}
    */
-  update (keyContainer, order, updateOrder = false, removedKeyContainerUpdating = true) {
+  update (keyContainer, order, updateOrder = false) {
     this.keyContainer = keyContainer
     this.order = order
     if (updateOrder) this.customStyle.innerText = /* css */`
@@ -498,96 +237,18 @@ export default class Key extends Intersection() {
         order: ${order};
       }
     `
-    if (removedKeyContainerUpdating && this.hasAttribute('updating')) {
-      this.dispatchEvent(new CustomEvent('yjs-request-notifications', {
-        detail: { force: true },
-        bubbles: true,
-        cancelable: true,
-        composed: true
-      }))
-      this.removeAttribute('updating')
-    }
     this.doOnIntersection = () => {
-      this.notifications.setAttribute('hostname', Array.from(this.keyContainer?.urls || [])?.[0]?.[1].url.hostname || '')
-      if (keyContainer.status.includes('connected') || keyContainer.status.includes('active')) {
-        this.setAttribute('connected', '')
-      } else {
-        this.removeAttribute('connected')
-      }
-      if (keyContainer.status.includes('default')) {
-        this.setAttribute('default', '')
-      } else {
-        this.removeAttribute('default')
-      }
-      let removeIconStateUpdating = true
-      if (navigator.onLine) {
-        if (keyContainer.status.includes('connected')) {
-          this.iconConnectionState.setAttribute('state', 'connected')
-        } else if (keyContainer.status.includes('active')) {
-          this.iconConnectionState.setAttribute('state', 'connecting')
-          this.iconConnectionState.setAttribute('updating', '')
-          removeIconStateUpdating = false
-        } else {
-          this.iconConnectionState.setAttribute('state', 'disconnected')
-        }
-      } else {
-        this.iconConnectionState.setAttribute('state', 'offline')
-      }
-      if (removeIconStateUpdating) this.iconConnectionState.removeAttribute('updating')
-      // avoid updating when inputs got changed
-      if (this.hasAttribute('touched')) return
-      this.selectName.disabled = keyContainer.status.includes('active') || keyContainer.status.includes('connected')
-      // reset the selected options
-      Key.resetSelect(this.selectName)
-      Key.resetSelect(this.selectProtocol)
-      this.inputPort.value = ''
-      let hasSelected = false
-      Array.from(keyContainer.urls).forEach(([origin, urlContainer], i) => {
-        let selected = keyContainer.status.includes('active')
-          ? urlContainer.status === 'active'
-          : urlContainer.status === 'connected' || urlContainer.status === 'disconnected'
-        if (selected) {
-          hasSelected = true
-        } else if (!hasSelected) {
-          selected = urlContainer.status === 'once-established' || urlContainer.status === 'default'
-          if (selected) hasSelected = true
-        }
-        Key.updateSelect(this.selectName, urlContainer.name || 'websocket', selected)
-        this.selectName.setAttribute('value', this.selectName.value)
-        Key.updateSelect(this.selectProtocol, urlContainer.url.protocol, selected)
-        this.selectProtocol.setAttribute('value', this.selectProtocol.value)
-        if (i === 0) {
-          this.titleEl.textContent = urlContainer.url.hostname
-          this.spanHostname.textContent = urlContainer.url.hostname
-        }
-        if (selected) this.inputPort.value = urlContainer.url.port ? urlContainer.url.port : ''
-        let currentKeepAlive
-      })
-      this.inputKeepAliveChangeEventListener({ target: { value: (this.inputKeepAlive.value = keepAlive) } }, true)
+      // TODO: title/name through chat-a-key-name
+      this.privateNameEl.textContent = keyContainer.private.name
+      this.publicNameEl.textContent = keyContainer.public.name
       this.updateHeight()
       this.doOnIntersection = null
     }
     if (this.hasAttribute('intersecting')) this.doOnIntersection()
   }
 
-  static resetSelect (select) {
-    Array.from(select.querySelectorAll('option')).forEach(option => (option.selected = false))
-  }
-
-  static updateSelect (select, value, selected) {
-    let option
-    if (!(option = select.querySelector(`option[value="${value}"]`))) {
-      option = document.createElement('option')
-      option.value = option.textContent = value
-      select.appendChild(option)
-    }
-    if (!option.selected) option.selected = selected
-  }
-
   // Due to performance issues, dialog open took around 1300ms (after this change ca. 350ms) on a chat with many users. This eliminated the recalculate style thanks to :host([has-height]:not([intersecting])) > li: display: none; for not intersecting user components but also keeps the height, to avoid weird scrolling effects.
   updateHeight (clear = false) {
-    // wct-details has an animation, which is triggered when intersecting, this animation is typically 300ms when not specified by attribute open-duration
-    // set --animation: none; if this has still side effects
     clearTimeout(this._timeoutUpdateHeight)
     this._timeoutUpdateHeight = setTimeout(() => {
       this.removeAttribute('has-height')
@@ -603,191 +264,20 @@ export default class Key extends Intersection() {
     }, clear ? 0 : 350)
   }
 
-  renderKeyInfo (force) {
-    this.iconPingState.setAttribute('updating', '')
-    return this.getKeysEventDetail().then(keysEventDetail => keysEventDetail.getdKeyContainer(false)).then(keyContainer => {
-      const urlInfo = Array.from(this.keyContainer.urls).reduce((acc, [origin, urlContainer]) => {
-        if (urlContainer.name === 'websocket') acc.hasWebsocket = true
-        if (urlContainer.url.hostname) acc.hostname = urlContainer.url.hostname
-        return acc
-      }, {
-        hostname: '',
-        hasWebsocket: false
-      })
-      this.detailsCustomTitle.textContent = urlInfo.hostname
-      this.detailsOrigins.innerHTML = this.keyContainer.origins.reduce((acc, origin) => /* html */`${acc}<span>${escapeHTML(origin)}</span>`, '')
-      this.detailsStatus.innerHTML = this.keyContainer.status.reduce((acc, status) => /* html */`${acc}<span class="${status}">${status}</span>`, '')
-      const url = Array.from(this.keyContainer.urls.keys())[0]
-      const pingKey = errorMessage => keyContainer.pingKey(url, force).then(response => {
-        this.iconPingState.removeAttribute('updating')
-        if (response.status === 'success') {
-          this.detailsCustomMessage.textContent = 'Ping: success!'
-          this.iconPingState.setAttribute('state', 'ping-success')
-        } else {
-          this.detailsCustomMessage.textContent = `${errorMessage}; ping: failed!`
-          this.iconPingState.setAttribute('state', 'error')
-        }
-      })
-      const renderKeyFallbacks = keyFallbacks => {
-        const tempDiv = document.createElement('div')
-        tempDiv.innerHTML = keyFallbacks.reduce((acc, [name, keys]) => {
-          return acc + keys.reduce((acc, href) => {
-            // render or update
-            const url = new URL(href)
-            // @ts-ignore
-            const id = `${self.Environment?.keyNamespace || 'p_'}${url.hostname.replaceAll('.', '-')}` // string <ident> without dots https://developer.mozilla.org/en-US/docs/Web/CSS/ident
-            const renderKeyName = () => /* html */`<div><chat-a-key-name id="${id}" key-dialog-show-event><span name>${name}${separator}${url.origin}</span></chat-a-key-name><span>&nbsp;(${name})</span></div>`
-            if (!this.detailsFallbacks.querySelector(`#${id}`) && urlInfo.hostname !== url.hostname) return acc + renderKeyName()
-            return acc
-          }, '')
-        }, '')
-        if (!this.detailsFallbacks.children.length) this.detailsFallbacks.textContent = ''
-        Array.from(tempDiv.children).forEach(child => this.detailsFallbacks.appendChild(child))
-      }
-      if (urlInfo.hasWebsocket) {
-        keyContainer.getWebsocketInfo(url, force).then(info => {
-          if (info.error) {
-            this.detailsCustomMessage.textContent = info.error
-            let keyFallbacks
-            if ((keyFallbacks = this.keyContainer.keyFallbacks?.get('websocket'))?.length) {
-              renderKeyFallbacks([keyFallbacks.reduce((acc, keyFallback) => {
-                // @ts-ignore
-                acc[1].push(keyFallback)
-                return acc
-              }, ['websocket', []])])
-            } else {
-              this.detailsFallbacks.textContent = info.error
-            }
-            pingKey(info.error)
-          } else {
-            this.detailsCustomMessage.textContent = info.customMessage
-            if (Array.isArray(info.keyFallbacks)) {
-              renderKeyFallbacks(info.keyFallbacks)
-            } else {
-              this.detailsFallbacks.textContent = 'None'
-            }
-            this.iconPingState.removeAttribute('updating')
-            this.iconPingState.setAttribute('state', 'fetch-success')
-          }
-        })
-      } else {
-        pingKey('Server')
-        this.detailsFallbacks.textContent = 'None'
-      }
-    })
-  }
-
-  getKeysEventDetail (force) {
-    return (!force && this._keysEventDetail) || (this._keysEventDetail = new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-keys-event-detail', {
-      detail: { resolve },
-      bubbles: true,
-      cancelable: true,
-      composed: true
-    }))))
-  }
-
-  /**
-   * @returns {{ url: URL; href: string; name: any; } | null}
-   */
-  getUrlHrefObj () {
-    const urlsArr = Array.from(this.keyContainer.urls)
-    let url
-    try {
-      url = new URL(urlsArr[0][1].url.href)
-      if (this.selectProtocol.value) url.protocol =  this.selectProtocol.value
-      if (this.inputPort.value) {
-        url.port = this.inputPort.value
-      } else {
-        url.port = ''
-      }
-    } catch (error) {
-      return null
-    }
-    if (this.selectName.value === 'websocket') {
-      url.searchParams.set('keep-alive', this.inputKeepAlive.value)
-    } else {
-      url.searchParams.delete('keep-alive')
-    }
-    return { url, href: url.href, name: this.selectName.value }
-  }
-
-  get iconConnectionState () {
-    return this.root.querySelector('#connection-state')
-  }
-
-  get iconPingState () {
-    return this.root.querySelector('#ping-state')
-  }
-
-  get iconDefault () {
-    return this.root.querySelector('#default')
-  }
-
   get iconShare () {
     return this.root.querySelector('#share')
   }
 
-  get details () {
-    return this.root.querySelector('wct-details')
+  get privateNameEl () {
+    return this.section.querySelector('[style="grid-area: title"] h2')
   }
 
-  get titleEl () {
-    return this.details?.root.querySelector('h2')
-  }
-
-  get detailsCustomTitle () {
-    return this.details?.root.querySelector('#title')
-  }
-
-  get detailsCustomMessage () {
-    return this.details?.root.querySelector('#custom-message')
-  }
-
-  get detailsFallbacks () {
-    return this.details?.root.querySelector('#fallbacks')
-  }
-
-  get detailsOrigins () {
-    return this.details?.root.querySelector('#origins')
-  }
-
-  get detailsStatus () {
-    return this.details?.root.querySelector('#status')
+  get publicNameEl () {
+    return this.section.querySelector('[style="grid-area: title"] h3')
   }
 
   get section () {
     return this.root.querySelector('section')
-  }
-
-  get selectName () {
-    return this.root.querySelector('select[id=name]')
-  }
-
-  get selectProtocol () {
-    return this.root.querySelector('select[id=protocol]')
-  }
-
-  get spanHostname () {
-    return this.root.querySelector('span[id=hostname]')
-  }
-
-  get inputPort () {
-    return this.root.querySelector('input[id=port]')
-  }
-
-  get spanKeepAliveCounter () {
-    return this.root.querySelector('span[id=keep-alive-counter]')
-  }
-  get spanKeepAliveText () {
-    return this.root.querySelector('span[id=keep-alive-text]')
-  }
-
-  get inputKeepAlive () {
-    return this.root.querySelector('input[id=keep-alive-input]')
-  }
-
-  get notifications () {
-    return this.root.querySelector('chat-m-notifications')
   }
 
   get template () {
