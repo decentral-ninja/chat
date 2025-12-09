@@ -117,9 +117,6 @@ export default class Key extends Intersection() {
   renderCSS () {
     this.css = /* css */`
       :host {
-        --h2-word-break: break-word;
-        --h2-font-family: var(--font-family);
-        --h2-font-size: 2em;
         display: block;
       }
       :host([has-height]:not([intersecting])) > section#grid {
@@ -180,8 +177,8 @@ export default class Key extends Intersection() {
           <div id=share></div>
         </div>
         <div style="grid-area: title">
-          <h2></h2>
-          <h3></h3>
+          <chat-a-key-name public></chat-a-key-name>
+          <chat-a-key-name private></chat-a-key-name>
         </div>
       </section>
     `
@@ -238,9 +235,10 @@ export default class Key extends Intersection() {
       }
     `
     this.doOnIntersection = () => {
-      // TODO: title/name through chat-a-key-name
-      this.privateNameEl.textContent = keyContainer.private.name
-      this.publicNameEl.textContent = keyContainer.public.name
+      this.privateNameEl.setAttribute('name', keyContainer.private.name)
+      this.privateNameEl.setAttribute('epoch', keyContainer.key.epoch)
+      this.publicNameEl.setAttribute('name', keyContainer.public.name)
+      this.publicNameEl.setAttribute('epoch', keyContainer.key.epoch)
       this.updateHeight()
       this.doOnIntersection = null
     }
@@ -269,11 +267,11 @@ export default class Key extends Intersection() {
   }
 
   get privateNameEl () {
-    return this.section.querySelector('[style="grid-area: title"] h2')
+    return this.section.querySelector('[style="grid-area: title"] chat-a-key-name[private]')
   }
 
   get publicNameEl () {
-    return this.section.querySelector('[style="grid-area: title"] h3')
+    return this.section.querySelector('[style="grid-area: title"] chat-a-key-name[public]')
   }
 
   get section () {

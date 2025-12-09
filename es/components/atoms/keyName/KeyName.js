@@ -1,7 +1,7 @@
 // @ts-check
 import { Shadow } from '../../../../../event-driven-web-components-prototypes/src/Shadow.js'
+import { escapeHTML } from '../../../../../event-driven-web-components-prototypes/src/helpers/Helpers.js'
 import { getHexColor } from '../../../../../Helpers.js'
-import { separator } from '../../../../../event-driven-web-components-yjs/src/es/controllers/Users.js'
 
 /* global self */
 /* global Environment */
@@ -12,29 +12,21 @@ import { separator } from '../../../../../event-driven-web-components-yjs/src/es
 * @type {CustomElementConstructor}
 */
 export default class KeyName extends Shadow() {
+  static get observedAttributes () {
+    return ['name', 'epoch']
+  }
+
   constructor (options = {}, ...args) {
     super({ importMetaUrl: import.meta.url, ...options }, ...args)
 
     this.hTagName = this.getAttribute('h-tag-name') || 'h4'
-    this.dataName = this.root.querySelector('[name]')?.textContent
 
     this.clickEventListener = event => {
       event.preventDefault()
       event.stopPropagation()
-      if (this.hasAttribute('provider-dialog-show-event')) {
-        this.dispatchEvent(new CustomEvent('provider-dialog-show-event', {
-          detail: {
-            id: this.getAttribute('id'),
-            name: this.dataName?.split(separator)[0],
-            href: this.dataName?.split(separator)[1]
-          },
-          bubbles: true,
-          cancelable: true,
-          composed: true
-        }))
-      } else {
-        this.dispatchEvent(new CustomEvent('provider-name-click', {
-          detail: { name: this.dataName },
+      if (this.hasAttribute('key-dialog-show-event')) {
+        this.dispatchEvent(new CustomEvent('key-dialog-show-event', {
+          detail: { epoch: this.getAttribute('epoch') },
           bubbles: true,
           cancelable: true,
           composed: true
@@ -42,28 +34,9 @@ export default class KeyName extends Shadow() {
       }
     }
 
-    let lastProvidersEventGetData = null
-    let timeoutId = null
-    const skipTimeoutClear = 5
-    let timeoutCounter = 1
-    this.providerEventListener = async event => {
-      lastProvidersEventGetData = event.detail.getData
-      if (timeoutCounter % skipTimeoutClear) clearTimeout(timeoutId)
-      timeoutCounter++
-      timeoutId = setTimeout(async () => {
-        timeoutCounter = 1
-        const providers = (await (await event.detail.getData(false)).getSessionProvidersByStatus()).connected
-        if (providers.find(provider => provider.includes(this.dataName))) {
-          this.setAttribute('is-connected-with-self', '')
-        } else {
-          this.removeAttribute('is-connected-with-self')
-        }
-        // @ts-ignore
-      }, self.Environment.awarenessEventListenerDelay)
-    }
-
-    this.providersChangeEventListener = event => {
-      if (lastProvidersEventGetData) this.providerEventListener({ detail: { getData: lastProvidersEventGetData } })
+    this.keyChangedEventListener = event => {
+      // TODO: call functions regarding key changes
+      console.log('****keyChangedEventListener*****', event.detail.modified || event.detail.deleted || event.detail.shared)
     }
   }
 
@@ -71,25 +44,20 @@ export default class KeyName extends Shadow() {
     if (this.shouldRenderCSS()) this.renderCSS()
     if (this.shouldRenderHTML()) this.renderHTML()
     this.addEventListener('click', this.clickEventListener)
-    this.globalEventTarget.addEventListener('yjs-providers-data', this.providerEventListener)
-    this.globalEventTarget.addEventListener('yjs-providers-change', this.providersChangeEventListener)
-    if (this.isConnected) this.connectedCallbackOnce()
-  }
-
-  connectedCallbackOnce () {
-    new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-providers-event-detail', {
-      detail: { resolve },
-      bubbles: true,
-      cancelable: true,
-      composed: true
-    }))).then(detail => this.providerEventListener({ detail }))
-    this.connectedCallbackOnce = () => {}
+    this.globalEventTarget.addEventListener('yjs-key-property-modified', this.keyChangedEventListener)
   }
 
   disconnectedCallback () {
     this.removeEventListener('click', this.clickEventListener)
-    this.globalEventTarget.removeEventListener('yjs-providers-data', this.providerEventListener)
-    this.globalEventTarget.removeEventListener('yjs-providers-change', this.providersChangeEventListener)
+    this.globalEventTarget.removeEventListener('yjs-key-property-modified', this.keyChangedEventListener)
+  }
+
+  attributeChangedCallback (name, oldValue, newValue) {
+    if (name === 'name') {
+      if (this.hTag && oldValue !== newValue) this.hTag.textContent = newValue
+    } else {
+      if (this.avatar && oldValue !== newValue) this.renderHexColor()
+    }
   }
 
   /**
@@ -124,7 +92,6 @@ export default class KeyName extends Shadow() {
         --${this.hTagName}-font-size: 1em;
         --${this.hTagName}-margin: 0;
         --${this.hTagName}-padding: 0.2em 0 0 0;
-        display: block;
         cursor: pointer;
       }
       *:focus {
@@ -137,11 +104,8 @@ export default class KeyName extends Shadow() {
         tap-highlight-color: transparent;
         --webkit-tap-highlight-color: transparent;
       }
-      :host > a > wct-icon-mdx {
-        display: flex;
-      }
       :host > a > ${this.hTagName}, :host > span {
-        text-align: left;
+        white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
         text-decoration: underline;
@@ -156,14 +120,6 @@ export default class KeyName extends Shadow() {
         margin-right: 0.25em;
         transform: translateY(0.1em);
         flex-shrink: 0;
-      }
-      :host .avatar > #connected {
-        display: none;
-      }
-      :host([is-connected-with-self]) .avatar > #connected {
-        --color: var(--background-color);
-        --color-hover: var(--color-secondary);
-        display: contents;
       }
     `
     return this.fetchTemplate()
@@ -190,22 +146,19 @@ export default class KeyName extends Shadow() {
    * @prop {string} keyName
    * @returns Promise<void>
    */
-  renderHTML () {
+  renderHTML (keyName = this.getAttribute('name')) {
+    if (this.lastKeyName === keyName) return Promise.resolve()
+    this.lastKeyName = keyName
     this.html = ''
     this.html = /* html */`
       <a href="#">
         <span class=avatar>
           <wct-icon-mdx hover-on-parent-shadow-root-host id=connected title=connected icon-url="../../../../../../img/icons/mobiledata.svg" size="0.75em"></wct-icon-mdx>
         </span>
-        <${this.hTagName}>${this.dataName?.split(separator)[1] || 'None'}</${this.hTagName}>
+        <${this.hTagName}>${escapeHTML(keyName) || 'None'}</${this.hTagName}>
       </a>
     `
-    try {
-      const url = new URL(this.dataName?.split(separator)[1])
-      getHexColor(url.host).then(hex => this.avatar.setAttribute('style', `background-color: ${hex}`))
-    } catch (error) {
-      getHexColor(this.dataName).then(hex => this.avatar.setAttribute('style', `background-color: ${hex}`))
-    }
+    this.renderHexColor()
     return this.fetchModules([
       {
         // @ts-ignore
@@ -213,6 +166,10 @@ export default class KeyName extends Shadow() {
         name: 'wct-icon-mdx'
       }
     ])
+  }
+
+  renderHexColor () {
+    getHexColor(this.getAttribute('epoch')).then(hex => this.avatar.setAttribute('style', `background-color: ${hex}`))
   }
 
   get hTag () {

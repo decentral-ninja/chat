@@ -34,7 +34,7 @@ export default class RoomName extends Shadow() {
     this.roomPromise = new Promise(resolve => (this.roomResolve = resolve))
 
     this.roomPromise.then(async ({ locationHref, room }) => {
-      this.renderHTML(await room, await new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-rooms', {
+      this.renderHTML(await room, await new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-active-room', {
         detail: {
           resolve
         },
@@ -167,10 +167,10 @@ export default class RoomName extends Shadow() {
   /**
    * Render HTML
    * @prop {string} roomName
-   * @prop {} getRoomsResult
+   * @prop {} room
    * @returns Promise<void>
    */
-  renderHTML (roomName, getRoomsResult) {
+  renderHTML (roomName, room) {
     roomName = roomName ? escapeHTML(roomName) : 'Loading...'
     this.html = ''
     this.html = /* html */`<a href="#">
@@ -178,7 +178,7 @@ export default class RoomName extends Shadow() {
         <wct-icon-mdx title="open rooms" hover-on-parent-element id="show-modal" rotate="180deg" icon-url="../../../../../../img/icons/chevron-left.svg" size="1.75em"></wct-icon-mdx>
         <h1 title="${roomName}">${roomName}</h1>
       </div>
-      <div class=aka>${getRoomsResult?.value?.[roomName]?.aka ? escapeHTML(getRoomsResult.value[roomName].aka) : ''}</div>
+      <div class=aka>${room?.aka ? escapeHTML(room.aka) : ''}</div>
     </a>`
     return this.fetchModules([
       {
