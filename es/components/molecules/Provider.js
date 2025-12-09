@@ -809,7 +809,7 @@ export default class Provider extends Intersection() {
             }
             pingProvider(info.error)
           } else {
-            // purifyHTML from provider responses if using html
+            // htmlPurify from provider responses if using html
             this.detailsCustomMessage.textContent = info.customMessage
             if (Array.isArray(info.providerFallbacks)) {
               renderProviderFallbacks(info.providerFallbacks)
