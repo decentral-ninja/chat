@@ -72,7 +72,10 @@ export default class Key extends Intersection() {
     const showPromises = []
     if (this.shouldRenderCSS()) showPromises.push(this.renderCSS())
     if (this.shouldRenderHTML()) showPromises.push(this.renderHTML())
-    Promise.all(showPromises).then(() => this.updateHeight())
+    Promise.all(showPromises).then(() => {
+      this.updateHeight()
+      this.hidden = false
+    })
     this.iconShare.addEventListener('click', this.iconShareClickEventListener)
     self.addEventListener('resize', this.resizeEventListener)
   }
@@ -162,7 +165,7 @@ export default class Key extends Intersection() {
         path: `${this.importMetaUrl}../../../../web-components-toolbox/src/css/style.css`, // apply namespace and fallback to allow overwriting on deeper level
         namespaceFallback: true
       }
-    ])
+    ], false)
   }
 
   /**
@@ -180,6 +183,12 @@ export default class Key extends Intersection() {
           <chat-a-key-name public></chat-a-key-name>
           <chat-a-key-name private></chat-a-key-name>
         </div>
+        <a-icon-combinations keys>
+          <template>
+            <wct-icon-mdx title="Private key" style="--color-hover: var(--color-red-full); color:var(--color-red);" icon-url="../../../../../../img/icons/key-filled.svg" size="1.5em"></wct-icon-mdx>
+            <wct-icon-mdx title="Public key" style="--color-hover: var(--color-green-full); color:var(--color-green-dark);" icon-url="../../../../../../img/icons/key-filled.svg" size="1.5em"></wct-icon-mdx>
+          </template>
+        </a-icon-combinations>
       </section>
     `
     this.html = this.customStyle
@@ -188,28 +197,13 @@ export default class Key extends Intersection() {
     return this.fetchModules([
       {
         // @ts-ignore
-        path: `${this.importMetaUrl}../../../../web-components-toolbox/src/es/components/atoms/iconMdx/IconMdx.js?${Environment?.version || ''}`,
-        name: 'wct-icon-mdx'
-      },
-      {
-        // @ts-ignore
-        path: `${this.importMetaUrl}../../../../web-components-toolbox/src/es/components/atoms/button/Button.js?${Environment?.version || ''}`,
-        name: 'wct-button'
-      },
-      {
-        // @ts-ignore
-        path: `${this.importMetaUrl}../../../../web-components-toolbox/src/es/components/molecules/details/Details.js?${Environment?.version || ''}`,
-        name: 'wct-details'
-      },
-      {
-        // @ts-ignore
         path: `${this.importMetaUrl}../../../../components/atoms/iconStates/IconStates.js?${Environment?.version || ''}`,
         name: 'a-icon-states'
       },
       {
         // @ts-ignore
-        path: `${this.importMetaUrl}./Notifications.js?${Environment?.version || ''}`,
-        name: 'chat-m-notifications'
+        path: `${this.importMetaUrl}../../../../components/atoms/iconCombinations/IconCombinations.js?${Environment?.version || ''}`,
+        name: 'a-icon-combinations'
       },
       {
         // @ts-ignore
@@ -229,7 +223,7 @@ export default class Key extends Intersection() {
   update (keyContainer, order, updateOrder = false) {
     this.keyContainer = keyContainer
     this.order = order
-    if (updateOrder) this.customStyle.innerText = /* css */`
+    if (updateOrder) this.customStyle.textContent = /* css */`
       :host {
         order: ${order};
       }
@@ -250,9 +244,9 @@ export default class Key extends Intersection() {
     clearTimeout(this._timeoutUpdateHeight)
     this._timeoutUpdateHeight = setTimeout(() => {
       this.removeAttribute('has-height')
-      this.customStyleHeight.innerText = ''
+      this.customStyleHeight.textContent = ''
       if (!clear) self.requestAnimationFrame(timeStamp => {
-        this.customStyleHeight.innerText = /* css */`
+        this.customStyleHeight.textContent = /* css */`
           :host {
             min-height: ${this.clientHeight}px;
           }

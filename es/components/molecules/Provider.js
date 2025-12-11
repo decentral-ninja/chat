@@ -441,7 +441,7 @@ export default class Provider extends Intersection() {
         path: `${this.importMetaUrl}../../../../web-components-toolbox/src/css/style.css`, // apply namespace and fallback to allow overwriting on deeper level
         namespaceFallback: true
       }
-    ])
+    ], false)
   }
 
   /**
@@ -640,7 +640,7 @@ export default class Provider extends Intersection() {
   update (data, order, updateOrder = false, removeDataUpdating = true) {
     this.data = data
     this.order = order
-    if (updateOrder) this.customStyle.innerText = /* css */`
+    if (updateOrder) this.customStyle.textContent = /* css */`
       :host {
         order: ${order};
       }
@@ -740,9 +740,9 @@ export default class Provider extends Intersection() {
     clearTimeout(this._timeoutUpdateHeight)
     this._timeoutUpdateHeight = setTimeout(() => {
       this.removeAttribute('has-height')
-      this.customStyleHeight.innerText = ''
+      this.customStyleHeight.textContent = ''
       if (!clear) self.requestAnimationFrame(timeStamp => {
-        this.customStyleHeight.innerText = /* css */`
+        this.customStyleHeight.textContent = /* css */`
           :host {
             min-height: ${this.clientHeight}px;
           }

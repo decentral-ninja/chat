@@ -222,15 +222,19 @@ export default class User extends Intersection() {
         --color-hover: var(--color);
         --cursor-hover: auto;
         display: flex;
-        flex-wrap: wrap;
+        gap: 0.25em;
         justify-content: space-between;
-        align-items: center;
+        align-items: start;
         border-bottom: 1px solid var(--color);
         overflow-wrap: anywhere;
+      }
+      :host > li > div > h2 > span#nickname {
+        flex-shrink: 1;
       }
       :host > li > div > h2 > span.user-icon {
         display: flex;
         flex-direction: column;
+        flex-shrink: 0;
         align-items: center;
       }
       :host > li > div > h2 > span.user-icon > .tiny{
@@ -293,7 +297,7 @@ export default class User extends Intersection() {
         path: `${this.importMetaUrl}../../../../web-components-toolbox/src/css/style.css`, // apply namespace and fallback to allow overwriting on deeper level
         namespaceFallback: true
       }
-    ])
+    ], false)
   }
 
   /**
@@ -400,7 +404,7 @@ export default class User extends Intersection() {
     }
     this.updateOrder(order)
     this.doOnIntersection = () => {
-      if (this.nicknameNode) this.nicknameNode.outerHTML = User.renderNickname(user.nickname)
+      if (this.nicknameNode) this.nicknameNode.outerHTML = User.renderNickname(user.nickname, this.user.uid)
       if (this.awarenessEpochNode) this.awarenessEpochNode.outerHTML = User.renderTableValue('awarenessEpoch', user, allUsers, this.getAttribute('uid'))
       if (this.connectedUsersNode) {
         if (typeof this.connectedUsersNode.children?.[0].update === 'function') {
@@ -425,7 +429,7 @@ export default class User extends Intersection() {
   }
 
   updateOrder (order) {
-    this.customStyleOrder.innerText = /* css */`
+    this.customStyleOrder.textContent = /* css */`
       :host {
         order: ${order};
       }
@@ -439,9 +443,9 @@ export default class User extends Intersection() {
     clearTimeout(this._timeoutUpdateHeight)
     this._timeoutUpdateHeight = setTimeout(() => {
       this.removeAttribute('has-height')
-      this.customStyleHeight.innerText = ''
+      this.customStyleHeight.textContent = ''
       if (!clear) self.requestAnimationFrame(timeStamp => {
-        this.customStyleHeight.innerText = /* css */`
+        this.customStyleHeight.textContent = /* css */`
           :host {
             min-height: ${this.clientHeight}px;
           }

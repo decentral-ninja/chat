@@ -101,7 +101,7 @@ export default class ConnectedUsers extends Shadow() {
         path: `${this.importMetaUrl}../../../../web-components-toolbox/src/css/style.css`, // apply namespace and fallback to allow overwriting on deeper level
         namespaceFallback: true
       }
-    ])
+    ], false)
   }
 
   /**

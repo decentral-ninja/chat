@@ -29,7 +29,7 @@ export default class KeysDialog extends Dialog {
     this._showEventListener = this.showEventListener
     this.showEventListener = event => {
       const result = this._showEventListener(event)
-      if (event.detail?.id) this.setActive('id', event.detail.id, [this.keysDiv], undefined, undefined)
+      if (event.detail?.id) this.setActive('id', event.detail.id, [this.keysDiv])
       return result
     }
 
@@ -97,6 +97,11 @@ export default class KeysDialog extends Dialog {
         scrollbar-width: thin;
         transition: height 0.3s ease-out;
       }
+      :host > dialog > #keys {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--grid-gap, 0.5em);
+      }
     `, undefined, false)
     return result
   }
@@ -110,12 +115,6 @@ export default class KeysDialog extends Dialog {
       <dialog>
         <wct-menu-icon id="close" no-aria class="open sticky" namespace="menu-icon-close-" no-click background style="--outline-style-focus-visible: none;"></wct-menu-icon>
         <h4>Keys:</h4>
-        <a-icon-combinations keys>
-          <template>
-            <wct-icon-mdx title="Private key" style="--color-hover: var(--color-red-full); color:var(--color-red);" icon-url="../../../../../../img/icons/key-filled.svg" size="20em"></wct-icon-mdx>
-            <wct-icon-mdx title="Public key" style="--color-hover: var(--color-green-full); color:var(--color-green-dark);" icon-url="../../../../../../img/icons/key-filled.svg" size="20em"></wct-icon-mdx>
-          </template>
-        </a-icon-combinations>
         <div id=keys></div>
       </dialog>
     `
@@ -124,11 +123,6 @@ export default class KeysDialog extends Dialog {
         // @ts-ignore
         path: `${this.importMetaUrl}../../atoms/menuIcon/MenuIcon.js?${Environment?.version || ''}`,
         name: 'wct-menu-icon'
-      },
-      {
-        // @ts-ignore
-        path: `${this.importMetaUrl}../../../../../../components/atoms/iconCombinations/IconCombinations.js?${Environment?.version || ''}`,
-        name: 'a-icon-combinations'
       },
       {
         // @ts-ignore
