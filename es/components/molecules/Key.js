@@ -1,7 +1,6 @@
 // @ts-check
 import { Intersection } from '../../../../event-driven-web-components-prototypes/src/Intersection.js'
 import { escapeHTML } from '../../../../event-driven-web-components-prototypes/src/helpers/Helpers.js'
-import { scrollElIntoView } from '../../../../event-driven-web-components-prototypes/src/helpers/Helpers.js'
 
 /* global Environment */
 
@@ -180,8 +179,8 @@ export default class Key extends Intersection() {
           <div id=share></div>
         </div>
         <div style="grid-area: title">
-          <chat-a-key-name public></chat-a-key-name>
-          <chat-a-key-name private></chat-a-key-name>
+          <chat-a-key-name public name="${escapeHTML(this.keyContainer.public.name)}" epoch='${this.keyContainer.key.epoch}'></chat-a-key-name>
+          <chat-a-key-name private name="${escapeHTML(this.keyContainer.private.name)}" epoch='${this.keyContainer.key.epoch}'></chat-a-key-name>
         </div>
         <a-icon-combinations keys>
           <template>

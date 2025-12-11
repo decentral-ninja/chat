@@ -53,6 +53,7 @@ export default class KeyName extends Shadow() {
   }
 
   attributeChangedCallback (name, oldValue, newValue) {
+    if (oldValue === null) return
     if (name === 'name') {
       if (this.hTag && oldValue !== newValue) this.hTag.textContent = newValue
     } else {
