@@ -1,4 +1,5 @@
 // @ts-check
+import { getHexColor } from '../../../../Helpers.js'
 import { Intersection } from '../../../../event-driven-web-components-prototypes/src/Intersection.js'
 import { escapeHTML } from '../../../../event-driven-web-components-prototypes/src/helpers/Helpers.js'
 
@@ -148,6 +149,17 @@ export default class Key extends Intersection() {
           }
       }
     `
+    getHexColor(this.keyContainer.key.epoch).then(hex => {
+      this.css = /* css */`
+        :host > section {
+          border-color: ${hex};
+        }
+        :host a-icon-states {
+          --color: ${hex};
+          --color-hover: ${hex}70;
+        }
+      `
+    })
     return this.fetchTemplate()
   }
 
@@ -182,12 +194,17 @@ export default class Key extends Intersection() {
           <chat-a-key-name public name="${escapeHTML(this.keyContainer.public.name)}" epoch='${this.keyContainer.key.epoch}'></chat-a-key-name>
           <chat-a-key-name private name="${escapeHTML(this.keyContainer.private.name)}" epoch='${this.keyContainer.key.epoch}'></chat-a-key-name>
         </div>
-        <a-icon-combinations keys>
+        <a-icon-states>
           <template>
-            <wct-icon-mdx title="Private key" style="--color-hover: var(--color-red-full); color:var(--color-red);" icon-url="../../../../../../img/icons/key-filled.svg" size="1.5em"></wct-icon-mdx>
-            <wct-icon-mdx title="Public key" style="--color-hover: var(--color-green-full); color:var(--color-green-dark);" icon-url="../../../../../../img/icons/key-filled.svg" size="1.5em"></wct-icon-mdx>
+            <wct-icon-mdx state="default" title="Key" icon-url="../../../../../../img/icons/key-square.svg" size="2em" hover-selector=section#grid></wct-icon-mdx>
+            <a-icon-combinations state="derived" keys title=keypair>
+              <template>
+                <wct-icon-mdx title="Private key" icon-url="../../../../../../img/icons/key-filled.svg" size="2em" hover-selector=section#grid></wct-icon-mdx>
+                <wct-icon-mdx title="Public key" icon-url="../../../../../../img/icons/key-filled.svg" size="2em" hover-selector=section#grid></wct-icon-mdx>
+              </template>
+            </a-icon-combinations>
           </template>
-        </a-icon-combinations>
+        </a-icon-states>
       </section>
     `
     this.html = this.customStyle
@@ -260,11 +277,11 @@ export default class Key extends Intersection() {
   }
 
   get privateNameEl () {
-    return this.section.querySelector('[style="grid-area: title"] chat-a-key-name[private]')
+    return this.section.querySelector('chat-a-key-name[private]')
   }
 
   get publicNameEl () {
-    return this.section.querySelector('[style="grid-area: title"] chat-a-key-name[public]')
+    return this.section.querySelector('chat-a-key-name[public]')
   }
 
   get section () {

@@ -1,7 +1,7 @@
 // @ts-check
 import { Intersection } from '../../../../event-driven-web-components-prototypes/src/Intersection.js'
 import { escapeHTML } from '../../../../event-driven-web-components-prototypes/src/helpers/Helpers.js'
-import { jsonParseMapUrlReviver } from '../../../../Helpers.js'
+import { getHexColor, jsonParseMapUrlReviver } from '../../../../Helpers.js'
 import { separator } from '../../../../event-driven-web-components-yjs/src/es/controllers/Users.js'
 import { scrollElIntoView } from '../../../../event-driven-web-components-prototypes/src/helpers/Helpers.js'
 
@@ -425,6 +425,13 @@ export default class Provider extends Intersection() {
         }
       }
     `
+    getHexColor(Array.from(this.data.urls)?.[0][1].url.host).then(hex => {
+      this.css = /* css */`
+        :host > section {
+          border-color: ${hex};
+        }
+      `
+    })
     return this.fetchTemplate()
   }
 
