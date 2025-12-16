@@ -100,7 +100,25 @@ export default class KeysDialog extends Dialog {
       :host > dialog > #keys {
         display: flex;
         flex-wrap: wrap;
-        gap: var(--grid-gap, 0.5em);
+        gap: 1em;
+      }
+      :host > dialog > #keys > chat-m-key, :host > dialog > #keys > wct-load-template-tag {
+        width: calc(33.3% - 0.66em);
+      }
+      @media only screen and (max-width: ${this.mobileBreakpoint}) {
+        :host > dialog > #keys > chat-m-key, :host > dialog > #keys > wct-load-template-tag {
+          width: 100%;
+        }
+      }
+      @media only screen and (min-width: 1500px) {
+        :host > dialog > #keys > chat-m-key, :host > dialog > #keys > wct-load-template-tag {
+          width: calc(25% - 0.75em);
+        }
+      }
+      @media only screen and (min-width: 2500px) {
+        :host > dialog > #keys > chat-m-key, :host > dialog > #keys > wct-load-template-tag {
+          width: calc(20% - 0.8em);
+        }
       }
     `, undefined, false)
     return result
