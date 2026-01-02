@@ -296,6 +296,7 @@ export default class Chat extends Shadow() {
         transform: rotate(45deg) translate(-33%, 23%);
         width: inherit;
         max-width: max-content;
+        max-height: 90dvh;
         filter: url("#svg-grain");
         animation: filter-animation .2s steps(1) infinite;
       }
