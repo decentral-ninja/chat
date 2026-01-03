@@ -185,8 +185,11 @@ export default class Notifications extends Hover() {
       :host {
         --color-hover: var(--color-yellow);
         --counter-color: var(--color-secondary);
-        display: flex;
+        display: block;
         align-items: center;
+      }
+      :host([room]) {
+        display: flex;
       }
       :host(.hover) {
         --color: var(--color-yellow);

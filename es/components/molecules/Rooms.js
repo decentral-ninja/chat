@@ -25,7 +25,7 @@ export default class Rooms extends Shadow() {
 
     this.clickEventListener = async event => {
       let target
-      if ((target = event.composedPath()[0])?.hasAttribute('route') || ((target = event.composedPath()[1]) && typeof target.hasAttribute === 'function' && target.hasAttribute('route'))) {
+      if ((target = event.composedPath().find(el => typeof el.hasAttribute === 'function' && el.hasAttribute('route')))) {
         if (!target.hasAttribute('href')) {
           event.stopPropagation()
           event.preventDefault()
