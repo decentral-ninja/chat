@@ -294,7 +294,7 @@ export default class Chat extends Shadow() {
       }
       :host > ul + section#empty > img {
         transform: rotate(45deg) translate(-33%, 23%);
-        width: auto;
+        width: inherit;
         max-width: max-content;
         max-height: 90dvh;
         filter: url("#svg-grain");
