@@ -407,7 +407,7 @@ export default class Message extends WebWorker(Intersection()) {
     switch (textObj.type) {
       case 'jitsi-video-started':
         textObj.text = /* html */`<span>just entered the video conference room: ${textObj.src}</span><wct-button id=send src="${textObj.src}" namespace="button-primary-" request-event-name="jitsi-dialog-show-event" click-no-toggle-active>
-            <wct-icon-mdx title="Join voice call" icon-url="../../../../../../img/icons/video-plus.svg" size="3em"></wct-icon-mdx>
+            <wct-icon-mdx title="Join voice call" icon-url="../../../../../../img/icons/video-plus.svg" size="3em" no-hover></wct-icon-mdx>
           </wct-button>`
         break
       case 'jitsi-video-stopped':
