@@ -38,7 +38,7 @@ export default class Message extends WebWorker(Intersection()) {
   #textObj
 
   constructor (options = {}, ...args) {
-    super({ importMetaUrl: import.meta.url, intersectionObserverInit: {}, ...options }, ...args)
+    super({ importMetaUrl: import.meta.url, tabindex: 'no-tabindex', intersectionObserverInit: {}, ...options }, ...args)
 
     this.clickEventListener = event => {
       if (this.dialog) {

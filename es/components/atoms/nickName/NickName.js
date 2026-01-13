@@ -13,7 +13,7 @@ import { getHexColor } from '../../../../../Helpers.js'
 */
 export default class NickName extends Shadow() {
   constructor (options = {}, ...args) {
-    super({ importMetaUrl: import.meta.url, ...options }, ...args)
+    super({ importMetaUrl: import.meta.url, tabindex: 'no-tabindex', ...options }, ...args)
 
     this.hTagName = this.getAttribute('h-tag-name') || 'h4'
 

@@ -12,7 +12,7 @@ import { escapeHTML } from '../../../../../event-driven-web-components-prototype
 */
 export default class RoomName extends Shadow() {
   constructor (options = {}, ...args) {
-    super({ importMetaUrl: import.meta.url, ...options }, ...args)
+    super({ importMetaUrl: import.meta.url, tabindex: 'no-tabindex', ...options }, ...args)
 
     this.clickEventListener = event => {
       event.preventDefault()

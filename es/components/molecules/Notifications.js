@@ -13,7 +13,7 @@ import { Hover } from '../../../../event-driven-web-components-prototypes/src/Ho
 export default class Notifications extends Hover() {
   constructor (options = {}, ...args) {
     // @ts-ignore
-    super({ importMetaUrl: import.meta.url, ...options }, ...args)
+    super({ importMetaUrl: import.meta.url, tabindex: 'no-tabindex', ...options }, ...args)
 
     // @ts-ignore
     this.roomNamePrefix = self.Environment?.roomNamePrefix || 'chat-'

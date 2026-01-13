@@ -16,7 +16,7 @@ import { scrollElIntoView } from '../../../../event-driven-web-components-protot
  */
 export default class Chat extends Shadow() {
   constructor (options = {}, ...args) {
-    super({ importMetaUrl: import.meta.url, ...options }, ...args)
+    super({ importMetaUrl: import.meta.url, tabindex: 'no-tabindex', ...options }, ...args)
 
     this.removeEmptySectionTimeout = 300
     let removeEmptySectionTimeoutId = null

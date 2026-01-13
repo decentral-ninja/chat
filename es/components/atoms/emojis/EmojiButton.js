@@ -12,7 +12,7 @@ import { Shadow } from '../../../../../event-driven-web-components-prototypes/sr
  */
 export default class EmojiButton extends Shadow() {
   constructor (options = {}, ...args) {
-    super({ importMetaUrl: import.meta.url, ...options }, ...args)
+    super({ importMetaUrl: import.meta.url, tabindex: 'no-tabindex', ...options }, ...args)
 
     this.toggleEmojiPicker = event => {
       const emojiPicker = this.root.querySelector('emoji-picker')

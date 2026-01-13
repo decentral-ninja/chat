@@ -20,7 +20,7 @@ export default class EmojiPicker extends Shadow() {
   }
 
   constructor (options = {}, ...args) {
-    super({ importMetaUrl: import.meta.url, ...options }, ...args)
+    super({ importMetaUrl: import.meta.url, tabindex: 'no-tabindex', ...options }, ...args)
 
     /* TODO: ADD RANGES & ADD MORE EMOJIS https://symbl.cc/en/unicode/blocks/emoticons/ */
     this.emojiCategories = [

@@ -105,6 +105,9 @@ export default class KeysDialog extends Dialog {
       :host > dialog > #keys > chat-m-key, :host > dialog > #keys > wct-load-template-tag {
         width: calc(33.3% - 0.66em);
       }
+      :host > dialog > #keys > wct-load-template-tag {
+        min-height: 25em;
+      }
       @media only screen and (max-width: ${this.mobileBreakpoint}) {
         :host > dialog > #keys > chat-m-key, :host > dialog > #keys > wct-load-template-tag {
           width: 100%;

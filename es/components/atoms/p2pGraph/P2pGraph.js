@@ -12,7 +12,7 @@ import { getHexColor } from '../../../../../Helpers.js'
 */
 export default class P2pGraph extends Intersection() {
   constructor (options = {}, ...args) {
-    super({ importMetaUrl: import.meta.url, intersectionObserverInit: {}, ...options }, ...args)
+    super({ importMetaUrl: import.meta.url, tabindex: 'no-tabindex', intersectionObserverInit: {}, ...options }, ...args)
 
     // this updates the min-height on resize, see updateHeight function for more info
     let resizeTimeout = null

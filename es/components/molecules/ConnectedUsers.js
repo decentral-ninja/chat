@@ -12,7 +12,7 @@ import { separator } from '../../../../event-driven-web-components-yjs/src/es/co
 */
 export default class ConnectedUsers extends Shadow() {
   constructor (connectedUsers, options = {}, ...args) {
-    super({ importMetaUrl: import.meta.url, ...options }, ...args)
+    super({ importMetaUrl: import.meta.url, tabindex: 'no-tabindex-style', ...options }, ...args)
 
     if (this.template) {
       ({ connectedUsers: this.connectedUsers } = JSON.parse(this.template.content.textContent))

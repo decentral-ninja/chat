@@ -18,7 +18,7 @@ export default class Provider extends Intersection() {
   }
 
   constructor (id, name, data, order, roomName, options = {}, ...args) {
-    super({ importMetaUrl: import.meta.url, intersectionObserverInit: {}, ...options }, ...args)
+    super({ importMetaUrl: import.meta.url, tabindex: 'no-tabindex', intersectionObserverInit: {}, ...options }, ...args)
 
     if (this.template) {
       ({ id: this.id, name: this.name, data: this.data, order: this.order, roomName: this.roomName } = JSON.parse(this.template.content.textContent, jsonParseMapUrlReviver))

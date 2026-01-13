@@ -12,7 +12,7 @@ import { jsonParseMapUrlReviver } from '../../../../Helpers.js'
 */
 export default class User extends Intersection() {
   constructor (user, allUsers, order, options = {}, ...args) {
-    super({ importMetaUrl: import.meta.url, intersectionObserverInit: {}, ...options }, ...args)
+    super({ importMetaUrl: import.meta.url, tabindex: 'no-tabindex', intersectionObserverInit: {}, ...options }, ...args)
 
     if (this.template) {
       ({ user: this.user, allUsers: this.allUsers, order: this.order } = JSON.parse(this.template.content.textContent, jsonParseMapUrlReviver))

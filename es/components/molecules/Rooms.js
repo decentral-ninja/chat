@@ -15,7 +15,7 @@ import { escapeHTML } from '../../../../event-driven-web-components-prototypes/s
  */
 export default class Rooms extends Shadow() {
   constructor (options = {}, ...args) {
-    super({ importMetaUrl: import.meta.url, ...options }, ...args)
+    super({ importMetaUrl: import.meta.url, tabindex: 'no-tabindex', ...options }, ...args)
 
     this.roomKeys = []
     // @ts-ignore

@@ -7,7 +7,7 @@ import { Shadow } from '../../../../event-driven-web-components-prototypes/src/S
 
 export default class Input extends Shadow() {
   constructor (options = {}, ...args) {
-    super({ importMetaUrl: import.meta.url, ...options }, ...args)
+    super({ importMetaUrl: import.meta.url, tabindex: 'no-tabindex-style', ...options }, ...args)
 
     const wormholeUrl = 'https://wormhole.app/'
     let wormholeOpened = false

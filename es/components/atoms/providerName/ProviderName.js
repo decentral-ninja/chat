@@ -13,7 +13,7 @@ import { separator } from '../../../../../event-driven-web-components-yjs/src/es
 */
 export default class ProviderName extends Shadow() {
   constructor (options = {}, ...args) {
-    super({ importMetaUrl: import.meta.url, ...options }, ...args)
+    super({ importMetaUrl: import.meta.url, tabindex: 'no-tabindex', ...options }, ...args)
 
     this.hTagName = this.getAttribute('h-tag-name') || 'h4'
     this.dataName = this.root.querySelector('[name]')?.textContent

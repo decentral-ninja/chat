@@ -12,7 +12,7 @@ import { escapeHTML } from '../../../../event-driven-web-components-prototypes/s
 */
 export default class Key extends Intersection() {
   constructor (epoch, keyContainer, order, options = {}, ...args) {
-    super({ importMetaUrl: import.meta.url, intersectionObserverInit: {}, ...options }, ...args)
+    super({ importMetaUrl: import.meta.url, tabindex: 'no-tabindex', intersectionObserverInit: {}, ...options }, ...args)
 
     if (this.template) {
       ({ epoch: this.epoch, keyContainer: this.keyContainer, order: this.order } = JSON.parse(this.template.content.textContent))
@@ -135,17 +135,26 @@ export default class Key extends Intersection() {
       #grid {
         display: grid;
         grid-template-areas:
-          "keyIcons title"
-          "text text";
+          "keyIcons keyIcons"
+          "title title";
         padding: var(--card-padding, 0.75em);
         align-items: center;
         gap: var(--grid-gap, 0.5em);
+        height: 100%;
+      }
+      #grid > [style="grid-area: title"] > div {
+        align-items: flex-end;
+        display: flex;
+        gap: 1em;
+      }
+      #grid > [style="grid-area: title"] > div span.font-size-tiny {
+        white-space: nowrap;
       }
       @media only screen and (max-width: _max-width_) {
         #grid {
           grid-template-areas:
-            "keyIcons title"
-            "text text";
+            "keyIcons keyIcons"
+            "title title";
           }
       }
     `
@@ -189,22 +198,22 @@ export default class Key extends Intersection() {
       <section id=grid>
         <div style="grid-area: keyIcons">
           <div id=share></div>
+          <a-icon-states>
+            <template>
+              <wct-icon-mdx state="default" title="Key" icon-url="../../../../../../img/icons/key-square.svg" size="2em" hover-selector=section#grid></wct-icon-mdx>
+              <a-icon-combinations state="derived" keys title=keypair>
+                <template>
+                  <wct-icon-mdx title="Private key" icon-url="../../../../../../img/icons/key-filled.svg" size="2em" hover-selector=section#grid></wct-icon-mdx>
+                  <wct-icon-mdx title="Public key" icon-url="../../../../../../img/icons/key-filled.svg" size="2em" hover-selector=section#grid></wct-icon-mdx>
+                </template>
+              </a-icon-combinations>
+            </template>
+          </a-icon-states>
         </div>
         <div style="grid-area: title">
-          <chat-a-key-name public name="${escapeHTML(this.keyContainer.public.name)}" epoch='${this.keyContainer.key.epoch}'></chat-a-key-name>
-          <chat-a-key-name private name="${escapeHTML(this.keyContainer.private.name)}" epoch='${this.keyContainer.key.epoch}'></chat-a-key-name>
+          <div><span>Public name<span class=font-size-tiny> (shared)</span>:</span><chat-a-key-name public name="${escapeHTML(this.keyContainer.public.name)}" epoch='${this.keyContainer.key.epoch}'></chat-a-key-name></div>
+          <div><span>Private name<span class=font-size-tiny> (locally saved)</span>:</span><chat-a-key-name private name="${escapeHTML(this.keyContainer.private.name)}" epoch='${this.keyContainer.key.epoch}'></chat-a-key-name></div>
         </div>
-        <a-icon-states>
-          <template>
-            <wct-icon-mdx state="default" title="Key" icon-url="../../../../../../img/icons/key-square.svg" size="2em" hover-selector=section#grid></wct-icon-mdx>
-            <a-icon-combinations state="derived" keys title=keypair>
-              <template>
-                <wct-icon-mdx title="Private key" icon-url="../../../../../../img/icons/key-filled.svg" size="2em" hover-selector=section#grid></wct-icon-mdx>
-                <wct-icon-mdx title="Public key" icon-url="../../../../../../img/icons/key-filled.svg" size="2em" hover-selector=section#grid></wct-icon-mdx>
-              </template>
-            </a-icon-combinations>
-          </template>
-        </a-icon-states>
       </section>
     `
     this.html = this.customStyle
