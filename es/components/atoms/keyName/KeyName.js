@@ -24,14 +24,15 @@ export default class KeyName extends Shadow() {
     this.clickEventListener = event => {
       event.preventDefault()
       event.stopPropagation()
-      if (this.hasAttribute('key-dialog-show-event')) {
-        this.dispatchEvent(new CustomEvent('key-dialog-show-event', {
-          detail: { epoch: this.getAttribute('epoch') },
-          bubbles: true,
-          cancelable: true,
-          composed: true
-        }))
-      }
+      this.dispatchEvent(new CustomEvent('key-name-click', {
+        detail: {
+          epoch: this.getAttribute('epoch'),
+          name: this.getAttribute('name')
+        },
+        bubbles: true,
+        cancelable: true,
+        composed: true
+      }))
     }
 
     this.keyChangedEventListener = event => {
@@ -153,10 +154,9 @@ export default class KeyName extends Shadow() {
     this.html = ''
     this.html = /* html */`
       <a href="#">
-        <span class=avatar>
-          <wct-icon-mdx hover-on-parent-shadow-root-host id=connected title=connected icon-url="../../../../../../img/icons/mobiledata.svg" size="0.75em"></wct-icon-mdx>
-        </span>
+        <span class=avatar></span>
         <${this.hTagName}>${escapeHTML(keyName) || 'None'}</${this.hTagName}>
+        <wct-icon-mdx hover-on-parent-element id="show-modal" title="edit nickname" icon-url="../../../../../../img/icons/pencil.svg" size="1em"></wct-icon-mdx>
       </a>
     `
     this.renderHexColor()

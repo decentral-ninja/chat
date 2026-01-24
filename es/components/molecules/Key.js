@@ -143,9 +143,14 @@ export default class Key extends Intersection() {
         height: 100%;
       }
       #grid > [style="grid-area: title"] > div {
-        align-items: flex-end;
+        align-items: flex-start;
         display: flex;
-        gap: 1em;
+        flex-wrap: wrap;
+        justify-content: space-between;
+      }
+      #grid > [style="grid-area: title"] > div > span.name {
+        display: flex;
+        flex-direction: column;
       }
       #grid > [style="grid-area: title"] > div span.font-size-tiny {
         white-space: nowrap;
@@ -211,8 +216,8 @@ export default class Key extends Intersection() {
           </a-icon-states>
         </div>
         <div style="grid-area: title">
-          <div><span>Public name<span class=font-size-tiny> (shared)</span>:</span><chat-a-key-name public name="${escapeHTML(this.keyContainer.public.name)}" epoch='${this.keyContainer.key.epoch}'></chat-a-key-name></div>
-          <div><span>Private name<span class=font-size-tiny> (locally saved)</span>:</span><chat-a-key-name private name="${escapeHTML(this.keyContainer.private.name)}" epoch='${this.keyContainer.key.epoch}'></chat-a-key-name></div>
+          <div><span class=name><span>Public name:</span><span class=font-size-tiny>(shared)</span></span>&nbsp;<chat-a-key-name public name="${escapeHTML(this.keyContainer.public.name)}" epoch='${this.keyContainer.key.epoch}'></chat-a-key-name></div>
+          <div><span class=name><span>Private name:</span><span class=font-size-tiny>(saved locally and not shared)</span></span>&nbsp;<chat-a-key-name private name="${escapeHTML(this.keyContainer.private.name)}" epoch='${this.keyContainer.key.epoch}'></chat-a-key-name></div>
         </div>
       </section>
     `
