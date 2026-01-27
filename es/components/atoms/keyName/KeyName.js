@@ -20,36 +20,46 @@ export default class KeyName extends Shadow() {
     super({ importMetaUrl: import.meta.url, tabindex: 'no-tabindex', ...options }, ...args)
 
     this.hTagName = this.getAttribute('h-tag-name') || 'h4'
+    this.linkTagName = this.hasAttribute('is-editable') ? 'a' : 'span'
 
     this.clickEventListener = event => {
+      if (event.composedPath().some(el => el === this.dialog)) return
       event.preventDefault()
       event.stopPropagation()
-      this.dispatchEvent(new CustomEvent('key-name-click', {
-        detail: {
-          epoch: this.getAttribute('epoch'),
-          name: this.getAttribute('name')
-        },
-        bubbles: true,
-        cancelable: true,
-        composed: true
-      }))
+      if (!this.dialog) {
+        this.html = /* html */`
+          <chat-m-key-name-dialog
+            namespace="dialog-top-slide-in-"
+            open="show-modal"
+            name="${escapeHTML(this.getAttribute('name'))}"
+            epoch='${this.getAttribute('epoch')}'
+            ${this.hasAttribute('private')
+              ? 'private'
+              : 'public'
+            }
+          >
+          </chat-m-key-name-dialog>
+        `
+      } else if (!this.dialog.dialog.hasAttribute('open')) {
+        this.dialog.show('show-modal')
+      }
     }
 
     this.keyChangedEventListener = event => {
-      // TODO: call functions regarding key changes
-      console.log('****keyChangedEventListener*****', event.detail.modified || event.detail.deleted || event.detail.shared)
+      const propNames = this.hasAttribute('private') ? 'private.name' : 'public.name'
+      if (event.detail.modified?.propNames === propNames && event.detail.modified.keyContainer.key.epoch === this.getAttribute('epoch')) this.setAttribute('name', propNames.split('.').reduce((acc, curr) => acc[curr], event.detail.modified.keyContainer))
     }
   }
 
   connectedCallback () {
     if (this.shouldRenderCSS()) this.renderCSS()
     if (this.shouldRenderHTML()) this.renderHTML()
-    this.addEventListener('click', this.clickEventListener)
+    if (this.hasAttribute('is-editable')) this.addEventListener('click', this.clickEventListener)
     this.globalEventTarget.addEventListener('yjs-key-property-modified', this.keyChangedEventListener)
   }
 
   disconnectedCallback () {
-    this.removeEventListener('click', this.clickEventListener)
+    if (this.hasAttribute('is-editable')) this.removeEventListener('click', this.clickEventListener)
     this.globalEventTarget.removeEventListener('yjs-key-property-modified', this.keyChangedEventListener)
   }
 
@@ -57,8 +67,10 @@ export default class KeyName extends Shadow() {
     if (oldValue === null) return
     if (name === 'name') {
       if (this.hTag && oldValue !== newValue) this.hTag.textContent = newValue
+      if (this.dialog) this.dialog.setAttribute('name', newValue)
     } else {
       if (this.avatar && oldValue !== newValue) this.renderHexColor()
+      if (this.dialog) this.dialog.setAttribute('epoch', newValue)
     }
   }
 
@@ -68,7 +80,7 @@ export default class KeyName extends Shadow() {
    * @return {boolean}
    */
   shouldRenderCSS () {
-    return !this.root.querySelector(`:host > style[_css], ${this.tagName} > style[_css]`)
+    return !this.root.querySelector(`:host > style[_css], ${this.linkTagName} > style[_css]`)
   }
 
   /**
@@ -85,7 +97,13 @@ export default class KeyName extends Shadow() {
    */
   renderCSS () {
     this.css = /* css */`
-      :host {
+      :host([is-editable]) {
+        cursor: pointer;
+      }
+      *:focus {
+        outline: none;
+      }
+      :host > ${this.linkTagName} {
         --a-margin: 0;
         --a-text-decoration: underline;
         --a-display: flex;
@@ -94,19 +112,13 @@ export default class KeyName extends Shadow() {
         --${this.hTagName}-font-size: 1em;
         --${this.hTagName}-margin: 0;
         --${this.hTagName}-padding: 0.2em 0 0 0;
-        cursor: pointer;
-      }
-      *:focus {
-        outline: none;
-      }
-      :host > a, :host > span {
         align-items: center;
         display: flex;
         padding-bottom: var(--spacing);
         tap-highlight-color: transparent;
         --webkit-tap-highlight-color: transparent;
       }
-      :host > a > ${this.hTagName}, :host > span {
+      :host > ${this.linkTagName} > ${this.hTagName} {
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -149,15 +161,19 @@ export default class KeyName extends Shadow() {
    * @returns Promise<void>
    */
   renderHTML (keyName = this.getAttribute('name')) {
+    this.setAttribute('name', escapeHTML(keyName))
     if (this.lastKeyName === keyName) return Promise.resolve()
     this.lastKeyName = keyName
     this.html = ''
     this.html = /* html */`
-      <a href="#">
+      <${this.linkTagName} href="#">
         <span class=avatar></span>
         <${this.hTagName}>${escapeHTML(keyName) || 'None'}</${this.hTagName}>
-        <wct-icon-mdx hover-on-parent-element id="show-modal" title="edit nickname" icon-url="../../../../../../img/icons/pencil.svg" size="1em"></wct-icon-mdx>
-      </a>
+        ${this.hasAttribute('is-editable')
+          ? /* html */`<wct-icon-mdx hover-on-parent-element id="show-modal" title="edit key name" icon-url="../../../../../../img/icons/pencil.svg" size="1em"></wct-icon-mdx>`
+          : ''
+        }
+      </${this.linkTagName}>
     `
     this.renderHexColor()
     return this.fetchModules([
@@ -165,6 +181,11 @@ export default class KeyName extends Shadow() {
         // @ts-ignore
         path: `${this.importMetaUrl}../../../../../web-components-toolbox/src/es/components/atoms/iconMdx/IconMdx.js?${Environment?.version || ''}`,
         name: 'wct-icon-mdx'
+      },
+      {
+        // @ts-ignore
+        path: `${this.importMetaUrl}../../molecules/dialogs/KeyNameDialog.js?${Environment?.version || ''}`,
+        name: 'chat-m-key-name-dialog'
       }
     ])
   }
@@ -179,6 +200,10 @@ export default class KeyName extends Shadow() {
 
   get avatar () {
     return this.root.querySelector('.avatar')
+  }
+
+  get dialog () {
+    return this.root.querySelector('chat-m-key-name-dialog')
   }
 
   get globalEventTarget () {

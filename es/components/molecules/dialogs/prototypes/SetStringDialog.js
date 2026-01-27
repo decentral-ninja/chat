@@ -102,4 +102,12 @@ export default class SetStringDialog extends Dialog {
       Array.from(div.childNodes).forEach(node => this.dialog.appendChild(node))
     })
   }
+
+  get grid () {
+    return this.root.querySelector('wct-grid')
+  }
+
+  get input () {
+    return this.grid.root.querySelector('wct-input')
+  }
 }
