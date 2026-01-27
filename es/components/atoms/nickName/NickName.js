@@ -134,6 +134,7 @@ export default class NickName extends Shadow() {
         --${this.hTagName}-margin: 0;
         --${this.hTagName}-padding: 0.2em 0 0 0;
         cursor: pointer;
+        max-width: 100%;
       }
       *:focus {
         outline: none;
@@ -147,6 +148,10 @@ export default class NickName extends Shadow() {
       }
       :host > a > wct-icon-mdx {
         display: flex;
+        flex-shrink: 0;
+      }
+      :host > a > :not(wct-icon-mdx) {
+        flex-shrink: 5;
       }
       :host > a > ${this.hTagName}, :host > span {
         white-space: nowrap;

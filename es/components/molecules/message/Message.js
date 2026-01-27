@@ -226,6 +226,9 @@ export default class Message extends WebWorker(Intersection()) {
         display: flex;
         justify-content: space-between;
       }
+      :host li > div > chat-a-nick-name {
+        max-width: calc(100% - 1.5em);
+      }
       :host li > .user, :host li > .timestamp {
         flex-grow: 1;
         display: flex;

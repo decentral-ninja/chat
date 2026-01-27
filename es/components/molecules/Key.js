@@ -131,6 +131,9 @@ export default class Key extends Intersection() {
         box-shadow: var(--box-shadow-length-one) var(--box-shadow-color), var(--box-shadow-length-two) var(--box-shadow-color);
         min-height: var(--chat-m-key-min-height, 5em); /* wct-load-template-tag requirement */
       }
+      :host > section > * {
+        min-width: 0;
+      }
       /* https://weedshaker.github.io/cssGridLayout/ */
       #grid {
         display: grid;
