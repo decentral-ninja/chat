@@ -163,6 +163,7 @@ export default class User extends Intersection() {
       :host > li > div > table > tbody > tr > td {
         overflow-wrap: anywhere;
         border-bottom: 1px solid var(--color);
+        min-width: 0;
       }
       :host > li > div > table > tbody > tr.time-status {
         padding-bottom: var(--h-margin-bottom, 1em);
