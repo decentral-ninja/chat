@@ -139,7 +139,8 @@ export default class Key extends Intersection() {
         display: grid;
         grid-template-areas:
           "keyIcons keyIcons"
-          "title title";
+          "title title"
+          "body body";
         padding: var(--card-padding, 0.75em);
         align-items: center;
         gap: var(--grid-gap, 0.5em);
@@ -162,7 +163,8 @@ export default class Key extends Intersection() {
         #grid {
           grid-template-areas:
             "keyIcons keyIcons"
-            "title title";
+            "title title"
+            "body body";
           }
       }
     `
@@ -222,6 +224,9 @@ export default class Key extends Intersection() {
           <div><span class=name><span>Public name:</span><span class=font-size-tiny>(shared)</span></span>&nbsp;<chat-a-key-name public name="${escapeHTML(this.keyContainer.public.name)}" epoch='${this.keyContainer.key.epoch}'${this.keyContainer.private.origin.self ? '  is-editable' : ''}></chat-a-key-name></div>
           <div><span class=name><span>Private name:</span><span class=font-size-tiny>(saved locally and not shared)</span></span>&nbsp;<chat-a-key-name private name="${escapeHTML(this.keyContainer.private.name)}" epoch='${this.keyContainer.key.epoch}' is-editable></chat-a-key-name></div>
         </div>
+        <div style="grid-area: body">
+          <chat-a-glide-to-reveal></chat-a-glide-to-reveal>
+        </div>
       </section>
     `
     this.html = this.customStyle
@@ -242,6 +247,11 @@ export default class Key extends Intersection() {
         // @ts-ignore
         path: `${this.importMetaUrl}../atoms/keyName/KeyName.js?${Environment?.version || ''}`,
         name: 'chat-a-key-name'
+      },
+      {
+        // @ts-ignore
+        path: `${this.importMetaUrl}../atoms/glideToReveal/GlideToReveal.js?${Environment?.version || ''}`,
+        name: 'chat-a-glide-to-reveal'
       }
     ])
   }

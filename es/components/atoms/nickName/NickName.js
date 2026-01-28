@@ -151,7 +151,7 @@ export default class NickName extends Shadow() {
         flex-shrink: 0;
       }
       :host > a > :not(wct-icon-mdx) {
-        flex-shrink: 5;
+        flex-shrink: 100;
       }
       :host > a > ${this.hTagName}, :host > span {
         white-space: nowrap;

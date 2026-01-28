@@ -125,13 +125,15 @@ export default class KeyName extends Shadow() {
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+      }
+      :host > a > ${this.hTagName} {
         text-decoration: underline;
       }
       :host > ${this.linkTagName} > wct-icon-mdx {
         flex-shrink: 0;
       }
       :host > ${this.linkTagName} > :not(wct-icon-mdx) {
-        flex-shrink: 5;
+        flex-shrink: 100;
       }
       :host .avatar {
         height: 1.25em;

@@ -93,7 +93,7 @@ export default class SetStringDialog extends Dialog {
         <wct-grid auto-fill="20%">
           <section>
             ${prependGridSection}
-            <wct-input id="input" inputId="input" placeholder="${placeholder}" namespace="wct-input-" namespace-fallback grid-column="1/5" value="${value}" submit-search autofocus force></wct-input>
+            <wct-input id="input" maxlength="50" inputId="input" placeholder="${placeholder}" namespace="wct-input-" namespace-fallback grid-column="1/5" value="${value}" submit-search autofocus force></wct-input>
             <wct-button namespace="button-primary-" request-event-name="submit-input">set</wct-button>
             ${appendGridSection}
           </section>
