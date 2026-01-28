@@ -155,7 +155,7 @@ export default class GlideToReveal extends Shadow() {
         <ul class="code">
           ${key.split('').reduce((acc, curr) => /* html */`
             ${acc}
-            <li tabindex="0" class="digit" draggable>
+            <li tabindex="0" class="digit">
               <span>${curr}</span>
             </li>
           `, '')}

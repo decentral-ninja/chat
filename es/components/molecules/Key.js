@@ -159,6 +159,10 @@ export default class Key extends Intersection() {
       #grid > [style="grid-area: title"] > div span.font-size-tiny {
         white-space: nowrap;
       }
+      #grid > [style="grid-area: body"] > p {
+        --p-margin: 0 auto;
+        text-decoration: underline;
+      }
       @media only screen and (max-width: _max-width_) {
         #grid {
           grid-template-areas:
@@ -210,11 +214,11 @@ export default class Key extends Intersection() {
           <div id=share></div>
           <a-icon-states>
             <template>
-              <wct-icon-mdx state="default" title="Key" icon-url="../../../../../../img/icons/key-square.svg" size="2em" hover-selector=section#grid></wct-icon-mdx>
+              <wct-icon-mdx state="default" title="Key" icon-url="../../../../../../img/icons/key-square.svg" size="2em" no-hover></wct-icon-mdx>
               <a-icon-combinations state="derived" keys title=keypair>
                 <template>
-                  <wct-icon-mdx title="Private key" icon-url="../../../../../../img/icons/key-filled.svg" size="2em" hover-selector=section#grid></wct-icon-mdx>
-                  <wct-icon-mdx title="Public key" icon-url="../../../../../../img/icons/key-filled.svg" size="2em" hover-selector=section#grid></wct-icon-mdx>
+                  <wct-icon-mdx title="Private key" icon-url="../../../../../../img/icons/key-filled.svg" size="2em" no-hover></wct-icon-mdx>
+                  <wct-icon-mdx title="Public key" icon-url="../../../../../../img/icons/key-filled.svg" size="2em" no-hover></wct-icon-mdx>
                 </template>
               </a-icon-combinations>
             </template>
@@ -225,6 +229,7 @@ export default class Key extends Intersection() {
           <div><span class=name><span>Private name:</span><span class=font-size-tiny>(saved locally and not shared)</span></span>&nbsp;<chat-a-key-name private name="${escapeHTML(this.keyContainer.private.name)}" epoch='${this.keyContainer.key.epoch}' is-editable></chat-a-key-name></div>
         </div>
         <div style="grid-area: body">
+          <p><wct-icon-mdx size="1em" no-hover title="generate" icon-url="../../../../../../img/icons/fold-down.svg"></wct-icon-mdx>JSONWEBKEY<wct-icon-mdx size="1em" no-hover title="generate" icon-url="../../../../../../img/icons/fold-down.svg"></wct-icon-mdx></p>
           <chat-a-glide-to-reveal>
             <template>${JSON.stringify(this.keyContainer.key.jsonWebKey)}</template>
           </chat-a-glide-to-reveal>
@@ -235,6 +240,11 @@ export default class Key extends Intersection() {
     this.html = this.customStyleHeight
     this.update(this.keyContainer, this.order, true)
     return this.fetchModules([
+      {
+        // @ts-ignore
+        path: `${this.importMetaUrl}../../../../web-components-toolbox/src/es/components/atoms/iconMdx/IconMdx.js?${Environment?.version || ''}`,
+        name: 'wct-icon-mdx'
+      },
       {
         // @ts-ignore
         path: `${this.importMetaUrl}../../../../components/atoms/iconStates/IconStates.js?${Environment?.version || ''}`,
