@@ -2,6 +2,8 @@
 import { Shadow } from '../../../../../web-components-toolbox/src/es/components/prototypes/Shadow.js'
 
 /**
+* https://prismic.io/blog/css-animation-examples#8-glide-to-reveal
+* 
 * @export
 * @class GlideToReveal
 * @type {CustomElementConstructor}
@@ -9,6 +11,16 @@ import { Shadow } from '../../../../../web-components-toolbox/src/es/components/
 export default class GlideToReveal extends Shadow() {
   constructor (options = {}, ...args) {
     super({ importMetaUrl: import.meta.url, tabindex: 'no-tabindex', ...options }, ...args)
+
+    this.mousedownEventListener = event => {
+      this.setAttribute('mousemove', '')
+      this.ul.addEventListener('mousemove', this.mousemoveEventListener)
+    }
+    this.mouseupEventListener = event => {
+      this.removeAttribute('mousemove')
+      this.ul.removeEventListener('mousemove', this.mousemoveEventListener)
+    }
+    this.mousemoveEventListener = event => this.ul.scroll(0, this.ul.scrollTop -= event.movementY)
   }
 
   connectedCallback () {
@@ -17,9 +29,16 @@ export default class GlideToReveal extends Shadow() {
     if (this.shouldRenderCSS()) showPromises.push(this.renderCSS())
     if (this.shouldRenderHTML()) showPromises.push(this.renderHTML())
     Promise.all(showPromises).then(() => (this.hidden = false))
+    this.ul.addEventListener('mousedown', this.mousedownEventListener)
+    this.ul.addEventListener('mouseup', this.mouseupEventListener)
+    this.addEventListener('mouseout', this.mouseupEventListener)
   }
 
-  disconnectedCallback () {}
+  disconnectedCallback () {
+    this.ul.removeEventListener('mousedown', this.mousedownEventListener)
+    this.ul.removeEventListener('mouseup', this.mouseupEventListener)
+    this.removeEventListener('mouseout', this.mouseupEventListener)
+  }
 
   /**
    * evaluates if a render is necessary
@@ -51,6 +70,9 @@ export default class GlideToReveal extends Shadow() {
       :host {
         font-family: var(--font-family-secondary);
       }
+      :host([mousemove]) .code {
+        cursor: grabbing;
+      }
       .code {
         font-size: 2em;
         display: flex;
@@ -68,6 +90,7 @@ export default class GlideToReveal extends Shadow() {
         display: flex;
         height: 100%;
         padding: 0 0.5em;
+        user-select: none;
       }
       .digit:focus-visible {
         outline-color: hsl(0 0% 50% / 0.25);
@@ -81,6 +104,10 @@ export default class GlideToReveal extends Shadow() {
       ul {
         padding: 0;
         margin: 0;
+        max-height: 5em;
+        overflow-y: auto;
+        scrollbar-color: var(--color) var(--background-color);
+        scrollbar-width: thin;
       }
       :host {
         --lerp-0: 1; /* === sin(90deg) */
@@ -121,72 +148,17 @@ export default class GlideToReveal extends Shadow() {
    * @returns Promise<void>
    */
   renderHTML () {
+    const key = this.template.content.textContent
+    this.template.remove()
     this.html = /* html */`
       <section>
         <ul class="code">
-          <li tabindex="0" class="digit">
-            <span>0</span>
-          </li>
-          <li tabindex="0" class="digit">
-            <span>3</span>
-          </li>
-          <li tabindex="0" class="digit">
-            <span>4</span>
-          </li>
-          <li tabindex="0" class="digit">
-            <span>8</span>
-          </li>
-          <li tabindex="0" class="digit">
-            <span>7</span>
-          </li>
-          <li tabindex="0" class="digit">
-            <span>2</span>
-          </li>
-          <li tabindex="0" class="digit">
-            <span>8</span>
-          </li>
-          <li tabindex="0" class="digit">
-            <span>7</span>
-          </li>
-          <li tabindex="0" class="digit">
-            <span>2</span>
-          </li>
-                    <li tabindex="0" class="digit">
-            <span>8</span>
-          </li>
-          <li tabindex="0" class="digit">
-            <span>7</span>
-          </li>
-          <li tabindex="0" class="digit">
-            <span>2</span>
-          </li>
-                    <li tabindex="0" class="digit">
-            <span>8</span>
-          </li>
-          <li tabindex="0" class="digit">
-            <span>7</span>
-          </li>
-          <li tabindex="0" class="digit">
-            <span>2</span>
-          </li>
-                    <li tabindex="0" class="digit">
-            <span>8</span>
-          </li>
-          <li tabindex="0" class="digit">
-            <span>7</span>
-          </li>
-          <li tabindex="0" class="digit">
-            <span>2</span>
-          </li>
-                    <li tabindex="0" class="digit">
-            <span>8</span>
-          </li>
-          <li tabindex="0" class="digit">
-            <span>7</span>
-          </li>
-          <li tabindex="0" class="digit">
-            <span>2</span>
-          </li>
+          ${key.split('').reduce((acc, curr) => /* html */`
+            ${acc}
+            <li tabindex="0" class="digit" draggable>
+              <span>${curr}</span>
+            </li>
+          `, '')}
         </ul>
       </section>
     `
@@ -194,5 +166,13 @@ export default class GlideToReveal extends Shadow() {
 
   get section () {
     return this.root.querySelector('section')
+  }
+
+  get ul () {
+    return this.section.querySelector('ul')
+  }
+
+  get template () {
+    return this.root.querySelector('template')
   }
 }

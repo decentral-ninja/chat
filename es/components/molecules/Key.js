@@ -225,7 +225,9 @@ export default class Key extends Intersection() {
           <div><span class=name><span>Private name:</span><span class=font-size-tiny>(saved locally and not shared)</span></span>&nbsp;<chat-a-key-name private name="${escapeHTML(this.keyContainer.private.name)}" epoch='${this.keyContainer.key.epoch}' is-editable></chat-a-key-name></div>
         </div>
         <div style="grid-area: body">
-          <chat-a-glide-to-reveal></chat-a-glide-to-reveal>
+          <chat-a-glide-to-reveal>
+            <template>${JSON.stringify(this.keyContainer.key.jsonWebKey)}</template>
+          </chat-a-glide-to-reveal>
         </div>
       </section>
     `
