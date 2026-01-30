@@ -366,6 +366,11 @@ export default class User extends Intersection() {
         // @ts-ignore
         path: `${this.importMetaUrl}./ConnectedUsers.js?${Environment?.version || ''}`,
         name: 'chat-m-connected-users'
+      },
+      {
+        // @ts-ignore
+        path: `${this.importMetaUrl}../atoms/glideToReveal/GlideToReveal.js?${Environment?.version || ''}`,
+        name: 'chat-a-glide-to-reveal'
       }
     ])
   }
