@@ -104,7 +104,7 @@ export default class GlideToReveal extends Shadow() {
       ul {
         padding: 0;
         margin: 0;
-        max-height: 5em;
+        max-height: var(--ul-max-height, 5em);
         overflow-y: auto;
         scrollbar-color: var(--color) var(--background-color);
         scrollbar-width: thin;

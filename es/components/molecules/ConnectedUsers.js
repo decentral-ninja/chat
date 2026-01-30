@@ -109,16 +109,16 @@ export default class ConnectedUsers extends Shadow() {
    * @returns Promise<void>
    */
   renderHTML () {
-    const style = `
+    const style = /* css */`
       <style protected>
         :host {
           --child-margin: 0 0 0 1em;
         }
         :host .title {
           display: flex;
-          gap: 1em;
           justify-content: space-between;
-          width: 100%;
+          gap: 0.5em;
+          width: calc(100% - 5.5em);
         }
         :host(:not([uid])) .title > div {
           align-items: center;

@@ -73,6 +73,7 @@ export default class Key extends Intersection() {
     if (this.shouldRenderCSS()) showPromises.push(this.renderCSS())
     if (this.shouldRenderHTML()) showPromises.push(this.renderHTML())
     Promise.all(showPromises).then(() => {
+      this.update(this.keyContainer, this.order, true)
       this.updateHeight()
       this.hidden = false
     })
@@ -120,6 +121,9 @@ export default class Key extends Intersection() {
   renderCSS () {
     this.css = /* css */`
       :host {
+        --details-default-content-spacing-custom: 0;
+        --details-default-text-align: left;
+        --details-default-any-display: inline;
         display: block;
       }
       :host([has-height]:not([intersecting])) > section#grid {
@@ -145,6 +149,10 @@ export default class Key extends Intersection() {
         align-items: center;
         gap: var(--grid-gap, 0.5em);
         height: 100%;
+      }
+      #grid > [style="grid-area: keyIcons"] {
+        display: flex;
+        gap: 1em;
       }
       #grid > [style="grid-area: title"] > div {
         align-items: flex-start;
@@ -211,7 +219,6 @@ export default class Key extends Intersection() {
     this.html = /* html */`
       <section id=grid>
         <div style="grid-area: keyIcons">
-          <div id=share></div>
           <a-icon-states>
             <template>
               <wct-icon-mdx state="default" title="Key" icon-url="../../../../../../img/icons/key-square.svg" size="2em" no-hover></wct-icon-mdx>
@@ -223,12 +230,33 @@ export default class Key extends Intersection() {
               </a-icon-combinations>
             </template>
           </a-icon-states>
+          <div id=share>share icon</div>
         </div>
         <div style="grid-area: title">
           <div><span class=name><span>Public name:</span><span class=font-size-tiny>(shared)</span></span>&nbsp;<chat-a-key-name public name="${escapeHTML(this.keyContainer.public.name)}" epoch='${this.keyContainer.key.epoch}'${this.keyContainer.private.origin.self ? '  is-editable' : ''}></chat-a-key-name></div>
           <div><span class=name><span>Private name:</span><span class=font-size-tiny>(saved locally and not shared)</span></span>&nbsp;<chat-a-key-name private name="${escapeHTML(this.keyContainer.private.name)}" epoch='${this.keyContainer.key.epoch}' is-editable></chat-a-key-name></div>
         </div>
         <div style="grid-area: body">
+          <wct-details id=origin namespace="details-default-">
+            <details>
+              <summary>
+                <h4>Origin:</h4>
+              </summary>
+              <div>
+                <span>${this.keyContainer.private.origin.room}</span> - 
+                <span>${this.keyContainer.private.origin.nickname || 'users nickname is unknown'}</span> - 
+                <span>${this.keyContainer.private.origin.self ? 'self made' : 'received'} <time class="timestamp">${(new Date(this.keyContainer.private.origin.timestamp)).toLocaleString(navigator.language)}</time></span>
+              </div>
+            </details>
+          </wct-details>
+          <wct-details id=shared namespace="details-default-">
+            <details>
+              <summary>
+                <h4>Shared:</h4>
+              </summary>
+              <div></div>
+            </details>
+          </wct-details>
           <p><wct-icon-mdx size="1em" no-hover title="generate" icon-url="../../../../../../img/icons/fold-down.svg"></wct-icon-mdx>JSONWEBKEY<wct-icon-mdx size="1em" no-hover title="generate" icon-url="../../../../../../img/icons/fold-down.svg"></wct-icon-mdx></p>
           <chat-a-glide-to-reveal>
             <template>${JSON.stringify(this.keyContainer.key.jsonWebKey)}</template>
@@ -238,12 +266,16 @@ export default class Key extends Intersection() {
     `
     this.html = this.customStyle
     this.html = this.customStyleHeight
-    this.update(this.keyContainer, this.order, true)
     return this.fetchModules([
       {
         // @ts-ignore
         path: `${this.importMetaUrl}../../../../web-components-toolbox/src/es/components/atoms/iconMdx/IconMdx.js?${Environment?.version || ''}`,
         name: 'wct-icon-mdx'
+      },
+      {
+        // @ts-ignore
+        path: `${this.importMetaUrl}../../../../web-components-toolbox/src/es/components/molecules/details/Details.js?${Environment?.version || ''}`,
+        name: 'wct-details'
       },
       {
         // @ts-ignore
@@ -288,6 +320,12 @@ export default class Key extends Intersection() {
       this.privateNameEl.setAttribute('epoch', keyContainer.key.epoch)
       this.publicNameEl.setAttribute('name', keyContainer.public.name)
       this.publicNameEl.setAttribute('epoch', keyContainer.key.epoch)
+      // TODO: shared, received, encrypted, decrypted
+      this.sharedEl.content.innerHTML = /* html */`
+        <span>${keyContainer.private.origin.room}</span> - 
+        <span>${keyContainer.private.origin.nickname || 'users nickname is unknown'}</span> - 
+        <span>${keyContainer.private.origin.self ? 'self made' : 'received'} <time>${(new Date(keyContainer.private.origin.timestamp)).toLocaleString(navigator.language)}</time></span>
+      `
       this.updateHeight()
       this.doOnIntersection = null
     }
@@ -321,6 +359,10 @@ export default class Key extends Intersection() {
 
   get publicNameEl () {
     return this.section.querySelector('chat-a-key-name[public]')
+  }
+
+  get sharedEl () {
+    return this.section.querySelector('#shared')
   }
 
   get section () {

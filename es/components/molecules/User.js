@@ -203,21 +203,8 @@ export default class User extends Intersection() {
         color: var(--color-secondary);
         font-weight: bold;
       }
-      :host > li > div > table > tbody > tr > td:where(.public-key-left, .public-key-right) {
-        grid-row-start: 100;
-        max-height: 5em;
-        overflow: auto;
-        scrollbar-color: var(--color) var(--background-color);
-        scrollbar-width: thin;
-      }
-      :host > li > div > table > tbody > tr > td.public-key-right {
-        font-size: 0.75em;
-      }
       :host([self]) > li > div > table > tbody > tr > td {
         border-bottom: 1px solid var(--background-color);
-      }
-      :host([self]) > li > div > table > tbody > tr > td:where(.public-key-left, .public-key-right) {
-        scrollbar-color: var(--color-secondary) var(--background-color);
       }
       :host > li > div > h2 {
         --color-hover: var(--color);
@@ -277,9 +264,6 @@ export default class User extends Intersection() {
         :host > li > div > table > tbody > tr > td:not(.time-status-icons):last-child {
           margin-left: 2em;
         }
-        :host > li > div > table > tbody > tr > td.public-key-right {
-          grid-row-start: 101;
-        }
       }
     `
     return this.fetchTemplate()
@@ -338,21 +322,21 @@ export default class User extends Intersection() {
                 return /* html */`
                   ${['localEpoch', 'awarenessEpoch', 'nickname'].includes(key) ? '' : acc}
                   <tr ${key === 'nickname' ? 'class=nickname' : ''}>
-                    <td ${key === 'publicKey' ? 'class=public-key-left' : ''}>${key === 'nickname'
+                    <td>${key === 'nickname'
                       ? this.user.isSelf
                         ? 'Your nickname:'
                         : 'User nickname:'
                       : key === 'localEpoch'
-                      ? 'first time visited:'
-                      : key === 'awarenessEpoch' || key === 'epoch'
-                      ? 'last time visited:'
-                      : key === 'mutuallyConnectedUsers'
-                      ? 'connected users:'
-                      : key === 'connectedUsers'
-                      ? 'last connected users / providers:'
-                      : key === 'uid'
-                      ? 'unique id:'
-                      : `${key}:`
+                        ? 'first time visited:'
+                        : key === 'awarenessEpoch' || key === 'epoch'
+                          ? 'last time visited:'
+                          : key === 'mutuallyConnectedUsers'
+                            ? 'connected users:'
+                            : key === 'connectedUsers'
+                              ? 'last connected users / providers:'
+                              : key === 'uid'
+                                ? 'unique id:'
+                                : `${key}:`
                     }</td>
                     ${User.renderTableValue(key, this.user, this.allUsers, this.getAttribute('uid'))}
                   </tr>
@@ -463,19 +447,31 @@ export default class User extends Intersection() {
   static renderTableValue (key, user, allUsers, selfUid) {
     if (key === 'mutuallyConnectedUsers' || key === 'connectedUsers') User.enrichUserWithFullUserNickname(user[key], allUsers)
     return /* html */`
-      <td id="${key}" ${key === 'publicKey' ? 'class=public-key-right' : ''}>${key === 'mutuallyConnectedUsers' || key === 'connectedUsers'
+      <td id="${key}">${key === 'mutuallyConnectedUsers' || key === 'connectedUsers'
         ? /* html */`
           <chat-m-connected-users uid='${selfUid}' ${key === 'connectedUsers' ? 'show-lone-providers' : ''}>
             <template>${JSON.stringify({ connectedUsers: user[key] })}</template>
           </chat-m-connected-users>
         `
-        : key === 'nickname'
-        ? /* html */`<chat-a-nick-name uid='${user.uid}' nickname="${escapeHTML(user.nickname)}"${user.isSelf ? ' self' : ''}></chat-a-nick-name>`
-        : typeof user[key] === 'string' && user[key].includes('epoch') && key !== 'uid' && key !== 'publicKey'
-        ? new Date(JSON.parse(user[key]).epoch).toLocaleString(navigator.language)
-        : typeof user[key] === 'object'
-          ? JSON.stringify(user[key])
-          : user[key]
+        : key === 'publicKey'
+          ? /* html */`
+            <chat-a-glide-to-reveal>
+              <style protected>
+                :host {
+                  --border-radius: 0;
+                  --ul-max-height: 2.5em;
+                }
+              </style>
+              <template>${JSON.stringify(user.publicKey)}</template>
+            </chat-a-glide-to-reveal>
+          `
+          : key === 'nickname'
+            ? /* html */`<chat-a-nick-name uid='${user.uid}' nickname="${escapeHTML(user.nickname)}"${user.isSelf ? ' self' : ''}></chat-a-nick-name>`
+            : typeof user[key] === 'string' && user[key].includes('epoch') && key !== 'uid'
+              ? new Date(JSON.parse(user[key]).epoch).toLocaleString(navigator.language)
+              : typeof user[key] === 'object'
+                ? JSON.stringify(user[key])
+                : user[key]
       }</td>
     `
   }
