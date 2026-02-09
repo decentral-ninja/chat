@@ -11,21 +11,19 @@ import { escapeHTML } from '../../../../../event-driven-web-components-prototype
 * @type {CustomElementConstructor}
 */
 export default class RoomName extends Shadow() {
-  constructor (options = {}, ...args) {
+  constructor (roomName, room, options = {}, ...args) {
     super({ importMetaUrl: import.meta.url, tabindex: 'no-tabindex', ...options }, ...args)
 
-    this.clickEventListener = event => {
-      event.preventDefault()
-      this.dispatchEvent(new CustomEvent('open-room', {
-        bubbles: true,
-        cancelable: true,
-        composed: true
-      }))
+    if (this.template) {
+      ({ roomName: this.roomName, room: this.room } = JSON.parse(this.template.content.textContent))
+    } else {
+      this.roomName = roomName
+      this.room = room
     }
 
     this.roomNameAkaEventListener = async event => {
       let target
-      if ((target = this.root.querySelector('.aka')) && event.detail?.key === await (await this.roomPromise)?.room) target.textContent = event.detail.aka ? event.detail.aka : ''
+      if ((target = this.root.querySelector('.aka')) && event.detail?.key === this.roomName) target.textContent = event.detail.aka ? event.detail.aka : ''
     }
 
     /** @type {(any)=>void} */
@@ -33,40 +31,34 @@ export default class RoomName extends Shadow() {
     /** @type {Promise<{ locationHref: string, room: Promise<string> & {done: boolean} }>} */
     this.roomPromise = new Promise(resolve => (this.roomResolve = resolve))
 
-    this.roomPromise.then(async ({ locationHref, room }) => {
-      this.renderHTML(await room, await new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-active-room', {
-        detail: {
-          resolve
-        },
-        bubbles: true,
-        cancelable: true,
-        composed: true
-      }))))
-    })
+    this.roomPromise.then(room => this.renderHTML(room))
   }
 
   connectedCallback () {
     if (this.shouldRenderCSS()) this.renderCSS()
     if (this.shouldRenderHTML()) this.renderHTML()
-    this.addEventListener('click', this.clickEventListener)
     this.globalEventTarget.addEventListener('room-name-aka', this.roomNameAkaEventListener)
     if (this.isConnected) this.connectedCallbackOnce()
   }
 
   connectedCallbackOnce () {
-    this.dispatchEvent(new CustomEvent('yjs-get-room', {
-      detail: {
-        resolve: this.roomResolve
-      },
-      bubbles: true,
-      cancelable: true,
-      composed: true
-    }))
+    if (this.room) {
+      this.roomResolve(this.room)
+    } else {
+      this.dispatchEvent(new CustomEvent('yjs-get-specific-room', {
+        detail: {
+          roomName: this.roomName,
+          resolve: this.roomResolve
+        },
+        bubbles: true,
+        cancelable: true,
+        composed: true
+      }))
+    }
     this.connectedCallbackOnce = () => {}
   }
 
   disconnectedCallback () {
-    this.removeEventListener('click', this.clickEventListener)
     this.globalEventTarget.removeEventListener('room-name-aka', this.roomNameAkaEventListener)
   }
 
@@ -85,7 +77,7 @@ export default class RoomName extends Shadow() {
    * @return {boolean}
    */
   shouldRenderHTML () {
-    return !this.hTag
+    return !this.a
   }
 
   /**
@@ -95,38 +87,16 @@ export default class RoomName extends Shadow() {
     this.css = /* css */`
       :host {
         --a-margin: 0;
-        --a-text-decoration: underline;
-        --a-display: flex;
-        --color: var(--a-color);
-        --h1-font-size: 1.75em;
-        --h1-margin: 0;
-        --h1-padding: 0.2em 0 0 0;
+        --color-hover: var(--color-yellow);
       }
-      :host > a:hover {
-        --a-color-hover: var(--color-yellow);
-        --color-hover: var(--a-color-hover);
-      }
-      *:focus {
-        outline: none;
-      }
-      :host > a, :host > a > div.name {
-        align-items: end;
+      :host > a {
         display: flex;
-        tap-highlight-color: transparent;
-        --webkit-tap-highlight-color: transparent;
+        flex-direction: column;
       }
-      :host > a wct-icon-mdx {
-        display: flex;
+      :host > a > div:not(.aka) {
+        word-break: break-all;
       }
-      :host > a h1 {
-        flex-shrink: 1;
-      }
-      :host > a h1, :host > a div.aka, :host > a > div.name {
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-      :host > a div.aka {
+      :host > a > div.aka {
         color: var(--color-disabled);
         font-style: italic;
         font-size: 0.75em;
@@ -134,15 +104,12 @@ export default class RoomName extends Shadow() {
         margin-left: 1em;
         display: list-item;
         list-style: inside;
-        flex-shrink: 2;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
-      :host > a div.aka:empty {
+      :host > a > div.aka:empty {
         display: none;
-      }
-      @media only screen and (max-width: _max-width_) {
-        :host > a {
-          flex-wrap: wrap;
-        }
       }
     `
     return this.fetchTemplate()
@@ -166,31 +133,24 @@ export default class RoomName extends Shadow() {
 
   /**
    * Render HTML
-   * @prop {string} roomName
-   * @prop {} room
+   * @prop {any} room
    * @returns Promise<void>
    */
-  renderHTML (roomName, room) {
-    roomName = roomName ? escapeHTML(roomName) : 'Loading...'
+  renderHTML (room) {
     this.html = ''
-    this.html = /* html */`<a href="#">
-      <div class=name>
-        <wct-icon-mdx title="open rooms" hover-on-parent-element id="show-modal" rotate="180deg" icon-url="../../../../../../img/icons/chevron-left.svg" size="1.75em"></wct-icon-mdx>
-        <h1 title="${roomName}">${roomName}</h1>
-      </div>
+    this.html = /* html */`<a ${this.hasAttribute('route') ? `route="${this.getAttribute('route')}"` : room?.locationHref ? `route href="${room.locationHref}"` : ''}>
+      <div>${this.roomName ? escapeHTML(this.roomName) : 'Loading...'}</div>
       <div class=aka>${room?.aka ? escapeHTML(room.aka) : ''}</div>
     </a>`
-    return this.fetchModules([
-      {
-        // @ts-ignore
-        path: `${this.importMetaUrl}../../../../../web-components-toolbox/src/es/components/atoms/iconMdx/IconMdx.js?${Environment?.version || ''}`,
-        name: 'wct-icon-mdx'
-      }
-    ])
+    return Promise.resolve()
   }
 
-  get hTag () {
-    return this.root.querySelector('h1')
+  get a () {
+    return this.root.querySelector('a')
+  }
+
+  get template () {
+    return this.root.querySelector('template')
   }
 
   get globalEventTarget () {

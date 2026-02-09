@@ -221,11 +221,6 @@ export default class Rooms extends Shadow() {
       }
     }
 
-    this.roomNameAkaEventListener = event => {
-      const target = this.ul.querySelector(`#${CSS.escape(event.detail.key)}`)?.querySelector('.aka') || this.ul.children[event.detail.liCount]?.querySelector('.aka')
-      if (target) target.textContent = event.detail.aka ? event.detail.aka : ''
-    }
-
     this.generateRoomNameLinkClickEventListener = event => {
       event.preventDefault()
       if (this.inputRoomName) {
@@ -249,7 +244,6 @@ export default class Rooms extends Shadow() {
     if (this.shouldRenderCSS()) this.renderCSS()
     this.addEventListener('click', this.clickEventListener)
     this.addEventListener('submit-room-name', this.roomNameEventListener)
-    this.addEventListener('room-name-aka', this.roomNameAkaEventListener)
     this.globalEventTarget.addEventListener('open-room', this.openRoomListener)
     if (this.isConnected) this.connectedCallbackOnce()
   }
@@ -271,7 +265,6 @@ export default class Rooms extends Shadow() {
   disconnectedCallback () {
     this.removeEventListener('click', this.clickEventListener)
     this.removeEventListener('submit-room-name', this.roomNameEventListener)
-    this.removeEventListener('room-name-aka', this.roomNameAkaEventListener)
     this.globalEventTarget.removeEventListener('open-room', this.openRoomListener)
     this.dialog?.close()
   }
@@ -300,12 +293,16 @@ export default class Rooms extends Shadow() {
         --dialog-left-slide-in-ul-display: flex;
         --dialog-left-slide-in-ul-list-style: none;
         --dialog-left-slide-in-ul-margin: 0;
+        --dialog-left-slide-in-ul-margin-mobile: 0;
         --dialog-left-slide-in-ul-padding-left: 0;
+        --dialog-left-slide-in-ul-padding-left-mobile: 0;
         --dialog-top-slide-in-hr-margin: 0.5em 0 -0.5em;
         --dialog-top-slide-in-ul-display: flex;
         --dialog-top-slide-in-ul-list-style: none;
         --dialog-top-slide-in-ul-margin: 0;
+        --dialog-top-slide-in-ul-margin-mobile: 0;
         --dialog-top-slide-in-ul-padding-left: 0;
+        --dialog-top-slide-in-ul-padding-left-mobile: 0;
         --wct-input-border-radius: var(--border-radius) 0 0 var(--border-radius);
         --wct-input-height: var(--wct-input-input-height);
         --wct-input-input-height: 100%;
@@ -396,6 +393,11 @@ export default class Rooms extends Shadow() {
           // @ts-ignore
           path: `${this.importMetaUrl}./Notifications.js?${Environment?.version || ''}`,
           name: 'chat-m-notifications'
+        },
+        {
+          // @ts-ignore
+          path: `${this.importMetaUrl}../atoms/roomName/RoomName.js?${Environment?.version || ''}`,
+          name: 'chat-a-room-name'
         }
       ])
     ]).then(async ([{ room }, getRoomsResult]) => {
@@ -461,9 +463,10 @@ export default class Rooms extends Shadow() {
               <h4>Enter room name or link:</h4>
               <wct-grid auto-fill="20%">
                 <section>
-                  <wct-input inputId="room-name-prefix" placeholder="${this.roomNamePrefix}" namespace="wct-input-" disabled></wct-input>
-                  <wct-input grid-column="2/5" inputId="room-name" placeholder="${this.randomRoom}" namespace="wct-middle-input-" namespace-fallback submit-search="submit-room-name" any-key-listener autofocus force></wct-input>
-                  <wct-button namespace="button-primary-" request-event-name="submit-room-name" click-no-toggle-active>enter</wct-button>
+                  <a href="#" id="generate-room-name" grid-row="1/1" grid-column="1/6"><wct-icon-mdx size="1em" hover-on-parent-element title="generate" icon-url="../../../../../../img/icons/fold-down.svg"></wct-icon-mdx>&nbsp;Generate a random room name&nbsp;<wct-icon-mdx size="1em" hover-on-parent-element title="generate" icon-url="../../../../../../img/icons/fold-down.svg"></wct-icon-mdx></a>
+                  <wct-input grid-row="2/2" inputId="room-name-prefix" placeholder="${this.roomNamePrefix}" namespace="wct-input-" disabled></wct-input>
+                  <wct-input maxlength="50" grid-row="2/2" grid-column="2/5" inputId="room-name" placeholder="${this.randomRoom}" namespace="wct-middle-input-" namespace-fallback submit-search="submit-room-name" any-key-listener autofocus force></wct-input>
+                  <wct-button grid-row="2/2" namespace="button-primary-" request-event-name="submit-room-name" click-no-toggle-active>enter</wct-button>
                 </section>
               </wct-grid>
               <hr>
@@ -519,6 +522,7 @@ export default class Rooms extends Shadow() {
         display: none;
       }
       :host ul > li[disabled] > div > a {
+        --color: var(--color-disabled);
         color: var(--color-disabled);
       }
       :host ul > li:not([disabled]):last-child {
@@ -545,12 +549,10 @@ export default class Rooms extends Shadow() {
       :host ul > li > div > a {
         margin: 0;
       }
-      :host ul > li > div > a:not(:has(> chat-m-notifications)) {
-        display: flex;
-        flex-direction: column;
+      :host ul > li > div > chat-a-room-name {
         flex-grow: 1;
         flex-shrink: 10;
-        max-width: calc(100% - 3em);
+        max-width: calc(100% - 12em);
       }
       :host ul > li > div > wct-icon-mdx {
         --color: var(--color-error);
@@ -560,18 +562,6 @@ export default class Rooms extends Shadow() {
       }
       :host ul > li[disabled] > div chat-m-notifications {
         color: var(--color-disabled);
-      }
-      :host ul > li > div > a > div.aka {
-        color: var(--color-disabled);
-        font-style: italic;
-        font-size: 0.75em;
-        text-decoration: underline;
-        margin-left: 1em;
-        display: list-item;
-        list-style: inside;
-      }
-      :host ul > li > div > a > div.aka:empty {
-        display: none;
       }
     </style>
     <ul>
@@ -585,10 +575,9 @@ export default class Rooms extends Shadow() {
           const roomKeyIndex = `room-key-index-${i}`
           return acc + /* html */`<wct-load-template-tag no-css copy-class-list><template><li id="${roomKeyIndex}" ${key === activeRoomName ? ' disabled' : ''}>
             <div>
-              <a route="${roomKeyIndex}">
-                <div>${sanitizeKey}</div>
-                <div class=aka>${rooms.value[key].aka ? escapeHTML(rooms.value[key].aka) : ''}</div>
-              </a>
+              <chat-a-room-name route="${roomKeyIndex}">
+                <template>${JSON.stringify({ roomName: key, room: rooms.value[key] })}</template>
+              </chat-a-room-name>
               ${enteringNewRoom
                 ? ''
                 : key === activeRoomName
