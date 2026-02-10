@@ -391,7 +391,7 @@ export default class Key extends Intersection() {
       this.publicNameEl.setAttribute('name', keyContainer.public.name)
       this.publicNameEl.setAttribute('epoch', keyContainer.key.epoch)
       // TODO: render NickName component if in the same room instead of span-nickname
-      const renderDetails = (arr, name) => arr.reduce((acc, curr) => /* html */`
+      const renderDetails = (arr, name) => /* html */`<div>${arr.reduce((acc, curr) => /* html */`
         ${acc}
         <div>
           <chat-a-room-name>
@@ -400,7 +400,7 @@ export default class Key extends Intersection() {
           <span>${curr.nickname || 'users nickname is unknown'}</span> - 
           <span>${name}:<br><time class="timestamp">${(new Date(curr.timestamp)).toLocaleString(navigator.language)}</time></span>
         </div>
-      `, '')
+      `, '')}</div>`
       // shared
       if (keyContainer.private.shared?.length) {
         this.sharedEl.classList.remove('hidden')
