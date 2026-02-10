@@ -335,7 +335,7 @@ export default class Key extends Intersection() {
       this.publicNameEl.setAttribute('epoch', keyContainer.key.epoch)
       // todo: details open-event-name only close same summary details
       // todo: provider show local fallbacks first before fetching
-      // TODO: room name component with aka. also at user, shared, received, encrypted, decrypted
+      // TODO: room name component with aka. also at provider, shared, received, encrypted, decrypted
       this.sharedEl.content.innerHTML = /* html */`
         <span>${keyContainer.private.origin.room}</span> - 
         <span>${keyContainer.private.origin.nickname || 'users nickname is unknown'}</span> - 

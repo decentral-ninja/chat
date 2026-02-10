@@ -521,7 +521,9 @@ export default class Rooms extends Shadow() {
       :host ul > li[disabled] > div > wct-icon-mdx:not([share]):not([edit]) {
         display: none;
       }
-      :host ul > li[disabled] > div > a {
+      :host ul > li[disabled] > div > a, :host ul > li[disabled] > div > chat-a-room-name {
+        --a-color: var(--color-disabled);
+        --color-hover: var(--color-disabled);
         --color: var(--color-disabled);
         color: var(--color-disabled);
       }

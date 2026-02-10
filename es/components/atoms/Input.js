@@ -237,6 +237,9 @@ export default class Input extends Shadow() {
         display: flex;
         width: 100%;
       }
+      :host > div > emoji-button {
+        z-index: 101;
+      }
       :host > div > * {
         flex-grow: 0; 
       }
@@ -245,7 +248,7 @@ export default class Input extends Shadow() {
         font-size: max(16px, 1em); /* 16px ios mobile focus zoom fix */
         transition: height 0.3s ease-out;
         resize: none;
-        padding-left: 2em;
+        padding-left: 2.5em;
         min-height: auto;
         max-height: 15dvh;
         overflow-y: auto;
@@ -277,13 +280,18 @@ export default class Input extends Shadow() {
       :host > div > textarea ~ wct-icon-mdx {
         transition: all 0.3s ease-out;
       }
-      :host(:focus) > div > textarea:hover ~ wct-icon-mdx, :host(:focus) > div > textarea:has(~ wct-button:hover) ~ wct-icon-mdx, :host(:focus) > div > emoji-button:hover ~ textarea ~ wct-icon-mdx {
+      :host(:focus) > div > textarea:hover ~ wct-icon-mdx,
+      :host(:focus) > div > textarea:has(~ wct-button:hover) ~ wct-icon-mdx,
+      :host(:focus) > div > textarea:has(~ wct-button:focus) ~ wct-icon-mdx,
+      :host(:focus) > div > emoji-button:hover ~ textarea ~ wct-icon-mdx {
         width: 0;
         padding: 0;
         opacity: 0;
         transition: all 0.3s ease-out;
       }
-      :host(:focus) > div > textarea:hover ~ wct-button, :host(:focus) > div > textarea ~ wct-button:hover, :host(:focus) > div > emoji-button:hover ~ textarea ~ wct-button {
+      :host(:focus) > div > textarea:hover ~ wct-button,
+      :host(:focus) > div > textarea ~ wct-button:hover,
+      :host(:focus) > div > emoji-button:hover ~ textarea ~ wct-button {
         padding: 0;
       }
       :host > section {
