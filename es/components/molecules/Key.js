@@ -138,6 +138,9 @@ export default class Key extends Intersection() {
       :host > section > * {
         min-width: 0;
       }
+      :host .hidden {
+        display: none;
+      }
       /* https://weedshaker.github.io/cssGridLayout/ */
       #grid {
         display: grid;
@@ -145,8 +148,9 @@ export default class Key extends Intersection() {
           "keyIcons keyIcons"
           "title title"
           "body body";
+        grid-template-rows: auto auto 1fr;
         padding: var(--card-padding, 0.75em);
-        align-items: center;
+        align-items: start;
         gap: var(--grid-gap, 0.5em);
         height: 100%;
       }
@@ -166,6 +170,9 @@ export default class Key extends Intersection() {
       }
       #grid > [style="grid-area: title"] > div span.font-size-tiny {
         white-space: nowrap;
+      }
+      #grid > [style="grid-area: body"] {
+        align-self: end;
       }
       #grid > [style="grid-area: body"] > p {
         --p-margin: 0 auto;
@@ -215,6 +222,15 @@ export default class Key extends Intersection() {
    * @returns Promise<void>
    */
   renderHTML () {
+    const style = /* html */`
+      <style protected=true>
+        :host > details > summary + div > div {
+          align-items: center;
+          display: flex;
+          gap: 0.5em;
+        }
+      </style>
+    `
     // keep-alive max=10days, value=1day, step=1h
     this.html = /* html */`
       <section id=grid>
@@ -238,29 +254,54 @@ export default class Key extends Intersection() {
         </div>
         <div style="grid-area: body">
           <wct-details id=origin namespace="details-default-" open-event-name='key-details-open-${this.getAttribute('epoch')}'>
-            <style protected=true>
-              :host > details > summary + div {
-                align-items: center;
-                display: flex;
-              }
-            </style>
+            ${style}
             <details>
               <summary>
                 <h4>Origin:</h4>
               </summary>
               <div>
-                <chat-a-room-name>
-                  <template>${JSON.stringify({roomName: this.keyContainer.private.origin.room})}</template>
-                </chat-a-room-name> - 
-                <span>${this.keyContainer.private.origin.nickname || 'users nickname is unknown'}</span> - 
-                <span>${this.keyContainer.private.origin.self ? 'self made' : 'received'} <time class="timestamp">${(new Date(this.keyContainer.private.origin.timestamp)).toLocaleString(navigator.language)}</time></span>
+                <div>
+                  <chat-a-room-name>
+                    <template>${JSON.stringify({roomName: this.keyContainer.private.origin.room})}</template>
+                  </chat-a-room-name> - 
+                  <span>${this.keyContainer.private.origin.nickname || 'users nickname is unknown'}</span> - 
+                  <span>${this.keyContainer.private.origin.self ? 'self made' : 'received'}:<br><time class="timestamp">${(new Date(this.keyContainer.private.origin.timestamp)).toLocaleString(navigator.language)}</time></span>
+                </div>
               </div>
             </details>
           </wct-details>
           <wct-details id=shared namespace="details-default-" open-event-name='key-details-open-${this.getAttribute('epoch')}'>
+            ${style}
             <details>
               <summary>
                 <h4>Shared:</h4>
+              </summary>
+              <div></div>
+            </details>
+          </wct-details>
+          <wct-details id=received namespace="details-default-" open-event-name='key-details-open-${this.getAttribute('epoch')}'>
+            ${style}
+            <details>
+              <summary>
+                <h4>Received:</h4>
+              </summary>
+              <div></div>
+            </details>
+          </wct-details>
+          <wct-details id=encrypted namespace="details-default-" open-event-name='key-details-open-${this.getAttribute('epoch')}'>
+            ${style}
+            <details>
+              <summary>
+                <h4>Encrypted:</h4>
+              </summary>
+              <div></div>
+            </details>
+          </wct-details>
+          <wct-details id=decrypted namespace="details-default-" open-event-name='key-details-open-${this.getAttribute('epoch')}'>
+            ${style}
+            <details>
+              <summary>
+                <h4>Decrypted:</h4>
               </summary>
               <div></div>
             </details>
@@ -333,12 +374,48 @@ export default class Key extends Intersection() {
       this.privateNameEl.setAttribute('epoch', keyContainer.key.epoch)
       this.publicNameEl.setAttribute('name', keyContainer.public.name)
       this.publicNameEl.setAttribute('epoch', keyContainer.key.epoch)
-      // TODO: shared, received, encrypted, decrypted
-      this.sharedEl.content.innerHTML = /* html */`
-        <span>${keyContainer.private.origin.room}</span> - 
-        <span>${keyContainer.private.origin.nickname || 'users nickname is unknown'}</span> - 
-        <span>${keyContainer.private.origin.self ? 'self made' : 'received'} <time>${(new Date(keyContainer.private.origin.timestamp)).toLocaleString(navigator.language)}</time></span>
-      `
+      const renderDetails = (arr, name) => arr.reduce((acc, curr) => /* html */`
+        ${acc}
+        <div>
+          <chat-a-room-name>
+            <template>${JSON.stringify({roomName: curr.room})}</template>
+          </chat-a-room-name> - 
+          <span>${curr.nickname || 'users nickname is unknown'}</span> - 
+          <span>${name}:<br><time class="timestamp">${(new Date(curr.timestamp)).toLocaleString(navigator.language)}</time></span>
+        </div>
+      `, '')
+      // shared
+      if (keyContainer.private.shared?.length) {
+        this.sharedEl.classList.remove('hidden')
+        this.sharedEl.content.innerHTML = renderDetails(keyContainer.private.shared, 'sent')
+      } else {
+        this.sharedEl.classList.add('hidden')
+        this.sharedEl.content.innerHTML = 'none'
+      }
+      // received
+      if (keyContainer.private.received?.length) {
+        this.receivedEl.classList.remove('hidden')
+        this.receivedEl.content.innerHTML = renderDetails(keyContainer.private.received, 'received')
+      } else {
+        this.receivedEl.classList.add('hidden')
+        this.receivedEl.content.innerHTML = 'none'
+      }
+      // encrypted
+      if (keyContainer.private.encrypted?.length) {
+        this.encryptedEl.classList.remove('hidden')
+        this.encryptedEl.content.innerHTML = renderDetails(keyContainer.private.encrypted, 'encrypted')
+      } else {
+        this.encryptedEl.classList.add('hidden')
+        this.encryptedEl.content.innerHTML = 'none'
+      }
+      // decrypted
+      if (keyContainer.private.decrypted?.length) {
+        this.decryptedEl.classList.remove('hidden')
+        this.decryptedEl.content.innerHTML = renderDetails(keyContainer.private.decrypted, 'decrypted')
+      } else {
+        this.decryptedEl.classList.add('hidden')
+        this.decryptedEl.content.innerHTML = 'none'
+      }
       this.updateHeight()
       this.doOnIntersection = null
     }
@@ -376,6 +453,18 @@ export default class Key extends Intersection() {
 
   get sharedEl () {
     return this.section.querySelector('#shared')
+  }
+
+  get receivedEl () {
+    return this.section.querySelector('#received')
+  }
+
+  get encryptedEl () {
+    return this.section.querySelector('#encrypted')
+  }
+
+  get decryptedEl () {
+    return this.section.querySelector('#decrypted')
   }
 
   get section () {
