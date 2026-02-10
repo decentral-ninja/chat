@@ -571,7 +571,7 @@ export default class Rooms extends Shadow() {
           const roomKeyIndex = `room-key-index-${i}`
           return acc + /* html */`<wct-load-template-tag no-css copy-class-list><template><li id="${roomKeyIndex}" ${key === activeRoomName ? ' disabled' : ''}>
             <div>
-              <chat-a-room-name route="${roomKeyIndex}">
+              <chat-a-room-name route="${roomKeyIndex}" id="${roomKeyIndex}" mode=false>
                 <template>${JSON.stringify({ roomName: key, room: rooms.value[key], isActiveRoom: key === activeRoomName })}</template>
               </chat-a-room-name>
               ${enteringNewRoom
