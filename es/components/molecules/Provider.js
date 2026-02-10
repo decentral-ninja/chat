@@ -20,6 +20,9 @@ export default class Provider extends Intersection() {
   constructor (id, name, data, order, roomName, options = {}, ...args) {
     super({ importMetaUrl: import.meta.url, tabindex: 'no-tabindex', intersectionObserverInit: {}, ...options }, ...args)
 
+    // @ts-ignore
+    this.roomNamePrefix = self.Environment?.roomNamePrefix || 'chat-'
+
     if (this.template) {
       ({ id: this.id, name: this.name, data: this.data, order: this.order, roomName: this.roomName } = JSON.parse(this.template.content.textContent, jsonParseMapUrlReviver))
       // revive url from href
@@ -515,6 +518,9 @@ export default class Provider extends Intersection() {
               scrollbar-color: var(--color) var(--background-color);
               scrollbar-width: thin;
             }
+            :host > details > table > tbody > tr > td#origins {
+              flex-direction: column;
+            }
             :host > details > table > tbody > tr > td:where(#origins, #status) > span {
               margin-right: 1em;
               white-space: nowrap;
@@ -632,6 +638,11 @@ export default class Provider extends Intersection() {
         // @ts-ignore
         path: `${this.importMetaUrl}../atoms/providerName/ProviderName.js?${Environment?.version || ''}`,
         name: 'chat-a-provider-name'
+      },
+      {
+        // @ts-ignore
+        path: `${this.importMetaUrl}../atoms/roomName/RoomName.js?${Environment?.version || ''}`,
+        name: 'chat-a-room-name'
       }
     ])
   }
@@ -771,7 +782,17 @@ export default class Provider extends Intersection() {
         hasWebsocket: false
       })
       this.detailsCustomTitle.textContent = urlInfo.hostname
-      this.detailsOrigins.innerHTML = this.data.origins.reduce((acc, origin) => /* html */`${acc}<span ${origin === this.roomName ? 'class=is-active-room title="currently active room"': ''}>${escapeHTML(origin)}</span>`, '')
+      this.detailsOrigins.innerHTML = this.data.origins.reduce((acc, origin) => /* html */`
+        ${acc}
+        ${origin.includes(this.roomNamePrefix)
+          ? `
+            <chat-a-room-name>
+              <template>${JSON.stringify({roomName: origin})}</template>
+            </chat-a-room-name>
+          `
+          : `<span>${escapeHTML(origin)}</span>`
+        }
+      `, '')
       this.detailsStatus.innerHTML = this.data.status.reduce((acc, status) => /* html */`${acc}<span class="${status}">${status}</span>`, '')
       const url = Array.from(this.data.urls.keys())[0]
       const pingProvider = errorMessage => data.pingProvider(url, force).then(response => {
@@ -800,17 +821,27 @@ export default class Provider extends Intersection() {
         if (!this.detailsFallbacks.children.length) this.detailsFallbacks.textContent = ''
         Array.from(tempDiv.children).forEach(child => this.detailsFallbacks.appendChild(child))
       }
+      // Render the fallbacks saved at local storage rooms
+      const renderProviderFallbacksFromStorage = providerFallbacks => {
+        renderProviderFallbacks([providerFallbacks.reduce((acc, providerFallback) => {
+          // @ts-ignore
+          acc[1].push(providerFallback)
+          return acc
+        }, ['websocket', []])])
+      }
       if (urlInfo.hasWebsocket) {
+        const providerFallbacks = this.data.providerFallbacks?.get('websocket')
+        // prerender the local storage fallbacks, before getWebsocketInfo answers
+        if (providerFallbacks?.length) {
+          renderProviderFallbacksFromStorage(providerFallbacks)
+        } else {
+          this.detailsFallbacks.textContent = 'Loading...'
+        }
         data.getWebsocketInfo(url, force).then(info => {
           if (info.error) {
             this.detailsCustomMessage.textContent = info.error
-            let providerFallbacks
-            if ((providerFallbacks = this.data.providerFallbacks?.get('websocket'))?.length) {
-              renderProviderFallbacks([providerFallbacks.reduce((acc, providerFallback) => {
-                // @ts-ignore
-                acc[1].push(providerFallback)
-                return acc
-              }, ['websocket', []])])
+            if (providerFallbacks?.length) {
+              renderProviderFallbacksFromStorage(providerFallbacks)
             } else {
               this.detailsFallbacks.textContent = info.error
             }

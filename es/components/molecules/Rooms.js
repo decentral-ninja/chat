@@ -521,12 +521,6 @@ export default class Rooms extends Shadow() {
       :host ul > li[disabled] > div > wct-icon-mdx:not([share]):not([edit]) {
         display: none;
       }
-      :host ul > li[disabled] > div > a, :host ul > li[disabled] > div > chat-a-room-name {
-        --a-color: var(--color-disabled);
-        --color-hover: var(--color-disabled);
-        --color: var(--color-disabled);
-        color: var(--color-disabled);
-      }
       :host ul > li:not([disabled]):last-child {
         border-bottom: none;
       }
@@ -578,7 +572,7 @@ export default class Rooms extends Shadow() {
           return acc + /* html */`<wct-load-template-tag no-css copy-class-list><template><li id="${roomKeyIndex}" ${key === activeRoomName ? ' disabled' : ''}>
             <div>
               <chat-a-room-name route="${roomKeyIndex}">
-                <template>${JSON.stringify({ roomName: key, room: rooms.value[key] })}</template>
+                <template>${JSON.stringify({ roomName: key, room: rooms.value[key], isActiveRoom: key === activeRoomName })}</template>
               </chat-a-room-name>
               ${enteringNewRoom
                 ? ''

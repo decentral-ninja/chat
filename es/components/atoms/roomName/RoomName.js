@@ -11,14 +11,15 @@ import { escapeHTML } from '../../../../../event-driven-web-components-prototype
 * @type {CustomElementConstructor}
 */
 export default class RoomName extends Shadow() {
-  constructor (roomName, room, options = {}, ...args) {
+  constructor (roomName, room, isActiveRoom, options = {}, ...args) {
     super({ importMetaUrl: import.meta.url, tabindex: 'no-tabindex', ...options }, ...args)
 
     if (this.template) {
-      ({ roomName: this.roomName, room: this.room } = JSON.parse(this.template.content.textContent))
+      ({ roomName: this.roomName, room: this.room, isActiveRoom: this.isActiveRoom } = JSON.parse(this.template.content.textContent))
     } else {
       this.roomName = roomName
       this.room = room
+      this.isActiveRoom = isActiveRoom
     }
 
     this.roomNameAkaEventListener = async event => {
@@ -28,10 +29,16 @@ export default class RoomName extends Shadow() {
 
     /** @type {(any)=>void} */
     this.roomResolve = map => map
-    /** @type {Promise<{ locationHref: string, room: Promise<string> & {done: boolean} }>} */
+    /** @type {Promise<{room: any, isActiveRoom: boolean}>} */
     this.roomPromise = new Promise(resolve => (this.roomResolve = resolve))
 
-    this.roomPromise.then(room => this.renderHTML(room))
+    this.roomPromise.then(({room, isActiveRoom}) => {
+      this.renderHTML(room)
+      if (isActiveRoom) {
+        this.setAttribute('is-active-room', '')
+        this.setAttribute('title', 'currently active room')
+      }
+    })
   }
 
   connectedCallback () {
@@ -43,7 +50,7 @@ export default class RoomName extends Shadow() {
 
   connectedCallbackOnce () {
     if (this.room) {
-      this.roomResolve(this.room)
+      this.roomResolve({room: this.room, isActiveRoom: this.isActiveRoom})
     } else {
       this.dispatchEvent(new CustomEvent('yjs-get-specific-room', {
         detail: {
@@ -88,6 +95,16 @@ export default class RoomName extends Shadow() {
       :host {
         --a-margin: 0;
         --color-hover: var(--color-yellow);
+      }
+      :host([is-active-room]) {
+        --a-color: var(--color-disabled);
+        --color-hover: var(--color-disabled);
+        --color: var(--color-disabled);
+        --a-color-visited: var(--color-disabled);
+      }
+      :host([is-active-room]) > a {
+        cursor: not-allowed;
+        pointer-events: none;
       }
       :host > a {
         display: flex;

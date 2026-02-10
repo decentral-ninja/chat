@@ -237,7 +237,7 @@ export default class Key extends Intersection() {
           <div><span class=name><span>Private name:</span><span class=font-size-tiny>(saved locally and not shared)</span></span>&nbsp;<chat-a-key-name private name="${escapeHTML(this.keyContainer.private.name)}" epoch='${this.keyContainer.key.epoch}' is-editable></chat-a-key-name></div>
         </div>
         <div style="grid-area: body">
-          <wct-details id=origin namespace="details-default-" open-event-name="todo">
+          <wct-details id=origin namespace="details-default-" open-event-name='key-details-open-${this.getAttribute('epoch')}'>
             <style protected=true>
               :host > details > summary + div {
                 align-items: center;
@@ -257,7 +257,7 @@ export default class Key extends Intersection() {
               </div>
             </details>
           </wct-details>
-          <wct-details id=shared namespace="details-default-" open-event-name="todo">
+          <wct-details id=shared namespace="details-default-" open-event-name='key-details-open-${this.getAttribute('epoch')}'>
             <details>
               <summary>
                 <h4>Shared:</h4>
@@ -333,9 +333,7 @@ export default class Key extends Intersection() {
       this.privateNameEl.setAttribute('epoch', keyContainer.key.epoch)
       this.publicNameEl.setAttribute('name', keyContainer.public.name)
       this.publicNameEl.setAttribute('epoch', keyContainer.key.epoch)
-      // todo: details open-event-name only close same summary details
-      // todo: provider show local fallbacks first before fetching
-      // TODO: room name component with aka. also at provider, shared, received, encrypted, decrypted
+      // TODO: shared, received, encrypted, decrypted
       this.sharedEl.content.innerHTML = /* html */`
         <span>${keyContainer.private.origin.room}</span> - 
         <span>${keyContainer.private.origin.nickname || 'users nickname is unknown'}</span> - 
