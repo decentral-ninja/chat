@@ -228,6 +228,12 @@ export default class Key extends Intersection() {
           align-items: center;
           display: flex;
           gap: 0.5em;
+          justify-content: space-between;
+        }
+        @media only screen and (max-width: 350px) {
+          :host > details > summary + div > div {
+            flex-wrap: wrap;
+          }
         }
       </style>
     `
@@ -259,15 +265,17 @@ export default class Key extends Intersection() {
               <summary>
                 <h4>Origin:</h4>
               </summary>
-              <div>
+              <template>
                 <div>
-                  <chat-a-room-name>
-                    <template>${JSON.stringify({roomName: this.keyContainer.private.origin.room})}</template>
-                  </chat-a-room-name> - 
-                  <span>${this.keyContainer.private.origin.nickname || 'users nickname is unknown'}</span> - 
-                  <span>${this.keyContainer.private.origin.self ? 'self made' : 'received'}:<br><time class="timestamp">${(new Date(this.keyContainer.private.origin.timestamp)).toLocaleString(navigator.language)}</time></span>
+                  <div>
+                    <chat-a-room-name>
+                      <template>${JSON.stringify({roomName: this.keyContainer.private.origin.room})}</template>
+                    </chat-a-room-name> - 
+                    <span>${this.keyContainer.private.origin.nickname || 'users nickname is unknown'}</span> - 
+                    <span>${this.keyContainer.private.origin.self ? 'self made' : 'received'}:<br><time class="timestamp">${(new Date(this.keyContainer.private.origin.timestamp)).toLocaleString(navigator.language)}</time></span>
+                  </div>
                 </div>
-              </div>
+              </template>
             </details>
           </wct-details>
           <wct-details id=shared namespace="details-default-" open-event-name='key-details-open-${this.getAttribute('epoch')}'>
@@ -276,7 +284,9 @@ export default class Key extends Intersection() {
               <summary>
                 <h4>Shared:</h4>
               </summary>
-              <div></div>
+              <template>
+                <div></div>
+              </template>
             </details>
           </wct-details>
           <wct-details id=received namespace="details-default-" open-event-name='key-details-open-${this.getAttribute('epoch')}'>
@@ -285,7 +295,9 @@ export default class Key extends Intersection() {
               <summary>
                 <h4>Received:</h4>
               </summary>
-              <div></div>
+              <template>
+                <div></div>
+              </template>
             </details>
           </wct-details>
           <wct-details id=encrypted namespace="details-default-" open-event-name='key-details-open-${this.getAttribute('epoch')}'>
@@ -294,7 +306,9 @@ export default class Key extends Intersection() {
               <summary>
                 <h4>Encrypted:</h4>
               </summary>
-              <div></div>
+              <template>
+                <div></div>
+              </template>
             </details>
           </wct-details>
           <wct-details id=decrypted namespace="details-default-" open-event-name='key-details-open-${this.getAttribute('epoch')}'>
@@ -303,7 +317,9 @@ export default class Key extends Intersection() {
               <summary>
                 <h4>Decrypted:</h4>
               </summary>
-              <div></div>
+              <template>
+                <div></div>
+              </template>
             </details>
           </wct-details>
           <p><wct-icon-mdx size="1em" no-hover title="generate" icon-url="../../../../../../img/icons/fold-down.svg"></wct-icon-mdx>JSONWEBKEY<wct-icon-mdx size="1em" no-hover title="generate" icon-url="../../../../../../img/icons/fold-down.svg"></wct-icon-mdx></p>
@@ -374,6 +390,7 @@ export default class Key extends Intersection() {
       this.privateNameEl.setAttribute('epoch', keyContainer.key.epoch)
       this.publicNameEl.setAttribute('name', keyContainer.public.name)
       this.publicNameEl.setAttribute('epoch', keyContainer.key.epoch)
+      // TODO: render NickName component if in the same room instead of span-nickname
       const renderDetails = (arr, name) => arr.reduce((acc, curr) => /* html */`
         ${acc}
         <div>

@@ -41,6 +41,12 @@ export default class KeysDialog extends Dialog {
       return superClose()
     }
 
+    this.clickAddKeyElEventListener = event => this.dispatchEvent(new CustomEvent('yjs-set-new-key', {
+      bubbles: true,
+      cancelable: true,
+      composed: true
+    }))
+
     this.keysEventListener = event => {
       this.renderData(event.detail.keyContainers || event.detail)
       console.log('****keysEventListener*****', event.detail.keyContainers || event.detail)
@@ -56,6 +62,7 @@ export default class KeysDialog extends Dialog {
   connectedCallback () {
     if (this.shouldRenderCustomHTML()) this.renderCustomHTML()
     const result = super.connectedCallback()
+    this.addKeyEl.addEventListener('click', this.clickAddKeyElEventListener)
     this.globalEventTarget.addEventListener('yjs-keys', this.keysEventListener)
     this.globalEventTarget.addEventListener('yjs-new-key', this.keysEventListener)
     this.globalEventTarget.addEventListener('yjs-key-property-modified', this.keyChangedEventListener)
@@ -67,6 +74,7 @@ export default class KeysDialog extends Dialog {
 
   disconnectedCallback () {
     super.disconnectedCallback()
+    this.addKeyEl.removeEventListener('click', this.clickAddKeyElEventListener)
     this.globalEventTarget.removeEventListener('yjs-keys', this.keysEventListener)
     this.globalEventTarget.removeEventListener('yjs-new-key', this.keysEventListener)
     this.globalEventTarget.removeEventListener('yjs-key-property-modified', this.keyChangedEventListener)
@@ -141,6 +149,7 @@ export default class KeysDialog extends Dialog {
       <dialog>
         <wct-menu-icon id="close" no-aria class="open sticky" namespace="menu-icon-close-" no-click background style="--outline-style-focus-visible: none;"></wct-menu-icon>
         <h4>Keys:</h4>
+        <wct-icon-mdx id=add-key title="Generate key" icon-url="../../../../../../img/icons/key-filled.svg" size="2em"></wct-icon-mdx>
         <div id=keys></div>
       </dialog>
     `
@@ -154,6 +163,11 @@ export default class KeysDialog extends Dialog {
         // @ts-ignore
         path: `${this.importMetaUrl}../loadTemplateTag/LoadTemplateTag.js?${Environment?.version || ''}`,
         name: 'wct-load-template-tag'
+      },
+      {
+        // @ts-ignore
+        path: `${this.importMetaUrl}../../atoms/iconMdx/IconMdx.js?${Environment?.version || ''}`,
+        name: 'wct-icon-mdx'
       },
       {
         // @ts-ignore
@@ -252,6 +266,10 @@ export default class KeysDialog extends Dialog {
 
   get keysDiv () {
     return this.root.querySelector('#keys')
+  }
+
+  get addKeyEl () {
+    return this.root.querySelector('#add-key')
   }
 
   get globalEventTarget () {
