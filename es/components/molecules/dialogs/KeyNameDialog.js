@@ -23,7 +23,8 @@ export default class KeyNameDialog extends SetStringDialog {
       if (inputField?.value) this.dispatchEvent(new CustomEvent(`yjs-set-key-${this.hasAttribute('private') ? 'private' : 'public'}-name`, {
         detail: {
           epoch: this.getAttribute('epoch'),
-          propertyValue: inputField.value
+          propertyValue: inputField.value,
+          adjustRandomNames: true
         },
         bubbles: true,
         cancelable: true,

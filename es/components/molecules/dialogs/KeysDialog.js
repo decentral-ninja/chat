@@ -49,7 +49,6 @@ export default class KeysDialog extends Dialog {
 
     this.keysEventListener = event => {
       this.renderData(event.detail.keyContainers || event.detail)
-      console.log('****keysEventListener*****', event.detail.keyContainers || event.detail)
     }
 
     this.keyChangedEventListener = event => {
@@ -105,7 +104,17 @@ export default class KeysDialog extends Dialog {
         scrollbar-width: thin;
         transition: height 0.3s ease-out;
       }
-      :host > dialog > #keys {
+      :host > dialog > section[controls] {
+        margin-bottom: 1em;
+      }
+      :host > dialog > section[controls] > * {
+        --color: var(--color-secondary);
+        cursor: pointer;
+      }
+      :host > dialog > section[controls] > *:hover {
+        --color: var(--color-yellow);
+      }
+      :host > dialog > section[controls], :host > dialog > #keys {
         display: flex;
         flex-wrap: wrap;
         gap: 1em;
@@ -149,7 +158,14 @@ export default class KeysDialog extends Dialog {
       <dialog>
         <wct-menu-icon id="close" no-aria class="open sticky" namespace="menu-icon-close-" no-click background style="--outline-style-focus-visible: none;"></wct-menu-icon>
         <h4>Keys:</h4>
-        <wct-icon-mdx id=add-key title="Generate key" icon-url="../../../../../../img/icons/key-filled.svg" size="2em"></wct-icon-mdx>
+        <section controls>
+          <a-icon-combinations id=add-key add-key title=keypair>
+            <template>
+              <wct-icon-mdx title="Generate key"  icon-url="../../../../../../img/icons/key-square.svg" size="3em" no-hover></wct-icon-mdx>
+              <wct-icon-mdx title="Generate key"  icon-url="../../../../../../img/icons/plus.svg" size="1.5em" no-hover></wct-icon-mdx>
+            </template>
+          </a-icon-combinations>
+        </section>
         <div id=keys></div>
       </dialog>
     `
@@ -173,6 +189,11 @@ export default class KeysDialog extends Dialog {
         // @ts-ignore
         path: `${this.importMetaUrl}../../../../../../chat/es/components/molecules/Key.js?${Environment?.version || ''}`,
         name: 'chat-m-key'
+      },
+      {
+        // @ts-ignore
+        path: `${this.importMetaUrl}../../../../../../components/atoms/iconCombinations/IconCombinations.js?${Environment?.version || ''}`,
+        name: 'a-icon-combinations'
       }
     ])
   }
@@ -199,7 +220,7 @@ export default class KeysDialog extends Dialog {
    */
   static renderKeys (div, keyContainers, dialogWasClosed) {
     const tempDiv = document.createElement('div')
-    tempDiv.innerHTML = keyContainers.reduce((acc, keyContainer, i) => {
+    tempDiv.innerHTML = keyContainers.reverse().reduce((acc, keyContainer, i) => {
       /// / render or update
       // @ts-ignore
       const epoch = keyContainer.key.epoch
@@ -217,7 +238,7 @@ export default class KeysDialog extends Dialog {
       }
       return acc
     }, '')
-    Array.from(tempDiv.children).forEach(child => div.appendChild(child))
+    Array.from(tempDiv.children).forEach(child => div.prepend(child))
   }
 
   /**

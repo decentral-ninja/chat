@@ -414,34 +414,38 @@ export default class Key extends Intersection() {
       // shared
       if (keyContainer.private.shared?.length) {
         this.sharedEl.classList.remove('hidden')
-        this.sharedEl.content.innerHTML = renderDetails(keyContainer.private.shared, 'sent')
+        const innerHTML = renderDetails(keyContainer.private.shared, 'sent')
+        if (this.lastSharedElInnerHTML !== innerHTML) this.sharedEl.content.innerHTML = this.lastSharedElInnerHTML = innerHTML
       } else {
         this.sharedEl.classList.add('hidden')
-        this.sharedEl.content.innerHTML = 'none'
+        this.sharedEl.content.innerHTML = this.lastSharedElInnerHTML = 'none'
       }
       // received
       if (keyContainer.private.received?.length) {
         this.receivedEl.classList.remove('hidden')
-        this.receivedEl.content.innerHTML = renderDetails(keyContainer.private.received, 'received')
+        const innerHTML = renderDetails(keyContainer.private.received, 'received')
+        if (this.lastReceivedElInnerHTML !== innerHTML) this.receivedEl.content.innerHTML = this.lastReceivedElInnerHTML = innerHTML
       } else {
         this.receivedEl.classList.add('hidden')
-        this.receivedEl.content.innerHTML = 'none'
+        this.receivedEl.content.innerHTML = this.lastReceivedElInnerHTML = 'none'
       }
       // encrypted
       if (keyContainer.private.encrypted?.length) {
         this.encryptedEl.classList.remove('hidden')
-        this.encryptedEl.content.innerHTML = renderDetails(keyContainer.private.encrypted, 'encrypted')
+        const innerHTML = renderDetails(keyContainer.private.encrypted, 'encrypted')
+        if (this.lastEncryptedElInnerHTML !== innerHTML) this.encryptedEl.content.innerHTML = this.lastEncryptedElInnerHTML = innerHTML
       } else {
         this.encryptedEl.classList.add('hidden')
-        this.encryptedEl.content.innerHTML = 'none'
+        this.encryptedEl.content.innerHTML = this.lastEncryptedElInnerHTML = 'none'
       }
       // decrypted
       if (keyContainer.private.decrypted?.length) {
         this.decryptedEl.classList.remove('hidden')
-        this.decryptedEl.content.innerHTML = renderDetails(keyContainer.private.decrypted, 'decrypted')
+        const innerHTML = renderDetails(keyContainer.private.decrypted, 'decrypted')
+        if (this.lastDecryptedElInnerHTML !== innerHTML) this.decryptedEl.content.innerHTML = this.lastDecryptedElInnerHTML = innerHTML
       } else {
         this.decryptedEl.classList.add('hidden')
-        this.decryptedEl.content.innerHTML = 'none'
+        this.decryptedEl.content.innerHTML = this.lastDecryptedElInnerHTML = 'none'
       }
       this.updateHeight()
       this.doOnIntersection = null
