@@ -73,7 +73,7 @@ export default class Key extends Intersection() {
     if (this.shouldRenderCSS()) showPromises.push(this.renderCSS())
     if (this.shouldRenderHTML()) showPromises.push(this.renderHTML())
     Promise.all(showPromises).then(() => {
-      this.update(this.keyContainer, this.order, true)
+      this.update(this.keyContainer, this.order, true, false)
       this.updateHeight()
       this.hidden = false
     })
@@ -230,6 +230,9 @@ export default class Key extends Intersection() {
           gap: 0.5em;
           justify-content: space-between;
         }
+        :host > details > summary + div > div > * {
+          width: 33%;
+        }
         @media only screen and (max-width: 350px) {
           :host > details > summary + div > div {
             flex-wrap: wrap;
@@ -271,7 +274,7 @@ export default class Key extends Intersection() {
                     <chat-a-room-name>
                       <template>${JSON.stringify({roomName: this.keyContainer.private.origin.room})}</template>
                     </chat-a-room-name> - 
-                    <span>${this.keyContainer.private.origin.nickname || 'users nickname is unknown'}</span> - 
+                    <chat-a-nick-name ${this.keyContainer.private.origin.uid ? `uid='${this.keyContainer.private.origin.uid}'` : ''}${this.keyContainer.private.origin.nickname ? ` nickname='${escapeHTML(this.keyContainer.private.origin.nickname)}'` : ''}${this.keyContainer.private.origin.self ? ' self user-dialog-show-event-only-on-avatar' : ' user-dialog-show-event'}></chat-a-nick-name> - 
                     <span>${this.keyContainer.private.origin.self ? 'self made' : 'received'}:<br><time class="timestamp">${(new Date(this.keyContainer.private.origin.timestamp)).toLocaleString(navigator.language)}</time></span>
                   </div>
                 </div>
@@ -364,6 +367,11 @@ export default class Key extends Intersection() {
       },
       {
         // @ts-ignore
+        path: `${this.importMetaUrl}../atoms/nickName/NickName.js?${Environment?.version || ''}`,
+        name: 'chat-a-nick-name'
+      },
+      {
+        // @ts-ignore
         path: `${this.importMetaUrl}../atoms/roomName/RoomName.js?${Environment?.version || ''}`,
         name: 'chat-a-room-name'
       }
@@ -375,9 +383,10 @@ export default class Key extends Intersection() {
    * @param {import('../../../../event-driven-web-components-yjs/src/es/controllers/Keys.js').KEY_CONTAINER} keyContainer
    * @param {number} order
    * @param {boolean} [updateOrder=false]
+   * @param {boolean} [updateNameEls=true]
    * @returns {void}
    */
-  update (keyContainer, order, updateOrder = false) {
+  update (keyContainer, order, updateOrder = false, updateNameEls = true) {
     this.keyContainer = keyContainer
     this.order = order
     if (updateOrder) this.customStyle.textContent = /* css */`
@@ -386,19 +395,20 @@ export default class Key extends Intersection() {
       }
     `
     this.doOnIntersection = () => {
-      this.privateNameEl.setAttribute('name', keyContainer.private.name)
-      this.privateNameEl.setAttribute('epoch', keyContainer.key.epoch)
-      this.publicNameEl.setAttribute('name', keyContainer.public.name)
-      this.publicNameEl.setAttribute('epoch', keyContainer.key.epoch)
-      // TODO: render NickName component if in the same room instead of span-nickname
-      const renderDetails = (arr, name) => /* html */`<div>${arr.reduce((acc, curr) => /* html */`
+      if (updateNameEls) {
+        this.privateNameEl.setAttribute('name', keyContainer.private.name || '')
+        this.privateNameEl.setAttribute('epoch', keyContainer.key.epoch || '')
+        this.publicNameEl.setAttribute('name', keyContainer.public.name || '')
+        this.publicNameEl.setAttribute('epoch', keyContainer.key.epoch || '')
+      }
+      const renderDetails = (arr, label) => /* html */`<div>${arr.reduce((acc, curr) => /* html */`
         ${acc}
         <div>
           <chat-a-room-name>
             <template>${JSON.stringify({roomName: curr.room})}</template>
           </chat-a-room-name> - 
-          <span>${curr.nickname || 'users nickname is unknown'}</span> - 
-          <span>${name}:<br><time class="timestamp">${(new Date(curr.timestamp)).toLocaleString(navigator.language)}</time></span>
+          <chat-a-nick-name ${curr.uid ? `uid='${curr.uid}'` : ''}${curr.nickname ? ` nickname='${escapeHTML(curr.nickname)}'` : ''}${curr.self ? ' self user-dialog-show-event-only-on-avatar' : ' user-dialog-show-event'}></chat-a-nick-name> - 
+          <span>${label}:<br><time class="timestamp">${(new Date(curr.timestamp)).toLocaleString(navigator.language)}</time></span>
         </div>
       `, '')}</div>`
       // shared

@@ -382,11 +382,6 @@ export default class Users extends Shadow() {
       },
       {
         // @ts-ignore
-        path: `${this.importMetaUrl}../atoms/nickName/NickName.js?${Environment?.version || ''}`,
-        name: 'chat-a-nick-name'
-      },
-      {
-        // @ts-ignore
         path: `${this.importMetaUrl}./dialogs/NickNameDialog.js?${Environment?.version || ''}`,
         name: 'chat-m-nick-name-dialog'
       },

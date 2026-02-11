@@ -66,7 +66,12 @@ export default class KeyName extends Shadow() {
   attributeChangedCallback (name, oldValue, newValue) {
     if (oldValue === null) return
     if (name === 'name') {
-      if (this.hTag && oldValue !== newValue) this.hTag.textContent = newValue
+      if (this.hTag && oldValue !== newValue) {
+        const value = newValue || 'None'
+        this.hTag.textContent = value
+        this.setAttribute('name', value)
+        this.setAttribute('title', value)
+      }
       if (this.dialog) this.dialog.setAttribute('name', newValue)
     } else {
       if (this.avatar && oldValue !== newValue) this.renderHexColor()
@@ -172,14 +177,16 @@ export default class KeyName extends Shadow() {
    * @returns Promise<void>
    */
   renderHTML (keyName = this.getAttribute('name')) {
-    this.setAttribute('name', escapeHTML(keyName))
     if (this.lastKeyName === keyName) return Promise.resolve()
     this.lastKeyName = keyName
+    keyName = escapeHTML(keyName) || 'None'
+    this.setAttribute('name', keyName)
+    this.setAttribute('title', keyName)
     this.html = ''
     this.html = /* html */`
       <${this.linkTagName} href="#">
         <span class=avatar></span>
-        <${this.hTagName}>${escapeHTML(keyName) || 'None'}</${this.hTagName}>
+        <${this.hTagName}>${keyName}</${this.hTagName}>
         ${this.hasAttribute('is-editable')
           ? /* html */`<wct-icon-mdx hover-on-parent-element id="show-modal" title="edit key name" icon-url="../../../../../../img/icons/pencil.svg" size="1em"></wct-icon-mdx>`
           : ''

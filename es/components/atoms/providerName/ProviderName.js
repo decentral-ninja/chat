@@ -191,13 +191,15 @@ export default class ProviderName extends Shadow() {
    * @returns Promise<void>
    */
   renderHTML () {
+    const providerName = this.dataName?.split(separator)[1] || 'None'
+    this.setAttribute('title', providerName)
     this.html = ''
     this.html = /* html */`
       <a href="#">
         <span class=avatar>
           <wct-icon-mdx hover-on-parent-shadow-root-host id=connected title=connected icon-url="../../../../../../img/icons/mobiledata.svg" size="0.75em"></wct-icon-mdx>
         </span>
-        <${this.hTagName}>${this.dataName?.split(separator)[1] || 'None'}</${this.hTagName}>
+        <${this.hTagName}>${providerName}</${this.hTagName}>
       </a>
     `
     try {

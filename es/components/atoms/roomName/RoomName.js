@@ -154,9 +154,11 @@ export default class RoomName extends Shadow() {
    * @returns Promise<void>
    */
   renderHTML (room) {
+    const roomName = this.roomName ? escapeHTML(this.roomName) : 'Loading...'
+    this.setAttribute('title', roomName)
     this.html = ''
     this.html = /* html */`<a ${this.hasAttribute('route') ? `route="${this.getAttribute('route')}"` : room?.locationHref ? `route href="${room.locationHref}"` : ''}>
-      <div>${this.roomName ? escapeHTML(this.roomName) : 'Loading...'}</div>
+      <div>${roomName}</div>
       <div class=aka>${room?.aka ? escapeHTML(room.aka) : ''}</div>
     </a>`
     return Promise.resolve()

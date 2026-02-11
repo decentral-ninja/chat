@@ -20,6 +20,7 @@ export default class NickName extends Shadow() {
     this.clickEventListener = event => {
       event.preventDefault()
       event.stopPropagation()
+      if (!this.hasAttribute('uid')) return
       if (this.hasAttribute('user-dialog-show-event')) {
         this.dispatchEvent(new CustomEvent('user-dialog-show-event', {
           detail: { uid: this.getAttribute('uid') },
@@ -70,6 +71,8 @@ export default class NickName extends Shadow() {
             this.removeAttribute('is-connected-with-self')
           }
           this.renderHTML(user.nickname || '')
+        } else if (this.hasAttribute('nickname')) {
+          this.renderHTML(this.getAttribute('nickname'))
         }
         // @ts-ignore
       }, self.Environment.awarenessEventListenerDelay)
@@ -91,7 +94,10 @@ export default class NickName extends Shadow() {
       bubbles: true,
       cancelable: true,
       composed: true
-    }))).then(detail => this.usersEventListener({ detail }))
+    }))).then(detail => {
+      if (!this.hasAttribute('uid') && this.hasAttribute('self')) this.setAttribute('uid', detail.selfUser.uid)
+      this.usersEventListener({ detail })
+    })
     this.connectedCallbackOnce = () => {}
   }
 
@@ -133,11 +139,23 @@ export default class NickName extends Shadow() {
         --${this.hTagName}-font-size: 1em;
         --${this.hTagName}-margin: 0;
         --${this.hTagName}-padding: 0.2em 0 0 0;
-        cursor: pointer;
         max-width: 100%;
+      }
+      :host(:not([uid])) {
+        --a-color: var(--color-disabled);
+        --color-hover: var(--color-disabled);
+        --color: var(--color-disabled);
+        --a-color-visited: var(--color-disabled);
+      }
+      :host(:not([uid])) > a {
+        cursor: not-allowed;
+        pointer-events: none;
       }
       *:focus {
         outline: none;
+      }
+      :host > a {
+        cursor: pointer;
       }
       :host > a, :host > span {
         align-items: center;
@@ -169,6 +187,7 @@ export default class NickName extends Shadow() {
         margin-right: 0.25em;
         transform: translateY(0.1em);
         flex-shrink: 0;
+        background-color: var(--color-disabled);
       }
       :host .avatar > #connected {
         display: none;
@@ -206,17 +225,19 @@ export default class NickName extends Shadow() {
   renderHTML (nickname = this.getAttribute('nickname')) {
     if (this.lastNickname === nickname) return Promise.resolve()
     this.lastNickname = nickname
+    nickname = escapeHTML(nickname) || (this.hasAttribute('self') ? 'Loading...' : 'users nickname is unknown')
+    this.setAttribute('title', nickname)
     this.html = ''
     this.html = /* html */`
       <a href="#">
         <span class=avatar>
           <wct-icon-mdx hover-on-parent-shadow-root-host id=connected title=connected icon-url="../../../../../../img/icons/mobiledata.svg" size="0.75em"></wct-icon-mdx>
         </span>
-        <${this.hTagName}>${escapeHTML(nickname) || 'None'}</${this.hTagName}>
+        <${this.hTagName}>${nickname}</${this.hTagName}>
         ${this.hasAttribute('self') ? '<wct-icon-mdx hover-on-parent-element id="show-modal" title="edit nickname" icon-url="../../../../../../img/icons/pencil.svg" size="1em"></wct-icon-mdx>' : ''}
       </a>
     `
-    getHexColor(this.getAttribute('uid')).then(hex => this.avatar.setAttribute('style', `background-color: ${hex}`))
+    if (this.hasAttribute('uid')) getHexColor(this.getAttribute('uid')).then(hex => this.avatar.setAttribute('style', `background-color: ${hex}`))
     return this.fetchModules([
       {
         // @ts-ignore
