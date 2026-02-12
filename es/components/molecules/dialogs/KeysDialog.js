@@ -220,24 +220,28 @@ export default class KeysDialog extends Dialog {
    */
   static renderKeys (div, keyContainers, dialogWasClosed) {
     const tempDiv = document.createElement('div')
-    tempDiv.innerHTML = keyContainers.reverse().reduce((acc, keyContainer, i) => {
-      /// / render or update
+    // @ts-ignore
+    tempDiv.innerHTML = keyContainers.error
       // @ts-ignore
-      const epoch = keyContainer.key.epoch
-      const renderKey = () => KeysDialog.renderKey(epoch, keyContainer, i)
-      let key
-      if ((key = div.querySelector(`[epoch='${epoch}']`))) {
-        if (typeof key.update === 'function') {
-          // dialogWasClosed gives indication to provider updateOrder
-          key.update(keyContainer, i, dialogWasClosed)
+      ? `<span style="color: red;">Error: ${JSON.stringify(keyContainers.error)}</span>`
+      : keyContainers.reverse().reduce((acc, keyContainer, i) => {
+        /// / render or update
+        // @ts-ignore
+        const epoch = keyContainer.key.epoch
+        const renderKey = () => KeysDialog.renderKey(epoch, keyContainer, i)
+        let key
+        if ((key = div.querySelector(`[epoch='${epoch}']`))) {
+          if (typeof key.update === 'function') {
+            // dialogWasClosed gives indication to provider updateOrder
+            key.update(keyContainer, i, dialogWasClosed)
+          } else {
+            key.outerHTML = renderKey()
+          }
         } else {
-          key.outerHTML = renderKey()
+          return acc + renderKey()
         }
-      } else {
-        return acc + renderKey()
-      }
-      return acc
-    }, '')
+        return acc
+      }, '')
     Array.from(tempDiv.children).forEach(child => div.prepend(child))
   }
 
