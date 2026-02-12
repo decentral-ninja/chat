@@ -12,6 +12,13 @@ export default class GlideToReveal extends Shadow() {
   constructor (options = {}, ...args) {
     super({ importMetaUrl: import.meta.url, tabindex: 'no-tabindex', ...options }, ...args)
 
+    this.clickEventListener = event => {
+      event.preventDefault()
+      event.stopPropagation()
+      Array.from(this.ul.children).forEach(li => li.classList.remove('hover'))
+      event.composedPath().find(el => el.tagName === 'LI')?.classList.add('hover')
+    }
+
     this.mousedownEventListener = event => {
       this.setAttribute('mousemove', '')
       this.ul.addEventListener('mousemove', this.mousemoveEventListener)
@@ -29,12 +36,14 @@ export default class GlideToReveal extends Shadow() {
     if (this.shouldRenderCSS()) showPromises.push(this.renderCSS())
     if (this.shouldRenderHTML()) showPromises.push(this.renderHTML())
     Promise.all(showPromises).then(() => (this.hidden = false))
+    this.addEventListener('click', this.clickEventListener)
     this.ul.addEventListener('mousedown', this.mousedownEventListener)
     this.ul.addEventListener('mouseup', this.mouseupEventListener)
     this.addEventListener('mouseout', this.mouseupEventListener)
   }
 
   disconnectedCallback () {
+    this.removeEventListener('click', this.clickEventListener)
     this.ul.removeEventListener('mousedown', this.mousedownEventListener)
     this.ul.removeEventListener('mouseup', this.mouseupEventListener)
     this.removeEventListener('mouseout', this.mouseupEventListener)
@@ -117,27 +126,27 @@ export default class GlideToReveal extends Shadow() {
         --lerp-4: calc(sin(25deg));
         --lerp-5: calc(sin(15deg));
       }
-      .digit:is(:hover, :focus-visible) {
+      .digit:is(:hover, :focus-visible, .hover) {
         --active: var(--lerp-0);
       }
-      .digit:is(:hover, :focus-visible) + .digit,
-      .digit:has(+ .digit:is(:hover, :focus-visible)) {
+      .digit:is(:hover, :focus-visible, .hover) + .digit,
+      .digit:has(+ .digit:is(:hover, :focus-visible, .hover)) {
         --active: var(--lerp-1);
       }
-      .digit:is(:hover, :focus-visible) + .digit + .digit,
-      .digit:has(+ .digit + .digit:is(:hover, :focus-visible)) {
+      .digit:is(:hover, :focus-visible, .hover) + .digit + .digit,
+      .digit:has(+ .digit + .digit:is(:hover, :focus-visible, .hover)) {
         --active: var(--lerp-2);
       }
-      .digit:is(:hover, :focus-visible) + .digit + .digit + .digit,
-      .digit:has(+ .digit + .digit + .digit:is(:hover, :focus-visible)) {
+      .digit:is(:hover, :focus-visible, .hover) + .digit + .digit + .digit,
+      .digit:has(+ .digit + .digit + .digit:is(:hover, :focus-visible, .hover)) {
         --active: var(--lerp-3);
       }
-      .digit:is(:hover, :focus-visible) + .digit + .digit + .digit + .digit,
-      .digit:has(+ .digit + .digit + .digit + .digit:is(:hover, :focus-visible)) {
+      .digit:is(:hover, :focus-visible, .hover) + .digit + .digit + .digit + .digit,
+      .digit:has(+ .digit + .digit + .digit + .digit:is(:hover, :focus-visible, .hover)) {
         --active: var(--lerp-4);
       }
-      .digit:is(:hover, :focus-visible) + .digit + .digit + .digit + .digit + .digit,
-      .digit:has(+ .digit + .digit + .digit + .digit + .digit:is(:hover, :focus-visible)) {
+      .digit:is(:hover, :focus-visible, .hover) + .digit + .digit + .digit + .digit + .digit,
+      .digit:has(+ .digit + .digit + .digit + .digit + .digit:is(:hover, :focus-visible, .hover)) {
         --active: var(--lerp-5);
       }
     `
