@@ -324,7 +324,7 @@ export default class Message extends WebWorker(Intersection()) {
   async renderHTML (textObj = this.textObj) {
     const textObjSync = await textObj
     this.html = Message.renderList(textObjSync, this.hasAttribute('no-dialog'))
-    if (!textObjSync.deleted) this.webWorker(Message.processText, textObjSync).then(textObj => (this.textSpan.innerHTML = Message.htmlPurify(textObj.text)))
+    if (!textObjSync.deleted) this.webWorker(Message.processText, textObjSync, location.host).then(textObj => (this.textSpan.innerHTML = Message.htmlPurify(textObj.text)))
     return Promise.all([
       textObjSync.replyTo && this.hasAttribute('show-reply-to')
         ? this.renderReplyTo(textObjSync)
@@ -405,7 +405,8 @@ export default class Message extends WebWorker(Intersection()) {
   }
 
   // make aTags with href when first link is detected https://stackoverflow.com/questions/1500260/detect-urls-in-text-with-javascript
-  static processText (textObj) {
+  // location.host is not available within web workers
+  static processText (textObj, locationHost = location.host) {
     textObj = structuredClone(textObj)
     switch (textObj.type) {
       case 'jitsi-video-started':
@@ -420,7 +421,7 @@ export default class Message extends WebWorker(Intersection()) {
         textObj.text = /* html */`<span>shared the following provider: </span><chat-a-provider-name id="${textObj.id}" provider-dialog-show-event><span name>${textObj.text}</span></chat-a-provider-name>`
         break
       default:
-        if (!textObj.text.includes('<')) textObj.text = textObj.text?.replace(/(https?:\/\/[^\s]+)/g, url => /* html */`<a href="${url}"${url.includes(location.host) && url.includes('room=') ? ' route' : ''} target="${url.includes(location.host) ? '_self' : '_blank'}">${url}</a>`)
+        if (!textObj.text.includes('<')) textObj.text = textObj.text?.replace(/(https?:\/\/[^\s]+)/g, url => /* html */`<a href="${url}"${url.includes(locationHost) && url.includes('room=') ? ' route' : ''} target="${url.includes(locationHost) ? '_self' : '_blank'}">${url}</a>`)
         break
     }
     return textObj
