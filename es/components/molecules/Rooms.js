@@ -438,7 +438,7 @@ export default class Rooms extends Shadow() {
                 <section>
                   <a href="#" id="generate-room-name" grid-row="1/1" grid-column="2/5"><wct-icon-mdx size="1em" hover-on-parent-element title="generate" icon-url="../../../../../../img/icons/fold-down.svg"></wct-icon-mdx>&nbsp;Generate a random room name&nbsp;<wct-icon-mdx size="1em" hover-on-parent-element title="generate" icon-url="../../../../../../img/icons/fold-down.svg"></wct-icon-mdx></a>
                   <wct-input grid-row="2/2" inputId="room-name-prefix" placeholder="${this.roomNamePrefix}" namespace="wct-input-" disabled></wct-input>
-                  <wct-input maxlength="50" grid-row="2/2" grid-column="2/5" inputId="room-name" placeholder="${(roomName = await room).replace(this.roomNamePrefix, '')}" namespace="wct-middle-input-" namespace-fallback submit-search="submit-room-name" any-key-listener autofocus force></wct-input>
+                  <wct-input maxlength="300" grid-row="2/2" grid-column="2/5" inputId="room-name" placeholder="${(roomName = await room).replace(this.roomNamePrefix, '')}" namespace="wct-middle-input-" namespace-fallback submit-search="submit-room-name" any-key-listener autofocus force></wct-input>
                   <wct-button grid-row="2/2" namespace="button-primary-" request-event-name="submit-room-name" click-no-toggle-active>enter</wct-button>
                 </section>
               </wct-grid>
@@ -465,7 +465,7 @@ export default class Rooms extends Shadow() {
                 <section>
                   <a href="#" id="generate-room-name" grid-row="1/1" grid-column="1/6"><wct-icon-mdx size="1em" hover-on-parent-element title="generate" icon-url="../../../../../../img/icons/fold-down.svg"></wct-icon-mdx>&nbsp;Generate a random room name&nbsp;<wct-icon-mdx size="1em" hover-on-parent-element title="generate" icon-url="../../../../../../img/icons/fold-down.svg"></wct-icon-mdx></a>
                   <wct-input grid-row="2/2" inputId="room-name-prefix" placeholder="${this.roomNamePrefix}" namespace="wct-input-" disabled></wct-input>
-                  <wct-input maxlength="50" grid-row="2/2" grid-column="2/5" inputId="room-name" placeholder="${this.randomRoom}" namespace="wct-middle-input-" namespace-fallback submit-search="submit-room-name" any-key-listener autofocus force></wct-input>
+                  <wct-input maxlength="300" grid-row="2/2" grid-column="2/5" inputId="room-name" placeholder="${this.randomRoom}" namespace="wct-middle-input-" namespace-fallback submit-search="submit-room-name" any-key-listener autofocus force></wct-input>
                   <wct-button grid-row="2/2" namespace="button-primary-" request-event-name="submit-room-name" click-no-toggle-active>enter</wct-button>
                 </section>
               </wct-grid>
