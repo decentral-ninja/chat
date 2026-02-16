@@ -123,7 +123,7 @@ export default class KeysDialog extends Dialog {
         width: calc(33.3% - 0.66em);
       }
       :host > dialog > #keys > wct-load-template-tag {
-        min-height: 25em;
+        min-height: 24em;
       }
       @media only screen and (max-width: 1200px) {
         :host > dialog > #keys > chat-m-key, :host > dialog > #keys > wct-load-template-tag {

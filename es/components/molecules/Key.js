@@ -133,7 +133,6 @@ export default class Key extends Intersection() {
         border: var(--wct-input-border, 1px solid var(--color-black));
         border-radius: var(--border-radius);
         box-shadow: var(--box-shadow-length-one) var(--box-shadow-color), var(--box-shadow-length-two) var(--box-shadow-color);
-        min-height: var(--chat-m-key-min-height, 5em); /* wct-load-template-tag requirement */
       }
       :host > section > * {
         min-width: 0;
@@ -281,7 +280,7 @@ export default class Key extends Intersection() {
               </template>
             </details>
           </wct-details>
-          <wct-details id=shared namespace="details-default-" open-event-name='key-details-open-${this.getAttribute('epoch')}'>
+          <wct-details id=shared class="hidden" namespace="details-default-" open-event-name='key-details-open-${this.getAttribute('epoch')}'>
             ${style}
             <details>
               <summary>
@@ -292,7 +291,7 @@ export default class Key extends Intersection() {
               </template>
             </details>
           </wct-details>
-          <wct-details id=received namespace="details-default-" open-event-name='key-details-open-${this.getAttribute('epoch')}'>
+          <wct-details id=received class="hidden" namespace="details-default-" open-event-name='key-details-open-${this.getAttribute('epoch')}'>
             ${style}
             <details>
               <summary>
@@ -303,7 +302,7 @@ export default class Key extends Intersection() {
               </template>
             </details>
           </wct-details>
-          <wct-details id=encrypted namespace="details-default-" open-event-name='key-details-open-${this.getAttribute('epoch')}'>
+          <wct-details id=encrypted class="hidden" namespace="details-default-" open-event-name='key-details-open-${this.getAttribute('epoch')}'>
             ${style}
             <details>
               <summary>
@@ -314,7 +313,7 @@ export default class Key extends Intersection() {
               </template>
             </details>
           </wct-details>
-          <wct-details id=decrypted namespace="details-default-" open-event-name='key-details-open-${this.getAttribute('epoch')}'>
+          <wct-details id=decrypted class="hidden" namespace="details-default-" open-event-name='key-details-open-${this.getAttribute('epoch')}'>
             ${style}
             <details>
               <summary>
