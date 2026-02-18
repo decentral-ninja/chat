@@ -37,25 +37,32 @@ export default class KeysDialog extends Dialog {
     const superClose = this.close
     this.close = () => {
       // TODO: Dialog closed - return selected key
+      if (this.deletedKeyEls.length) new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-delete-key', {
+        detail: {
+          resolve,
+          epochs: this.deletedKeyEls.map(el => el.getAttribute('epoch'))
+        },
+        bubbles: true,
+        cancelable: true,
+        composed: true
+      }))).then(result => this.deletedKeyEls.forEach(el => el.remove()))
       this.dialogWasClosed = true
       return superClose()
     }
 
-    this.clickAddKeyElEventListener = event => this.dispatchEvent(new CustomEvent('yjs-set-new-key', {
-      bubbles: true,
-      cancelable: true,
-      composed: true
-    }))
+    this.clickAddKeyElEventListener = event => {
+      this.addKeyEl.setAttribute('updating', '')
+      this.dispatchEvent(new CustomEvent('yjs-set-new-key', {
+        bubbles: true,
+        cancelable: true,
+        composed: true
+      }))
+    }
 
     this.keysEventListener = event => {
+      this.addKeyEl.removeAttribute('updating')
       this.renderData(event.detail.keyContainers || event.detail)
     }
-
-    this.keyChangedEventListener = event => {
-      // TODO: call functions regarding key changes
-      console.log('****keyChangedEventListener*****', event.detail.modified || event.detail.deleted || event.detail.shared)
-    }
-    // TODO: key crud(d=disable+delete)
   }
 
   connectedCallback () {
@@ -64,8 +71,8 @@ export default class KeysDialog extends Dialog {
     this.addKeyEl.addEventListener('click', this.clickAddKeyElEventListener)
     this.globalEventTarget.addEventListener('yjs-keys', this.keysEventListener)
     this.globalEventTarget.addEventListener('yjs-new-key', this.keysEventListener)
-    this.globalEventTarget.addEventListener('yjs-key-property-modified', this.keyChangedEventListener)
-    this.globalEventTarget.addEventListener('yjs-key-deleted', this.keyChangedEventListener)
+    this.globalEventTarget.addEventListener('yjs-encrypted', this.keysEventListener)
+    this.globalEventTarget.addEventListener('yjs-decrypted', this.keysEventListener)
     this.globalEventTarget.addEventListener('yjs-shared-key', this.keysEventListener)
     this.globalEventTarget.addEventListener('yjs-received-key', this.keysEventListener)
     return result
@@ -76,8 +83,8 @@ export default class KeysDialog extends Dialog {
     this.addKeyEl.removeEventListener('click', this.clickAddKeyElEventListener)
     this.globalEventTarget.removeEventListener('yjs-keys', this.keysEventListener)
     this.globalEventTarget.removeEventListener('yjs-new-key', this.keysEventListener)
-    this.globalEventTarget.removeEventListener('yjs-key-property-modified', this.keyChangedEventListener)
-    this.globalEventTarget.removeEventListener('yjs-key-deleted', this.keyChangedEventListener)
+    this.globalEventTarget.removeEventListener('yjs-encrypted', this.keysEventListener)
+    this.globalEventTarget.removeEventListener('yjs-decrypted', this.keysEventListener)
     this.globalEventTarget.removeEventListener('yjs-shared-key', this.keysEventListener)
     this.globalEventTarget.removeEventListener('yjs-received-key', this.keysEventListener)
     this.close()
@@ -119,6 +126,10 @@ export default class KeysDialog extends Dialog {
         flex-wrap: wrap;
         gap: 1em;
       }
+      :host > dialog > section > #add-key[updating] {
+        cursor: not-allowed;
+        pointer-events: none;
+      }
       :host > dialog > #keys > chat-m-key, :host > dialog > #keys > wct-load-template-tag {
         width: calc(33.3% - 0.66em);
       }
@@ -159,12 +170,16 @@ export default class KeysDialog extends Dialog {
         <wct-menu-icon id="close" no-aria class="open sticky" namespace="menu-icon-close-" no-click background style="--outline-style-focus-visible: none;"></wct-menu-icon>
         <h4>Keys:</h4>
         <section controls>
-          <a-icon-combinations id=add-key add-key title=keypair>
+          <a-icon-states id=add-key loading-size=2>
             <template>
-              <wct-icon-mdx title="Generate key"  icon-url="../../../../../../img/icons/key-square.svg" size="3em" no-hover></wct-icon-mdx>
-              <wct-icon-mdx title="Generate key"  icon-url="../../../../../../img/icons/plus.svg" size="1.5em" no-hover></wct-icon-mdx>
+              <a-icon-combinations state="default" add-key title=keypair>
+                <template>
+                  <wct-icon-mdx title="Generate key"  icon-url="../../../../../../img/icons/key-square.svg" size="3em" no-hover></wct-icon-mdx>
+                  <wct-icon-mdx title="Generate key"  icon-url="../../../../../../img/icons/plus.svg" size="1.5em" no-hover></wct-icon-mdx>
+                </template>
+              </a-icon-combinations>
             </template>
-          </a-icon-combinations>
+          </a-icon-states>
         </section>
         <div id=keys></div>
       </dialog>
@@ -192,6 +207,11 @@ export default class KeysDialog extends Dialog {
       },
       {
         // @ts-ignore
+        path: `${this.importMetaUrl}../../../../../../components/atoms/iconStates/IconStates.js?${Environment?.version || ''}`,
+        name: 'a-icon-states'
+      },
+      {
+        // @ts-ignore
         path: `${this.importMetaUrl}../../../../../../components/atoms/iconCombinations/IconCombinations.js?${Environment?.version || ''}`,
         name: 'a-icon-combinations'
       }
@@ -201,11 +221,12 @@ export default class KeysDialog extends Dialog {
   /**
    * initializes the rendering of the keys
    * 
-   * @param {import('../../../../../event-driven-web-components-yjs/src/es/controllers/Keys.js').KEY_CONTAINERS} keyContainers
+   * @param {import('../../../../../event-driven-web-components-yjs/src/es/controllers/Keys.js').KEY_CONTAINERS|import('../../../../../event-driven-web-components-prototypes/src/controllers/Crypto.js').JSON_WEB_KEY_TO_CRYPTOKEY_ERROR|null} keyContainers
    * @returns {void}
    */
   renderData (keyContainers) {
     // TODO: Decide here, if the component will be info, select option for single encryption key (message) or select checkbox for multiple encryption keys (share with user)
+    if (!keyContainers) return
     KeysDialog.renderKeys(this.keysDiv, keyContainers, this.dialogWasClosed)
     this.dialogWasClosed = false
   }
@@ -214,7 +235,7 @@ export default class KeysDialog extends Dialog {
    * Description
    * 
    * @param {any} div
-   * @param {import('../../../../../event-driven-web-components-yjs/src/es/controllers/Keys.js').KEY_CONTAINERS} keyContainers
+   * @param {import('../../../../../event-driven-web-components-yjs/src/es/controllers/Keys.js').KEY_CONTAINERS|import('../../../../../event-driven-web-components-prototypes/src/controllers/Crypto.js').JSON_WEB_KEY_TO_CRYPTOKEY_ERROR} keyContainers
    * @param {boolean} dialogWasClosed
    * @returns {void}
    */
@@ -224,6 +245,7 @@ export default class KeysDialog extends Dialog {
     tempDiv.innerHTML = keyContainers.error
       // @ts-ignore
       ? `<span style="color: red;">Error: ${JSON.stringify(keyContainers.error)}</span>`
+      // @ts-ignore
       : keyContainers.reverse().reduce((acc, keyContainer, i) => {
         /// / render or update
         // @ts-ignore
@@ -291,6 +313,10 @@ export default class KeysDialog extends Dialog {
 
   get keysDiv () {
     return this.root.querySelector('#keys')
+  }
+
+  get deletedKeyEls () {
+    return Array.from(this.keysDiv.querySelectorAll('chat-m-key[deleted][epoch]'))
   }
 
   get addKeyEl () {

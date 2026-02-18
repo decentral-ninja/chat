@@ -120,56 +120,9 @@ export default class Rooms extends Shadow() {
           }
         })
       } else if ((target = event.composedPath().find(el => el.hasAttribute?.('delete')))) {
-        const deleteKey = this.roomKeys[target.getAttribute('delete').replace('room-key-index-', '')] || target.getAttribute('delete')
-        new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-delete-room', {
-          detail: {
-            resolve,
-            name: deleteKey
-          },
-          bubbles: true,
-          cancelable: true,
-          composed: true
-        }))).then(() => this.dispatchEvent(new CustomEvent('yjs-request-notifications', {
-          detail: { force: true },
-          bubbles: true,
-          cancelable: true,
-          composed: true
-        })))
-        this.dispatchEvent(new CustomEvent('yjs-unsubscribe-notifications', {
-          detail: {
-            room: deleteKey,
-            locationHref: target.getAttribute('href')
-          },
-          bubbles: true,
-          cancelable: true,
-          composed: true
-        }))
-        this.clearAllDeleted()
         target.parentNode.classList.add('deleted')
       } else if ((target = event.composedPath().find(el => el.hasAttribute?.('undo')))) {
         target.parentNode.classList.remove('deleted')
-        new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-undo-room', {
-          detail: {
-            resolve
-          },
-          bubbles: true,
-          cancelable: true,
-          composed: true
-        }))).then(() => this.dispatchEvent(new CustomEvent('yjs-request-notifications', {
-          detail: { force: true },
-          bubbles: true,
-          cancelable: true,
-          composed: true
-        })))
-        this.dispatchEvent(new CustomEvent('yjs-subscribe-notifications', {
-          detail: {
-            room: this.roomKeys[target.getAttribute('undo').replace('room-key-index-', '')] || target.getAttribute('undo'),
-            locationHref: target.getAttribute('href')
-          },
-          bubbles: true,
-          cancelable: true,
-          composed: true
-        }))
       } else if ((target = event.composedPath().find(el => el.matches?.('[disabled]')))) {
         if (target.querySelector('chat-m-notifications[has-notifications]')) {
           this.dispatchEvent(new CustomEvent('provider-dialog-show-event', {
@@ -229,6 +182,8 @@ export default class Rooms extends Shadow() {
       }
     }
 
+    this.roomDialogClosedEventListener = event => this.clearAllDeleted()
+
     this.openRoomListener = event => {
       this.renderHTML().then(() => this.dialog?.show('show-modal'))
     }
@@ -244,6 +199,7 @@ export default class Rooms extends Shadow() {
     if (this.shouldRenderCSS()) this.renderCSS()
     this.addEventListener('click', this.clickEventListener)
     this.addEventListener('submit-room-name', this.roomNameEventListener)
+    this.addEventListener('room-dialog-closed', this.roomDialogClosedEventListener)
     this.globalEventTarget.addEventListener('open-room', this.openRoomListener)
     if (this.isConnected) this.connectedCallbackOnce()
   }
@@ -265,6 +221,7 @@ export default class Rooms extends Shadow() {
   disconnectedCallback () {
     this.removeEventListener('click', this.clickEventListener)
     this.removeEventListener('submit-room-name', this.roomNameEventListener)
+    this.removeEventListener('room-dialog-closed', this.roomDialogClosedEventListener)
     this.globalEventTarget.removeEventListener('open-room', this.openRoomListener)
     this.dialog?.close()
   }
@@ -410,6 +367,7 @@ export default class Rooms extends Shadow() {
         ? /* html */`
           <wct-dialog
             namespace="dialog-left-slide-in-"
+            closed-event-name="room-dialog-closed"
           >
             <style protected=true>
               :host > dialog > wct-menu-icon {
@@ -453,6 +411,7 @@ export default class Rooms extends Shadow() {
             open=show-modal
             open-on-every-connect
             no-backdrop-close
+            no-delete
           >
             <style protected=true>
               :host {
@@ -542,6 +501,9 @@ export default class Rooms extends Shadow() {
       :host ul > li > div.deleted [undo] {
         display: contents;
       }
+      :host([no-delete]) ul > li [delete], :host([no-delete]) ul > li [undo] {
+        display: none;
+      }
       :host ul > li > div > a {
         margin: 0;
       }
@@ -596,7 +558,40 @@ export default class Rooms extends Shadow() {
   }
 
   clearAllDeleted () {
-    if (this.dialog) Array.from(this.dialog.root.querySelectorAll('.deleted')).forEach(node => node.parentNode.remove())
+    if (this.dialog) {
+      const deleteKeys = []
+      Array.from(this.dialog.root.querySelectorAll('.deleted')).forEach(node => {
+        const target = node.querySelector('[delete]')
+        if (!target) return
+        const deleteKey = this.roomKeys[target.getAttribute('delete').replace('room-key-index-', '')] || target.getAttribute('delete')
+        deleteKeys.push(deleteKey)
+        this.dispatchEvent(new CustomEvent('yjs-unsubscribe-notifications', {
+          detail: {
+            room: deleteKey,
+            locationHref: target.getAttribute('href')
+          },
+          bubbles: true,
+          cancelable: true,
+          composed: true
+        }))
+        node.parentNode.remove()
+      })
+      // storage can not handle multiple quick requests, for that reason we bundle all deleteKeys into one request
+      new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-delete-room', {
+        detail: {
+          resolve,
+          names: deleteKeys
+        },
+        bubbles: true,
+        cancelable: true,
+        composed: true
+      }))).then(() => this.dispatchEvent(new CustomEvent('yjs-request-notifications', {
+        detail: { force: true },
+        bubbles: true,
+        cancelable: true,
+        composed: true
+      })))
+    }
   }
 
   /**

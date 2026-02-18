@@ -24,38 +24,14 @@ export default class Key extends Intersection() {
     }
     this.setAttribute('epoch', this.epoch)
 
-    this.iconShareClickEventListener = event => {
-      console.log('*********', 'share')
-      // TODO: Custom Key share dialog
-      // this.fetchModules([{
-      //   // @ts-ignore
-      //   path: `${this.importMetaUrl}../molecules/dialogs/ShareDialog.js?${Environment?.version || ''}`,
-      //   name: 'chat-m-share-dialog'
-      // }]).then(async () => {
-      //   const urlHrefObj = this.getUrlHrefObj()
-      //   const shareValue = `${urlHrefObj?.name || this.selectName.value}${separator}${urlHrefObj?.url.origin || Array.from(this.keyContainer.urls.keys())[0]}`
-      //   if (this.shareDialog) {
-      //     this.shareDialog.setAttribute('href', shareValue)
-      //     this.shareDialog.setAttribute('href-title', `key - ${shareValue}`)
-      //     // @ts-ignore
-      //     this.shareDialog.show('show-modal')
-      //   } else {
-      //     const div = document.createElement('div')
-      //     div.innerHTML = /* html */`
-      //       <chat-m-share-dialog
-      //         namespace="dialog-top-slide-in-"
-      //         open="show-modal"
-      //         href="${shareValue}"
-      //         href-title="key - ${shareValue}"
-      //         chat-add-type="share-key"
-      //         chat-add-id="${this.getAttribute('id')}"
-      //         no-navigator-share
-      //       ></chat-m-share-dialog>
-      //     `
-      //     this.shareDialog = div.children[0]
-      //     this.root.appendChild(div.children[0])
-      //   }
-      // })
+    this.trashIconClickEventListener = event => {
+      const value = this.trashIcon.getAttribute('state') === 'undo' ? 'default' : 'undo'
+      this.trashIcon.setAttribute('state', value)
+      if (value === 'undo') {
+        this.setAttribute('deleted', '')
+      } else {
+        this.removeAttribute('deleted')
+      }
     }
 
     // this updates the min-height on resize, see updateHeight function for more info
@@ -77,13 +53,13 @@ export default class Key extends Intersection() {
       this.updateHeight()
       this.hidden = false
     })
-    this.iconShare.addEventListener('click', this.iconShareClickEventListener)
+    this.trashIcon.addEventListener('click', this.trashIconClickEventListener)
     self.addEventListener('resize', this.resizeEventListener)
   }
 
   disconnectedCallback () {
     super.disconnectedCallback()
-    this.iconShare.removeEventListener('click', this.iconShareClickEventListener)
+    this.trashIcon.removeEventListener('click', this.trashIconClickEventListener)
     self.removeEventListener('resize', this.resizeEventListener)
   }
 
@@ -126,6 +102,9 @@ export default class Key extends Intersection() {
         --details-default-any-display: inline;
         display: block;
       }
+      :host([deleted]) {
+        text-decoration: line-through;
+      }
       :host([has-height]:not([intersecting])) > section#grid {
         display: none;
       }
@@ -139,6 +118,10 @@ export default class Key extends Intersection() {
       }
       :host .hidden {
         display: none;
+      }
+      :host a-icon-states#trash-icon {
+        --color: var(--color-error);
+        --color-hover: var(--color-yellow);
       }
       /* https://weedshaker.github.io/cssGridLayout/ */
       #grid {
@@ -156,6 +139,7 @@ export default class Key extends Intersection() {
       #grid > [style="grid-area: keyIcons"] {
         display: flex;
         gap: 1em;
+        justify-content: space-between;
       }
       #grid > [style="grid-area: title"] > div {
         align-items: flex-start;
@@ -191,7 +175,7 @@ export default class Key extends Intersection() {
         :host > section {
           border-color: ${hex};
         }
-        :host a-icon-states {
+        :host a-icon-states#key-icon {
           --color: ${hex};
           --color-hover: ${hex}70;
         }
@@ -221,6 +205,7 @@ export default class Key extends Intersection() {
    * @returns Promise<void>
    */
   renderHTML () {
+    // summary details style
     const style = /* html */`
       <style protected=true>
         :host > details > summary + div > div {
@@ -243,7 +228,7 @@ export default class Key extends Intersection() {
     this.html = /* html */`
       <section id=grid>
         <div style="grid-area: keyIcons">
-          <a-icon-states>
+          <a-icon-states id=key-icon>
             <template>
               <wct-icon-mdx state="default" title="Key" icon-url="../../../../../../img/icons/key-square.svg" size="2em" no-hover></wct-icon-mdx>
               <a-icon-combinations state="derived" keys title=keypair>
@@ -254,7 +239,12 @@ export default class Key extends Intersection() {
               </a-icon-combinations>
             </template>
           </a-icon-states>
-          <div id=share>share icon</div>
+          <a-icon-states id=trash-icon>
+            <template>
+              <wct-icon-mdx state="default" title="delete" delete icon-url="../../../../../../img/icons/trash.svg" size="2em"></wct-icon-mdx>
+              <wct-icon-mdx state="undo" title="undo" undo icon-url="../../../../../../img/icons/trash-off.svg" size="2em"></wct-icon-mdx>
+            </template>
+          </a-icon-states>
         </div>
         <div style="grid-area: title">
           <div><span class=name><span>Public name:</span><span class=font-size-tiny>(shared)</span></span>&nbsp;<chat-a-key-name public name="${escapeHTML(this.keyContainer.public.name)}" epoch='${this.keyContainer.key.epoch}'${this.keyContainer.private.origin.self ? '  is-editable' : ''}></chat-a-key-name></div>
@@ -469,10 +459,6 @@ export default class Key extends Intersection() {
     }, clear ? 0 : 350)
   }
 
-  get iconShare () {
-    return this.root.querySelector('#share')
-  }
-
   get privateNameEl () {
     return this.section.querySelector('chat-a-key-name[private]')
   }
@@ -495,6 +481,10 @@ export default class Key extends Intersection() {
 
   get decryptedEl () {
     return this.section.querySelector('#decrypted')
+  }
+
+  get trashIcon () {
+    return this.section.querySelector('#trash-icon')
   }
 
   get section () {
