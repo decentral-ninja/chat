@@ -14,8 +14,9 @@ export default class User extends Intersection() {
   constructor (user, allUsers, order, options = {}, ...args) {
     super({ importMetaUrl: import.meta.url, tabindex: 'no-tabindex', intersectionObserverInit: {}, ...options }, ...args)
 
-    if (this.template) {
-      ({ user: this.user, allUsers: this.allUsers, order: this.order } = JSON.parse(this.template.content.textContent, jsonParseMapUrlReviver))
+    if (this.templateUser && this.templateAllUsers) {
+      ({ user: this.user, order: this.order } = JSON.parse(this.templateUser.content.textContent, jsonParseMapUrlReviver));
+      ({ allUsers: this.allUsers } = JSON.parse(this.templateAllUsers.content.textContent, jsonParseMapUrlReviver))
     } else {
       /** @type {import('../../../../event-driven-web-components-yjs/src/es/controllers/Users.js').User} */
       this.user = user
@@ -517,8 +518,12 @@ export default class User extends Intersection() {
     return this.root.querySelector('#mutuallyConnectedUsers')
   }
 
-  get template () {
-    return this.root.querySelector('template')
+  get templateUser () {
+    return this.root.querySelector('template[user]')
+  }
+
+  get templateAllUsers () {
+    return this.root.querySelector('template[all-users]')
   }
 
   get customStyleOrder () {

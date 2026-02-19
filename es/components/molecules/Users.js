@@ -40,20 +40,27 @@ export default class Users extends Shadow() {
       }, self.Environment.awarenessEventListenerDelay || 1000)
     }
 
-    this.openDialog = async event => {
+    this.openDialog = event => {
       event.preventDefault()
       this.dialog.show('show-modal')
-      if (lastUsersEventGetData) {
-        clearTimeout(timeoutId)
-        await this.renderData(await lastUsersEventGetData(), lastSeparator)
-        this.iconStatesEl.removeAttribute('updating')
-        // the graph has to be refreshed when dialog opens
-        // @ts-ignore
-        const getArgs = this.isUserGraphTabActive
-          ? async () => [this.usersGraph, (await lastUsersEventGetData()).usersConnectedWithSelf, lastSeparator, this.getAttribute('active'), undefined, true]
-          : async () => [this.usersGraphHistory, (await lastUsersEventGetData()).allUsers, lastSeparator, this.getAttribute('active'), true, true]
-        Users.renderP2pGraph(...(await getArgs()))
-      }
+      return new Promise(resolve => {
+        if (lastUsersEventGetData) {
+          clearTimeout(timeoutId)
+          setTimeout(async () => {
+            await this.renderData(await lastUsersEventGetData(), lastSeparator)
+            this.iconStatesEl.removeAttribute('updating')
+            // the graph has to be refreshed when dialog opens
+            // @ts-ignore
+            const getArgs = this.isUserGraphTabActive
+              ? async () => [this.usersGraph, (await lastUsersEventGetData()).usersConnectedWithSelf, lastSeparator, this.getAttribute('active'), undefined, true]
+              : async () => [this.usersGraphHistory, (await lastUsersEventGetData()).allUsers, lastSeparator, this.getAttribute('active'), true, true]
+            Users.renderP2pGraph(...(await getArgs()))
+            resolve('done')
+          }, 0)
+        } else {
+          resolve('done')
+        }
+      })
     }
     
     this.userDialogShowEventEventListener = event => {
@@ -466,6 +473,7 @@ export default class Users extends Shadow() {
   }
 
   static async renderUserTableList (targetList, otherList, users, allUsers, newestMessage, areConnectedUsers, activeUid, anyUsersGraphIsIntersecting) {
+    const allUsersTemplate = /* html */`<template all-users>${JSON.stringify({ allUsers }, jsonStringifyMapUrlReplacer)}</template>`
     const tempDiv = document.createElement('div')
     tempDiv.innerHTML = await Array.from(users).reduce(async (acc, [key, user], i) => {
       const isUpToDate = areConnectedUsers || user.uid === newestMessage?.uid || JSON.parse(user.awarenessEpoch || user.epoch).epoch >= newestMessage?.timestamp
@@ -474,7 +482,8 @@ export default class Users extends Shadow() {
         <wct-load-template-tag uid='${user.uid}'${activeUid === user.uid ? ' class=active' : ''} no-css style="order: ${i};" copy-class-list>
           <template>
             <chat-m-user uid='${user.uid}'${user.isSelf ? ' self' : ''}${activeUid === user.uid ? ' class=active' : ''}${isUpToDate ? ' is-up-to-date' : ''} hex-color="${(await getHexColor(user.uid))}">
-              <template>${JSON.stringify({ user, allUsers, order: i }, jsonStringifyMapUrlReplacer)}</template>
+              <template user>${JSON.stringify({ user, order: i }, jsonStringifyMapUrlReplacer)}</template>
+              ${allUsersTemplate}
             </chat-m-user>
           </template>
         </wct-load-template-tag>
