@@ -85,7 +85,7 @@ export default class KeyName extends Shadow() {
    * @return {boolean}
    */
   shouldRenderCSS () {
-    return !this.root.querySelector(`:host > style[_css], ${this.linkTagName} > style[_css]`)
+    return !this.root.querySelector(`${this.cssSelector} > style[_css]`)
   }
 
   /**
