@@ -37,7 +37,7 @@ export default class EmojiButton extends Shadow() {
    * @return {boolean}
    */
   shouldRenderCSS () {
-    return !this.root.querySelector(`:host > style[_css], ${this.tagName} > style[_css]`)
+    return !this.root.querySelector(`${this.cssSelector} > style[_css]`)
   }
 
   /**
@@ -56,10 +56,6 @@ export default class EmojiButton extends Shadow() {
    */
   renderCSS () {
     this.css = /* css */`
-      :host {
-        display: inline-block;
-        position: relative;
-      }
       :host > div {
         position: relative;
       }
@@ -68,8 +64,7 @@ export default class EmojiButton extends Shadow() {
         border: none;
         cursor: pointer;
         font-size: 1.5em;
-        margin-top: 0.5em;
-        position: absolute;
+        padding: 0;
       }
     `
   }

@@ -204,7 +204,7 @@ export default class Input extends Shadow() {
    * @return {boolean}
    */
   shouldRenderCSS () {
-    return !this.root.querySelector(`:host > style[_css], ${this.tagName} > style[_css]`)
+    return !this.root.querySelector(`${this.cssSelector} > style[_css]`)
   }
 
   /**
@@ -236,9 +236,19 @@ export default class Input extends Shadow() {
         --color-hover: var(--color-yellow);
         display: flex;
         width: 100%;
+        position: relative;
       }
-      :host > div > emoji-button {
+      :host > div > #inline-buttons {
+        --padding: 0.25em;
+        position: absolute;
+        left: 0;
+        bottom: 0;
         z-index: 101;
+        display: flex;
+        flex-direction: column;
+        align-items: left;
+        gap: 0.25em;
+        padding: var(--padding);
       }
       :host > div > * {
         flex-grow: 0; 
@@ -249,8 +259,8 @@ export default class Input extends Shadow() {
         transition: height 0.3s ease-out;
         resize: none;
         padding-left: 2.5em;
-        min-height: auto;
-        max-height: 15dvh;
+        min-height: 4.365em;
+        max-height: 50dvh;
         overflow-y: auto;
         outline: none;
         border-radius: 0;
@@ -278,20 +288,20 @@ export default class Input extends Shadow() {
         display: flex;
       }
       :host > div > textarea ~ wct-icon-mdx {
-        transition: all 0.3s ease-out;
+        transition: var(--transition);
       }
       :host(:focus) > div > textarea:hover ~ wct-icon-mdx,
       :host(:focus) > div > textarea:has(~ wct-button:hover) ~ wct-icon-mdx,
       :host(:focus) > div > textarea:has(~ wct-button:focus) ~ wct-icon-mdx,
-      :host(:focus) > div > emoji-button:hover ~ textarea ~ wct-icon-mdx {
+      :host(:focus) > div > #inline-buttons:hover ~ textarea ~ wct-icon-mdx {
         width: 0;
         padding: 0;
         opacity: 0;
-        transition: all 0.3s ease-out;
+        transition: var(--transition);
       }
       :host(:focus) > div > textarea:hover ~ wct-button,
       :host(:focus) > div > textarea ~ wct-button:hover,
-      :host(:focus) > div > emoji-button:hover ~ textarea ~ wct-button {
+      :host(:focus) > div > #inline-buttons:hover ~ textarea ~ wct-button {
         padding: 0;
       }
       :host > section {
@@ -336,6 +346,11 @@ export default class Input extends Shadow() {
       ::-webkit-scrollbar-thumb:hover {
         background: #555; 
       }
+      @media only screen and (max-width: 350px) {
+        :host > div > textarea {
+          min-height: 3.8em;
+        }
+      }
     `
     return this.fetchTemplate()
   }
@@ -367,7 +382,10 @@ export default class Input extends Shadow() {
     this.html = /* html */`
       <section id="reply-to"></section>
       <div>
-        <emoji-button></emoji-button>
+        <div id="inline-buttons">
+          <emoji-button></emoji-button>
+          <chat-a-key-status></chat-a-key-status>
+        </div>
         <textarea enterkeyhint="enter" placeholder="type your message..." rows="2"></textarea>
         <wct-button id=send title=send namespace="button-primary-" click-no-toggle-active>
           <wct-icon-mdx title=send icon-url="../../../../../../img/icons/send-2.svg" size="1.5em" no-hover></wct-icon-mdx>
@@ -391,6 +409,11 @@ export default class Input extends Shadow() {
         // @ts-ignore
         path: `${this.importMetaUrl}../../../../web-components-toolbox/src/es/components/atoms/iconMdx/IconMdx.js?${Environment?.version || ''}`,
         name: 'wct-icon-mdx'
+      },
+      {
+        // @ts-ignore
+        path: `${this.importMetaUrl}./keyStatus/KeyStatus.js?${Environment?.version || ''}`,
+        name: 'chat-a-key-status'
       }
     ])
   }

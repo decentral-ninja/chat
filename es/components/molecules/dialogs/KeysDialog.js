@@ -172,7 +172,7 @@ export default class KeysDialog extends Dialog {
         <section controls>
           <a-icon-states id=add-key loading-size=2>
             <template>
-              <a-icon-combinations state="default" add-key title=keypair>
+              <a-icon-combinations state="default" namespace=icon-combinations-add-key- title="Add new key">
                 <template>
                   <wct-icon-mdx title="Generate key"  icon-url="../../../../../../img/icons/key-square.svg" size="3em" no-hover></wct-icon-mdx>
                   <wct-icon-mdx title="Generate key"  icon-url="../../../../../../img/icons/plus.svg" size="1.5em" no-hover></wct-icon-mdx>

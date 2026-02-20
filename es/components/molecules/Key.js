@@ -231,7 +231,7 @@ export default class Key extends Intersection() {
           <a-icon-states id=key-icon>
             <template>
               <wct-icon-mdx state="default" title="Key" icon-url="../../../../../../img/icons/key-square.svg" size="2em" no-hover></wct-icon-mdx>
-              <a-icon-combinations state="derived" keys title=keypair>
+              <a-icon-combinations state="derived" namespace=icon-combinations-double-keys- title=keypair>
                 <template>
                   <wct-icon-mdx title="Private key" icon-url="../../../../../../img/icons/key-filled.svg" size="2em" no-hover></wct-icon-mdx>
                   <wct-icon-mdx title="Public key" icon-url="../../../../../../img/icons/key-filled.svg" size="2em" no-hover></wct-icon-mdx>

@@ -146,7 +146,7 @@ export default class EmojiPicker extends Shadow() {
     :host {
       font-size: max(12px, 0.5em);
       position: absolute;
-      bottom: 0;
+      bottom: 2.7em;
       width: 100%;
       height: 58vh;
       width: 40dvw;
@@ -203,7 +203,7 @@ export default class EmojiPicker extends Shadow() {
     @media only screen and (max-width: _max-width_) {
       :host{
         width: 75dvw;
-        bottom: 0;
+        bottom: 2.4em;
       }
     }
     
