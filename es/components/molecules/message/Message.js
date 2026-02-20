@@ -65,6 +65,8 @@ export default class Message extends WebWorker(Intersection()) {
       }
     }
 
+    this.dblclickEventListener = event => this.clickEventListener(event)
+
     this.clickReplyToEventListener = async event => this.dispatchEvent(new CustomEvent('chat-scroll', {
       detail: {
         scrollEl: (await this.textObj).replyTo?.timestamp
@@ -133,7 +135,7 @@ export default class Message extends WebWorker(Intersection()) {
   async addEventListeners () {
     if (this.openDialogIcon) {
       this.openDialogIcon.addEventListener('click', this.clickEventListener)
-      this.addEventListener('dblclick', this.clickEventListener)
+      if (this.li) this.li.addEventListener('dblclick', this.dblclickEventListener)
     }
     if (this.replyToLi) this.replyToLi.addEventListener('click', this.clickReplyToEventListener)
     this.globalEventTarget.addEventListener(`chat-remove-${(await this.textObj).timestamp || ''}`, this.chatRemoveEventListener)
@@ -147,7 +149,7 @@ export default class Message extends WebWorker(Intersection()) {
   async removeEventListeners () {
     if (this.openDialogIcon) {
       this.openDialogIcon.removeEventListener('click', this.clickEventListener)
-      this.removeEventListener('dblclick', this.clickEventListener)
+      if (this.li) this.li.removeEventListener('dblclick', this.dblclickEventListener)
     }
     if (this.replyToLi) this.replyToLi.removeEventListener('click', this.clickReplyToEventListener)
     this.globalEventTarget.removeEventListener(`chat-remove-${(await this.textObj).timestamp || ''}`, this.chatRemoveEventListener)
