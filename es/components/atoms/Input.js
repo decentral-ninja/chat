@@ -384,7 +384,7 @@ export default class Input extends Shadow() {
       <div>
         <div id="inline-buttons">
           <emoji-button></emoji-button>
-          <chat-a-key-status></chat-a-key-status>
+          <chat-a-key-status hidden></chat-a-key-status>
         </div>
         <textarea enterkeyhint="enter" placeholder="type your message..." rows="2"></textarea>
         <wct-button id=send title=send namespace="button-primary-" click-no-toggle-active>
