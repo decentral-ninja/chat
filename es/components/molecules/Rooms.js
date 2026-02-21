@@ -139,7 +139,7 @@ export default class Rooms extends Shadow() {
       event.stopPropagation()
       if (event?.detail?.type === 'key') {
         // filter rooms
-        Rooms.filterFunction(event.detail.value, Array.from(this.ul.children))
+        Rooms.filterFunction(event.detail.value, Array.from(this.ul.children).reverse())
       } else {
         // go to room
         this.dialog?.close()
@@ -465,7 +465,7 @@ export default class Rooms extends Shadow() {
         padding-top: 0.5em;
         padding-bottom: 0.5em;
       }
-      :host ul > li.hidden {
+      :host ul > li.hidden, :host ul > wct-load-template-tag.hidden {
         display: none;
       }
       :host ul > li > div {
@@ -609,7 +609,7 @@ export default class Rooms extends Shadow() {
   static filterFunction (filter, nodes) {
     filter = filter.toUpperCase()
     // @ts-ignore
-    nodes.forEach(node => node.classList[!filter || (node.template?.content.textContent || node.innerText || node.textContent).toUpperCase().includes(filter) ? 'remove' : 'add']('hidden'))
+    nodes.forEach(node => node.classList[!filter || (node.template?.content.querySelector('template')?.content.textContent || node.template?.content.textContent || node.innerText || node.textContent).toUpperCase().includes(filter) ? 'remove' : 'add']('hidden'))
   }
 
   /**

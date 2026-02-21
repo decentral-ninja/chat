@@ -274,7 +274,7 @@ export default class Input extends Shadow() {
       :host > div > wct-button, :host > div > wct-icon-mdx {
         cursor: pointer;
         word-break: break-all;
-        padding-right: 1em;
+        padding-right: 0.5em;
         
       }
       :host > div > wct-button:last-child, :host > div > wct-icon-mdx:last-child {
