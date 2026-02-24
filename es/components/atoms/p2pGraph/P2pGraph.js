@@ -81,7 +81,8 @@ export default class P2pGraph extends Intersection() {
         overflow: visible;
       }
       :host > div > svg text {
-        color: var(--color);
+        filter: var(--svg-text-filter, none);
+        color: var(--svg-text-color, var(--color));
         font-size: var(--font-size);
         font-family: var(--h-font-family, var(--font-family));
         user-select: none;

@@ -205,7 +205,8 @@ export default class Message extends WebWorker(Intersection()) {
       :host li {
         display: flex;
         flex-direction: column;
-        background-color: var(--color-gray);
+        background-color: var(--message-li-background-color, var(--color-gray));
+        color: var(--message-li-color, var(--color));
         box-shadow: ${this.getAttribute('box-shadow') || 'none'};
         border-radius: var(--border-radius);
         float: left;
@@ -221,7 +222,8 @@ export default class Message extends WebWorker(Intersection()) {
         text-decoration: line-through;
       }
       :host([self]) li {
-        background-color: var(--color-green);
+        background-color: var(--message-li-self-background-color, var(--message-li-background-color, var(--color-green)));
+        color: var(--message-li-self-color, var(--message-li-color, var(--color)));
         float: right;
       }
       :host li > div {

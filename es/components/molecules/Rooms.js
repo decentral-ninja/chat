@@ -461,7 +461,7 @@ export default class Rooms extends Shadow() {
         padding-bottom: 0.5em;
       }
       :host ul > li {
-        border-bottom: 1px solid var(--background-color-rgba-50);
+        border-bottom: var(--rooms-border-bottom, 1px solid var(--background-color-rgba-50));
         padding-top: 0.5em;
         padding-bottom: 0.5em;
       }

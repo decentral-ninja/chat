@@ -110,6 +110,7 @@ export default class Key extends Intersection() {
       }
       :host > section {
         border: var(--wct-input-border, 1px solid var(--color-black));
+        background-color: var(--card-background-color, transparent);
         border-radius: var(--border-radius);
         box-shadow: var(--box-shadow-length-one) var(--box-shadow-color), var(--box-shadow-length-two) var(--box-shadow-color);
       }

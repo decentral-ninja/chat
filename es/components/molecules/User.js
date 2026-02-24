@@ -105,6 +105,7 @@ export default class User extends Intersection() {
         --box-shadow-color: ${this.getAttribute('hex-color') || 'var(--color-user)'};
         --box-shadow-default: var(--box-shadow-length-one) var(--box-shadow-color), var(--box-shadow-length-two) var(--box-shadow-color);
         border-color: ${this.getAttribute('hex-color')};
+        background-color: var(--card-background-color, transparent);
         border-radius: var(--border-radius);
         border: 1px solid var(--color-user);
         box-shadow: var(--box-shadow-default);
@@ -130,13 +131,13 @@ export default class User extends Intersection() {
         margin: 0;
       }
       :host(:where([self], .active)) > li > * {
-        --color: var(--background-color);
-        --a-color: var(--background-color);
-        --h2-color: var(--background-color);
-        --h3-color: var(--background-color);
-        --h4-color: var(--background-color);
+        --color: var(--card-color, var(--background-color));
+        --a-color: var(--card-a-color, var(--card-color, var(--background-color)));
+        --h2-color: var(--card-h-color, var(--card-color, var(--background-color)));
+        --h3-color: var(--card-h-color, var(--card-color, var(--background-color)));
+        --h4-color: var(--card-h-color, var(--card-color, var(--background-color)));
         --box-shadow-default: var(--box-shadow-length-one) var(--box-shadow-color), var(--box-shadow-length-two) var(--box-shadow-color);
-        color: var(--background-color);
+        color: var(--card-color, var(--background-color));
         border-radius: var(--border-radius);
       }
       :host([self]) > li > * {

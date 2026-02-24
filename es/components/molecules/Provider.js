@@ -312,6 +312,7 @@ export default class Provider extends Intersection() {
         100%{background-position:10% 0%}
       }
       :host > section {
+        background-color: var(--card-background-color, transparent);
         border: var(--wct-input-border, 1px solid var(--color-black));
         border-radius: var(--border-radius);
         box-shadow: var(--box-shadow-length-one) var(--box-shadow-color), var(--box-shadow-length-two) var(--box-shadow-color);
@@ -353,28 +354,31 @@ export default class Provider extends Intersection() {
         display: none;
       }
       :host > section > div#url > input#port {
-        width: 7em;
+        width: 9em;
       }
       :host > section > div:where(#url, #keep-alive) {
         display: flex;
         flex-wrap: wrap;
         align-items: center;
         justify-content: center;
-        background-color: var(--color-gray-lighter);
+        background-color: var(--input-area-background-color, var(--color-gray-lighter));
         padding: 0.5em;
-        border: 1px solid var(--color-black);
+        border: var(--input-area-border, 1px solid var(--color-black));
         border-radius: var(--border-radius);
+      }
+      :host > section > div:where(#url, #keep-alive) > :where(select, input) {
+        height: 2em;
+        font-size: 1em;
+        background-color: var(--input-area-select-background-color, transparent);
+        --outline-color: transparent;
+        border: 0;
+        cursor: pointer;
+        color: var(--color);
+        padding: 0 2em 0 1em;
       }
       :host > section > div#keep-alive {
         gap: 1em;
         justify-content: space-between;
-      }
-      :host > section > div#url > select {
-        --outline-color: transparent;
-        border: 0;
-        height: 2em;
-        font-size: 1em;
-        cursor: pointer;
       }
       :host > section > div#keep-alive, :host > section > div#url > :where(#keep-alive-name, #keep-alive-counter) {
         display: none;
