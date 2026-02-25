@@ -15,7 +15,9 @@ export default class KeyName extends Shadow() {
 
     this.clickEventListener = event => this.dispatchEvent(new CustomEvent('keys-dialog-show-event', {
       detail: {
-        command: 'show-modal'
+        command: 'show-modal',
+        checkbox: true,
+        epoch: this.getAttribute('epoch')
       },
       bubbles: true,
       cancelable: true,

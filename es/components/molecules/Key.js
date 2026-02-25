@@ -34,6 +34,22 @@ export default class Key extends Intersection() {
       }
     }
 
+    this.inputEventListener = event => {
+      if (this.checkbox.checked) {
+        this.setAttribute('checked', '')
+      } else {
+        this.removeAttribute('checked')
+      }
+      this.dispatchEvent(new CustomEvent('key-checked', {
+        detail: {
+          checked: this.checkbox.checked
+        },
+        bubbles: true,
+        cancelable: true,
+        composed: true
+      }))
+    }
+
     // this updates the min-height on resize, see updateHeight function for more info
     let resizeTimeout = null
     this.resizeEventListener = event => {
@@ -54,12 +70,14 @@ export default class Key extends Intersection() {
       this.hidden = false
     })
     this.trashIcon.addEventListener('click', this.trashIconClickEventListener)
+    this.checkbox.addEventListener('input', this.inputEventListener)
     self.addEventListener('resize', this.resizeEventListener)
   }
 
   disconnectedCallback () {
     super.disconnectedCallback()
     this.trashIcon.removeEventListener('click', this.trashIconClickEventListener)
+    this.checkbox.removeEventListener('input', this.inputEventListener)
     self.removeEventListener('resize', this.resizeEventListener)
   }
 
@@ -113,6 +131,7 @@ export default class Key extends Intersection() {
         background-color: var(--card-background-color, transparent);
         border-radius: var(--border-radius);
         box-shadow: var(--box-shadow-length-one) var(--box-shadow-color), var(--box-shadow-length-two) var(--box-shadow-color);
+        transition: var(--transition);
       }
       :host > section > * {
         min-width: 0;
@@ -123,6 +142,10 @@ export default class Key extends Intersection() {
       :host a-icon-states#trash-icon {
         --color: var(--color-error);
         --color-hover: var(--color-yellow);
+      }
+      :host > section:has(input:checked), :host(.active) > section {
+        border-width: 0.5em;
+        box-shadow: inset var(--box-shadow-length-one) var(--box-shadow-color), inset var(--box-shadow-length-two) var(--box-shadow-color);;
       }
       /* https://weedshaker.github.io/cssGridLayout/ */
       #grid {
@@ -140,7 +163,26 @@ export default class Key extends Intersection() {
       #grid > [style="grid-area: keyIcons"] {
         display: flex;
         gap: 1em;
-        justify-content: space-between;
+        justify-content: end;
+        align-items: center;
+      }
+      #grid > [style="grid-area: keyIcons"] > label {
+        flex-grow: 1;
+        cursor: pointer;
+      }
+      #grid > [style="grid-area: keyIcons"] > input {
+        height: 2em;
+        width: 2em;
+        cursor: pointer;
+      }
+      :host([deleted]) #grid > [style="grid-area: keyIcons"] > input,
+      :host(.no-checkbox:not([checked])) #grid > [style="grid-area: keyIcons"] > input,
+      #grid > [style="grid-area: keyIcons"] > input:checked + #trash-icon {
+        display: none;
+      }
+      :host([deleted]) #grid > [style="grid-area: keyIcons"] > label,
+      :host(.no-checkbox:not([checked])) #grid > [style="grid-area: keyIcons"] > label {
+        pointer-events: none;
       }
       #grid > [style="grid-area: title"] > div {
         align-items: flex-start;
@@ -229,17 +271,20 @@ export default class Key extends Intersection() {
     this.html = /* html */`
       <section id=grid>
         <div style="grid-area: keyIcons">
-          <a-icon-states id=key-icon>
-            <template>
-              <wct-icon-mdx state="default" title="Key" icon-url="../../../../../../img/icons/key-square.svg" size="2em" no-hover></wct-icon-mdx>
-              <a-icon-combinations state="derived" namespace=icon-combinations-double-keys- title=keypair>
-                <template>
-                  <wct-icon-mdx title="Private key" icon-url="../../../../../../img/icons/key-filled.svg" size="2em" no-hover></wct-icon-mdx>
-                  <wct-icon-mdx title="Public key" icon-url="../../../../../../img/icons/key-filled.svg" size="2em" no-hover></wct-icon-mdx>
-                </template>
-              </a-icon-combinations>
-            </template>
-          </a-icon-states>
+          <label for="checkbox" title="select this key">
+            <a-icon-states id=key-icon>
+              <template>
+                <wct-icon-mdx state="default" title="Key" icon-url="../../../../../../img/icons/key-square.svg" size="2em" no-hover></wct-icon-mdx>
+                <a-icon-combinations state="derived" namespace=icon-combinations-double-keys- title=keypair>
+                  <template>
+                    <wct-icon-mdx title="Private key" icon-url="../../../../../../img/icons/key-filled.svg" size="2em" no-hover></wct-icon-mdx>
+                    <wct-icon-mdx title="Public key" icon-url="../../../../../../img/icons/key-filled.svg" size="2em" no-hover></wct-icon-mdx>
+                  </template>
+                </a-icon-combinations>
+              </template>
+            </a-icon-states>
+          </label>
+          <input type="checkbox" id="checkbox" name="checkbox" title="select this key">
           <a-icon-states id=trash-icon>
             <template>
               <wct-icon-mdx state="default" title="delete" delete icon-url="../../../../../../img/icons/trash.svg" size="2em"></wct-icon-mdx>
@@ -482,6 +527,10 @@ export default class Key extends Intersection() {
 
   get decryptedEl () {
     return this.section.querySelector('#decrypted')
+  }
+
+  get checkbox () {
+    return this.section.querySelector('#checkbox')
   }
 
   get trashIcon () {
