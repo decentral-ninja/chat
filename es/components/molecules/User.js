@@ -238,6 +238,9 @@ export default class User extends Intersection() {
         --color: var(--background-color);
         --color-hover: var(--color);
       }
+      :host(.active) > li > * {
+        --a-color: var(--background-color);
+      }
       :host(.active) > li > div > h2 > span.user-icon > .tiny{
         color: var(--background-color);
       }

@@ -346,7 +346,7 @@ export default class Input extends Shadow() {
       ::-webkit-scrollbar-thumb:hover {
         background: #555; 
       }
-      @media only screen and (max-width: 350px) {
+      @media only screen and (max-width: _max-width_) {
         :host > div > textarea {
           min-height: 3.8em;
         }

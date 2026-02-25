@@ -153,6 +153,7 @@ export default class ProviderName extends Shadow() {
         justify-content: center;
         align-items: center;
         border-radius: 50%;
+        box-shadow: 0px 0px 0.25em var(--color-white);
         margin-right: 0.25em;
         transform: translateY(0.1em);
         flex-shrink: 0;

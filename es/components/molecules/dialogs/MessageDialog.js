@@ -120,7 +120,7 @@ export default class MessageDialog extends Dialog {
       }
       :host > dialog #controls > * {
         display: contents;
-        --color: var(--color-secondary);
+        --color: var(--controls-color, var(--color-secondary));
         --color-hover: var(--color-yellow);
       }
       :host > dialog #controls > #delete {

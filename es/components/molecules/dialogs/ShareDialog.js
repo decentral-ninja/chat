@@ -140,7 +140,7 @@ export default class ShareDialog extends Dialog {
         margin-top: -0.5em;
       }
       :host > dialog #controls > * {
-        --color: var(--color-secondary);
+        --color: var(--controls-color, var(--color-secondary));
         --color-hover: var(--color-yellow);
       }
       @media only screen and (max-width: _max-width_) {
