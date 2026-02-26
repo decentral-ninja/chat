@@ -203,7 +203,7 @@ export default class Chat extends Shadow() {
         composed: true
       }))).then(room => {
         if (room?.scrollEl && this.ulGetScrollElFunc(room.scrollEl)()) {
-          scrollElIntoView(this.ulGetScrollElFunc(room.scrollEl), ':not([intersecting])', undefined, {behavior: 'instant'})
+          self.requestAnimationFrame(timeStamp => scrollElIntoView(this.ulGetScrollElFunc(room.scrollEl), ':not([intersecting])', undefined, {behavior: 'instant'}))
         } else if (room?.scrollTop) {
           // backwards compatible behavior and if no scrollTop scrolls to bottom
           this.dispatchEvent(new CustomEvent('main-scroll', {
