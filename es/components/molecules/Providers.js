@@ -671,11 +671,15 @@ export default class Providers extends Shadow() {
     const stringifiedData = JSON.stringify(Array.isArray(data) ? data : Array.from(data))
     const isSame = graph.children[0]?.template.content.textContent === stringifiedData
     if (force || !isSame) {
-      graph.setAttribute('style', `min-height: ${graph.clientHeight}px;`)
+      graph.setAttribute('style', `height: ${graph.offsetHeight}px;`)
       graph.innerHTML = /* html */`
-        <chat-a-p2p-graph separator="${separator || ''}" providers>
-          <template>${stringifiedData}</template>
-        </chat-a-p2p-graph>
+        <wct-load-template-tag>
+          <template>
+            <chat-a-p2p-graph separator="${separator || ''}" providers>
+              <template>${stringifiedData}</template>
+            </chat-a-p2p-graph>
+          </template>
+        </wct-load-template-tag>
       `
       graph.addEventListener('p2p-graph-load', event => self.requestAnimationFrame(timeStamp => graph.removeAttribute('style')), { once: true })
     }

@@ -497,7 +497,7 @@ export default class Key extends Intersection() {
       if (!clear) self.requestAnimationFrame(timeStamp => {
         this.customStyleHeight.textContent = /* css */`
           :host {
-            min-height: ${this.clientHeight}px;
+            min-height: ${this.offsetHeight}px;
           }
         `
         this.setAttribute('has-height', '')

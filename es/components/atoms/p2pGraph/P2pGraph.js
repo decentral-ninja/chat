@@ -248,7 +248,7 @@ export default class P2pGraph extends Intersection() {
     if (!clear) self.requestAnimationFrame(timeStamp => {
       this.customStyleHeight.textContent = /* css */`
         :host {
-          min-height: ${height || this.clientHeight}px;
+          min-height: ${height || this.offsetHeight}px;
         }
       `
       this.setAttribute('has-height', '')

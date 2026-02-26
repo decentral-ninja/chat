@@ -49,12 +49,6 @@ export default class Users extends Shadow() {
           setTimeout(async () => {
             await this.renderData(await lastUsersEventGetData(), lastSeparator)
             this.iconStatesEl.removeAttribute('updating')
-            // the graph has to be refreshed when dialog opens
-            // @ts-ignore
-            const getArgs = this.isUserGraphTabActive
-              ? async () => [this.usersGraph, (await lastUsersEventGetData()).usersConnectedWithSelf, lastSeparator, this.getAttribute('active'), undefined, true]
-              : async () => [this.usersGraphHistory, (await lastUsersEventGetData()).allUsers, lastSeparator, this.getAttribute('active'), true, true]
-            Users.renderP2pGraph(...(await getArgs()))
             resolve('done')
           }, 0)
         } else {
@@ -87,7 +81,7 @@ export default class Users extends Shadow() {
         this.usersGraph.scrollIntoView({ behavior: 'smooth' })
         this.usersGraphHistory.scrollIntoView({ behavior: 'smooth' })
       // tab click
-      } else if (event.composedPath().some(node => typeof (activeNode = node).hasAttribute === 'function' && node.hasAttribute('data-tab')) && lastUsersEventGetData) {
+      } else if (this.isDialogOpen() && event.composedPath().some(node => typeof (activeNode = node).hasAttribute === 'function' && node.hasAttribute('data-tab')) && lastUsersEventGetData) {
         // @ts-ignore
         const getArgs = activeNode.matches('#usersGraph') || this.isUserGraphTabActive
           ? async () => [this.usersGraph, (await lastUsersEventGetData()).usersConnectedWithSelf, lastSeparator, this.getAttribute('active'), undefined, true]
@@ -462,11 +456,15 @@ export default class Users extends Shadow() {
     const stringifiedData = JSON.stringify(Array.isArray(data) ? data : Array.from(data))
     const isSame = graph.children[0]?.template.content.textContent === stringifiedData
     if (force || !isSame) {
-      graph.setAttribute('style', `min-height: ${graph.clientHeight}px;`)
+      graph.setAttribute('style', `height: ${graph.offsetHeight}px;`)
       graph.innerHTML = /* html */`
-        <chat-a-p2p-graph separator="${separator || ''}"${activeUid ? ` active='${activeUid}'` : ''}${showAllConnectedUsers ? ' connected-users' : ''}>
-          <template>${stringifiedData}</template>
-        </chat-a-p2p-graph>
+        <wct-load-template-tag>
+          <template>
+            <chat-a-p2p-graph separator="${separator || ''}"${activeUid ? ` active='${activeUid}'` : ''}${showAllConnectedUsers ? ' connected-users' : ''}>
+              <template>${stringifiedData}</template>
+            </chat-a-p2p-graph>
+          </template>
+        </wct-load-template-tag>
       `
       graph.addEventListener('p2p-graph-load', event => self.requestAnimationFrame(timeStamp => graph.removeAttribute('style')), { once: true })
     }
