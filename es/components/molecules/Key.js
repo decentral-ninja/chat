@@ -34,13 +34,13 @@ export default class Key extends Intersection() {
       }
     }
 
-    this.inputEventListener = event => {
+    this.inputEventListener = (event, dispatch = true) => {
       if (this.checkbox.checked) {
         this.setAttribute('checked', '')
       } else {
         this.removeAttribute('checked')
       }
-      this.dispatchEvent(new CustomEvent('key-checked', {
+      if (dispatch) this.dispatchEvent(new CustomEvent('key-checked', {
         detail: {
           checked: this.checkbox.checked
         },
@@ -136,7 +136,7 @@ export default class Key extends Intersection() {
       :host > section > * {
         min-width: 0;
       }
-      :host .hidden {
+      :host .hidden, :host(.active) a-icon-states#trash-icon {
         display: none;
       }
       :host a-icon-states#trash-icon {

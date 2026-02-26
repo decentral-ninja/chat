@@ -126,6 +126,9 @@ export default class KeyName extends Shadow() {
         tap-highlight-color: transparent;
         --webkit-tap-highlight-color: transparent;
       }
+      :host > ${this.linkTagName}:hover {
+        --h4-color: var(--color-hover);
+      }
       :host > ${this.linkTagName} > ${this.hTagName} {
         white-space: nowrap;
         overflow: hidden;
@@ -151,6 +154,9 @@ export default class KeyName extends Shadow() {
         margin-right: 0.25em;
         transform: translateY(0.1em);
         flex-shrink: 0;
+      }
+      :host([no-avatar]) .avatar {
+        display: none;
       }
     `
     return this.fetchTemplate()

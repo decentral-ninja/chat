@@ -22,16 +22,18 @@ export default class KeysDialog extends Dialog {
         bubbles: true,
         cancelable: true,
         composed: true
-      }))).then(async keyContainers => {
+      }))).then(keyContainers => {
         this.renderData(keyContainers)
         // use the event details from the previously triggered this.showEventListener which calls this.show
+        let epoch
         if (this.showEventDetail) {
           if (this.showEventDetail.checkbox) {
             this.setAttribute('checkbox', '')
           } else {
             this.removeAttribute('checkbox')
           }
-          if (this.showEventDetail.epoch) await this.setActive('epoch', this.showEventDetail.epoch, [this.keysDiv], undefined, undefined, this.showEventDetail.checkbox)
+          epoch = this.showEventDetail.epoch
+          this.messageUid = this.showEventDetail.messageUid
           this.showEventDetail = null
         }
         if (this.hasAttribute('checkbox')) {
@@ -39,6 +41,7 @@ export default class KeysDialog extends Dialog {
         } else {
           KeysDialog.setKeysClassList(this.keyEls, 'add', 'no-checkbox', true)
         }
+        this.setActive('epoch', epoch, [this.keysDiv], undefined, undefined, this.hasAttribute('checkbox'))
         if (this.hasChecked) {
           this.setAttribute('has-checked', '')
         } else {
@@ -67,6 +70,7 @@ export default class KeysDialog extends Dialog {
         composed: true
       }))).then(result => this.deletedKeyEls.forEach(el => el.remove()))
       this.dialogWasClosed = true
+      this.removeAttribute('touched')
       return superClose()
     }
 
@@ -80,19 +84,32 @@ export default class KeysDialog extends Dialog {
     }
 
     this.clickCancelElEventListener = event => {
+      this.close()
       this.keyEls.forEach(key => {
         if (key.checkbox) {
           // @ts-ignore
           key.checkbox.checked = false
           // @ts-ignore
-          key.inputEventListener()
+          key.inputEventListener(undefined, false)
         }
       })
     }
 
-    this.clickSubmitElEventListener = event => {
-      // TODO: return selected key
-      console.log('*********', 'dispatch event')
+    this.clickEncryptElEventListener = event => {
+      this.close()
+      const epoch = this.hasAttribute('has-checked') ? this.keyEls.find((keyEl => keyEl.hasAttribute('checked')))?.getAttribute('epoch') : ''
+      if (this.messageUid) {
+        console.log('****TODO:*****', 'dispatch message change encryption with this.messageUid + epoch at Chat.js')
+      } else {
+        this.dispatchEvent(new CustomEvent('yjs-set-active-room-default-key', {
+          detail: {
+            epoch
+          },
+          bubbles: true,
+          cancelable: true,
+          composed: true
+        }))
+      }
     }
 
     this.keyCheckedEventListener = event => {
@@ -104,6 +121,7 @@ export default class KeysDialog extends Dialog {
         this.removeAttribute('has-checked')
         KeysDialog.setKeysClassList(this.keyEls, 'remove', 'no-checkbox')
       }
+      this.setAttribute('touched', '')
     }
 
     this.keysEventListener = event => {
@@ -115,10 +133,11 @@ export default class KeysDialog extends Dialog {
   connectedCallback () {
     if (this.shouldRenderCustomHTML()) this.renderCustomHTML()
     const result = super.connectedCallback()
-  this.addEventListener('key-checked', this.keyCheckedEventListener)
+    this.addEventListener('key-checked', this.keyCheckedEventListener)
     this.addKeyEl.addEventListener('click', this.clickAddKeyElEventListener)
     this.cancelEl.addEventListener('click', this.clickCancelElEventListener)
-    this.submitEl.addEventListener('click', this.clickSubmitElEventListener)
+    this.encryptEl.addEventListener('click', this.clickEncryptElEventListener)
+    this.removeEncryptionEl.addEventListener('click', this.clickEncryptElEventListener)
     this.globalEventTarget.addEventListener('yjs-keys', this.keysEventListener)
     this.globalEventTarget.addEventListener('yjs-new-key', this.keysEventListener)
     this.globalEventTarget.addEventListener('yjs-encrypted', this.keysEventListener)
@@ -133,7 +152,8 @@ export default class KeysDialog extends Dialog {
     this.removeEventListener('key-checked', this.keyCheckedEventListener)
     this.addKeyEl.removeEventListener('click', this.clickAddKeyElEventListener)
     this.cancelEl.removeEventListener('click', this.clickCancelElEventListener)
-    this.submitEl.removeEventListener('click', this.clickSubmitElEventListener)
+    this.encryptEl.removeEventListener('click', this.clickEncryptElEventListener)
+    this.removeEncryptionEl.removeEventListener('click', this.clickEncryptElEventListener)
     this.globalEventTarget.removeEventListener('yjs-keys', this.keysEventListener)
     this.globalEventTarget.removeEventListener('yjs-new-key', this.keysEventListener)
     this.globalEventTarget.removeEventListener('yjs-encrypted', this.keysEventListener)
@@ -208,9 +228,19 @@ export default class KeysDialog extends Dialog {
         gap: 1em;
         justify-content: flex-end;
       }
-      :host([has-checked]) > dialog > section[buttons] {
+      :host > dialog > section[buttons] > #remove-encryption {
+        --button-primary-background-color-custom: var(--color-secondary);
+        --button-primary-border-color: var(--color-secondary);
+      }
+      :host([checkbox]) > dialog > section[buttons] {
         display: flex;
         opacity: 1;
+      }
+      :host(:not([has-checked])) > dialog > section[buttons] > #encrypt, :host([has-checked]) > dialog > section[buttons] > #remove-encryption, :host(:not([touched])) > dialog > section[buttons] > #remove-encryption {
+        display: none;
+      }
+      :host > dialog > section[buttons] > wct-button::part(button) {
+        gap: 0.25em;
       }
       @media only screen and (max-width: 1200px) {
         :host > dialog > #keys > chat-m-key, :host > dialog > #keys > wct-load-template-tag {
@@ -260,8 +290,9 @@ export default class KeysDialog extends Dialog {
         </section>
         <div id=keys></div>
         <section buttons>
-          <wct-button id=cancel namespace="button-secondary-" request-event-name="cancel" click-no-toggle-active>cancel</wct-button>
-          <wct-button id=submit namespace="button-primary-" request-event-name="cancel" click-no-toggle-active>use key</wct-button>
+          <wct-button id=cancel title="cancel" namespace="button-secondary-" click-no-toggle-active>cancel</wct-button>
+          <wct-button id=encrypt title="encrypt" namespace="button-primary-" click-no-toggle-active><wct-icon-mdx title="encrypt" icon-url="../../../../../../img/icons/lock.svg" size="1em" no-hover class="icon-left"></wct-icon-mdx>set</wct-button>
+          <wct-button id=remove-encryption title="remove encryption" namespace="button-primary-" click-no-toggle-active><wct-icon-mdx title="remove encryption" icon-url="../../../../../../img/icons/lock-open-2.svg" size="1em" no-hover class="icon-left"></wct-icon-mdx>unset</wct-button>
         </section>
       </dialog>
     `
@@ -372,11 +403,11 @@ export default class KeysDialog extends Dialog {
     keys.forEach(key => {
       key.classList[command](className)
       // @ts-ignore
-      if (resetCheckbox && key.checkbox && !key.classList.contains('active')) {
+      if (resetCheckbox && key.checkbox) {
         // @ts-ignore
         key.checkbox.checked = false
         // @ts-ignore
-        key.inputEventListener()
+        key.inputEventListener(undefined, false)
       }
     })
   }
@@ -391,19 +422,26 @@ export default class KeysDialog extends Dialog {
    * @param {boolean} [active=true]
    * @param {boolean} [scroll=true]
    * @param {boolean} [setCheckbox=false]
-   * @returns {Promise<void>}
+   * @returns {void}
    */
-  async setActive (attributeName, attributeValue, parentNodes, active = true, scroll = true, setCheckbox = false) {
+  setActive (attributeName, attributeValue, parentNodes, active = true, scroll = true, setCheckbox = false) {
     parentNodes.reduce((acc, parentNode) => [...acc, ...(parentNode.querySelectorAll('.active') || [])], []).forEach(node => node.classList.remove('active'))
+    if (!attributeName) return
+    if (!attributeValue) return
+    /** @type {any} */
     let node
     if (active) {
       if (parentNodes.some(parentNode => (node = parentNode.querySelector(`[${attributeName}='${attributeValue}']`)))) {
-        // @ts-ignore
         node.classList.add('active')
         if (setCheckbox) {
-          // @ts-ignore
-          if (node.loadPromise) node = await node.loadPromise
-          if (node.checkbox) {
+          if (node.loadPromise) {
+            node.loadPromise.then(node => {
+              if (node.checkbox) {
+                node.checkbox.checked = true
+                node.inputEventListener()
+              }
+            })
+          } else if (node.checkbox) {
             node.checkbox.checked = true
             node.inputEventListener()
           }
@@ -413,7 +451,7 @@ export default class KeysDialog extends Dialog {
         let node
         if(parentNodes.some(parentNode => (node = parentNode.querySelector('.active')))) return node
         return null
-      }, ':not([intersecting])', this.dialogEl, { behavior: 'smooth', block: 'nearest' }, 500)
+      }, ':not([intersecting])', this.dialog, { behavior: 'smooth', block: 'nearest' }, 500)
     }
     if (node) {
       this.setAttribute('active', attributeValue)
@@ -446,8 +484,12 @@ export default class KeysDialog extends Dialog {
     return this.root.querySelector('#cancel')
   }
 
-  get submitEl () {
-    return this.root.querySelector('#submit')
+  get encryptEl () {
+    return this.root.querySelector('#encrypt')
+  }
+
+  get removeEncryptionEl () {
+    return this.root.querySelector('#remove-encryption')
   }
 
   get globalEventTarget () {
