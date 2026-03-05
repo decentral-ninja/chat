@@ -63,7 +63,7 @@ export default class KeyName extends Shadow() {
 
   connectedCallbackOnce () {
     if (this.hasAttribute('epoch')) {
-      this.keyEventListener(undefined, new Promise(resolve => this.dispatchEvent(new CustomEvent(`yjs-get-key`, {
+      this.keyEventListener(undefined, new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-key', {
         detail: {
           resolve,
           epoch: this.getAttribute('epoch')
@@ -73,7 +73,7 @@ export default class KeyName extends Shadow() {
         composed: true
       }))))
     } else {
-      this.keyEventListener(undefined, new Promise(resolve => this.dispatchEvent(new CustomEvent(`yjs-get-active-room-default-key`, {
+      this.keyEventListener(undefined, new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-active-room-default-key', {
         detail: {
           resolve
         },
@@ -154,12 +154,7 @@ export default class KeyName extends Shadow() {
       <section id=section-key-icon>
         <a-icon-states id=key-icon>
           <template>
-            <a-icon-combinations state="default" namespace=icon-combinations-add-key->
-              <template>
-                <wct-icon-mdx title="No encryption key active!" icon-url="../../../../../../img/icons/key-square.svg" size="1.8em" hover-selector="section#section-key-icon"></wct-icon-mdx>
-                <wct-icon-mdx title="No encryption key active!" icon-url="../../../../../../img/icons/plus.svg" size="0.9em" hover-selector="section#section-key-icon"></wct-icon-mdx>
-              </template>
-            </a-icon-combinations>
+            <wct-icon-mdx state="default" title="No encryption key active!" icon-url="../../../../../../img/icons/lock-open-2.svg" size="1.8em" hover-selector="section#section-key-icon"></wct-icon-mdx>
             <wct-icon-mdx state="has-key" title="Encryption key active!" icon-url="../../../../../../img/icons/lock.svg" size="1.8em" hover-selector="section#section-key-icon"></wct-icon-mdx>
           </template>
         </a-icon-states>

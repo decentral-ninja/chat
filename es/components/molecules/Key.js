@@ -50,6 +50,10 @@ export default class Key extends Intersection() {
       }))
     }
 
+    this.closeDetailsEventListener = event => this.updateHeight(true)
+
+    this.detailsAnimationendEventListener = event => this.updateHeight()
+
     // this updates the min-height on resize, see updateHeight function for more info
     let resizeTimeout = null
     this.resizeEventListener = event => {
@@ -71,6 +75,8 @@ export default class Key extends Intersection() {
     })
     this.trashIcon.addEventListener('click', this.trashIconClickEventListener)
     this.checkbox.addEventListener('input', this.inputEventListener)
+    this.addEventListener('close', this.closeDetailsEventListener)
+    this.addEventListener('wct-details-animationend', this.detailsAnimationendEventListener)
     self.addEventListener('resize', this.resizeEventListener)
   }
 
@@ -78,6 +84,8 @@ export default class Key extends Intersection() {
     super.disconnectedCallback()
     this.trashIcon.removeEventListener('click', this.trashIconClickEventListener)
     this.checkbox.removeEventListener('input', this.inputEventListener)
+    this.removeEventListener('close', this.closeDetailsEventListener)
+    this.removeEventListener('wct-details-animationend', this.detailsAnimationendEventListener)
     self.removeEventListener('resize', this.resizeEventListener)
   }
 
@@ -297,7 +305,7 @@ export default class Key extends Intersection() {
           <div><span class=name><span>Private name:</span><span class=font-size-tiny>(saved locally and not shared)</span></span>&nbsp;<chat-a-key-name private name="${escapeHTML(this.keyContainer.private.name)}" epoch='${this.keyContainer.key.epoch}' is-editable></chat-a-key-name></div>
         </div>
         <div style="grid-area: body">
-          <wct-details id=origin namespace="details-default-" open-event-name='key-details-open-${this.getAttribute('epoch')}'>
+          <wct-details id=origin namespace="details-default-" open-event-name='key-details-open-${this.getAttribute('epoch')}' animationend-event-name=wct-details-animationend>
             ${style}
             <details>
               <summary>
@@ -316,7 +324,7 @@ export default class Key extends Intersection() {
               </template>
             </details>
           </wct-details>
-          <wct-details id=shared class="hidden" namespace="details-default-" open-event-name='key-details-open-${this.getAttribute('epoch')}'>
+          <wct-details id=shared class="hidden" namespace="details-default-" open-event-name='key-details-open-${this.getAttribute('epoch')}' animationend-event-name=wct-details-animationend>
             ${style}
             <details>
               <summary>
@@ -327,7 +335,7 @@ export default class Key extends Intersection() {
               </template>
             </details>
           </wct-details>
-          <wct-details id=received class="hidden" namespace="details-default-" open-event-name='key-details-open-${this.getAttribute('epoch')}'>
+          <wct-details id=received class="hidden" namespace="details-default-" open-event-name='key-details-open-${this.getAttribute('epoch')}' animationend-event-name=wct-details-animationend>
             ${style}
             <details>
               <summary>
@@ -338,7 +346,7 @@ export default class Key extends Intersection() {
               </template>
             </details>
           </wct-details>
-          <wct-details id=encrypted class="hidden" namespace="details-default-" open-event-name='key-details-open-${this.getAttribute('epoch')}'>
+          <wct-details id=encrypted class="hidden" namespace="details-default-" open-event-name='key-details-open-${this.getAttribute('epoch')}' animationend-event-name=wct-details-animationend>
             ${style}
             <details>
               <summary>
@@ -349,7 +357,7 @@ export default class Key extends Intersection() {
               </template>
             </details>
           </wct-details>
-          <wct-details id=decrypted class="hidden" namespace="details-default-" open-event-name='key-details-open-${this.getAttribute('epoch')}'>
+          <wct-details id=decrypted class="hidden" namespace="details-default-" open-event-name='key-details-open-${this.getAttribute('epoch')}' animationend-event-name=wct-details-animationend>
             ${style}
             <details>
               <summary>
@@ -436,13 +444,13 @@ export default class Key extends Intersection() {
         this.publicNameEl.setAttribute('name', keyContainer.public.name || '')
         this.publicNameEl.setAttribute('epoch', keyContainer.key.epoch || '')
       }
-      const renderDetails = (arr, label) => /* html */`<div>${arr.reduce((acc, curr) => /* html */`
+      const renderDetails = (arr, label, useNickName = true) => /* html */`<div>${arr.reduce((acc, curr) => /* html */`
         ${acc}
         <div>
           <chat-a-room-name>
             <template>${JSON.stringify({roomName: curr.room})}</template>
           </chat-a-room-name> - 
-          <chat-a-nick-name ${curr.uid ? `uid='${curr.uid}'` : ''}${curr.nickname ? ` nickname='${escapeHTML(curr.nickname)}'` : ''}${curr.self ? ' self user-dialog-show-event-only-on-avatar' : ' user-dialog-show-event'}></chat-a-nick-name> - 
+          ${useNickName ? /* html */`<chat-a-nick-name ${curr.uid ? `uid='${curr.uid}'` : ''}${curr.nickname ? ` nickname='${escapeHTML(curr.nickname)}'` : ''}${curr.self ? ' self user-dialog-show-event-only-on-avatar' : ' user-dialog-show-event'}></chat-a-nick-name> - ` : ''}
           <span>${label}:<br><time class="timestamp">${(new Date(curr.timestamp)).toLocaleString(navigator.language)}</time></span>
         </div>
       `, '')}</div>`
@@ -467,7 +475,7 @@ export default class Key extends Intersection() {
       // encrypted
       if (keyContainer.private.encrypted?.length) {
         this.encryptedEl.classList.remove('hidden')
-        const innerHTML = renderDetails(keyContainer.private.encrypted, 'encrypted')
+        const innerHTML = renderDetails(keyContainer.private.encrypted, 'encrypted', false)
         if (this.lastEncryptedElInnerHTML !== innerHTML) this.encryptedEl.content.innerHTML = this.lastEncryptedElInnerHTML = innerHTML
       } else {
         this.encryptedEl.classList.add('hidden')
@@ -496,7 +504,7 @@ export default class Key extends Intersection() {
       this.customStyleHeight.textContent = ''
       if (!clear) self.requestAnimationFrame(timeStamp => {
         this.customStyleHeight.textContent = /* css */`
-          :host {
+          :host([has-height]:not([intersecting])) {
             min-height: ${this.offsetHeight}px;
           }
         `

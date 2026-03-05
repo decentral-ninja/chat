@@ -5,18 +5,21 @@ import { WebWorker } from '../../../../event-driven-web-components-prototypes/sr
  * textObj aka. Message container
  * the chat controller and molecules delete/remove messages but when as replyTo message it can show as deleted
  @typedef {{
-    isSelf?: boolean,
-    nickname?: string,
-    sendNotifications?: boolean,
-    text?: string,
+  isSelf?: boolean,
+  nickname?: string,
+  sendNotifications?: boolean,
+  text?: string,
+  timestamp: number,
+  uid: string,
+  updatedNickname?: string,
+  replyTo?: {
     timestamp: number,
-    uid: string,
-    updatedNickname?: string,
-    replyTo?: {
-      timestamp: number,
-      uid: string
-    },
-    deleted?: boolean
+    uid: string
+  },
+  deleted?: boolean,
+  encrypted?: false | import('../../../../event-driven-web-components-prototypes/src/controllers/Crypto.js').ENCRYPTED&{
+    public: {name: string}
+  }
   }} TextObj
 */
 
@@ -69,29 +72,32 @@ export const Chat = (ChosenHTMLElement = WebWorker()) => class Chat extends Chos
         nickname: await this.nickname,
         timestamp: Date.now(),
         sendNotifications: true, // servers websocket utils.js has this check,
-        text: '' // must always include the text property
+        text: '', // must always include the text property
+        encrypted: false
       }
+      /** @type {any} */
+      let textObj
       switch (event.detail.type) {
         case 'jitsi-video-started':
         case 'jitsi-video-stopped':
-          (await this.array).push([{
+          textObj = {
             ...mandatoryData,
             type: event.detail.type,
             src: event.detail.iframeSrc,
             text: event.detail.type
-          }])
-          return
+          }
+          break
         case 'share-provider':
-          (await this.array).push([{
+          textObj = {
             ...mandatoryData,
             type: event.detail.type,
             id: event.detail.id,
             text: event.detail.input.value
-          }])
-          return
+          }
+          break
         default:
           if (event.detail.input.value) {
-            const textObj = {
+            textObj = {
               ...mandatoryData,
               text: event.detail.input.value
             }
@@ -103,9 +109,51 @@ export const Chat = (ChosenHTMLElement = WebWorker()) => class Chat extends Chos
                 uid: event.detail.replyToTextObj.uid
               }
             }
-            (await this.array).push([textObj])
             if (event.detail.clear !== false) event.detail.input.value = ''
           }
+      }
+      if (textObj) {
+        const keyContainer = event.detail.key?.epoch
+          ? await new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-key', {
+            detail: {
+              resolve,
+              epoch: event.detail.key.epoch
+            },
+            bubbles: true,
+            cancelable: true,
+            composed: true
+          })))
+          : await new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-active-room-default-key', {
+            detail: {
+              resolve
+            },
+            bubbles: true,
+            cancelable: true,
+            composed: true
+          })))
+        if (keyContainer) {
+          /** @type {{keyContainers: import('../../../../event-driven-web-components-prototypes/src/controllers/Crypto.js').JSON_WEB_KEY_TO_CRYPTOKEY_ERROR | import('../../../../event-driven-web-components-yjs/src/es/controllers/Keys.js').KEY_CONTAINERS | null, encrypted: import('../../../../event-driven-web-components-prototypes/src/controllers/Crypto.js').ENCRYPTED | import('../../../../event-driven-web-components-prototypes/src/controllers/Crypto.js').ENCRYPTED_ERROR | import('../../../../event-driven-web-components-prototypes/src/controllers/Crypto.js').JSON_WEB_KEY_TO_CRYPTOKEY_ERROR}} */
+          const { encrypted } = await new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-encrypt', {
+            detail: {
+              resolve,
+              text: textObj.text,
+              key: keyContainer
+            },
+            bubbles: true,
+            cancelable: true,
+            composed: true
+          })))
+          // @ts-ignore
+          if (!encrypted.error) {
+            // @ts-ignore
+            textObj.text = `encrypted: ${encrypted.text.substring(0, 10)}...`
+            textObj.encrypted = {
+              ...encrypted,
+              public: keyContainer.public
+            }
+          }
+        }
+        (await this.array).push([textObj])
       }
     }
 

@@ -21,7 +21,10 @@ import { Intersection } from '../../../../../event-driven-web-components-prototy
     timestamp: number,
     uid: string
   },
-  deleted: boolean
+  deleted: boolean,
+  encrypted?: false | import('../../../../..//event-driven-web-components-prototypes/src/controllers/Crypto.js').ENCRYPTED&{
+    public: {name: string}
+  }
 }} TextObjDeleted
 */
 
@@ -237,7 +240,7 @@ export default class Message extends WebWorker(Intersection()) {
         flex-grow: 1;
         display: flex;
         align-items: end;
-        color: gray;
+        color: var(--message-li-timestamp-color, gray);
         font-size: 0.8em;
       }
       :host li > span {
@@ -328,6 +331,38 @@ export default class Message extends WebWorker(Intersection()) {
   async renderHTML (textObj = this.textObj) {
     const textObjSync = await textObj
     this.html = Message.renderList(textObjSync, this.hasAttribute('no-dialog'))
+    if (textObjSync.encrypted) {
+      const keyContainer = await new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-key', {
+        detail: {
+          resolve,
+          // @ts-ignore
+          epoch: textObjSync.encrypted.key.epoch
+        },
+        bubbles: true,
+        cancelable: true,
+        composed: true
+      })))
+      if (keyContainer) {
+        const { decrypted } = await new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-decrypt', {
+          detail: {
+            resolve,
+            encrypted: textObjSync.encrypted,
+            key: keyContainer,
+            uid: textObjSync.uid
+          },
+          bubbles: true,
+          cancelable: true,
+          composed: true
+        })))
+        if (!decrypted.error) {
+          // TODO: show encryption icon at list element to indicate with which key the message was encrypted
+          textObjSync.text = decrypted.text
+        }
+      } else {
+        // TODO: change textObj.type to processText as key request component
+        textObjSync.text = 'TODO: ****key is missing*****'
+      }
+    }
     if (!textObjSync.deleted) this.webWorker(Message.processText, textObjSync, location.host).then(textObj => (this.textSpan.innerHTML = Message.htmlPurify(textObj.text)))
     return Promise.all([
       textObjSync.replyTo && this.hasAttribute('show-reply-to')
@@ -364,7 +399,7 @@ export default class Message extends WebWorker(Intersection()) {
         <chat-m-message part="reply-to-li" timestamp="${
             // @ts-ignore
             self.Environment?.timestampNamespace || 't_'
-          }${textObj.replyTo?.timestamp}"${updatedTextObj?.isSelf ? ' self' : ''} no-dialog width="calc(100% - 0.2em)" box-shadow="2px 2px 5px var(--color-black)"${this.getAttribute('next-show-reply-to') === 'true' ? ' show-reply-to next-show-reply-to="true"' : ''}>
+          }${textObj.replyTo?.timestamp}"${updatedTextObj?.isSelf ? ' self' : ''} no-dialog width="calc(100% - 0.2em)" box-shadow="2px 2px 5px var(--message-li-box-shadow, var(--color-black))"${this.getAttribute('next-show-reply-to') === 'true' ? ' show-reply-to next-show-reply-to="true"' : ''}>
           <template>${JSON.stringify(updatedTextObj)}</template>
         </chat-m-message>
       `)

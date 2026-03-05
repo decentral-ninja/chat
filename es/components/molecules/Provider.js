@@ -765,7 +765,7 @@ export default class Provider extends Intersection() {
       this.customStyleHeight.textContent = ''
       if (!clear) self.requestAnimationFrame(timeStamp => {
         this.customStyleHeight.textContent = /* css */`
-          :host {
+          :host([has-height]:not([intersecting])) {
             min-height: ${this.offsetHeight}px;
           }
         `

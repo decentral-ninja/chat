@@ -99,7 +99,8 @@ export default class KeysDialog extends Dialog {
       this.close()
       const epoch = this.hasAttribute('has-checked') ? this.keyEls.find((keyEl => keyEl.hasAttribute('checked')))?.getAttribute('epoch') : ''
       if (this.messageUid) {
-        console.log('****TODO:*****', 'dispatch message change encryption with this.messageUid + epoch at Chat.js')
+        // TODO: Supply a checkbox to allow this new key become the ActiveRoomDefaultKey
+        console.log('****TODO:*****', 'dispatch message change encryption with this.messageUid + epoch at Chat.js through Keys.js')
       } else {
         this.dispatchEvent(new CustomEvent('yjs-set-active-room-default-key', {
           detail: {
@@ -202,9 +203,26 @@ export default class KeysDialog extends Dialog {
         flex-wrap: wrap;
         gap: 1em;
       }
+      :host > dialog > section > #add-key {
+        position: relative;
+      }
       :host > dialog > section > #add-key[updating] {
         cursor: not-allowed;
         pointer-events: none;
+      }
+      :host > dialog > section > #add-key > p {
+        position: absolute;
+        left: calc(100% + 0.25em);
+        bottom: 0;
+        margin: 0;
+        padding: 0;
+        white-space: nowrap;
+        color: var(--color);
+        transition: var(--transition);
+        max-width: 50dvw;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
       :host > dialog > #keys > chat-m-key, :host > dialog > #keys > wct-load-template-tag {
         width: calc(33.3% - 0.66em);
@@ -213,8 +231,11 @@ export default class KeysDialog extends Dialog {
         min-height: 24em;
       }
       :host > dialog > section[buttons] {
+        --button-primary-background-color-hover-custom: var(--color-yellow);
         --button-primary-background-color-custom: var(--color-green);
         --button-primary-border-color: var(--color-green);
+        --button-secondary-color-hover-custom: var(--color-yellow);
+        --button-secondary-border-color-hover-custom: var(--color-yellow);
         display: none;
         opacity: 0;
         transition: var(--transition);
@@ -277,20 +298,23 @@ export default class KeysDialog extends Dialog {
         <h4 id=title-default>Keys:</h4>
         <h4 id=title-checkbox>Select a key:</h4>
         <section controls>
-          <a-icon-states id=add-key loading-size=2>
-            <template>
-              <a-icon-combinations state="default" namespace=icon-combinations-add-key- title="Add new key">
-                <template>
-                  <wct-icon-mdx title="Generate key"  icon-url="../../../../../../img/icons/key-square.svg" size="3em" no-hover></wct-icon-mdx>
-                  <wct-icon-mdx title="Generate key"  icon-url="../../../../../../img/icons/plus.svg" size="1.5em" no-hover></wct-icon-mdx>
-                </template>
-              </a-icon-combinations>
-            </template>
-          </a-icon-states>
+          <div id=add-key>
+            <a-icon-states loading-size=2>
+              <template>
+                <a-icon-combinations state="default" namespace=icon-combinations-add-key- title="Add new key">
+                  <template>
+                    <wct-icon-mdx title="Generate key"  icon-url="../../../../../../img/icons/key-square.svg" size="3em" no-hover></wct-icon-mdx>
+                    <wct-icon-mdx title="Generate key"  icon-url="../../../../../../img/icons/plus.svg" size="1.5em" no-hover></wct-icon-mdx>
+                  </template>
+                </a-icon-combinations>
+              </template>
+            </a-icon-states>
+            <p>Generate key</p>
+          </div>
         </section>
         <div id=keys></div>
         <section buttons>
-          <wct-button id=cancel title="cancel" namespace="button-secondary-" click-no-toggle-active>cancel</wct-button>
+          <wct-button id=cancel title="close" namespace="button-secondary-" click-no-toggle-active>close</wct-button>
           <wct-button id=encrypt title="encrypt" namespace="button-primary-" click-no-toggle-active><wct-icon-mdx title="encrypt" icon-url="../../../../../../img/icons/lock.svg" size="1em" no-hover class="icon-left"></wct-icon-mdx>set</wct-button>
           <wct-button id=remove-encryption title="remove encryption" namespace="button-primary-" click-no-toggle-active><wct-icon-mdx title="remove encryption" icon-url="../../../../../../img/icons/lock-open-2.svg" size="1em" no-hover class="icon-left"></wct-icon-mdx>unset</wct-button>
         </section>
@@ -338,7 +362,7 @@ export default class KeysDialog extends Dialog {
    */
   renderData (keyContainers) {
     if (!keyContainers) return
-    KeysDialog.renderKeys(this.keysDiv, keyContainers, this.dialogWasClosed)
+    KeysDialog.renderKeys(this.keysDiv, keyContainers, this.dialogWasClosed, this.hasAttribute('has-checked'))
     this.dialogWasClosed = false
   }
 
@@ -348,9 +372,10 @@ export default class KeysDialog extends Dialog {
    * @param {any} div
    * @param {import('../../../../../event-driven-web-components-yjs/src/es/controllers/Keys.js').KEY_CONTAINERS|import('../../../../../event-driven-web-components-prototypes/src/controllers/Crypto.js').JSON_WEB_KEY_TO_CRYPTOKEY_ERROR} keyContainers
    * @param {boolean} dialogWasClosed
+   * @param {boolean} hasChecked
    * @returns {void}
    */
-  static renderKeys (div, keyContainers, dialogWasClosed) {
+  static renderKeys (div, keyContainers, dialogWasClosed, hasChecked) {
     const tempDiv = document.createElement('div')
     // @ts-ignore
     tempDiv.innerHTML = keyContainers.error
@@ -361,7 +386,7 @@ export default class KeysDialog extends Dialog {
         /// / render or update
         // @ts-ignore
         const epoch = keyContainer.key.epoch
-        const renderKey = () => KeysDialog.renderKey(epoch, keyContainer, i)
+        const renderKey = () => KeysDialog.renderKey(epoch, keyContainer, i, false, hasChecked)
         let key
         if ((key = div.querySelector(`[epoch='${epoch}']`))) {
           if (typeof key.update === 'function') {
@@ -385,11 +410,12 @@ export default class KeysDialog extends Dialog {
    * @param {string} epoch
    * @param {import('../../../../../event-driven-web-components-yjs/src/es/controllers/Keys.js').KEY_CONTAINER} keyContainer
    * @param {number} i
-   * @param {boolean} [active=false]
+   * @param {boolean} active
+   * @param {boolean} hasChecked
    * @returns {string}
    */
-  static renderKey (epoch, keyContainer, i, active = false) {
-    return /* html */`<wct-load-template-tag epoch=${epoch} no-css style="order: ${i};" copy-class-list ${active ? 'class=active' : ''}><template><chat-m-key ${active ? 'class=active' : ''}><template>${JSON.stringify({ epoch, keyContainer, order: i })}</template></chat-m-key></template></wct-load-template-tag>`
+  static renderKey (epoch, keyContainer, i, active, hasChecked) {
+    return /* html */`<wct-load-template-tag epoch=${epoch} no-css style="order: ${i};" copy-class-list class="${active ? 'active' : ''}${active && hasChecked ? ', ' : ''}${hasChecked ? 'no-checkbox' : ''}"><template><chat-m-key ${active ? 'class=active' : ''}><template>${JSON.stringify({ epoch, keyContainer, order: i })}</template></chat-m-key></template></wct-load-template-tag>`
   }
 
   /**
