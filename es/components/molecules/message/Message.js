@@ -22,10 +22,14 @@ import { Intersection } from '../../../../../event-driven-web-components-prototy
     uid: string
   },
   deleted: boolean,
-  encrypted?: false | import('../../../../..//event-driven-web-components-prototypes/src/controllers/Crypto.js').ENCRYPTED&{
+  encrypted?: false | import('../../../../..//event-driven-web-components-prototypes/src/controllers/Crypto.js').ENCRYPTED & {
     public: {name: string}
-  }
-}} TextObjDeleted
+  },
+  decrypted?: boolean,
+  type?: string,
+  src?: string,
+  id?: string
+ }} TextObjDeleted
 */
 
 /**
@@ -233,8 +237,18 @@ export default class Message extends WebWorker(Intersection()) {
         display: flex;
         justify-content: space-between;
       }
-      :host li > div > chat-a-nick-name {
+      :host li > div > div:has(> chat-a-key-status) {
+        flex: 1;
+        display: flex;
+        min-height: 2.75em;
+        align-items: flex-end;
+      }
+      :host li > div > div > chat-a-nick-name {
+        align-self: flex-start;
         max-width: calc(100% - 1.5em);
+      }
+      :host li > div > div > chat-a-key-status {
+        --max-width: 30dvw;
       }
       :host li > .user, :host li > .timestamp {
         flex-grow: 1;
@@ -332,6 +346,8 @@ export default class Message extends WebWorker(Intersection()) {
     const textObjSync = await textObj
     this.html = Message.renderList(textObjSync, this.hasAttribute('no-dialog'))
     if (textObjSync.encrypted) {
+      this.setAttribute('encrypted', '')
+      textObjSync.decrypted = false
       const keyContainer = await new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-key', {
         detail: {
           resolve,
@@ -355,12 +371,17 @@ export default class Message extends WebWorker(Intersection()) {
           composed: true
         })))
         if (!decrypted.error) {
-          // TODO: show encryption icon at list element to indicate with which key the message was encrypted
-          textObjSync.text = decrypted.text
+          this.setAttribute('decrypted', '')
+          textObjSync.decrypted = true
+          try {
+            const decryptedObj = JSON.parse(decrypted.text)
+            textObjSync.text = decryptedObj.text
+            textObjSync.id = decryptedObj.id
+            textObjSync.src = decryptedObj.src
+          } catch (error) {
+            textObjSync.text = decrypted.text
+          }
         }
-      } else {
-        // TODO: change textObj.type to processText as key request component
-        textObjSync.text = 'TODO: ****key is missing*****'
       }
     }
     if (!textObjSync.deleted) this.webWorker(Message.processText, textObjSync, location.host).then(textObj => (this.textSpan.innerHTML = Message.htmlPurify(textObj.text)))
@@ -388,6 +409,11 @@ export default class Message extends WebWorker(Intersection()) {
           // @ts-ignore
           path: `${this.importMetaUrl}../../atoms/providerName/ProviderName.js?${Environment?.version || ''}`,
           name: 'chat-a-provider-name'
+        },
+        {
+          // @ts-ignore
+          path: `${this.importMetaUrl}../../atoms/keyStatus/KeyStatus.js?${Environment?.version || ''}`,
+          name: 'chat-a-key-status'
         }
       ])])
   }
@@ -432,7 +458,10 @@ export default class Message extends WebWorker(Intersection()) {
     return /* html */`
       <li part="${part}"${textObj.deleted ? ' deleted' : ''}>
         <div>
-          ${textObj.deleted ? '' : /* html */`<chat-a-nick-name class="user" uid='${textObj.uid}' nickname="${escapeHTML(textObj.updatedNickname)}"${textObj.isSelf ? ' self user-dialog-show-event-only-on-avatar' : ' user-dialog-show-event'}></chat-a-nick-name>`}
+          <div>
+            ${textObj.encrypted ? /* html */`<chat-a-key-status epoch='${textObj.encrypted.key.epoch}' public-name="${escapeHTML(textObj.encrypted.public.name)}"></chat-a-key-status>` : ''}
+            ${textObj.deleted ? '' : /* html */`<chat-a-nick-name class="user" uid='${textObj.uid}' nickname="${escapeHTML(textObj.updatedNickname)}"${textObj.isSelf ? ' self user-dialog-show-event-only-on-avatar' : ' user-dialog-show-event'}></chat-a-nick-name>`}
+          </div>
           ${hasAttributeNoDialog
             ? ''
             : '<wct-icon-mdx title="view message" id="show-modal" rotate="-180deg" icon-url="../../../../../../img/icons/dots-circle-horizontal.svg" size="1.5em"></wct-icon-mdx>'
@@ -446,6 +475,8 @@ export default class Message extends WebWorker(Intersection()) {
   // make aTags with href when first link is detected https://stackoverflow.com/questions/1500260/detect-urls-in-text-with-javascript
   // location.host is not available within web workers
   static processText (textObj, locationHost = location.host) {
+    // TODO: web component which is going to request the key
+    if (textObj.encrypted && !textObj.decrypted) return textObj
     textObj = structuredClone(textObj)
     switch (textObj.type) {
       case 'jitsi-video-started':

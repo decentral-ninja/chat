@@ -19,8 +19,12 @@ import { WebWorker } from '../../../../event-driven-web-components-prototypes/sr
   deleted?: boolean,
   encrypted?: false | import('../../../../event-driven-web-components-prototypes/src/controllers/Crypto.js').ENCRYPTED&{
     public: {name: string}
-  }
-  }} TextObj
+  },
+  decrypted?: boolean,
+  type?: string,
+  src?: string,
+  id?: string
+ }} TextObj
 */
 
 /**
@@ -136,7 +140,11 @@ export const Chat = (ChosenHTMLElement = WebWorker()) => class Chat extends Chos
           const { encrypted } = await new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-encrypt', {
             detail: {
               resolve,
-              text: textObj.text,
+              text: JSON.stringify({
+                text: textObj.text,
+                id: textObj.id,
+                src: textObj.src
+              }),
               key: keyContainer
             },
             bubbles: true,
@@ -146,7 +154,10 @@ export const Chat = (ChosenHTMLElement = WebWorker()) => class Chat extends Chos
           // @ts-ignore
           if (!encrypted.error) {
             // @ts-ignore
-            textObj.text = `encrypted: ${encrypted.text.substring(0, 10)}...`
+            const peek = encrypted.text.substring(0, 10)
+            textObj.text = `encrypted: ${peek}...`
+            textObj.id = `encrypted: ${peek}...`
+            textObj.src = `encrypted: ${peek}...`
             textObj.encrypted = {
               ...encrypted,
               public: keyContainer.public

@@ -22,15 +22,17 @@ export default class KeysDialog extends Dialog {
         bubbles: true,
         cancelable: true,
         composed: true
-      }))).then(keyContainers => {
-        this.renderData(keyContainers)
+      }))).then(async keyContainers => {
+        await this.renderData(keyContainers)
         // use the event details from the previously triggered this.showEventListener which calls this.show
         let epoch
         if (this.showEventDetail) {
           if (this.showEventDetail.checkbox) {
             this.setAttribute('checkbox', '')
+            KeysDialog.setKeysClassList(this.keyEls, 'add', 'checkbox')
           } else {
             this.removeAttribute('checkbox')
+            KeysDialog.setKeysClassList(this.keyEls, 'remove', 'checkbox')
           }
           epoch = this.showEventDetail.epoch
           this.messageUid = this.showEventDetail.messageUid
@@ -358,11 +360,20 @@ export default class KeysDialog extends Dialog {
    * initializes the rendering of the keys
    * 
    * @param {import('../../../../../event-driven-web-components-yjs/src/es/controllers/Keys.js').KEY_CONTAINERS|import('../../../../../event-driven-web-components-prototypes/src/controllers/Crypto.js').JSON_WEB_KEY_TO_CRYPTOKEY_ERROR|null} keyContainers
-   * @returns {void}
+   * @returns {Promise<void>}
    */
-  renderData (keyContainers) {
+  async renderData (keyContainers) {
     if (!keyContainers) return
-    KeysDialog.renderKeys(this.keysDiv, keyContainers, this.dialogWasClosed, this.hasAttribute('has-checked'))
+    /** @type {import('../../../../../event-driven-web-components-yjs/src/es/controllers/Keys.js').KEY_CONTAINER} */
+    const defaultKeyContainer = await new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-active-room-default-key', {
+      detail: {
+        resolve
+      },
+      bubbles: true,
+      cancelable: true,
+      composed: true
+    })))
+    KeysDialog.renderKeys(this.keysDiv, keyContainers, this.dialogWasClosed, this.hasAttribute('has-checked'), defaultKeyContainer?.key.epoch)
     this.dialogWasClosed = false
   }
 
@@ -373,9 +384,10 @@ export default class KeysDialog extends Dialog {
    * @param {import('../../../../../event-driven-web-components-yjs/src/es/controllers/Keys.js').KEY_CONTAINERS|import('../../../../../event-driven-web-components-prototypes/src/controllers/Crypto.js').JSON_WEB_KEY_TO_CRYPTOKEY_ERROR} keyContainers
    * @param {boolean} dialogWasClosed
    * @param {boolean} hasChecked
+   * @param {string} defaultKeyEpoch
    * @returns {void}
    */
-  static renderKeys (div, keyContainers, dialogWasClosed, hasChecked) {
+  static renderKeys (div, keyContainers, dialogWasClosed, hasChecked, defaultKeyEpoch) {
     const tempDiv = document.createElement('div')
     // @ts-ignore
     tempDiv.innerHTML = keyContainers.error
@@ -386,12 +398,16 @@ export default class KeysDialog extends Dialog {
         /// / render or update
         // @ts-ignore
         const epoch = keyContainer.key.epoch
-        const renderKey = () => KeysDialog.renderKey(epoch, keyContainer, i, false, hasChecked)
+        const isDefault = defaultKeyEpoch
+          ? defaultKeyEpoch === epoch
+          : false
+        const renderKey = () => KeysDialog.renderKey(epoch, keyContainer, i, false, hasChecked, isDefault)
         let key
         if ((key = div.querySelector(`[epoch='${epoch}']`))) {
           if (typeof key.update === 'function') {
             // dialogWasClosed gives indication to provider updateOrder
             key.update(keyContainer, i, dialogWasClosed)
+            key.classList[isDefault ? 'add' : 'remove']('is-default')
           } else {
             key.outerHTML = renderKey()
           }
@@ -412,10 +428,11 @@ export default class KeysDialog extends Dialog {
    * @param {number} i
    * @param {boolean} active
    * @param {boolean} hasChecked
+   * @param {boolean} isDefault
    * @returns {string}
    */
-  static renderKey (epoch, keyContainer, i, active, hasChecked) {
-    return /* html */`<wct-load-template-tag epoch=${epoch} no-css style="order: ${i};" copy-class-list class="${active ? 'active' : ''}${active && hasChecked ? ', ' : ''}${hasChecked ? 'no-checkbox' : ''}"><template><chat-m-key ${active ? 'class=active' : ''}><template>${JSON.stringify({ epoch, keyContainer, order: i })}</template></chat-m-key></template></wct-load-template-tag>`
+  static renderKey (epoch, keyContainer, i, active, hasChecked, isDefault) {
+    return /* html */`<wct-load-template-tag epoch=${epoch} no-css style="order: ${i};" copy-class-list class="${active ? 'active' : ''}${active && (hasChecked || isDefault) ? ', ' : ''}${hasChecked ? 'no-checkbox' : ''}${hasChecked && isDefault ? ', ' : ''}${isDefault ? 'is-default' : ''}"><template><chat-m-key ${active ? 'class=active' : ''}><template>${JSON.stringify({ epoch, keyContainer, order: i })}</template></chat-m-key></template></wct-load-template-tag>`
   }
 
   /**

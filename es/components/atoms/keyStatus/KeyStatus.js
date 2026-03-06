@@ -44,6 +44,11 @@ export default class KeyName extends Shadow() {
           `
         })
         this.iconStates.setAttribute('state', 'has-key')
+      } else if(this.hasAttribute('epoch')) {
+        this.keyNameEl.textContent = this.hasAttribute('public-name')
+          ? `Unknown key: ${this.getAttribute('public-name')}`
+          : 'Unknown key!'
+        this.iconStates.setAttribute('state', 'has-key')
       } else {
         this.keyNameEl.innerHTML = ''
         this.keyNameEl.textContent = 'No active key!'
@@ -123,9 +128,12 @@ export default class KeyName extends Shadow() {
         display: flex;
         position: relative;
       }
+      :host > section > a-icon-states {
+        --svg-filter: drop-shadow(0px 0px 0.075em var(--color-white));
+      }
       :host > section > p {
         position: absolute;
-        left: calc(100% - (var(--padding) - 0.25em));
+        left: calc(100% - (var(--padding, 0.25em) - 0.25em));
         bottom: 0;
         margin: 0;
         padding: 0;
@@ -133,7 +141,8 @@ export default class KeyName extends Shadow() {
         white-space: nowrap;
         color: var(--color);
         transition: var(--transition);
-        max-width: 50dvw;
+        text-shadow: 0px 0px 0.075em var(--color-white);
+        max-width: var(--max-width, 50dvw);
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;

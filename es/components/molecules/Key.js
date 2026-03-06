@@ -144,7 +144,7 @@ export default class Key extends Intersection() {
       :host > section > * {
         min-width: 0;
       }
-      :host .hidden, :host(.active) a-icon-states#trash-icon {
+      :host .hidden, :host(.active.checkbox) a-icon-states#trash-icon, :host(.is-default) a-icon-states#trash-icon {
         display: none;
       }
       :host a-icon-states#trash-icon {

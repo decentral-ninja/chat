@@ -26,10 +26,8 @@ export default class JitsiDialog extends Dialog {
       if (event.detail?.this && event.detail?.this.hasAttribute('src')) {
         this.iframeSrc = event.detail?.this.getAttribute('src')
         this.link.setAttribute('href', this.iframeSrc)
-        if (this.iframe && this.iframe.getAttribute('src') !== this.iframeSrc) {
-          this.iframe.setAttribute('src', this.iframeSrc)
-          this.start()
-        }
+        if (this.iframe && this.iframe.getAttribute('src') !== this.iframeSrc) this.iframe.setAttribute('src', this.iframeSrc)
+        if (this.iframeWrapper && this.iframeWrapper.getAttribute('src') !== this.iframeSrc) this.iframeWrapper.setAttribute('src', this.iframeSrc)
       }
       return superShowEventListener(event)
     }
