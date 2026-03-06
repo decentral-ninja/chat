@@ -358,7 +358,7 @@ export default class Message extends WebWorker(Intersection()) {
    * @return {Promise<[any, any]>}
    */
   async renderHTML (textObj = this.textObj) {
-    const textObjSync = await textObj
+    const textObjSync = structuredClone(await textObj)
     // @ts-ignore
     this.html = Message.renderList(textObjSync, this.hasAttribute('no-dialog'), undefined, textObjSync.encrypted)
     if (textObjSync.encrypted) {
@@ -494,7 +494,6 @@ export default class Message extends WebWorker(Intersection()) {
   // make aTags with href when first link is detected https://stackoverflow.com/questions/1500260/detect-urls-in-text-with-javascript
   // location.host is not available within web workers
   static processText (textObj, locationHost = location.host) {
-    textObj = structuredClone(textObj)
     // TODO: web component which is going to offer to request the key (with hex color and key icon)
     if (textObj.encrypted && !textObj.decrypted) return textObj
     switch (textObj.type) {
