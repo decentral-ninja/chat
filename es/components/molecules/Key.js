@@ -42,6 +42,7 @@ export default class Key extends Intersection() {
       }
       if (dispatch) this.dispatchEvent(new CustomEvent('key-checked', {
         detail: {
+          event,
           checked: this.checkbox.checked
         },
         bubbles: true,

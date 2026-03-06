@@ -488,9 +488,9 @@ export default class Message extends WebWorker(Intersection()) {
   // make aTags with href when first link is detected https://stackoverflow.com/questions/1500260/detect-urls-in-text-with-javascript
   // location.host is not available within web workers
   static processText (textObj, locationHost = location.host) {
-    // TODO: web component which is going to request the key
-    if (textObj.encrypted && !textObj.decrypted) return textObj
     textObj = structuredClone(textObj)
+    // TODO: web component which is going to offer to request the key (with hex color and key icon)
+    if (textObj.encrypted && !textObj.decrypted) return textObj
     switch (textObj.type) {
       case 'jitsi-video-started':
         textObj.text = /* html */`<span>just entered the video conference room: ${textObj.src}</span><wct-button id=send src="${textObj.src}" namespace="button-primary-" request-event-name="jitsi-dialog-show-event" click-no-toggle-active>

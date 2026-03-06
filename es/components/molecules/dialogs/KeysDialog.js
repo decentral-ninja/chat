@@ -124,7 +124,7 @@ export default class KeysDialog extends Dialog {
         this.removeAttribute('has-checked')
         KeysDialog.setKeysClassList(this.keyEls, 'remove', 'no-checkbox')
       }
-      this.setAttribute('touched', '')
+      if (event.detail.event) this.setAttribute('touched', '')
     }
 
     this.keysEventListener = event => {
@@ -260,7 +260,11 @@ export default class KeysDialog extends Dialog {
         display: flex;
         opacity: 1;
       }
-      :host(:not([has-checked])) > dialog > section[buttons] > #encrypt, :host([has-checked]) > dialog > section[buttons] > #remove-encryption, :host(:not([touched])) > dialog > section[buttons] > #remove-encryption {
+      :host(:not([has-checked])) > dialog > section[buttons] > #encrypt,
+      :host([has-checked]) > dialog > section[buttons] > #remove-encryption,
+      :host(:not([touched])) > dialog > section[buttons] > #remove-encryption,
+      :host(:not([touched])) > dialog > section[buttons] > #encrypt,
+      :host > dialog:has(> #keys > chat-m-key[checked].is-default) > section[buttons] > #encrypt {
         display: none;
       }
       :host > dialog > section[buttons] > wct-button::part(button) {
