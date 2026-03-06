@@ -240,7 +240,7 @@ export default class Message extends WebWorker(Intersection()) {
       :host li > div > div:has(> chat-a-key-status) {
         flex: 1;
         display: flex;
-        min-height: 2.75em;
+        min-height: 3em;
         align-items: flex-end;
       }
       :host li > div > div > chat-a-nick-name {
@@ -249,6 +249,8 @@ export default class Message extends WebWorker(Intersection()) {
       }
       :host li > div > div > chat-a-key-status {
         --max-width: 30dvw;
+        padding-bottom: var(--spacing);
+        transform: translateX(-3px);
       }
       :host li > .user, :host li > .timestamp {
         flex-grow: 1;

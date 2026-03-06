@@ -38,8 +38,10 @@ export default class KeyName extends Shadow() {
             :host {
               --color: ${hex};
               --h4-color: ${hex};
-              --spacing: 0;
               --h4-line-height: var(--line-height, normal);
+            }
+            :host > section > p {
+              --spacing: 0;
             }
           `
         })
