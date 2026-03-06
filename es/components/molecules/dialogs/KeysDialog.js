@@ -128,6 +128,7 @@ export default class KeysDialog extends Dialog {
     }
 
     this.keysEventListener = event => {
+      if (event.detail.error) return
       this.addKeyEl.removeAttribute('updating')
       this.renderData(event.detail.keyContainers || event.detail)
     }

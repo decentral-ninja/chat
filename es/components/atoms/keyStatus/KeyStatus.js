@@ -15,20 +15,22 @@ export default class KeyName extends Shadow() {
   constructor (options = {}, ...args) {
     super({ importMetaUrl: import.meta.url, tabindex: 'no-tabindex', ...options }, ...args)
 
-    this.clickEventListener = event => this.dispatchEvent(new CustomEvent('keys-dialog-show-event', {
-      detail: {
-        command: 'show-modal',
-        checkbox: this.hasAttribute('checkbox'),
-        epoch: keyContainer?.key.epoch,
-        messageUid: this.getAttribute('message-uid')
-      },
-      bubbles: true,
-      cancelable: true,
-      composed: true
-    }))
-
     /** @type {import("../../../../../event-driven-web-components-yjs/src/es/controllers/Keys.js").KEY_CONTAINER | undefined} */
     let keyContainer
+    this.clickEventListener = event => {
+      if (['has-key', 'default'].includes(this.getAttribute('state'))) this.dispatchEvent(new CustomEvent('keys-dialog-show-event', {
+        detail: {
+          command: 'show-modal',
+          checkbox: this.hasAttribute('checkbox'),
+          epoch: keyContainer?.key.epoch,
+          messageUid: this.getAttribute('message-uid')
+        },
+        bubbles: true,
+        cancelable: true,
+        composed: true
+      }))
+    }
+
     this.keyEventListener = async (event, keyPromise) => {
       keyContainer = event?.detail || await keyPromise
       if (keyContainer) {
@@ -45,17 +47,20 @@ export default class KeyName extends Shadow() {
             }
           `
         })
-        this.iconStates.setAttribute('state', 'has-key')
+        this.iconStates.setAttribute('state', this.hasAttribute('is-message-child') ? 'decrypted' : 'has-key')
+        this.setAttribute('state', 'has-key')
       } else if(this.hasAttribute('epoch')) {
         this.keyNameEl.textContent = this.hasAttribute('public-name')
           ? `Unknown key: ${this.getAttribute('public-name')}`
           : 'Unknown key!'
         this.iconStates.setAttribute('state', 'has-key')
+        this.setAttribute('state', 'key-not-found')
       } else {
         this.keyNameEl.innerHTML = ''
         this.keyNameEl.textContent = 'No active key!'
         this.customStyle.textContent = ''
         this.iconStates.setAttribute('state', 'default')
+        this.setAttribute('state', 'default')
       }
     }
   }
@@ -124,6 +129,11 @@ export default class KeyName extends Shadow() {
       :host {
         --color: var(--a-color);
         --color-hover: var(--color-yellow);
+      }
+      :host([state=key-not-found]) {
+        pointer-events: none;
+      }
+      :host(:not([state=key-not-found])) {
         cursor: pointer;
       }
       :host > section {
@@ -166,6 +176,7 @@ export default class KeyName extends Shadow() {
         <a-icon-states id=key-icon>
           <template>
             <wct-icon-mdx state="default" title="No encryption key active!" icon-url="../../../../../../img/icons/lock-open-2.svg" size="1.8em" hover-selector="section#section-key-icon"></wct-icon-mdx>
+            <wct-icon-mdx state="decrypted" title="Message successfully decrypted!" icon-url="../../../../../../img/icons/lock-open-2.svg" size="1.8em" hover-selector="section#section-key-icon"></wct-icon-mdx>
             <wct-icon-mdx state="has-key" title="Encryption key active!" icon-url="../../../../../../img/icons/lock.svg" size="1.8em" hover-selector="section#section-key-icon"></wct-icon-mdx>
           </template>
         </a-icon-states>

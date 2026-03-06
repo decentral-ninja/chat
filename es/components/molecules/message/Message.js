@@ -86,6 +86,15 @@ export default class Message extends WebWorker(Intersection()) {
     this.chatRemoveEventListener = async event => {
       if (event.detail.textObj.timestamp === (await this.textObj).timestamp && event.detail.textObj.uid === (await this.textObj).uid) this.update()
     }
+
+    this.newKeyEventListener = async event => {
+      if (event.detail.error) return
+      const textObjSync = await this.textObj
+      if (!textObjSync.encrypted || textObjSync.encrypted.key.epoch !== event.detail.newKey.key.epoch) return
+      this.globalEventTarget.removeEventListener('yjs-new-key', this.newKeyEventListener)
+      this.html = ''
+      this.renderHTML().then(() => this.addEventListeners())
+    }
   }
 
   connectedCallback () {
@@ -384,6 +393,8 @@ export default class Message extends WebWorker(Intersection()) {
             textObjSync.text = decrypted.text
           }
         }
+      } else {
+        this.globalEventTarget.addEventListener('yjs-new-key', this.newKeyEventListener)
       }
     }
     if (!textObjSync.deleted) this.webWorker(Message.processText, textObjSync, location.host).then(textObj => (this.textSpan.innerHTML = Message.htmlPurify(textObj.text)))
@@ -461,7 +472,7 @@ export default class Message extends WebWorker(Intersection()) {
       <li part="${part}"${textObj.deleted ? ' deleted' : ''}>
         <div>
           <div>
-            ${textObj.encrypted ? /* html */`<chat-a-key-status epoch='${textObj.encrypted.key.epoch}' public-name="${escapeHTML(textObj.encrypted.public.name)}"></chat-a-key-status>` : ''}
+            ${textObj.encrypted ? /* html */`<chat-a-key-status epoch='${textObj.encrypted.key.epoch}' public-name="${escapeHTML(textObj.encrypted.public.name)}" is-message-child></chat-a-key-status>` : ''}
             ${textObj.deleted ? '' : /* html */`<chat-a-nick-name class="user" uid='${textObj.uid}' nickname="${escapeHTML(textObj.updatedNickname)}"${textObj.isSelf ? ' self user-dialog-show-event-only-on-avatar' : ' user-dialog-show-event'}></chat-a-nick-name>`}
           </div>
           ${hasAttributeNoDialog
