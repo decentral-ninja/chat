@@ -87,11 +87,15 @@ export default class Message extends WebWorker(Intersection()) {
       if (event.detail.textObj.timestamp === (await this.textObj).timestamp && event.detail.textObj.uid === (await this.textObj).uid) this.update()
     }
 
-    this.newKeyEventListener = async event => {
+    this.keysEventListener = async event => {
       if (event.detail.error) return
       const textObjSync = await this.textObj
-      if (!textObjSync.encrypted || textObjSync.encrypted.key.epoch !== event.detail.newKey.key.epoch) return
-      this.globalEventTarget.removeEventListener('yjs-new-key', this.newKeyEventListener)
+      if (!textObjSync.encrypted) return
+      if (event.detail.newKey && event.detail.newKey.key.epoch !== textObjSync.encrypted.key.epoch) return
+      // @ts-ignore
+      if (Array.isArray(event.detail.deleted) && event.detail.deleted.every(deletedKeyContainer => deletedKeyContainer.key.epoch !== textObjSync.encrypted.key.epoch)) return
+      this.globalEventTarget.removeEventListener('yjs-new-key', this.keysEventListener)
+      this.globalEventTarget.removeEventListener('yjs-key-deleted', this.keysEventListener)
       this.html = ''
       this.renderHTML().then(() => this.addEventListeners())
     }
@@ -355,7 +359,8 @@ export default class Message extends WebWorker(Intersection()) {
    */
   async renderHTML (textObj = this.textObj) {
     const textObjSync = await textObj
-    this.html = Message.renderList(textObjSync, this.hasAttribute('no-dialog'))
+    // @ts-ignore
+    this.html = Message.renderList(textObjSync, this.hasAttribute('no-dialog'), undefined, textObjSync.encrypted)
     if (textObjSync.encrypted) {
       this.setAttribute('encrypted', '')
       textObjSync.decrypted = false
@@ -393,8 +398,9 @@ export default class Message extends WebWorker(Intersection()) {
             textObjSync.text = decrypted.text
           }
         }
+        this.globalEventTarget.addEventListener('yjs-key-deleted', this.keysEventListener)
       } else {
-        this.globalEventTarget.addEventListener('yjs-new-key', this.newKeyEventListener)
+        this.globalEventTarget.addEventListener('yjs-new-key', this.keysEventListener)
       }
     }
     if (!textObjSync.deleted) this.webWorker(Message.processText, textObjSync, location.host).then(textObj => (this.textSpan.innerHTML = Message.htmlPurify(textObj.text)))
@@ -466,7 +472,7 @@ export default class Message extends WebWorker(Intersection()) {
    * @returns
    * @memberof Message
    */
-  static renderList (textObj, hasAttributeNoDialog, part = 'li') {
+  static renderList (textObj, hasAttributeNoDialog, part = 'li', isEncrypted = false) {
     // ATTENTION: Attribute static does not need any user nor dialog interaction!
     return /* html */`
       <li part="${part}"${textObj.deleted ? ' deleted' : ''}>
@@ -480,7 +486,7 @@ export default class Message extends WebWorker(Intersection()) {
             : '<wct-icon-mdx title="view message" id="show-modal" rotate="-180deg" icon-url="../../../../../../img/icons/dots-circle-horizontal.svg" size="1.5em"></wct-icon-mdx>'
           }
         </div>
-        <span class="text${textObj.deleted ? ' italic' : ''}">${textObj.deleted ? 'Message got deleted!' : '<span class="loading">Loading...</span>'}</span>${textObj.deleted ? '' : /* html */`<time class="timestamp">${textObj.timestamp ? (new Date(textObj.timestamp)).toLocaleString(navigator.language) : ''}</time>`}
+        <span class="text${textObj.deleted ? ' italic' : ''}">${textObj.deleted ? 'Message got deleted!' : `<span class="loading">${isEncrypted ? 'Decrypting' : 'Loading'}...</span>`}</span>${textObj.deleted ? '' : /* html */`<time class="timestamp">${textObj.timestamp ? (new Date(textObj.timestamp)).toLocaleString(navigator.language) : ''}</time>`}
       </li>
     `
   }

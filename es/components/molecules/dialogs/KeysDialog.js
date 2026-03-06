@@ -65,7 +65,8 @@ export default class KeysDialog extends Dialog {
       if (this.deletedKeyEls.length) new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-delete-key', {
         detail: {
           resolve,
-          epochs: this.deletedKeyEls.map(el => el.getAttribute('epoch'))
+          epochs: this.deletedKeyEls.map(el => el.getAttribute('epoch')),
+          dispatch: true
         },
         bubbles: true,
         cancelable: true,
