@@ -278,7 +278,7 @@ export default class Message extends WebWorker(Intersection()) {
       :host li > span.text {
         white-space: pre-line;
       }
-      :host li > span.text > wct-button, :host li > span.text > wct-icon-mdx, :host li > span.text > chat-a-provider-name {
+      :host li > span.text > wct-button, :host li > span.text > wct-icon-mdx, :host li > span.text > chat-a-provider-name, :host li > span.text > chat-a-key-request {
         display: block;
       }
       :host li > span.text > wct-button{
@@ -415,16 +415,6 @@ export default class Message extends WebWorker(Intersection()) {
           name: 'chat-a-nick-name'
         },
         {
-        // @ts-ignore
-          path: `${this.importMetaUrl}../../../../../web-components-toolbox/src/es/components/atoms/iconMdx/IconMdx.js?${Environment?.version || ''}`,
-          name: 'wct-icon-mdx'
-        },
-        {
-        // @ts-ignore
-          path: `${this.importMetaUrl}../../../../../web-components-toolbox/src/es/components/atoms/button/Button.js?${Environment?.version || ''}`,
-          name: 'wct-button'
-        },
-        {
           // @ts-ignore
           path: `${this.importMetaUrl}../../atoms/providerName/ProviderName.js?${Environment?.version || ''}`,
           name: 'chat-a-provider-name'
@@ -433,6 +423,21 @@ export default class Message extends WebWorker(Intersection()) {
           // @ts-ignore
           path: `${this.importMetaUrl}../../atoms/keyStatus/KeyStatus.js?${Environment?.version || ''}`,
           name: 'chat-a-key-status'
+        },
+        {
+          // @ts-ignore
+          path: `${this.importMetaUrl}../../atoms/keyRequest/KeyRequest.js?${Environment?.version || ''}`,
+          name: 'chat-a-key-request'
+        },
+        {
+        // @ts-ignore
+          path: `${this.importMetaUrl}../../../../../web-components-toolbox/src/es/components/atoms/iconMdx/IconMdx.js?${Environment?.version || ''}`,
+          name: 'wct-icon-mdx'
+        },
+        {
+        // @ts-ignore
+          path: `${this.importMetaUrl}../../../../../web-components-toolbox/src/es/components/atoms/button/Button.js?${Environment?.version || ''}`,
+          name: 'wct-button'
         }
       ])])
   }
@@ -494,8 +499,12 @@ export default class Message extends WebWorker(Intersection()) {
   // make aTags with href when first link is detected https://stackoverflow.com/questions/1500260/detect-urls-in-text-with-javascript
   // location.host is not available within web workers
   static processText (textObj, locationHost = location.host) {
-    // TODO: web component which is going to offer to request the key (with hex color and key icon)
-    if (textObj.encrypted && !textObj.decrypted) return textObj
+    if (textObj.encrypted && !textObj.decrypted) {
+      textObj.text = /* html */`<chat-a-key-request>
+        <template>${JSON.stringify(textObj.encrypted)}</template>
+      </chat-a-key-request>`
+      return textObj
+    }
     switch (textObj.type) {
       case 'jitsi-video-started':
         textObj.text = /* html */`<span>just entered the video conference room: ${textObj.src}</span><wct-button id=send src="${textObj.src}" namespace="button-primary-" request-event-name="jitsi-dialog-show-event" click-no-toggle-active>

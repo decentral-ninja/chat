@@ -269,6 +269,14 @@ export default class Key extends Intersection() {
         :host > details > summary + div > div > * {
           width: 33%;
         }
+        :host > details > summary + div > div > chat-a-room-name:not([is-active-room]) ~ chat-a-nick-name {
+          --a-color: var(--color-disabled);
+          --color-hover: var(--color-disabled);
+          --color: var(--color-disabled);
+          --a-color-visited: var(--color-disabled);
+          cursor: not-allowed;
+          pointer-events: none;
+        }
         @media only screen and (max-width: 350px) {
           :host > details > summary + div > div {
             flex-wrap: wrap;
@@ -459,7 +467,7 @@ export default class Key extends Intersection() {
       if (keyContainer.private.shared?.length) {
         this.sharedEl.classList.remove('hidden')
         const innerHTML = renderDetails(keyContainer.private.shared, 'sent')
-        if (this.lastSharedElInnerHTML !== innerHTML) this.sharedEl.content.innerHTML = this.lastSharedElInnerHTML = innerHTML
+        if (this.lastSharedElInnerHTML !== innerHTML) this.sharedEl.content.outerHTML = this.lastSharedElInnerHTML = innerHTML
       } else {
         this.sharedEl.classList.add('hidden')
         this.sharedEl.content.innerHTML = this.lastSharedElInnerHTML = 'none'
@@ -468,7 +476,7 @@ export default class Key extends Intersection() {
       if (keyContainer.private.received?.length) {
         this.receivedEl.classList.remove('hidden')
         const innerHTML = renderDetails(keyContainer.private.received, 'received')
-        if (this.lastReceivedElInnerHTML !== innerHTML) this.receivedEl.content.innerHTML = this.lastReceivedElInnerHTML = innerHTML
+        if (this.lastReceivedElInnerHTML !== innerHTML) this.receivedEl.content.outerHTML = this.lastReceivedElInnerHTML = innerHTML
       } else {
         this.receivedEl.classList.add('hidden')
         this.receivedEl.content.innerHTML = this.lastReceivedElInnerHTML = 'none'
@@ -477,7 +485,7 @@ export default class Key extends Intersection() {
       if (keyContainer.private.encrypted?.length) {
         this.encryptedEl.classList.remove('hidden')
         const innerHTML = renderDetails(keyContainer.private.encrypted, 'encrypted', false)
-        if (this.lastEncryptedElInnerHTML !== innerHTML) this.encryptedEl.content.innerHTML = this.lastEncryptedElInnerHTML = innerHTML
+        if (this.lastEncryptedElInnerHTML !== innerHTML) this.encryptedEl.content.outerHTML = this.lastEncryptedElInnerHTML = innerHTML
       } else {
         this.encryptedEl.classList.add('hidden')
         this.encryptedEl.content.innerHTML = this.lastEncryptedElInnerHTML = 'none'
@@ -486,7 +494,7 @@ export default class Key extends Intersection() {
       if (keyContainer.private.decrypted?.length) {
         this.decryptedEl.classList.remove('hidden')
         const innerHTML = renderDetails(keyContainer.private.decrypted, 'decrypted')
-        if (this.lastDecryptedElInnerHTML !== innerHTML) this.decryptedEl.content.innerHTML = this.lastDecryptedElInnerHTML = innerHTML
+        if (this.lastDecryptedElInnerHTML !== innerHTML) this.decryptedEl.content.outerHTML = this.lastDecryptedElInnerHTML = innerHTML
       } else {
         this.decryptedEl.classList.add('hidden')
         this.decryptedEl.content.innerHTML = this.lastDecryptedElInnerHTML = 'none'
