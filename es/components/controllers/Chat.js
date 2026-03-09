@@ -18,7 +18,9 @@ import { WebWorker } from '../../../../event-driven-web-components-prototypes/sr
   },
   deleted?: boolean,
   encrypted?: false | import('../../../../event-driven-web-components-prototypes/src/controllers/Crypto.js').ENCRYPTED&{
-    public: {name: string}
+    key: {
+      public: {name: string}
+    }
   },
   decrypted?: boolean,
   type?: string,
@@ -99,6 +101,22 @@ export const Chat = (ChosenHTMLElement = WebWorker()) => class Chat extends Chos
             text: event.detail.input.value
           }
           break
+        case 'key-request':
+          textObj = {
+            ...mandatoryData,
+            type: event.detail.type,
+            text: 'requesting key...',
+            key: event.detail.key
+          }
+          break
+        case 'key-answer':
+          textObj = {
+            ...mandatoryData,
+            type: event.detail.type,
+            text: 'answering with key...',
+            key: event.detail.key
+          }
+          break
         default:
           if (event.detail.input.value) {
             textObj = {
@@ -127,14 +145,16 @@ export const Chat = (ChosenHTMLElement = WebWorker()) => class Chat extends Chos
             cancelable: true,
             composed: true
           })))
-          : await new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-active-room-default-key', {
-            detail: {
-              resolve
-            },
-            bubbles: true,
-            cancelable: true,
-            composed: true
-          })))
+          : event.detail.noDefaultEncryption
+            ? null
+            : await new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-active-room-default-key', {
+              detail: {
+                resolve
+              },
+              bubbles: true,
+              cancelable: true,
+              composed: true
+            })))
         if (keyContainer) {
           /** @type {{keyContainers: import('../../../../event-driven-web-components-prototypes/src/controllers/Crypto.js').JSON_WEB_KEY_TO_CRYPTOKEY_ERROR | import('../../../../event-driven-web-components-yjs/src/es/controllers/Keys.js').KEY_CONTAINERS | null, encrypted: import('../../../../event-driven-web-components-prototypes/src/controllers/Crypto.js').ENCRYPTED | import('../../../../event-driven-web-components-prototypes/src/controllers/Crypto.js').ENCRYPTED_ERROR | import('../../../../event-driven-web-components-prototypes/src/controllers/Crypto.js').JSON_WEB_KEY_TO_CRYPTOKEY_ERROR}} */
           const { encrypted } = await new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-encrypt', {
@@ -158,10 +178,8 @@ export const Chat = (ChosenHTMLElement = WebWorker()) => class Chat extends Chos
             textObj.text = `encrypted: ${peek}...`
             textObj.id = `encrypted: ${peek}...`
             textObj.src = `encrypted: ${peek}...`
-            textObj.encrypted = {
-              ...encrypted,
-              public: keyContainer.public
-            }
+            textObj.encrypted = encrypted
+            textObj.encrypted.key.public = keyContainer.public
           }
         }
         (await this.array).push([textObj])

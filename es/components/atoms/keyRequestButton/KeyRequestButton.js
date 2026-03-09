@@ -8,33 +8,47 @@ import { getHexColor } from '../../../../../Helpers.js'
 
 /**
 * @export
-* @class KeyRequest
+* @class KeyRequestButton
 * @type {CustomElementConstructor}
 */
-export default class KeyRequest extends Shadow() {
-  constructor (keyContainer, options = {}, ...args) {
+export default class KeyRequestButton extends Shadow() {
+  constructor (encrypted, options = {}, ...args) {
     super({ importMetaUrl: import.meta.url, tabindex: 'no-tabindex', ...options }, ...args)
 
     if (this.template) {
       /** @type {import('../../../../../event-driven-web-components-prototypes/src/controllers/Crypto.js').ENCRYPTED & {public: {name: string}}} */
-      this.keyContainer = JSON.parse(this.template.content.textContent)
+      this.encrypted = JSON.parse(this.template.content.textContent)
     } else {
       /** @type {import('../../../../../event-driven-web-components-prototypes/src/controllers/Crypto.js').ENCRYPTED & {public: {name: string}}} */
-      this.keyContainer = keyContainer
+      this.encrypted = encrypted
     }
-    this.setAttribute('epoch', this.keyContainer.key.epoch)
 
     this.clickEventListener = event => {
       event.preventDefault()
       event.stopPropagation()
-      console.log('*********', event)
+      /** @type {import('../../../../../event-driven-web-components-prototypes/src/controllers/Crypto.js').KEY_EPOCH & {public: {name: string}}} */
+      const key = {
+        public: this.encrypted.public,
+        ...this.encrypted.key
+      }
+      this.setAttribute('requested', '')
+      this.dispatchEvent(new CustomEvent('chat-add', {
+        detail: {
+          type: 'key-request',
+          noDefaultEncryption: true,
+          key
+        },
+        bubbles: true,
+        cancelable: true,
+        composed: true
+      }))
     }
   }
 
   connectedCallback () {
     if (this.shouldRenderCSS()) this.renderCSS()
     if (this.shouldRenderHTML()) this.renderHTML()
-    this.addEventListener('click', this.clickEventListener)
+    this.addEventListener('click', this.clickEventListener, { once: true })
   }
 
   disconnectedCallback () {
@@ -56,7 +70,7 @@ export default class KeyRequest extends Shadow() {
    * @return {boolean}
    */
   shouldRenderHTML () {
-    return !this.icon
+    return !this.section
   }
 
   /**
@@ -77,6 +91,18 @@ export default class KeyRequest extends Shadow() {
         gap: 0.5em;
         align-items: flex-end;
         justify-content: center;
+      }
+      :host([requested]) {
+        --a-color: var(--color-disabled);
+        --a-color-visited: var(--a-color);
+        --a-text-decoration: none;
+        pointer-events: none;
+      }
+      :host > section > a #requested, :host([requested]) > section > a #request {
+        display: none;
+      }
+      :host([requested]) > section > a #requested {
+        display: inline;
       }
     `
     return this.fetchTemplate()
@@ -106,16 +132,18 @@ export default class KeyRequest extends Shadow() {
     this.html = /* html */`
       <section>
         <a href=#>
-          <p>Request unknown key:</p>
+          <p><span id=request>Request</span><span id=requested>Requested</span> key:</p>
           <a-icon-combinations id=icon namespace=icon-combinations-add-key- title="Request key">
             <template>
-              <wct-icon-mdx title="Request key"  icon-url="../../../../../../img/icons/key-square.svg" size="3em" hover-selector="a"></wct-icon-mdx>
-              <wct-icon-mdx title="Request key"  icon-url="../../../../../../img/icons/plus.svg" size="1.5em" hover-selector="a"></wct-icon-mdx>
+              <wct-icon-mdx title="Request key" icon-url="../../../../../../img/icons/key-square.svg" size="3em" hover-selector="a"></wct-icon-mdx>
+              <wct-icon-mdx title="Request key" icon-url="../../../../../../img/icons/plus.svg" size="1.5em" hover-selector="a"></wct-icon-mdx>
             </template>
           </a-icon-combinations>
-          <p>"${escapeHTML(this.keyContainer.public.name)}"</p>
+          <p>"${
+            // @ts-ignore
+            escapeHTML(this.encrypted.key.public?.name || this.encrypted.public.name)}"</p>
         </a>
-        <p>to decrypt this message: "${this.keyContainer.text.substring(0, 10)}..."</p>
+        <p>to decrypt this message: "${this.encrypted.text.substring(0, 10)}..."</p>
       </section>
     `
     this.renderHexColor()
@@ -134,7 +162,11 @@ export default class KeyRequest extends Shadow() {
   }
 
   renderHexColor () {
-    getHexColor(this.getAttribute('epoch')).then(hex => this.icon.setAttribute('style', `--color: ${hex}`))
+    getHexColor(this.encrypted.key.epoch).then(hex => this.icon.setAttribute('style', `--color: ${hex}`))
+  }
+
+  get section () {
+    return this.root.querySelector('section')
   }
 
   get icon () {
@@ -143,10 +175,5 @@ export default class KeyRequest extends Shadow() {
 
   get template () {
     return this.root.querySelector('template')
-  }
-
-  get globalEventTarget () {
-    // @ts-ignore
-    return this._globalEventTarget || (this._globalEventTarget = self.Environment?.activeRoute || document.body)
   }
 }

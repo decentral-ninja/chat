@@ -23,7 +23,9 @@ import { Intersection } from '../../../../../event-driven-web-components-prototy
   },
   deleted: boolean,
   encrypted?: false | import('../../../../..//event-driven-web-components-prototypes/src/controllers/Crypto.js').ENCRYPTED & {
-    public: {name: string}
+    key: {
+      public: {name: string}
+    }
   },
   decrypted?: boolean,
   type?: string,
@@ -278,8 +280,11 @@ export default class Message extends WebWorker(Intersection()) {
       :host li > span.text {
         white-space: pre-line;
       }
-      :host li > span.text > wct-button, :host li > span.text > wct-icon-mdx, :host li > span.text > chat-a-provider-name, :host li > span.text > chat-a-key-request {
+      :host li > span.text > wct-button, :host li > span.text > wct-icon-mdx, :host li > span.text > chat-a-provider-name, :host li > span.text > chat-a-key-request-button {
         display: block;
+      }
+      :host:has(li > span.text > chat-a-key-request-message[unknown]) {
+        display: none;
       }
       :host li > span.text > wct-button{
         --button-primary-background-color: var(--color-jitsi);
@@ -364,16 +369,7 @@ export default class Message extends WebWorker(Intersection()) {
     if (textObjSync.encrypted) {
       this.setAttribute('encrypted', '')
       textObjSync.decrypted = false
-      const keyContainer = await new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-key', {
-        detail: {
-          resolve,
-          // @ts-ignore
-          epoch: textObjSync.encrypted.key.epoch
-        },
-        bubbles: true,
-        cancelable: true,
-        composed: true
-      })))
+      const keyContainer = await this.keyContainer
       if (keyContainer) {
         const { decrypted } = await new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-decrypt', {
           detail: {
@@ -426,8 +422,13 @@ export default class Message extends WebWorker(Intersection()) {
         },
         {
           // @ts-ignore
-          path: `${this.importMetaUrl}../../atoms/keyRequest/KeyRequest.js?${Environment?.version || ''}`,
-          name: 'chat-a-key-request'
+          path: `${this.importMetaUrl}../../atoms/keyRequestButton/KeyRequestButton.js?${Environment?.version || ''}`,
+          name: 'chat-a-key-request-button'
+        },
+        {
+          // @ts-ignore
+          path: `${this.importMetaUrl}../../atoms/keyRequestMessage/KeyRequestMessage.js?${Environment?.version || ''}`,
+          name: 'chat-a-key-request-message'
         },
         {
         // @ts-ignore
@@ -460,8 +461,16 @@ export default class Message extends WebWorker(Intersection()) {
     // @ts-ignore
     return this.textObj.hasError || this.hasAttribute('no-update')
       ? Promise.resolve()
-      : Promise.all([this.textObj, this.getUpdatedTextObj()]).then(([textObj, updatedTextObj]) => {
-        if (JSON.stringify(textObj) === JSON.stringify(updatedTextObj)) return
+      : Promise.all([
+        this.textObj,
+        this.getUpdatedTextObj(),
+        this.keyContainer,
+        this.getKeyContainer(true)
+      ]).then(([textObj, updatedTextObj, oldKeyContainer, newKeyContainer]) => {
+        const textObjsAreIdentical = JSON.stringify(textObj) === JSON.stringify(updatedTextObj)
+        if (textObjsAreIdentical && !textObj.encrypted) return
+        const keyContainersAreIdentical = !oldKeyContainer || !newKeyContainer || oldKeyContainer.disabled === newKeyContainer.disabled && oldKeyContainer.public.name === newKeyContainer.public.name && oldKeyContainer.private.name === newKeyContainer.private.name
+        if (textObjsAreIdentical && keyContainersAreIdentical) return
         this.textObj = Promise.resolve(updatedTextObj)
         this.removeEventListeners()
         this.html = ''
@@ -483,7 +492,8 @@ export default class Message extends WebWorker(Intersection()) {
       <li part="${part}"${textObj.deleted ? ' deleted' : ''}>
         <div>
           <div>
-            ${textObj.encrypted ? /* html */`<chat-a-key-status epoch='${textObj.encrypted.key.epoch}' public-name="${escapeHTML(textObj.encrypted.public.name)}" is-message-child></chat-a-key-status>` : ''}
+            ${//@ts-ignore
+              textObj.encrypted ? /* html */`<chat-a-key-status epoch='${textObj.encrypted.key.epoch}' public-name="${escapeHTML(textObj.encrypted.key.public?.name || textObj.encrypted.public.name)}" is-message-child></chat-a-key-status>` : ''}
             ${textObj.deleted ? '' : /* html */`<chat-a-nick-name class="user" uid='${textObj.uid}' nickname="${escapeHTML(textObj.updatedNickname)}"${textObj.isSelf ? ' self user-dialog-show-event-only-on-avatar' : ' user-dialog-show-event'}></chat-a-nick-name>`}
           </div>
           ${hasAttributeNoDialog
@@ -500,9 +510,9 @@ export default class Message extends WebWorker(Intersection()) {
   // location.host is not available within web workers
   static processText (textObj, locationHost = location.host) {
     if (textObj.encrypted && !textObj.decrypted) {
-      textObj.text = /* html */`<chat-a-key-request>
+      textObj.text = /* html */`<chat-a-key-request-button>
         <template>${JSON.stringify(textObj.encrypted)}</template>
-      </chat-a-key-request>`
+      </chat-a-key-request-button>`
       return textObj
     }
     switch (textObj.type) {
@@ -516,6 +526,11 @@ export default class Message extends WebWorker(Intersection()) {
         break
       case 'share-provider':
         textObj.text = /* html */`<span>shared the following provider: </span><chat-a-provider-name id="${textObj.id}" provider-dialog-show-event><span name>${textObj.text}</span></chat-a-provider-name>`
+        break
+      case 'key-request':
+        textObj.text = /* html */`<chat-a-key-request-message>
+          <template>${JSON.stringify(textObj)}</template>
+        </chat-a-key-request-message>`
         break
       default:
         if (!textObj.text.includes('<')) textObj.text = textObj.text?.replace(/(https?:\/\/[^\s]+)/g, url => /* html */`<a href="${url}"${url.includes(locationHost) && url.includes('room=') ? ' route' : ''} target="${url.includes(locationHost) ? '_self' : '_blank'}">${url}</a>`)
@@ -593,6 +608,35 @@ export default class Message extends WebWorker(Intersection()) {
 
   get dialog () {
     return this.root.querySelector('chat-m-message-dialog')
+  }
+
+  /**
+   * @returns {Promise<import('../../../../../event-driven-web-components-yjs/src/es/controllers/Keys.js').KEY_CONTAINER | undefined>}
+   */
+  get keyContainer () {
+    return this.getKeyContainer()
+  }
+
+  /**
+   * @param {boolean} [force=false]
+   * @returns {Promise<import('../../../../../event-driven-web-components-yjs/src/es/controllers/Keys.js').KEY_CONTAINER | undefined>}
+   */
+  getKeyContainer (force = false) {
+    return force || !this._keyContainer
+      ? (this._keyContainer = this.textObj.then(textObjSync => {
+        if (!textObjSync.encrypted) return undefined
+        return new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-key', {
+          detail: {
+            resolve,
+            // @ts-ignore
+            epoch: textObjSync.encrypted.key.epoch
+          },
+          bubbles: true,
+          cancelable: true,
+          composed: true
+        })))
+      }))
+      : this._keyContainer
   }
 
   get template () {
