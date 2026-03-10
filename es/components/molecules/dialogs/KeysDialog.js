@@ -131,7 +131,7 @@ export default class KeysDialog extends Dialog {
     this.keysEventListener = event => {
       if (event.detail.error) return
       this.addKeyEl.removeAttribute('updating')
-      this.renderData(event.detail.keyContainers || event.detail)
+      if (this.isDialogOpen()) this.renderData(event.detail.keyContainers || event.detail)
     }
   }
 
@@ -539,6 +539,10 @@ export default class KeysDialog extends Dialog {
 
   get removeEncryptionEl () {
     return this.root.querySelector('#remove-encryption')
+  }
+
+  isDialogOpen () {
+    return this.dialog.hasAttribute('open')
   }
 
   get globalEventTarget () {

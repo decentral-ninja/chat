@@ -141,7 +141,7 @@ export default class KeyRequestButton extends Shadow() {
           </a-icon-combinations>
           <p>"${
             // @ts-ignore
-            escapeHTML(this.encrypted.key.public?.name || this.encrypted.public.name)}"</p>
+            escapeHTML(this.encrypted.key.public?.name || this.encrypted.public?.name)}"</p>
         </a>
         <p>to decrypt this message: "${this.encrypted.text.substring(0, 10)}..."</p>
       </section>

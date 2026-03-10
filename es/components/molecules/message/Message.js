@@ -96,10 +96,11 @@ export default class Message extends WebWorker(Intersection()) {
       if (event.detail.newKey && event.detail.newKey.key.epoch !== textObjSync.encrypted.key.epoch) return
       // @ts-ignore
       if (Array.isArray(event.detail.deleted) && event.detail.deleted.every(deletedKeyContainer => deletedKeyContainer.key.epoch !== textObjSync.encrypted.key.epoch)) return
+      if (event.detail.decrypted && event.detail.decrypted.key.epoch !== textObjSync.encrypted.key.epoch) return
       this.globalEventTarget.removeEventListener('yjs-new-key', this.keysEventListener)
       this.globalEventTarget.removeEventListener('yjs-key-deleted', this.keysEventListener)
-      this.html = ''
-      this.renderHTML().then(() => this.addEventListeners())
+      this.globalEventTarget.removeEventListener('yjs-received-key', this.keysEventListener)
+      this.update()
     }
   }
 
@@ -326,6 +327,10 @@ export default class Message extends WebWorker(Intersection()) {
       :host *[part=reply-to-li][deleted] {
         cursor: auto;
       }
+      :host li > span.text > #key-answer {
+        display: flex;
+        white-space: normal;
+      }
     `
     return this.fetchTemplate()
   }
@@ -366,6 +371,7 @@ export default class Message extends WebWorker(Intersection()) {
     const textObjSync = structuredClone(await textObj)
     // @ts-ignore
     this.html = Message.renderList(textObjSync, this.hasAttribute('no-dialog'), undefined, textObjSync.encrypted)
+    // do the whole decryption here
     if (textObjSync.encrypted) {
       this.setAttribute('encrypted', '')
       textObjSync.decrypted = false
@@ -397,6 +403,7 @@ export default class Message extends WebWorker(Intersection()) {
         this.globalEventTarget.addEventListener('yjs-key-deleted', this.keysEventListener)
       } else {
         this.globalEventTarget.addEventListener('yjs-new-key', this.keysEventListener)
+        this.globalEventTarget.addEventListener('yjs-received-key', this.keysEventListener)
       }
     }
     if (!textObjSync.deleted) this.webWorker(Message.processText, textObjSync, location.host).then(textObj => (this.textSpan.innerHTML = Message.htmlPurify(textObj.text)))
@@ -469,7 +476,7 @@ export default class Message extends WebWorker(Intersection()) {
       ]).then(([textObj, updatedTextObj, oldKeyContainer, newKeyContainer]) => {
         const textObjsAreIdentical = JSON.stringify(textObj) === JSON.stringify(updatedTextObj)
         if (textObjsAreIdentical && !textObj.encrypted) return
-        const keyContainersAreIdentical = !oldKeyContainer || !newKeyContainer || oldKeyContainer.disabled === newKeyContainer.disabled && oldKeyContainer.public.name === newKeyContainer.public.name && oldKeyContainer.private.name === newKeyContainer.private.name
+        const keyContainersAreIdentical = oldKeyContainer?.disabled === newKeyContainer?.disabled && oldKeyContainer?.public.name === newKeyContainer?.public.name && oldKeyContainer?.private.name === newKeyContainer?.private.name
         if (textObjsAreIdentical && keyContainersAreIdentical) return
         this.textObj = Promise.resolve(updatedTextObj)
         this.removeEventListeners()
@@ -493,7 +500,7 @@ export default class Message extends WebWorker(Intersection()) {
         <div>
           <div>
             ${//@ts-ignore
-              textObj.encrypted ? /* html */`<chat-a-key-status epoch='${textObj.encrypted.key.epoch}' public-name="${escapeHTML(textObj.encrypted.key.public?.name || textObj.encrypted.public.name)}" is-message-child></chat-a-key-status>` : ''}
+              textObj.encrypted ? /* html */`<chat-a-key-status epoch='${textObj.encrypted.key.epoch}' public-name="${escapeHTML(textObj.encrypted.key.public?.name || textObj.encrypted.public?.name)}" is-message-child></chat-a-key-status>` : ''}
             ${textObj.deleted ? '' : /* html */`<chat-a-nick-name class="user" uid='${textObj.uid}' nickname="${escapeHTML(textObj.updatedNickname)}"${textObj.isSelf ? ' self user-dialog-show-event-only-on-avatar' : ' user-dialog-show-event'}></chat-a-nick-name>`}
           </div>
           ${hasAttributeNoDialog
@@ -531,6 +538,11 @@ export default class Message extends WebWorker(Intersection()) {
         textObj.text = /* html */`<chat-a-key-request-message>
           <template>${JSON.stringify(textObj)}</template>
         </chat-a-key-request-message>`
+        break
+      case 'key-answer':
+        textObj.text = /* html */`<span id=key-answer>
+          ${textObj.text}&nbsp;<chat-a-key-name public name="${textObj.keyName}" epoch='${textObj.keyEpoch}'></chat-a-key-name>
+        </span>`
         break
       default:
         if (!textObj.text.includes('<')) textObj.text = textObj.text?.replace(/(https?:\/\/[^\s]+)/g, url => /* html */`<a href="${url}"${url.includes(locationHost) && url.includes('room=') ? ' route' : ''} target="${url.includes(locationHost) ? '_self' : '_blank'}">${url}</a>`)

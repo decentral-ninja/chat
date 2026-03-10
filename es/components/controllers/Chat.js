@@ -105,7 +105,7 @@ export const Chat = (ChosenHTMLElement = WebWorker()) => class Chat extends Chos
           textObj = {
             ...mandatoryData,
             type: event.detail.type,
-            text: 'requesting key...',
+            text: 'Requesting key...',
             key: event.detail.key
           }
           break
@@ -113,8 +113,10 @@ export const Chat = (ChosenHTMLElement = WebWorker()) => class Chat extends Chos
           textObj = {
             ...mandatoryData,
             type: event.detail.type,
-            text: 'answering with key...',
-            key: event.detail.key
+            text: `Answering to user "${event.detail.receiver.nickname}" with key "${event.detail.keyName}", waiting for acceptance.`,
+            sharedEncrypted: event.detail.sharedEncrypted,
+            keyName: event.detail.keyName,
+            keyEpoch: event.detail.keyEpoch
           }
           break
         default:
@@ -186,10 +188,23 @@ export const Chat = (ChosenHTMLElement = WebWorker()) => class Chat extends Chos
       }
     }
 
+    this.chatFindEventListener = async event => {
+      // propNames have to be supplied as expl.: 'key.epoch'
+      event.detail.resolve((await this.array).toArray().find(message => {
+        const value = event.detail.propNames.split('.').reduce((acc, propName) => {
+          if (acc[propName]) return acc[propName]
+          return acc
+        }, message)
+        return value === message
+          ? null
+          : value === event.detail.value
+      }))
+    }
+
     this.chatDeleteEventListener = async event => {
       let index = -1
       // check that the uid of the message to delete is the same as this local users uid
-      if (event.detail.uid === await this.uid && (index = (await this.array).toArray().findIndex(message => message.timestamp === event.detail.timestamp && message.uid === event.detail.uid)) !== -1) (await this.array).delete(index, 1)
+      if ((event.detail.forceDelete || event.detail.uid === await this.uid) && (index = (await this.array).toArray().findIndex(message => message.timestamp === event.detail.timestamp && message.uid === event.detail.uid)) !== -1) (await this.array).delete(index, 1)
     }
 
     this.chatObserveEventListener = async event => {
@@ -302,6 +317,7 @@ export const Chat = (ChosenHTMLElement = WebWorker()) => class Chat extends Chos
   connectedCallback () {
     this.addEventListener('chat-add', this.chatAddEventListener)
     this.addEventListener('chat-delete', this.chatDeleteEventListener)
+    this.addEventListener('chat-find', this.chatFindEventListener)
     this.addEventListener('chat-get-text-obj', this.getTextObjEventListener)
     this.addEventListener('yjs-get-chat-event-detail', this.getChatEventDetailEventListener)
     this.globalEventTarget.addEventListener('yjs-get-timestamps-of-messages', this.getTimestampsOfMessages)
@@ -337,6 +353,7 @@ export const Chat = (ChosenHTMLElement = WebWorker()) => class Chat extends Chos
   disconnectedCallback () {
     this.removeEventListener('chat-add', this.chatAddEventListener)
     this.removeEventListener('chat-delete', this.chatDeleteEventListener)
+    this.removeEventListener('chat-find', this.chatFindEventListener)
     this.removeEventListener('chat-get-text-obj', this.getTextObjEventListener)
     this.removeEventListener('yjs-get-chat-event-detail', this.getChatEventDetailEventListener)
     this.globalEventTarget.removeEventListener('yjs-get-timestamps-of-messages', this.getTimestampsOfMessages)

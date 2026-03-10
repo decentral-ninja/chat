@@ -21,24 +21,50 @@ export default class KeyRequestMessage extends Shadow() {
       this.textObj = textObj
     }
 
-    this.clickEventListener = event => {
+    this.clickEventListener = async event => {
       event.preventDefault()
       event.stopPropagation()
       if (!this.keyContainer) return
+      const user = (await new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-user', {
+        detail: {
+          resolve,
+          uid: this.textObj.uid
+        },
+        bubbles: true,
+        cancelable: true,
+        composed: true
+      })))).user
+      let publicKey
+      try {
+        publicKey = JSON.parse(user.publicKey)
+      } catch (error) {
+        return console.warn('Users publicKey is broken!', user)
+      }
+      const shared = await new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-share-key', {
+        detail: {
+          resolve,
+          key: this.keyContainer,
+          publicKey
+        },
+        bubbles: true,
+        cancelable: true,
+        composed: true
+      })))
+      if (shared.error) return
       this.setAttribute('answered', '')
-      console.log('*****TODO: Share the encrypted key in the dispatch below!****', this)
-      /*
       this.dispatchEvent(new CustomEvent('chat-add', {
         detail: {
           type: 'key-answer',
           noDefaultEncryption: true,
-          key
+          sharedEncrypted: shared.encrypted,
+          keyName: this.keyContainer.public.name,
+          keyEpoch: this.keyContainer.key.epoch,
+          receiver: user
         },
         bubbles: true,
         cancelable: true,
         composed: true
       }))
-      */
     }
   }
 
@@ -134,7 +160,7 @@ export default class KeyRequestMessage extends Shadow() {
             <wct-icon-mdx id=icon title="Request key" icon-url="../../../../../../img/icons/key-square.svg" size="3em" hover-selector="a"></wct-icon-mdx>
             <p>"${
               // @ts-ignore
-              escapeHTML(this.textObj.key.public?.name || this.textObj.public.name)}" requested...</p>
+              escapeHTML(this.textObj.key.public?.name || this.textObj.public?.name)}" requested...</p>
           </a>
         </section>
       `
@@ -155,11 +181,11 @@ export default class KeyRequestMessage extends Shadow() {
           this.keyContainer = keyContainer
           this.section.innerHTML = /* html */`
             <a href=#>
-              <p><span id=answer>Send</span><span id=answered>Answered with</span> key:</p>
+              <p><span id=answer>Please, send me the</span><span id=answered>Answered with</span> key:</p>
               <wct-icon-mdx id=icon title="Request key" icon-url="../../../../../../img/icons/key-square.svg" size="3em" hover-selector="a"></wct-icon-mdx>
               <p>"${
                 // @ts-ignore
-                escapeHTML(this.textObj.key.public?.name || this.textObj.public.name)}"</p>
+                escapeHTML(this.textObj.key.public?.name || this.textObj.public?.name)}"</p>
             </a>
           `
         } else {
@@ -170,7 +196,7 @@ export default class KeyRequestMessage extends Shadow() {
               <wct-icon-mdx id=icon title="Request key" icon-url="../../../../../../img/icons/key-square.svg" size="3em" hover-selector="a"></wct-icon-mdx>
               <p>"${
                 // @ts-ignore
-                escapeHTML(this.textObj.key.public?.name || this.textObj.public.name)}" is unknown</p>
+                escapeHTML(this.textObj.key.public?.name || this.textObj.public?.name)}" is unknown</p>
             </a>
           `
         }

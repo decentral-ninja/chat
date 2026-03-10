@@ -64,27 +64,32 @@ export default class Chat extends Shadow() {
           wasLastMessage = textObjs.length === i + 1
           // if timestamp does not exist... assuming that messages timestamp with user uid are unique and we want to avoid double messages.
           if (!this.ul.querySelector(`[timestamp="${timestamp}"][uid='${textObj.uid}']`)) {
-            const div = document.createElement('div')
-            div.innerHTML = this.getMessageHTML(textObj, timestamp, wasLastMessage, isUlEmpty)
-            if (isUlEmpty) {
-              this.ul.appendChild(div.children[0])
+            // a received key, which got shared by another user, does not need visual representation but we digest it here
+            if (textObj.type === 'key-answer' && textObj.sharedEncrypted && !textObj.isSelf) {
+              this.digestKeyAnswer(textObj)
             } else {
-              let prevSibling
-              // @ts-ignore
-              if (Array.from(this.ul.children).reverse().some(child => Number((prevSibling = child).getAttribute('timestamp')?.replace(self.Environment?.timestampNamespace || 't_', '')) < textObj.timestamp)) {
-                // @ts-ignore
-                prevSibling.after(div.children[0])
+              const div = document.createElement('div')
+              div.innerHTML = this.getMessageHTML(textObj, timestamp, wasLastMessage, isUlEmpty)
+              if (isUlEmpty) {
+                this.ul.appendChild(div.children[0])
               } else {
-                this.ul.prepend(div.children[0])
+                let prevSibling
+                // @ts-ignore
+                if (Array.from(this.ul.children).reverse().some(child => Number((prevSibling = child).getAttribute('timestamp')?.replace(self.Environment?.timestampNamespace || 't_', '')) < textObj.timestamp)) {
+                  // @ts-ignore
+                  prevSibling.after(div.children[0])
+                } else {
+                  this.ul.prepend(div.children[0])
+                }
               }
-            }
-            // update awareness timestamp when message is written
-            if (!isUlEmpty && wasLastMessage) {
-              this.dispatchEvent(new CustomEvent('yjs-update-awareness-epoch', {
-                bubbles: true,
-                cancelable: true,
-                composed: true
-              }))
+              // update awareness timestamp when message is written
+              if (!isUlEmpty && wasLastMessage) {
+                this.dispatchEvent(new CustomEvent('yjs-update-awareness-epoch', {
+                  bubbles: true,
+                  cancelable: true,
+                  composed: true
+                }))
+              }
             }
           }
           // scroll behavior
@@ -474,6 +479,61 @@ export default class Chat extends Shadow() {
       cancelable: true,
       composed: true
     }))))
+  }
+
+  async digestKeyAnswer (textObj) {
+    const user = (await new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-user', {
+      detail: {
+        resolve,
+        uid: textObj.uid
+      },
+      bubbles: true,
+      cancelable: true,
+      composed: true
+    })))).user
+    let publicKey
+    try {
+      publicKey = JSON.parse(user.publicKey)
+    } catch (error) {
+      return console.warn('Users publicKey is broken!', user)
+    }
+    const received = await new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-receive-key', {
+      detail: {
+        resolve,
+        encrypted: textObj.sharedEncrypted,
+        publicKey,
+        dispatch: true
+      },
+      bubbles: true,
+      cancelable: true,
+      composed: true
+    })))
+    if (received.error) return
+    const keyRequestTextObj = await new Promise(resolve => this.dispatchEvent(new CustomEvent('chat-find', {
+      detail: {
+        resolve,
+        propNames: 'key.epoch',
+        value: received.decrypted.key.epoch
+      },
+      bubbles: true,
+      cancelable: true,
+      composed: true
+    })))
+    if (keyRequestTextObj) this.dispatchEvent(new CustomEvent('chat-delete', {
+      detail: keyRequestTextObj,
+      bubbles: true,
+      cancelable: true,
+      composed: true
+    }))
+    this.dispatchEvent(new CustomEvent('chat-delete', {
+      detail: {
+        ...textObj,
+        forceDelete: true
+      },
+      bubbles: true,
+      cancelable: true,
+      composed: true
+    }))
   }
 
   get ul () {
