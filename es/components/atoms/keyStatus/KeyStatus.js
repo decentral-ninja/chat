@@ -176,7 +176,7 @@ export default class KeyName extends Shadow() {
         <a-icon-states id=key-icon>
           <template>
             <wct-icon-mdx state="default" title="No encryption key active!" icon-url="../../../../../../img/icons/lock-open-2.svg" size="1.8em" hover-selector="section#section-key-icon"></wct-icon-mdx>
-            <wct-icon-mdx state="decrypted" title="Message successfully decrypted!" icon-url="../../../../../../img/icons/lock-open-2.svg" size="1.8em" hover-selector="section#section-key-icon"></wct-icon-mdx>
+            <wct-icon-mdx state="decrypted" title="Message successfully decrypted!" icon-url="../../../../../../img/icons/lock.svg" size="1.8em" hover-selector="section#section-key-icon"></wct-icon-mdx>
             <wct-icon-mdx state="has-key" title="Encryption key active!" icon-url="../../../../../../img/icons/lock.svg" size="1.8em" hover-selector="section#section-key-icon"></wct-icon-mdx>
           </template>
         </a-icon-states>
