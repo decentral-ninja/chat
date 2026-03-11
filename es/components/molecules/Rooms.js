@@ -623,7 +623,7 @@ export default class Rooms extends Shadow() {
    * @returns {string}
    */
   static getRandomRoom () {
-    return `random-room-${Date.now()}`
+    return `random-room-${self.crypto.randomUUID()}`
   }
 
   get randomRoom () {

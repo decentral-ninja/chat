@@ -66,16 +66,25 @@ export default class KeyRequestMessage extends Shadow() {
         composed: true
       }))
     }
+
+    this.newKeyEventListener = async event => {
+      if (event.detail.error || !this.hasAttribute('unknown')) return
+      if (event.detail.decrypted.key.epoch !== this.textObj.key.epoch) return
+      this.html = ''
+      this.renderHTML()
+    }
   }
 
   connectedCallback () {
     if (this.shouldRenderCSS()) this.renderCSS()
     if (this.shouldRenderHTML()) this.renderHTML()
     this.addEventListener('click', this.clickEventListener, { once: true })
+    this.globalEventTarget.addEventListener('yjs-received-key', this.newKeyEventListener)
   }
 
   disconnectedCallback () {
     this.removeEventListener('click', this.clickEventListener)
+    this.globalEventTarget.removeEventListener('yjs-received-key', this.newKeyEventListener)
   }
 
   /**
@@ -178,6 +187,7 @@ export default class KeyRequestMessage extends Shadow() {
         composed: true
       }))).then(keyContainer => {
         if (keyContainer) {
+          this.removeAttribute('unknown')
           this.keyContainer = keyContainer
           this.section.innerHTML = /* html */`
             <a href=#>
@@ -226,5 +236,10 @@ export default class KeyRequestMessage extends Shadow() {
 
   get template () {
     return this.root.querySelector('template')
+  }
+
+  get globalEventTarget () {
+    // @ts-ignore
+    return this._globalEventTarget || (this._globalEventTarget = self.Environment?.activeRoute || document.body)
   }
 }

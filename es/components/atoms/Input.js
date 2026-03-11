@@ -14,10 +14,7 @@ export default class Input extends Shadow() {
 
     this.sendEventListener = async (event, input) => {
       let replyToTextObj = null
-      if (this.replyToSection.innerHTML) {
-        replyToTextObj = await this.chatMessageEl.textObj
-        this.replyToSection.innerHTML = ''
-      }
+      if (this.replyToSection.innerHTML) replyToTextObj = await this.chatMessageEl.textObj
       this.dispatchEvent(new CustomEvent('chat-add', {
         detail: {
           input: input || event.composedPath()[0],
@@ -27,6 +24,7 @@ export default class Input extends Shadow() {
         cancelable: true,
         composed: true
       }))
+      if (this.replyToSection.innerHTML) this.clearReplyToSection()
       this.textarea.style.height = 'auto'
     }
 
@@ -148,6 +146,28 @@ export default class Input extends Shadow() {
         path: `${this.importMetaUrl}../../../../web-components-toolbox/src/es/components/atoms/menuIcon/MenuIcon.js?${Environment?.version || ''}`,
         name: 'wct-menu-icon'
       }]).then(() => {
+        if (event.detail.textObj.encrypted) {
+          new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-active-room-default-key', {
+            detail: {
+              resolve
+            },
+            bubbles: true,
+            cancelable: true,
+            composed: true
+          }))).then(keyContainer => {
+            this.beforeReplyDefaultKeyEpoch = keyContainer?.key.epoch || ''
+            this.dispatchEvent(new CustomEvent('yjs-set-active-room-default-key', {
+              detail: {
+                epoch: event.detail.textObj.encrypted.key.epoch
+              },
+              bubbles: true,
+              cancelable: true,
+              composed: true
+            }))
+          })
+        } else {
+          this.beforeReplyDefaultKeyEpoch = undefined
+        }
         this.replyToSection.innerHTML = /* html */`
           <div id="reply-controls">
             <h4>Reply to:</h4>
@@ -157,7 +177,7 @@ export default class Input extends Shadow() {
             <template>${JSON.stringify(event.detail.textObj)}</template>
           </chat-m-message>
         `
-        this.replyClose.addEventListener('click', event => (this.replyToSection.innerHTML = ''), { once: true })
+        this.replyClose.addEventListener('click', event => this.clearReplyToSection(), { once: true })
         this.chatMessageEl.addEventListener('click', event => this.dispatchEvent(new CustomEvent('chat-scroll', {
           detail: {
             scrollEl: this.chatMessageEl.getAttribute('timestamp')
@@ -421,6 +441,18 @@ export default class Input extends Shadow() {
   isTouchScreen () {
     // @ts-ignore
     return ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (navigator.msMaxTouchPoints > 0)
+  }
+
+  clearReplyToSection () {
+    this.replyToSection.innerHTML = ''
+    if (this.beforeReplyDefaultKeyEpoch !== undefined) this.dispatchEvent(new CustomEvent('yjs-set-active-room-default-key', {
+      detail: {
+        epoch: this.beforeReplyDefaultKeyEpoch
+      },
+      bubbles: true,
+      cancelable: true,
+      composed: true
+    }))
   }
 
   get isMobile () {

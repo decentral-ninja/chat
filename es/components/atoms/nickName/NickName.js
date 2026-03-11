@@ -223,7 +223,8 @@ export default class NickName extends Shadow() {
    * @prop {string} nickname
    * @returns Promise<void>
    */
-  renderHTML (nickname = this.getAttribute('nickname')) {
+  renderHTML (nickname) {
+    if (!nickname) nickname = this.getAttribute('nickname')
     if (this.lastNickname === nickname) return Promise.resolve()
     this.lastNickname = nickname
     nickname = escapeHTML(nickname) || (this.hasAttribute('self') ? 'Loading...' : 'users nickname is unknown')

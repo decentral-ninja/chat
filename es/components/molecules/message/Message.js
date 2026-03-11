@@ -107,10 +107,15 @@ export default class Message extends WebWorker(Intersection()) {
   connectedCallback () {
     super.connectedCallback()
     if (this.isConnected) this.connectedCallbackOnce()
-    if (this.shouldRenderCSS()) this.renderCSS()
+    this.hidden = true
+    if (this.shouldRenderCSS()) this.renderCSS().then(() => {
+      // default behavior after rendering css to show the component. All other types unhide after rendered html
+      if (this.getAttribute('type') === 'default') this.hidden = false
+    })
     const htmlReadyFunc = () => {
       this.addEventListeners()
       const updateReadyFunc = () => {
+        this.hidden = false
         this.dispatchEvent(new CustomEvent('message-rendered', {
           detail: {
             message: this
@@ -136,7 +141,15 @@ export default class Message extends WebWorker(Intersection()) {
 
   connectedCallbackOnce () {
     try {
-      this.textObj = Promise.resolve(this.template ? JSON.parse(this.template.content.textContent) : null)
+      const textObj = this.template ? JSON.parse(this.template.content.textContent) : null
+      this.textObj = Promise.resolve(textObj)
+      this.setAttribute('type', textObj.type
+        ? textObj.type
+        : textObj.encrypted
+          ? 'encrypted'
+          : 'default'
+      )
+      if (textObj.encrypted) this.setAttribute('encrypted', '')
     } catch (error) {
       // NOTE: this Error can be triggered by corrupt html. Expl.: <img src="" \"> which as object can be JSON stringified and parsed but at molecules/Chat.js breaks it after inserting the corrupt html string into the <template> tag
       // @ts-ignore
@@ -151,6 +164,7 @@ export default class Message extends WebWorker(Intersection()) {
       // @ts-ignore
       this.textObj.hasError = true
       console.error('Could not parse message:', { message: this, error })
+      this.setAttribute('type', 'error')
     }
     this.connectedCallbackOnce = () => {}
   }
@@ -278,13 +292,13 @@ export default class Message extends WebWorker(Intersection()) {
       :host li > span {
         word-break: break-word;
       }
-      :host li > span.text {
+      :host([type=default]) li > span.text {
         white-space: pre-line;
       }
       :host li > span.text > wct-button, :host li > span.text > wct-icon-mdx, :host li > span.text > chat-a-provider-name, :host li > span.text > chat-a-key-request-button {
         display: block;
       }
-      :host:has(li > span.text > chat-a-key-request-message[unknown]) {
+      :host(:not([self])):has(li > span.text > chat-a-key-request-message[unknown]) {
         display: none;
       }
       :host li > span.text > wct-button{
@@ -355,9 +369,9 @@ export default class Message extends WebWorker(Intersection()) {
         return this.fetchCSS([{
           path: `${this.importMetaUrl}./default-/default-.css`, // apply namespace since it is specific and no fallback
           namespace: false
-        }, ...styles])
+        }, ...styles], false)
       default:
-        return this.fetchCSS(styles)
+        return this.fetchCSS(styles, false)
     }
   }
 
@@ -365,12 +379,12 @@ export default class Message extends WebWorker(Intersection()) {
    * Render HTML
    *
    * @param {Promise<import("../../controllers/Chat.js").TextObj | TextObjDeleted>} [textObj=this.textObj]
-   * @return {Promise<[any, any]>}
+   * @return {Promise<[any, any, any]>}
    */
   async renderHTML (textObj = this.textObj) {
     const textObjSync = structuredClone(await textObj)
     // @ts-ignore
-    this.html = Message.renderList(textObjSync, this.hasAttribute('no-dialog'), undefined, textObjSync.encrypted)
+    this.html = Message.renderList(textObjSync, this.hasAttribute('no-dialog'), undefined, textObjSync.encrypted, this.hasAttribute('self'))
     // do the whole decryption here
     if (textObjSync.encrypted) {
       this.setAttribute('encrypted', '')
@@ -406,8 +420,10 @@ export default class Message extends WebWorker(Intersection()) {
         this.globalEventTarget.addEventListener('yjs-received-key', this.keysEventListener)
       }
     }
-    if (!textObjSync.deleted) this.webWorker(Message.processText, textObjSync, location.host).then(textObj => (this.textSpan.innerHTML = Message.htmlPurify(textObj.text)))
     return Promise.all([
+      textObjSync.deleted
+        ? null
+        : this.webWorker(Message.processText, textObjSync, location.host).then(textObj => (this.textSpan.innerHTML = Message.htmlPurify(textObj.text))),
       textObjSync.replyTo && this.hasAttribute('show-reply-to')
         ? this.renderReplyTo(textObjSync)
         : null,
@@ -493,14 +509,14 @@ export default class Message extends WebWorker(Intersection()) {
    * @returns
    * @memberof Message
    */
-  static renderList (textObj, hasAttributeNoDialog, part = 'li', isEncrypted = false) {
+  static renderList (textObj, hasAttributeNoDialog, part = 'li', isEncrypted = false, isSelf = false) {
     // ATTENTION: Attribute static does not need any user nor dialog interaction!
     return /* html */`
       <li part="${part}"${textObj.deleted ? ' deleted' : ''}>
         <div>
           <div>
             ${//@ts-ignore
-              textObj.encrypted ? /* html */`<chat-a-key-status epoch='${textObj.encrypted.key.epoch}' public-name="${escapeHTML(textObj.encrypted.key.public?.name || textObj.encrypted.public?.name)}" is-message-child></chat-a-key-status>` : ''}
+              textObj.encrypted ? /* html */`<chat-a-key-status epoch='${textObj.encrypted.key.epoch}' public-name="${escapeHTML(textObj.encrypted.key.public?.name || textObj.encrypted.public?.name)}" is-message-child ${isSelf ? 'self' : ''}></chat-a-key-status>` : ''}
             ${textObj.deleted ? '' : /* html */`<chat-a-nick-name class="user" uid='${textObj.uid}' nickname="${escapeHTML(textObj.updatedNickname)}"${textObj.isSelf ? ' self user-dialog-show-event-only-on-avatar' : ' user-dialog-show-event'}></chat-a-nick-name>`}
           </div>
           ${hasAttributeNoDialog
@@ -535,7 +551,7 @@ export default class Message extends WebWorker(Intersection()) {
         textObj.text = /* html */`<span>shared the following provider: </span><chat-a-provider-name id="${textObj.id}" provider-dialog-show-event><span name>${textObj.text}</span></chat-a-provider-name>`
         break
       case 'key-request':
-        textObj.text = /* html */`<chat-a-key-request-message>
+        textObj.text = /* html */`<chat-a-key-request-message unknown>
           <template>${JSON.stringify(textObj)}</template>
         </chat-a-key-request-message>`
         break

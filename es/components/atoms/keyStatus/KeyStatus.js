@@ -141,7 +141,7 @@ export default class KeyName extends Shadow() {
         position: relative;
       }
       :host > section > a-icon-states {
-        --svg-filter: drop-shadow(0px 0px 0.075em var(--color-white));
+        --svg-filter: drop-shadow(0px 0px 0.075em var(--key-status-svg-filter-color, var(--color-white)));
       }
       :host > section > p {
         position: absolute;
@@ -153,11 +153,17 @@ export default class KeyName extends Shadow() {
         white-space: nowrap;
         color: var(--color);
         transition: var(--transition);
-        text-shadow: 0px 0px 0.075em var(--color-white);
+        text-shadow: 0px 0px 0.075em var(--key-status-text-shadow-color, var(--color-white));
         max-width: var(--max-width, 50dvw);
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+      }
+      :host([self]) > section > p {
+        text-shadow: 0px 0px 0.075em var(--key-status-self-text-shadow-color, var(--key-status-text-shadow-color, var(--color-white)));
+      }
+      :host([self]) > section > a-icon-states {
+        --svg-filter: drop-shadow(0px 0px 0.075em var(--key-status-self-svg-filter-color, var(--color-white)));
       }
       :host(:hover) > section > p {
         color: var(--color-yellow);

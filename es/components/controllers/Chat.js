@@ -190,7 +190,8 @@ export const Chat = (ChosenHTMLElement = WebWorker()) => class Chat extends Chos
 
     this.chatFindEventListener = async event => {
       // propNames have to be supplied as expl.: 'key.epoch'
-      event.detail.resolve((await this.array).toArray().find(message => {
+      // @ts-ignore
+      event.detail.resolve(await this.webWorker(Chat.enrichTextObj, (await this.array).toArray().filter(message => {
         const value = event.detail.propNames.split('.').reduce((acc, propName) => {
           if (acc[propName]) return acc[propName]
           return acc
@@ -198,7 +199,7 @@ export const Chat = (ChosenHTMLElement = WebWorker()) => class Chat extends Chos
         return value === message
           ? null
           : value === event.detail.value
-      }))
+      }), await this.uid, (await (await this.usersData)()).allUsers))
     }
 
     this.chatDeleteEventListener = async event => {

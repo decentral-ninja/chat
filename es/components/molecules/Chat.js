@@ -274,9 +274,14 @@ export default class Chat extends Shadow() {
         min-height: var(--chat-m-message-min-height);
       }
       :host > ul > .deleted {
-        animation: delete 3s ease-out;
         overflow: hidden;
         min-height: 0;
+      }
+      :host > ul > .deleted:not([type=key-request]) {
+        animation: delete 3s ease-out;
+      }
+      :host > ul > .deleted[type=key-request] {
+        animation: delete 0s ease-out;
       }
       :host > ul + section#empty {
         display: grid;
@@ -497,6 +502,7 @@ export default class Chat extends Shadow() {
     } catch (error) {
       return console.warn('Users publicKey is broken!', user)
     }
+    // decrypt the key message
     const received = await new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-receive-key', {
       detail: {
         resolve,
@@ -509,7 +515,8 @@ export default class Chat extends Shadow() {
       composed: true
     })))
     if (received.error) return
-    const keyRequestTextObj = await new Promise(resolve => this.dispatchEvent(new CustomEvent('chat-find', {
+    // delete unneeded answer key message
+    const keyRequestTextObjs = await new Promise(resolve => this.dispatchEvent(new CustomEvent('chat-find', {
       detail: {
         resolve,
         propNames: 'key.epoch',
@@ -519,12 +526,13 @@ export default class Chat extends Shadow() {
       cancelable: true,
       composed: true
     })))
-    if (keyRequestTextObj) this.dispatchEvent(new CustomEvent('chat-delete', {
+    keyRequestTextObjs.filter(message => message.isSelf).forEach(keyRequestTextObj => this.dispatchEvent(new CustomEvent('chat-delete', {
       detail: keyRequestTextObj,
       bubbles: true,
       cancelable: true,
       composed: true
-    }))
+    })))
+    // delete unneeded request key message
     this.dispatchEvent(new CustomEvent('chat-delete', {
       detail: {
         ...textObj,
@@ -534,6 +542,26 @@ export default class Chat extends Shadow() {
       cancelable: true,
       composed: true
     }))
+    // check if there is already a default key
+    const keyContainer = await new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-active-room-default-key', {
+      detail: {
+        resolve
+      },
+      bubbles: true,
+      cancelable: true,
+      composed: true
+    })))
+    // set received key as default key if no default key has been set so far
+    if (!keyContainer) {
+      this.dispatchEvent(new CustomEvent('yjs-set-active-room-default-key', {
+        detail: {
+          epoch: received.decrypted.key.epoch
+        },
+        bubbles: true,
+        cancelable: true,
+        composed: true
+      }))
+    }
   }
 
   get ul () {
