@@ -281,7 +281,7 @@ export default class Chat extends Shadow() {
         animation: delete 3s ease-out;
       }
       :host > ul > .deleted[type=key-request] {
-        animation: delete 0s ease-out;
+        animation: delete 0.1s ease-out;
       }
       :host > ul + section#empty {
         display: grid;
