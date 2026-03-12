@@ -66,7 +66,7 @@ export default class Chat extends Shadow() {
           if (!this.ul.querySelector(`[timestamp="${timestamp}"][uid='${textObj.uid}']`)) {
             // a received key, which got shared by another user, does not need visual representation but we digest it here
             if (textObj.type === 'key-answer' && textObj.sharedEncrypted && !textObj.isSelf) {
-              this.digestKeyAnswer(textObj)
+              if (event.detail.added) this.digestKeyAnswer(textObj)
             } else {
               const div = document.createElement('div')
               div.innerHTML = this.getMessageHTML(textObj, timestamp, wasLastMessage, isUlEmpty)
@@ -515,7 +515,7 @@ export default class Chat extends Shadow() {
       composed: true
     })))
     if (received.error) return
-    // delete unneeded answer key message
+    // delete unneeded request key messages
     const keyRequestTextObjs = await new Promise(resolve => this.dispatchEvent(new CustomEvent('chat-find', {
       detail: {
         resolve,
@@ -532,7 +532,17 @@ export default class Chat extends Shadow() {
       cancelable: true,
       composed: true
     })))
-    // delete unneeded request key message
+    // delete unneeded answer key messages
+    const keyAnswerTextObjs = await new Promise(resolve => this.dispatchEvent(new CustomEvent('chat-find', {
+      detail: {
+        resolve,
+        propNames: 'key.epoch',
+        value: textObj.keyEpoch
+      },
+      bubbles: true,
+      cancelable: true,
+      composed: true
+    })))
     this.dispatchEvent(new CustomEvent('chat-delete', {
       detail: {
         ...textObj,
@@ -542,6 +552,15 @@ export default class Chat extends Shadow() {
       cancelable: true,
       composed: true
     }))
+    keyAnswerTextObjs.forEach(keyAnswerTextObj => this.dispatchEvent(new CustomEvent('chat-delete', {
+      detail: {
+        ...keyAnswerTextObj,
+        forceDelete: true
+      },
+      bubbles: true,
+      cancelable: true,
+      composed: true
+    })))
     // check if there is already a default key
     const keyContainer = await new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-active-room-default-key', {
       detail: {

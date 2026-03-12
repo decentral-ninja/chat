@@ -93,14 +93,32 @@ export default class Message extends WebWorker(Intersection()) {
       if (event.detail.error) return
       const textObjSync = await this.textObj
       if (!textObjSync.encrypted) return
-      if (event.detail.newKey && event.detail.newKey.key.epoch !== textObjSync.encrypted.key.epoch) return
-      // @ts-ignore
-      if (Array.isArray(event.detail.deleted) && event.detail.deleted.every(deletedKeyContainer => deletedKeyContainer.key.epoch !== textObjSync.encrypted.key.epoch)) return
-      if (event.detail.decrypted && event.detail.decrypted.key.epoch !== textObjSync.encrypted.key.epoch) return
+      let keyContainersAreIdentical
+      // yjs-new-key
+      if (event.detail.newKey) {
+        if (event.detail.newKey.key.epoch !== textObjSync.encrypted.key.epoch) return
+        keyContainersAreIdentical = false
+        this._keyContainer = event.detail.newKey
+      }
+      // yjs-key-deleted
+      if (Array.isArray(event.detail.deleted)) {
+        // @ts-ignore
+        if (event.detail.deleted.every(deletedKeyContainer => deletedKeyContainer.key.epoch !== textObjSync.encrypted.key.epoch)) return
+        keyContainersAreIdentical = false
+        this._keyContainer = undefined
+      }
+      // yjs-received-key
+      if (event.detail.decrypted) {
+        if (event.detail.decrypted.key.epoch !== textObjSync.encrypted.key.epoch) return
+        const oldKeyContainer = await this.keyContainer
+        const newKeyContainer = event.detail.decrypted
+        keyContainersAreIdentical = oldKeyContainer?.disabled === newKeyContainer?.disabled && oldKeyContainer?.public.name === newKeyContainer?.public.name && oldKeyContainer?.private.name === newKeyContainer?.private.name
+        this._keyContainer = newKeyContainer
+      }
       this.globalEventTarget.removeEventListener('yjs-new-key', this.keysEventListener)
       this.globalEventTarget.removeEventListener('yjs-key-deleted', this.keysEventListener)
       this.globalEventTarget.removeEventListener('yjs-received-key', this.keysEventListener)
-      this.update()
+      this.update(keyContainersAreIdentical)
     }
   }
 
@@ -292,7 +310,7 @@ export default class Message extends WebWorker(Intersection()) {
       :host li > span {
         word-break: break-word;
       }
-      :host([type=default]) li > span.text {
+      :host li > span.text {
         white-space: pre-line;
       }
       :host li > span.text > wct-button, :host li > span.text > wct-icon-mdx, :host li > span.text > chat-a-provider-name, :host li > span.text > chat-a-key-request-button {
@@ -344,6 +362,11 @@ export default class Message extends WebWorker(Intersection()) {
       :host li > span.text > #key-answer {
         display: flex;
         white-space: normal;
+      }
+      @media only screen and (max-width: _max-width_) {
+        :host li > span.text > #key-answer {
+          flex-direction: column;
+        }
       }
     `
     return this.fetchTemplate()
@@ -480,19 +503,16 @@ export default class Message extends WebWorker(Intersection()) {
     })
   }
 
-  update () {
+  update (keyContainersAreIdentical = true) {
     // @ts-ignore
     return this.textObj.hasError || this.hasAttribute('no-update')
       ? Promise.resolve()
       : Promise.all([
         this.textObj,
         this.getUpdatedTextObj(),
-        this.keyContainer,
-        this.getKeyContainer(true)
-      ]).then(([textObj, updatedTextObj, oldKeyContainer, newKeyContainer]) => {
+      ]).then(([textObj, updatedTextObj]) => {
         const textObjsAreIdentical = JSON.stringify(textObj) === JSON.stringify(updatedTextObj)
         if (textObjsAreIdentical && !textObj.encrypted) return
-        const keyContainersAreIdentical = oldKeyContainer?.disabled === newKeyContainer?.disabled && oldKeyContainer?.public.name === newKeyContainer?.public.name && oldKeyContainer?.private.name === newKeyContainer?.private.name
         if (textObjsAreIdentical && keyContainersAreIdentical) return
         this.textObj = Promise.resolve(updatedTextObj)
         this.removeEventListeners()

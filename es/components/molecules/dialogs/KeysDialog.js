@@ -399,8 +399,11 @@ export default class KeysDialog extends Dialog {
     tempDiv.innerHTML = keyContainers.error
       // @ts-ignore
       ? `<span style="color: red;">Error: ${JSON.stringify(keyContainers.error)}</span>`
+      : keyContainers
       // @ts-ignore
-      : keyContainers.reverse().reduce((acc, keyContainer, i) => {
+      .sort((a, b) => Math.max(a.private.origin?.timestamp || '', a.private.shared?.[0]?.timestamp || '', a.private.received?.[0]?.timestamp || '', a.private.encrypted?.[0]?.timestamp || '', a.private.decrypted?.[0]?.timestamp || '') - Math.max(b.private.origin?.timestamp || '', b.private.shared?.[0]?.timestamp || '', b.private.received?.[0]?.timestamp || '', b.private.encrypted?.[0]?.timestamp || '', b.private.decrypted?.[0]?.timestamp || ''))
+      .reverse()
+      .reduce((acc, keyContainer, i) => {
         /// / render or update
         // @ts-ignore
         const epoch = keyContainer.key.epoch

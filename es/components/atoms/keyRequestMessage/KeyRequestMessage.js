@@ -136,6 +136,12 @@ export default class KeyRequestMessage extends Shadow() {
       :host([answered]) > section > a #answered {
         display: inline;
       }
+      @media only screen and (max-width: _max-width_) {
+        :host > section > a {
+          align-items: center;
+          flex-direction: column;
+        }
+      }
     `
     return this.fetchTemplate()
   }
@@ -191,7 +197,7 @@ export default class KeyRequestMessage extends Shadow() {
           this.keyContainer = keyContainer
           this.section.innerHTML = /* html */`
             <a href=#>
-              <p><span id=answer>Please, send me the</span><span id=answered>Answered with</span> key:</p>
+              <p><span id=answer>Click here to send the requested</span><span id=answered>Answered with</span> key:</p>
               <wct-icon-mdx id=icon title="Request key" icon-url="../../../../../../img/icons/key-square.svg" size="3em" hover-selector="a"></wct-icon-mdx>
               <p>"${
                 // @ts-ignore

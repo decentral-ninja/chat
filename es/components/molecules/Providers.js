@@ -607,7 +607,8 @@ export default class Providers extends Shadow() {
     iconStatesEl.setAttribute('state', online
       ? (counter = sessionProvidersByStatus.connected.length)
           ? 'connected'
-          : sessionProvidersByStatus.disconnected.length
+          // has websocketUrl or webrtcUrl means it is actively trying to connect
+          : sessionProvidersByStatus.disconnected.length && (sessionProvidersByStatus.websocketUrl || sessionProvidersByStatus.webrtcUrl)
             ? 'disconnected'
             : 'no-active'
       : 'offline'

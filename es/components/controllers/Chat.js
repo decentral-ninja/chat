@@ -113,7 +113,7 @@ export const Chat = (ChosenHTMLElement = WebWorker()) => class Chat extends Chos
           textObj = {
             ...mandatoryData,
             type: event.detail.type,
-            text: `Answering to user "${event.detail.receiver.nickname}" with key "${event.detail.keyName}", waiting for acceptance.`,
+            text: `Private/public key encrypted message to user "${event.detail.receiver.nickname}" with key "${event.detail.keyName}", waiting for acceptance of key: `,
             sharedEncrypted: event.detail.sharedEncrypted,
             keyName: event.detail.keyName,
             keyEpoch: event.detail.keyEpoch
