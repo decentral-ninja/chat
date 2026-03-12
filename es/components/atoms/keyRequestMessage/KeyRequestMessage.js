@@ -59,7 +59,8 @@ export default class KeyRequestMessage extends Shadow() {
           sharedEncrypted: shared.encrypted,
           keyName: this.keyContainer.public.name,
           keyEpoch: this.keyContainer.key.epoch,
-          receiver: user
+          receiver: user,
+          replyToTextObj: this.textObj
         },
         bubbles: true,
         cancelable: true,

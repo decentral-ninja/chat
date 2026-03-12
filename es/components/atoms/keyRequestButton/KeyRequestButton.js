@@ -12,15 +12,17 @@ import { getHexColor } from '../../../../../Helpers.js'
 * @type {CustomElementConstructor}
 */
 export default class KeyRequestButton extends Shadow() {
-  constructor (encrypted, options = {}, ...args) {
+  constructor (textObj, options = {}, ...args) {
     super({ importMetaUrl: import.meta.url, tabindex: 'no-tabindex', ...options }, ...args)
 
     if (this.template) {
+      this.textObj = JSON.parse(this.template.content.textContent)
       /** @type {import('../../../../../event-driven-web-components-prototypes/src/controllers/Crypto.js').ENCRYPTED & {public: {name: string}}} */
-      this.encrypted = JSON.parse(this.template.content.textContent)
+      this.encrypted = this.textObj.encrypted
     } else {
+      this.textObj = textObj
       /** @type {import('../../../../../event-driven-web-components-prototypes/src/controllers/Crypto.js').ENCRYPTED & {public: {name: string}}} */
-      this.encrypted = encrypted
+      this.encrypted = this.textObj.encrypted
     }
 
     this.clickEventListener = event => {
@@ -36,7 +38,8 @@ export default class KeyRequestButton extends Shadow() {
         detail: {
           type: 'key-request',
           noDefaultEncryption: true,
-          key
+          key,
+          replyToTextObj: this.textObj
         },
         bubbles: true,
         cancelable: true,
@@ -129,10 +132,11 @@ export default class KeyRequestButton extends Shadow() {
    * @returns Promise<void>
    */
   renderHTML () {
+    if (this.textObj.requested) this.setAttribute('requested', '')
     this.html = /* html */`
       <section>
         <a href=#>
-          <p><span id=request>Request</span><span id=requested>Requested</span> key:</p>
+          <p><span id=request>Click here to request</span><span id=requested>Requested</span> key:</p>
           <a-icon-combinations id=icon namespace=icon-combinations-add-key- title="Request key">
             <template>
               <wct-icon-mdx title="Request key" icon-url="../../../../../../img/icons/key-square.svg" size="3em" hover-selector="a"></wct-icon-mdx>

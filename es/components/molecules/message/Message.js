@@ -30,7 +30,9 @@ import { Intersection } from '../../../../../event-driven-web-components-prototy
   decrypted?: boolean,
   type?: string,
   src?: string,
-  id?: string
+  id?: string,
+  answered?: true,
+  requested?: true
  }} TextObjDeleted
 */
 
@@ -360,6 +362,7 @@ export default class Message extends WebWorker(Intersection()) {
         cursor: auto;
       }
       :host li > span.text > #key-answer {
+        align-items: end;
         display: flex;
         white-space: normal;
       }
@@ -491,6 +494,10 @@ export default class Message extends WebWorker(Intersection()) {
 
   renderReplyTo (textObj) {
     return this.getUpdatedTextObj(Promise.resolve(textObj.replyTo)).then(updatedTextObj => {
+      // reply to encrypted message with key-request
+      if (textObj.type === 'key-request' && updatedTextObj.encrypted) updatedTextObj.requested = true
+      // reply to key-request with the answer
+      if (textObj.type === 'key-answer' && updatedTextObj.type === 'key-request') updatedTextObj.answered = true
       if (this.replyToLi) this.replyToLi.remove()
       this.li.insertAdjacentHTML('afterbegin', /* html */`
         <chat-m-message part="reply-to-li" timestamp="${
@@ -554,7 +561,7 @@ export default class Message extends WebWorker(Intersection()) {
   static processText (textObj, locationHost = location.host) {
     if (textObj.encrypted && !textObj.decrypted) {
       textObj.text = /* html */`<chat-a-key-request-button>
-        <template>${JSON.stringify(textObj.encrypted)}</template>
+        <template>${JSON.stringify(textObj)}</template>
       </chat-a-key-request-button>`
       return textObj
     }
@@ -571,7 +578,7 @@ export default class Message extends WebWorker(Intersection()) {
         textObj.text = /* html */`<span>shared the following provider: </span><chat-a-provider-name id="${textObj.id}" provider-dialog-show-event><span name>${textObj.text}</span></chat-a-provider-name>`
         break
       case 'key-request':
-        textObj.text = /* html */`<chat-a-key-request-message unknown>
+        textObj.text = /* html */`<chat-a-key-request-message unknown ${textObj.answered ? ' answered' : ''}>
           <template>${JSON.stringify(textObj)}</template>
         </chat-a-key-request-message>`
         break

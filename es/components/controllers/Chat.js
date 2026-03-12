@@ -25,7 +25,9 @@ import { WebWorker } from '../../../../event-driven-web-components-prototypes/sr
   decrypted?: boolean,
   type?: string,
   src?: string,
-  id?: string
+  id?: string,
+  answered?: true,
+  requested?: true
  }} TextObj
 */
 
@@ -106,17 +108,25 @@ export const Chat = (ChosenHTMLElement = WebWorker()) => class Chat extends Chos
             ...mandatoryData,
             type: event.detail.type,
             text: 'Requesting key...',
-            key: event.detail.key
+            key: event.detail.key,
+            replyTo: {
+              timestamp: event.detail.replyToTextObj.timestamp,
+              uid: event.detail.replyToTextObj.uid
+            }
           }
           break
         case 'key-answer':
           textObj = {
             ...mandatoryData,
             type: event.detail.type,
-            text: `Private/public key encrypted message to user "${event.detail.receiver.nickname}" with key "${event.detail.keyName}", waiting for acceptance of key: `,
+            text: `Private/public key encrypted message to user "${event.detail.receiver.nickname}" with key "${event.detail.keyName}". Waiting for acceptance of key: `,
             sharedEncrypted: event.detail.sharedEncrypted,
             keyName: event.detail.keyName,
-            keyEpoch: event.detail.keyEpoch
+            keyEpoch: event.detail.keyEpoch,
+            replyTo: {
+              timestamp: event.detail.replyToTextObj.timestamp,
+              uid: event.detail.replyToTextObj.uid
+            }
           }
           break
         default:
@@ -202,10 +212,20 @@ export const Chat = (ChosenHTMLElement = WebWorker()) => class Chat extends Chos
       }), await this.uid, (await (await this.usersData)()).allUsers))
     }
 
+    // wait for previous delete to finish before running next delete since the crdt array is async and else leads to this error: https://discuss.yjs.dev/t/deleting-multiple-array-elements-by-indexes/826
+    this.queue = []
     this.chatDeleteEventListener = async event => {
+      const queuePromiseAll = Promise.all(this.queue)
+      let queueResolve
+      const queuePromise = new Promise(resolve => (queueResolve = resolve))
+      this.queue.push(queuePromise)
+      await queuePromiseAll
       let index = -1
       // check that the uid of the message to delete is the same as this local users uid
       if ((event.detail.forceDelete || event.detail.uid === await this.uid) && (index = (await this.array).toArray().findIndex(message => message.timestamp === event.detail.timestamp && message.uid === event.detail.uid)) !== -1) (await this.array).delete(index, 1)
+      // @ts-ignore
+      queueResolve()
+      this.queue.splice(this.queue.indexOf(queuePromise), 1)
     }
 
     this.chatObserveEventListener = async event => {
