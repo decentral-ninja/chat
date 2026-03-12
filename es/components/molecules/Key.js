@@ -24,6 +24,17 @@ export default class Key extends Intersection() {
     }
     this.setAttribute('epoch', this.epoch)
 
+    this.downloadIconClickEventListener = event => {
+      const blob = new Blob([JSON.stringify(this.keyContainer)], { type: 'text/plain' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.target = '_blank'
+      a.download = this.keyContainer.private.name
+      a.click()
+      URL.revokeObjectURL(url)      
+    }
+
     this.trashIconClickEventListener = event => {
       const value = this.trashIcon.getAttribute('state') === 'undo' ? 'default' : 'undo'
       this.trashIcon.setAttribute('state', value)
@@ -75,6 +86,7 @@ export default class Key extends Intersection() {
       this.hidden = false
     })
     this.trashIcon.addEventListener('click', this.trashIconClickEventListener)
+    this.downloadIcon.addEventListener('click', this.downloadIconClickEventListener)
     this.checkbox.addEventListener('input', this.inputEventListener)
     this.addEventListener('close', this.closeDetailsEventListener)
     this.addEventListener('wct-details-animationend', this.detailsAnimationendEventListener)
@@ -84,6 +96,7 @@ export default class Key extends Intersection() {
   disconnectedCallback () {
     super.disconnectedCallback()
     this.trashIcon.removeEventListener('click', this.trashIconClickEventListener)
+    this.downloadIcon.removeEventListener('click', this.downloadIconClickEventListener)
     this.checkbox.removeEventListener('input', this.inputEventListener)
     this.removeEventListener('close', this.closeDetailsEventListener)
     this.removeEventListener('wct-details-animationend', this.detailsAnimationendEventListener)
@@ -186,7 +199,7 @@ export default class Key extends Intersection() {
       }
       :host([deleted]) #grid > [style="grid-area: keyIcons"] > input,
       :host(.no-checkbox:not([checked])) #grid > [style="grid-area: keyIcons"] > input,
-      #grid > [style="grid-area: keyIcons"] > input:checked + #trash-icon {
+      #grid > [style="grid-area: keyIcons"] > input:checked ~ #trash-icon {
         display: none;
       }
       :host([deleted]) #grid > [style="grid-area: keyIcons"] > label,
@@ -302,6 +315,7 @@ export default class Key extends Intersection() {
             </a-icon-states>
           </label>
           <input type="checkbox" id="checkbox" name="checkbox" title="select this key">
+          <wct-icon-mdx id="download-icon" title="download" delete icon-url="../../../../../../img/icons/download.svg" size="2em"></wct-icon-mdx>
           <a-icon-states id=trash-icon>
             <template>
               <wct-icon-mdx state="default" title="delete" delete icon-url="../../../../../../img/icons/trash.svg" size="2em"></wct-icon-mdx>
@@ -548,6 +562,10 @@ export default class Key extends Intersection() {
 
   get checkbox () {
     return this.section.querySelector('#checkbox')
+  }
+
+  get downloadIcon () {
+    return this.section.querySelector('#download-icon')
   }
 
   get trashIcon () {

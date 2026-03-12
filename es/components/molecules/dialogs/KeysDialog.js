@@ -86,6 +86,29 @@ export default class KeysDialog extends Dialog {
       }))
     }
 
+    this.clickUploadKeyElEventListener = event => {
+      const input = document.createElement('input')
+      input.type = 'file'
+      input.accept = 'text/plain'
+      input.multiple = true
+      input.onchange = () => {
+        if (!input.files?.length) return
+        Array.from(input.files).forEach(file => {
+          const reader = new FileReader()
+          reader.onload = () => this.dispatchEvent(new CustomEvent('yjs-set-key', {
+            detail: {
+              keyContainer: reader.result
+            },
+            bubbles: true,
+            cancelable: true,
+            composed: true
+          }))
+          reader.readAsText(file)
+        })
+      }
+      input.click()
+    }
+
     this.clickCancelElEventListener = event => {
       this.close()
       this.keyEls.forEach(key => {
@@ -140,6 +163,7 @@ export default class KeysDialog extends Dialog {
     const result = super.connectedCallback()
     this.addEventListener('key-checked', this.keyCheckedEventListener)
     this.addKeyEl.addEventListener('click', this.clickAddKeyElEventListener)
+    this.uploadKeyEl.addEventListener('click', this.clickUploadKeyElEventListener)
     this.cancelEl.addEventListener('click', this.clickCancelElEventListener)
     this.encryptEl.addEventListener('click', this.clickEncryptElEventListener)
     this.removeEncryptionEl.addEventListener('click', this.clickEncryptElEventListener)
@@ -156,6 +180,7 @@ export default class KeysDialog extends Dialog {
     super.disconnectedCallback()
     this.removeEventListener('key-checked', this.keyCheckedEventListener)
     this.addKeyEl.removeEventListener('click', this.clickAddKeyElEventListener)
+    this.uploadKeyEl.removeEventListener('click', this.clickUploadKeyElEventListener)
     this.cancelEl.removeEventListener('click', this.clickCancelElEventListener)
     this.encryptEl.removeEventListener('click', this.clickEncryptElEventListener)
     this.removeEncryptionEl.removeEventListener('click', this.clickEncryptElEventListener)
@@ -207,26 +232,22 @@ export default class KeysDialog extends Dialog {
         flex-wrap: wrap;
         gap: 1em;
       }
-      :host > dialog > section > #add-key {
-        position: relative;
+      :host > dialog > section > #add-key, :host > dialog > section > #upload-key {
+        --color-hover: var(--color-yellow);
+        display: flex;
+        gap: 0.25em;
+        align-items: flex-end;
       }
-      :host > dialog > section > #add-key[updating] {
+      :host > dialog > section > #add-key[updating], :host > dialog > section > #upload-key[updating] {
         cursor: not-allowed;
         pointer-events: none;
       }
-      :host > dialog > section > #add-key > p {
-        position: absolute;
-        left: calc(100% + 0.25em);
-        bottom: 0;
+      :host > dialog > section > #add-key > p, :host > dialog > section > #upload-key > p {
         margin: 0;
         padding: 0;
         white-space: nowrap;
         color: var(--color);
         transition: var(--transition);
-        max-width: 50dvw;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
       }
       :host > dialog > #keys > chat-m-key, :host > dialog > #keys > wct-load-template-tag {
         width: calc(33.3% - 0.66em);
@@ -245,7 +266,7 @@ export default class KeysDialog extends Dialog {
         transition: var(--transition);
         position: sticky;
         bottom: -1em;
-        background-color: var(--background-color);
+        background: linear-gradient(180deg, transparent -70%, var(--background-color) 30%);
         margin-left: -1em;
         margin-right: -1em;
         padding: 1em;
@@ -318,6 +339,10 @@ export default class KeysDialog extends Dialog {
               </template>
             </a-icon-states>
             <p>Generate key</p>
+          </div>
+          <div id=upload-key>
+            <wct-icon-mdx title="Generate key" icon-url="../../../../../../img/icons/upload.svg" size="3em" hover-selector="div"></wct-icon-mdx>
+            <p>Upload key textfile</p>
           </div>
         </section>
         <div id=keys></div>
@@ -530,6 +555,10 @@ export default class KeysDialog extends Dialog {
 
   get addKeyEl () {
     return this.root.querySelector('#add-key')
+  }
+
+  get uploadKeyEl () {
+    return this.root.querySelector('#upload-key')
   }
 
   get cancelEl () {

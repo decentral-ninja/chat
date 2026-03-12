@@ -30,8 +30,8 @@ export default class KeyRequestButton extends Shadow() {
       event.stopPropagation()
       /** @type {import('../../../../../event-driven-web-components-prototypes/src/controllers/Crypto.js').KEY_EPOCH & {public: {name: string}}} */
       const key = {
-        public: this.encrypted.public,
-        ...this.encrypted.key
+        public: this.encrypted?.public,
+        ...this.encrypted?.key
       }
       this.setAttribute('requested', '')
       this.dispatchEvent(new CustomEvent('chat-add', {
@@ -145,9 +145,9 @@ export default class KeyRequestButton extends Shadow() {
           </a-icon-combinations>
           <p>"${
             // @ts-ignore
-            escapeHTML(this.encrypted.key.public?.name || this.encrypted.public?.name)}"</p>
+            escapeHTML(this.encrypted?.key.public?.name || this.encrypted?.public?.name)}"</p>
         </a>
-        <p>to decrypt this message: "${this.encrypted.text.substring(0, 10)}..."</p>
+        <p>to decrypt this message: "${this.encrypted?.text.substring(0, 10)}..."</p>
       </section>
     `
     this.renderHexColor()
@@ -166,7 +166,7 @@ export default class KeyRequestButton extends Shadow() {
   }
 
   renderHexColor () {
-    getHexColor(this.encrypted.key.epoch).then(hex => this.icon.setAttribute('style', `--color: ${hex}`))
+    getHexColor(this.encrypted?.key.epoch).then(hex => this.icon.setAttribute('style', `--color: ${hex}`))
   }
 
   get section () {
