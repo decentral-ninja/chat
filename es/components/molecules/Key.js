@@ -30,7 +30,7 @@ export default class Key extends Intersection() {
       const a = document.createElement('a')
       a.href = url
       a.target = '_blank'
-      a.download = this.keyContainer.private.name
+      a.download = 'decentral-ninja_' + this.keyContainer.private.name
       a.click()
       URL.revokeObjectURL(url)      
     }
