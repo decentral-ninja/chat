@@ -502,13 +502,23 @@ export default class Chat extends Shadow() {
     } catch (error) {
       return console.warn('Users publicKey is broken!', user)
     }
+    // check if there is already a default key
+    const defaultKeyContainer = await new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-active-room-default-key', {
+      detail: {
+        resolve
+      },
+      bubbles: true,
+      cancelable: true,
+      composed: true
+    })))
     // decrypt the key message
     const received = await new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-receive-key', {
       detail: {
         resolve,
         encrypted: textObj.sharedEncrypted,
         publicKey,
-        dispatch: true
+        dispatch: true,
+        setActiveRoomDefaultKey: defaultKeyContainer ? false : true
       },
       bubbles: true,
       cancelable: true,
@@ -561,26 +571,6 @@ export default class Chat extends Shadow() {
       cancelable: true,
       composed: true
     })))
-    // check if there is already a default key
-    const keyContainer = await new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-active-room-default-key', {
-      detail: {
-        resolve
-      },
-      bubbles: true,
-      cancelable: true,
-      composed: true
-    })))
-    // set received key as default key if no default key has been set so far
-    if (!keyContainer) {
-      this.dispatchEvent(new CustomEvent('yjs-set-active-room-default-key', {
-        detail: {
-          epoch: received.decrypted.key.epoch
-        },
-        bubbles: true,
-        cancelable: true,
-        composed: true
-      }))
-    }
   }
 
   get ul () {

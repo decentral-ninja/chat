@@ -72,6 +72,8 @@ export default class Key extends Intersection() {
       clearTimeout(resizeTimeout)
       resizeTimeout = setTimeout(async () => this.updateHeight(), 200)
     }
+
+    this.defaultKeyEventListener = event => this.updateDefault(event.detail?.epoch === this.epoch)
   }
 
   connectedCallback () {
@@ -83,6 +85,7 @@ export default class Key extends Intersection() {
     Promise.all(showPromises).then(() => {
       this.update(this.keyContainer, this.order, true, false)
       this.updateHeight()
+      this.updateDefault(this.classList.contains('is-default'))
       this.hidden = false
     })
     this.trashIcon.addEventListener('click', this.trashIconClickEventListener)
@@ -91,6 +94,7 @@ export default class Key extends Intersection() {
     this.addEventListener('close', this.closeDetailsEventListener)
     this.addEventListener('wct-details-animationend', this.detailsAnimationendEventListener)
     self.addEventListener('resize', this.resizeEventListener)
+    this.globalEventTarget.addEventListener('yjs-default-key', this.defaultKeyEventListener)
   }
 
   disconnectedCallback () {
@@ -101,6 +105,7 @@ export default class Key extends Intersection() {
     this.removeEventListener('close', this.closeDetailsEventListener)
     this.removeEventListener('wct-details-animationend', this.detailsAnimationendEventListener)
     self.removeEventListener('resize', this.resizeEventListener)
+    this.globalEventTarget.removeEventListener('yjs-default-key', this.defaultKeyEventListener)
   }
 
   intersectionCallback (entries, observer) {
@@ -536,6 +541,17 @@ export default class Key extends Intersection() {
     }, clear ? 0 : 350)
   }
 
+  // Keys.js tells this node by class="is-default" 
+  updateDefault (isDefault) {
+    if (isDefault) {
+      this.checkbox.checked = true
+      this.setAttribute('checked', '')
+    } else {
+      this.checkbox.checked = false
+      this.removeAttribute('checked')
+    }
+  }
+
   get privateNameEl () {
     return this.section.querySelector('chat-a-key-name[private]')
   }
@@ -600,5 +616,10 @@ export default class Key extends Intersection() {
           return style
         })())
     )
+  }
+
+  get globalEventTarget () {
+    // @ts-ignore
+    return this._globalEventTarget || (this._globalEventTarget = self.Environment?.activeRoute || document.body)
   }
 }

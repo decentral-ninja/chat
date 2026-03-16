@@ -80,6 +80,9 @@ export default class KeysDialog extends Dialog {
     this.clickAddKeyElEventListener = event => {
       this.addKeyEl.setAttribute('updating', '')
       this.dispatchEvent(new CustomEvent('yjs-set-new-key', {
+        detail: {
+          setActiveRoomDefaultKey: this.keyEls.some(keyEl => keyEl.hasAttribute('checked') || keyEl.classList.contains('is-default')) ? false : true
+        },
         bubbles: true,
         cancelable: true,
         composed: true
@@ -97,7 +100,8 @@ export default class KeysDialog extends Dialog {
           const reader = new FileReader()
           reader.onload = () => this.dispatchEvent(new CustomEvent('yjs-set-key', {
             detail: {
-              keyContainer: reader.result
+              keyContainer: reader.result,
+              setActiveRoomDefaultKey: this.keyEls.some(keyEl => keyEl.hasAttribute('checked') || keyEl.classList.contains('is-default')) ? false : true
             },
             bubbles: true,
             cancelable: true,
@@ -466,7 +470,7 @@ export default class KeysDialog extends Dialog {
    * @returns {string}
    */
   static renderKey (epoch, keyContainer, i, active, hasChecked, isDefault) {
-    return /* html */`<wct-load-template-tag epoch=${epoch} no-css style="order: ${i};" copy-class-list class="${active ? 'active' : ''}${active && (hasChecked || isDefault) ? ', ' : ''}${hasChecked ? 'no-checkbox' : ''}${hasChecked && isDefault ? ', ' : ''}${isDefault ? 'is-default' : ''}"><template><chat-m-key ${active ? 'class=active' : ''}><template>${JSON.stringify({ epoch, keyContainer, order: i })}</template></chat-m-key></template></wct-load-template-tag>`
+    return /* html */`<wct-load-template-tag epoch=${epoch} no-css style="order: ${i};" copy-class-list class="${active ? 'active' : ''}${active && (hasChecked || isDefault) ? ' ' : ''}${hasChecked ? 'no-checkbox' : ''}${hasChecked && isDefault ? ' ' : ''}${isDefault ? 'is-default' : ''}"><template><chat-m-key ${active ? 'class=active' : ''}><template>${JSON.stringify({ epoch, keyContainer, order: i })}</template></chat-m-key></template></wct-load-template-tag>`
   }
 
   /**
