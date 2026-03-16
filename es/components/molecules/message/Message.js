@@ -127,9 +127,8 @@ export default class Message extends WebWorker(Intersection()) {
   connectedCallback () {
     super.connectedCallback()
     if (this.isConnected) this.connectedCallbackOnce()
-    this.hidden = true
+    if (this.shouldRenderHTML() && this.shouldRenderCSS()) this.hidden = true
     if (this.shouldRenderCSS()) this.renderCSS().then(() => {
-      // default behavior after rendering css to show the component. All other types unhide after rendered html
       if (this.getAttribute('type') === 'default') this.hidden = false
     })
     const htmlReadyFunc = () => {
@@ -147,7 +146,11 @@ export default class Message extends WebWorker(Intersection()) {
       }
       // request most recent synced state
       if (this.hasAttribute('update-on-connected-callback') && !this.hasAttribute('static')) {
-        this.update().then(updateReadyFunc)
+        this.doOnIntersection = () => {
+          this.update().then(updateReadyFunc)
+          this.doOnIntersection = null
+        }
+        if (this.hasAttribute('intersecting')) this.doOnIntersection()
       } else {
         updateReadyFunc()
       }
@@ -229,6 +232,7 @@ export default class Message extends WebWorker(Intersection()) {
       }
       if (this.areEntriesIntersecting(entries)) {
         this.setAttribute('intersecting', '')
+        if (this.doOnIntersection) this.doOnIntersection()
         if (this.hasAttribute('update-on-intersection')) this.update()
         return
       }
@@ -517,8 +521,8 @@ export default class Message extends WebWorker(Intersection()) {
       : Promise.all([
         this.textObj,
         this.getUpdatedTextObj(),
-      ]).then(([textObj, updatedTextObj]) => {
-        const textObjsAreIdentical = JSON.stringify(textObj) === JSON.stringify(updatedTextObj)
+      ]).then(async ([textObj, updatedTextObj]) => {
+        const textObjsAreIdentical = await this.webWorker(Message.compareTextObj, textObj, updatedTextObj)
         if (textObjsAreIdentical && !textObj.encrypted) return
         if (textObjsAreIdentical && keyContainersAreIdentical) return
         this.textObj = Promise.resolve(updatedTextObj)
@@ -526,6 +530,10 @@ export default class Message extends WebWorker(Intersection()) {
         this.html = ''
         return this.renderHTML().then(() => this.addEventListeners())
       })
+  }
+
+  static compareTextObj (textObjA, textObjB) {
+    return JSON.stringify(textObjA) === JSON.stringify(textObjB)
   }
 
   /**
