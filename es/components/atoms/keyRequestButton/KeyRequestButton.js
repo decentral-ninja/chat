@@ -107,6 +107,12 @@ export default class KeyRequestButton extends Shadow() {
       :host([requested]) > section > a #requested {
         display: inline;
       }
+      @media only screen and (max-width: _max-width_) {
+        :host > section > a {
+          flex-direction: column;
+          align-items: center;
+        }
+      }
     `
     return this.fetchTemplate()
   }
