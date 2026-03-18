@@ -17,14 +17,14 @@ export default class Provider extends Intersection() {
     return ['class']
   }
 
-  constructor (id, name, data, order, roomName, options = {}, ...args) {
+  constructor (id, name, data, order, roomName, providerHasPerformanceIssues, options = {}, ...args) {
     super({ importMetaUrl: import.meta.url, tabindex: 'no-tabindex', intersectionObserverInit: {}, ...options }, ...args)
 
     // @ts-ignore
     this.roomNamePrefix = self.Environment?.roomNamePrefix || 'chat-'
 
     if (this.template) {
-      ({ id: this.id, name: this.name, data: this.data, order: this.order, roomName: this.roomName } = JSON.parse(this.template.content.textContent, jsonParseMapUrlReviver))
+      ({ id: this.id, name: this.name, data: this.data, order: this.order, roomName: this.roomName, providerHasPerformanceIssues: this.providerHasPerformanceIssues } = JSON.parse(this.template.content.textContent, jsonParseMapUrlReviver))
       // revive url from href
       /** @type {import('./Providers.js').Provider} */
       this.data.urls.forEach((url, key) => {
@@ -37,6 +37,7 @@ export default class Provider extends Intersection() {
       this.data = data
       this.order = order
       this.roomName = roomName
+      this.providerHasPerformanceIssues = providerHasPerformanceIssues
     }
     this.setAttribute('id', this.id)
 
@@ -87,7 +88,7 @@ export default class Provider extends Intersection() {
     this.undoEventListener = event => {
       event.stopPropagation()
       this.removeAttribute('touched')
-      this.update(this.data, this.order)
+      this.update(this.data, this.order, undefined, this.providerHasPerformanceIssues)
     }
 
     this.titleElClickEventListener = event => {
@@ -366,7 +367,7 @@ export default class Provider extends Intersection() {
         border: var(--input-area-border, 1px solid var(--color-black));
         border-radius: var(--border-radius);
       }
-      :host > section > div:where(#url, #keep-alive) > :where(select, input) {
+      :host > section > div:where(#url, #keep-alive) > :where(select, input:not([type=range])) {
         height: 2em;
         font-size: 1em;
         background-color: var(--input-area-select-background-color, transparent);
@@ -482,6 +483,7 @@ export default class Provider extends Intersection() {
               <wct-icon-mdx state="connecting" id=connecting title="trying to connect" style="--color: var(--color-orange);" no-hover icon-url="../../../../../../img/icons/plug-connected.svg" size="2em"></wct-icon-mdx>
               <wct-icon-mdx state="disconnected" id=disconnected title=disconnected style="--color: var(--color-error);" no-hover icon-url="../../../../../../img/icons/plug-connected-x.svg" size="2em"></wct-icon-mdx>
               <wct-icon-mdx state="offline" title="You are offline!" style="color:var(--color-error)" no-hover icon-url="../../../../../../img/icons/plug-connected-x.svg" size="2em"></wct-icon-mdx>
+              <wct-icon-mdx state="performance-issue" title="This provider has performance issues! Switch to a fallback provider!!!" style="color:var(--color-error)" icon-url="../../../../../../img/icons/alert-triangle.svg" size="2em"></wct-icon-mdx>
             </template>
           </a-icon-states>
         </div>
@@ -611,7 +613,7 @@ export default class Provider extends Intersection() {
     this.html = this.customStyle
     this.html = this.customStyleHeight
     this.inputKeepAliveChangeEventListener({ target: { value: this.inputKeepAlive.value } }, true)
-    this.update(this.data, this.order, true)
+    this.update(this.data, this.order, true, this.providerHasPerformanceIssues)
     return this.fetchModules([
       {
         // @ts-ignore
@@ -656,12 +658,14 @@ export default class Provider extends Intersection() {
    * @param {import('./Providers.js').Provider} data
    * @param {number} order
    * @param {boolean} [updateOrder=false]
+   * @param {boolean} [providerHasPerformanceIssues=false]
    * @param {boolean} [removeDataUpdating=true]
    * @returns {void}
    */
-  update (data, order, updateOrder = false, removeDataUpdating = true) {
+  update (data, order, updateOrder = false, providerHasPerformanceIssues = false, removeDataUpdating = true) {
     this.data = data
     this.order = order
+    this.providerHasPerformanceIssues = providerHasPerformanceIssues
     if (updateOrder) this.customStyle.textContent = /* css */`
       :host {
         order: ${order};
@@ -690,7 +694,9 @@ export default class Provider extends Intersection() {
       }
       let removeIconStateUpdating = true
       if (navigator.onLine) {
-        if (data.status.includes('connected')) {
+        if (providerHasPerformanceIssues) {
+          this.iconConnectionState.setAttribute('state', 'performance-issue')
+        } else if (data.status.includes('connected')) {
           this.iconConnectionState.setAttribute('state', 'connected')
         } else if (data.status.includes('active')) {
           this.iconConnectionState.setAttribute('state', 'connecting')

@@ -1,5 +1,6 @@
 // @ts-check
 import { Shadow } from '../../../../event-driven-web-components-prototypes/src/Shadow.js'
+import { WebWorker } from '../../../../event-driven-web-components-prototypes/src/WebWorker.js'
 import { jsonStringifyMapUrlReplacer } from '../../../../Helpers.js'
 import { scrollElIntoView } from '../../../../event-driven-web-components-prototypes/src/helpers/Helpers.js'
 
@@ -43,13 +44,18 @@ import { scrollElIntoView } from '../../../../event-driven-web-components-protot
  * @export
  * @class Providers
  */
-export default class Providers extends Shadow() {
+export default class Providers extends WebWorker(Shadow()) {
   constructor (options = {}, ...args) {
     super({ importMetaUrl: import.meta.url, tabindex: 'no-tabindex-style', ...options }, ...args)
+
+    // @ts-ignore
+    this.updateProviderPerformanceAfter = self.Environment?.updateProviderPerformanceAfter || 120000
+    this.lastUpdatedProviderPerformance = Date.now() - this.updateProviderPerformanceAfter
 
     let renderDataForce = false
     let lastProvidersEventGetData = null
     this.lastSeparator = this.getAttribute('separator') || '<>'
+    let performanceResults
     let timeoutId = null
     const skipTimeoutClear = 5
     let timeoutCounter = 1
@@ -61,11 +67,48 @@ export default class Providers extends Shadow() {
       timeoutCounter++
       timeoutId = setTimeout(async () => {
         timeoutCounter = 1
+        let data
+        if (this.lastUpdatedProviderPerformance + this.updateProviderPerformanceAfter < Date.now()) {
+          this.lastUpdatedProviderPerformance = Date.now()
+          data = await event.detail.getData()
+          performanceResults = (await Promise.all((await data.getSessionProvidersByStatus()).connected.map(provider => {
+            try {
+              let [type, url] = provider.split(data.separator)
+              if (type !== 'websocket') return null
+              url = new URL(provider.split(data.separator)[1])
+              return new Promise(resolve => {
+                // @ts-ignore
+                const oldOs = (performanceResults || []).find(performanceResult => performanceResult.hostname === url.hostname)?.os
+                data.getWebsocketInfo(url.origin, true).then(async result => resolve({...result, os: await this.webWorker(Providers.calcPerformanceLoad, result.os, oldOs), hostname: url.hostname, origin: url.origin}))
+              })
+            } catch (error) {
+              // @ts-ignore
+              return console.warn('url is broken', provider.split(data.separator)[1]) || null
+            }
+          }))).filter(result => result && !result.error)
+          const threshold = 90
+          this.performanceIssueProviders = performanceResults.reduce((acc, result) => {
+            if (result.os.cpuLoad < threshold && result.os.memoryLoad < threshold) return acc
+            acc.push(result.hostname)
+            this.dispatchEvent(new CustomEvent('yjs-delay-notification-fetching', {
+              detail: {
+                error: 'low on performance',
+                origin: result.origin
+              },
+              bubbles: true,
+              cancelable: true,
+              composed: true
+            }))
+            return acc
+          }, [])
+          console.info('Providers performance:', performanceResults)
+          if (this.performanceIssueProviders.length) console.warn('Providers are having performance issues!!!', this.performanceIssueProviders, performanceResults)
+        }
         if (this.isDialogOpen()) {
-          this.renderData(await event.detail.getData(), await (await this.roomPromise).room, true)
+          this.renderData(data || await event.detail.getData(), await (await this.roomPromise).room, true)
           renderDataForce = false
         } else {
-          Providers.toggleIconStates(this.iconStatesEl, await event.detail.getData(), this.hasAttribute('online'))
+          Providers.toggleIconStates(this.iconStatesEl, data || await event.detail.getData(), this.hasAttribute('online'), this.performanceIssueProviders?.length)
           renderDataForce = true
         }
         this.iconStatesEl.removeAttribute('updating')
@@ -211,12 +254,12 @@ export default class Providers extends Shadow() {
     this.onlineEventListener = async event => {
       this.setAttribute('online', '')
       this.dialog?.setAttribute('online', '')
-      if (lastProvidersEventGetData) Providers.toggleIconStates(this.iconStatesEl, await lastProvidersEventGetData(false), this.hasAttribute('online'))
+      if (lastProvidersEventGetData) Providers.toggleIconStates(this.iconStatesEl, await lastProvidersEventGetData(false), this.hasAttribute('online'), this.performanceIssueProviders?.length)
     }
     this.offlineEventListener = async event => {
       this.removeAttribute('online')
       this.dialog?.removeAttribute('online')
-      if (lastProvidersEventGetData) Providers.toggleIconStates(this.iconStatesEl, await lastProvidersEventGetData(false), this.hasAttribute('online'))
+      if (lastProvidersEventGetData) Providers.toggleIconStates(this.iconStatesEl, await lastProvidersEventGetData(false), this.hasAttribute('online'), this.performanceIssueProviders?.length)
     }
     if (navigator.onLine) {
       this.onlineEventListener()
@@ -240,6 +283,7 @@ export default class Providers extends Shadow() {
   }
 
   connectedCallback () {
+    this.lastUpdatedProviderPerformance = Date.now() - this.updateProviderPerformanceAfter
     if (this.shouldRenderCSS()) this.renderCSS()
     if (this.shouldRenderHTML()) this.renderHTML().then(() => this.dialog.dialogPromise.then(dialog => this.usersDialogLink.addEventListener('click', this.openUserDialogClickListener)))
     this.addEventListener('submit-websocket-url', this.submitWebsocketUrlEventListener)
@@ -342,6 +386,7 @@ export default class Providers extends Shadow() {
           <wct-icon-mdx state="connected" title="Network providers connected" style="color:var(--color-green-full)" icon-url="../../../../../../img/icons/network.svg" size="2em"></wct-icon-mdx>
           <wct-icon-mdx state="disconnected" title="No connection to Network providers" style="color:var(--color-error)" icon-url="../../../../../../img/icons/network-off.svg" size="2em"></wct-icon-mdx>
           <wct-icon-mdx state="offline" title="You are offline!" style="color:var(--color-error)" icon-url="../../../../../../img/icons/network-off.svg" size="2em"></wct-icon-mdx>
+          <wct-icon-mdx state="performance-issue" title="Some of the providers have performance issues!" style="color:var(--color-error)" icon-url="../../../../../../img/icons/alert-triangle.svg" size="2em"></wct-icon-mdx>
           <wct-icon-mdx state="no-active" title="No network providers is actively trying to connect!" style="color:var(--color-error)" icon-url="../../../../../../img/icons/plug-connected-x.svg" size="2em"></wct-icon-mdx>
         </template>
       </a-icon-states>
@@ -531,8 +576,8 @@ export default class Providers extends Shadow() {
     }))).then(async ({ websocketUrl, webrtcUrl }) => {
       this.websocketUrl = websocketUrl
       this.webrtcUrl = webrtcUrl
-      Providers.toggleIconStates(this.iconStatesEl, data, this.hasAttribute('online'))
-      this.lastP2pGraphData = Providers.renderProvidersList(this.providersDiv, data, roomName, this.providersGraph, this.providerDialogWasClosed, force)
+      Providers.toggleIconStates(this.iconStatesEl, data, this.hasAttribute('online'), this.performanceIssueProviders?.length)
+      this.lastP2pGraphData = Providers.renderProvidersList(this.providersDiv, data, roomName, this.providersGraph, this.providerDialogWasClosed, this.performanceIssueProviders, force)
       this.providerDialogWasClosed = false
       // TODO: ******************************* Below only reproduces the old behavior *******************************
       /** @type {HTMLInputElement | any} */
@@ -600,17 +645,19 @@ export default class Providers extends Shadow() {
     }
   }
 
-  static async toggleIconStates (iconStatesEl, data, online) {
+  static async toggleIconStates (iconStatesEl, data, online, hasPerformanceIssueProviders) {
     let counter = 0
     const sessionProvidersByStatus = await data.getSessionProvidersByStatus()
     // no-active only works when no connection was made at all, like opening a room without any providers, since it is too hard right now to evaluate if providers are trying to connect
     iconStatesEl.setAttribute('state', online
       ? (counter = sessionProvidersByStatus.connected.length)
-          ? 'connected'
-          // has websocketUrl or webrtcUrl means it is actively trying to connect
-          : sessionProvidersByStatus.disconnected.length && (sessionProvidersByStatus.websocketUrl || sessionProvidersByStatus.webrtcUrl)
-            ? 'disconnected'
-            : 'no-active'
+        ? hasPerformanceIssueProviders
+          ? 'performance-issue'
+          : 'connected'
+        // has websocketUrl or webrtcUrl means it is actively trying to connect
+        : sessionProvidersByStatus.disconnected.length && (sessionProvidersByStatus.websocketUrl || sessionProvidersByStatus.webrtcUrl)
+          ? 'disconnected'
+          : 'no-active'
       : 'offline'
     )
     if (counter) {
@@ -620,20 +667,21 @@ export default class Providers extends Shadow() {
     }
   }
 
-  static async renderProvidersList (div, data, roomName, providersGraph, providerDialogWasClosed, force) {
+  static async renderProvidersList (div, data, roomName, providersGraph, providerDialogWasClosed, performanceIssueProviders, force) {
     const providers = Array.from(await data.getCompleteProviders(force))
     const tempDiv = document.createElement('div')
     tempDiv.innerHTML = providers.reduce((acc, [name, providerData], i) => {
       /// / render or update
       // @ts-ignore
       const id = `${self.Environment?.providerNamespace || 'p_'}${name.replaceAll('.', '-')}` // string <ident> without dots https://developer.mozilla.org/en-US/docs/Web/CSS/ident
-      const renderProvider = () => Providers.renderProvider(id, name, i, providerData, roomName)
+      const providerHasPerformanceIssues = performanceIssueProviders?.includes(name)
+      const renderProvider = () => Providers.renderProvider(id, name, i, providerData, roomName, undefined, providerHasPerformanceIssues)
       let provider
       if ((provider = div.querySelector(`#${id}`))) {
         if (typeof provider.update === 'function') {
           // providerDialogWasClosed gives indication to provider updateOrder
           // force triggers removeDataUpdating on provider, since it got fresh data when forced (renderDataForce) since this occurs on fresh data
-          provider.update(providerData, i, providerDialogWasClosed, force)
+          provider.update(providerData, i, providerDialogWasClosed, providerHasPerformanceIssues, force)
         } else {
           provider.outerHTML = renderProvider()
         }
@@ -664,12 +712,12 @@ export default class Providers extends Shadow() {
    * @param {boolean} [active=false]
    * @returns {string}
    */
-  static renderProvider (id, name, i, providerData, roomName, active = false) {
-    return /* html */`<wct-load-template-tag id=${id} no-css style="order: ${i};" copy-class-list ${active ? 'class=active' : ''}><template><chat-m-provider ${active ? 'class=active' : ''}><template>${JSON.stringify({ id, name, data: providerData, order: i, roomName }, jsonStringifyMapUrlReplacer)}</template></chat-m-provider></template></wct-load-template-tag>`
+  static renderProvider (id, name, i, providerData, roomName, active = false, providerHasPerformanceIssues = false) {
+    return /* html */`<wct-load-template-tag id=${id} no-css style="order: ${i};" copy-class-list ${active ? 'class=active' : ''}><template><chat-m-provider ${active ? 'class=active' : ''}><template>${JSON.stringify({ id, name, data: providerData, order: i, roomName, providerHasPerformanceIssues }, jsonStringifyMapUrlReplacer)}</template></chat-m-provider></template></wct-load-template-tag>`
   }
 
   static renderP2pGraph (graph, data, separator, force = false) {
-    const stringifiedData = JSON.stringify(Array.isArray(data) ? data : Array.from(data))
+    const stringifiedData = Providers.htmlPurify(JSON.stringify(Array.isArray(data) ? data : Array.from(data)), true)
     const isSame = graph.children[0]?.template.content.textContent === stringifiedData
     if (force || !isSame) {
       graph.setAttribute('style', `height: ${graph.offsetHeight}px;`)
@@ -683,6 +731,29 @@ export default class Providers extends Shadow() {
         </wct-load-template-tag>
       `
       graph.addEventListener('p2p-graph-load', event => self.requestAnimationFrame(timeStamp => graph.removeAttribute('style')), { once: true })
+    }
+  }
+
+  // https://stackoverflow.com/questions/9565912/convert-the-output-of-os-cpus-in-node-js-to-percentage
+  static calcPerformanceLoad (os, oldOs) {
+    if (!os) return null
+    const times = os.cpus.reduce((acc, cpu) => {
+      for (const key in cpu.times) {
+        acc[key] = (acc[key] || 0) + cpu.times[key]
+        acc.total += cpu.times[key]
+      }
+      return acc
+    }, {total: 0, idle: 0})
+    return {
+      times,
+      freemem: os.freemem,
+      totalmem: os.totalmem,
+      memoryLoad: Math.round(os.freemem / os.totalmem * 100),
+      // subtract the old values, since https://nodejs.org/docs/latest/api/os.html#os_os_cpus delivers an average over all time since machine booted, to calc the performance since last fetch
+      cpuLoad: Math.round(oldOs
+        ? ((times.total - oldOs.times.total) - (times.idle - oldOs.times.idle)) / (times.total - oldOs.times.total) * 100
+        : (times.total - times.idle) / times.total * 100
+      )
     }
   }
 
