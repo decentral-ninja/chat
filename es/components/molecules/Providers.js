@@ -88,7 +88,7 @@ export default class Providers extends WebWorker(Shadow()) {
           }))).filter(result => result && !result.error)
           const threshold = 90
           this.performanceIssueProviders = performanceResults.reduce((acc, result) => {
-            if (result.os.cpuLoad < threshold && result.os.memoryLoad < threshold) return acc
+            if (result.os?.cpuLoad < threshold && result.os?.memoryLoad < threshold) return acc
             acc.push(result.hostname)
             this.dispatchEvent(new CustomEvent('yjs-delay-notification-fetching', {
               detail: {
