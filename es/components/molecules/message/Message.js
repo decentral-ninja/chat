@@ -128,9 +128,11 @@ export default class Message extends WebWorker(Intersection()) {
     super.connectedCallback()
     if (this.isConnected) this.connectedCallbackOnce()
     if (this.shouldRenderHTML() && this.shouldRenderCSS()) this.hidden = true
-    if (this.shouldRenderCSS()) this.renderCSS().then(() => {
-      if (this.getAttribute('type') === 'default') this.hidden = false
-    })
+    if (this.shouldRenderCSS()) {
+      this.renderCSS().then(() => {
+        if (this.getAttribute('type') === 'default') this.hidden = false
+      })
+    }
     const htmlReadyFunc = () => {
       this.addEventListeners()
       const updateReadyFunc = () => {
@@ -520,7 +522,7 @@ export default class Message extends WebWorker(Intersection()) {
       ? Promise.resolve()
       : Promise.all([
         this.textObj,
-        this.getUpdatedTextObj(),
+        this.getUpdatedTextObj()
       ]).then(async ([textObj, updatedTextObj]) => {
         const textObjsAreIdentical = await this.webWorker(Message.compareTextObj, textObj, updatedTextObj)
         if (textObjsAreIdentical && !textObj.encrypted) return
@@ -550,7 +552,7 @@ export default class Message extends WebWorker(Intersection()) {
       <li part="${part}"${textObj.deleted ? ' deleted' : ''}>
         <div>
           <div>
-            ${//@ts-ignore
+            ${// @ts-ignore
               textObj.encrypted ? /* html */`<chat-a-key-status epoch='${textObj.encrypted.key.epoch}' public-name="${escapeHTML(textObj.encrypted.key.public?.name || textObj.encrypted.public?.name)}" is-message-child ${isSelf ? 'self' : ''}></chat-a-key-status>` : ''}
             ${textObj.deleted ? '' : /* html */`<chat-a-nick-name class="user" uid='${textObj.uid}' nickname="${escapeHTML(textObj.updatedNickname)}"${textObj.isSelf ? ' self user-dialog-show-event-only-on-avatar' : ' user-dialog-show-event'}></chat-a-nick-name>`}
           </div>
@@ -687,18 +689,18 @@ export default class Message extends WebWorker(Intersection()) {
   getKeyContainer (force = false) {
     return force || !this._keyContainer
       ? (this._keyContainer = this.textObj.then(textObjSync => {
-        if (!textObjSync.encrypted) return undefined
-        return new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-key', {
-          detail: {
-            resolve,
-            // @ts-ignore
-            epoch: textObjSync.encrypted.key.epoch
-          },
-          bubbles: true,
-          cancelable: true,
-          composed: true
-        })))
-      }))
+          if (!textObjSync.encrypted) return undefined
+          return new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-key', {
+            detail: {
+              resolve,
+              // @ts-ignore
+              epoch: textObjSync.encrypted.key.epoch
+            },
+            bubbles: true,
+            cancelable: true,
+            composed: true
+          })))
+        }))
       : this._keyContainer
   }
 

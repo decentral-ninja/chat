@@ -147,7 +147,7 @@ export default class MessageDialog extends Dialog {
     try {
       parsedTemplateTextContent = JSON.parse(this.template.content.textContent)
     } catch (error) {
-      parsedTemplateTextContent = {text: ''}
+      parsedTemplateTextContent = { text: '' }
     }
     this.template.remove()
     this.html = /* html */`

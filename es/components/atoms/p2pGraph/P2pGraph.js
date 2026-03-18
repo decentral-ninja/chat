@@ -94,11 +94,11 @@ export default class P2pGraph extends Intersection() {
         filter: drop-shadow(0px 0px 0.5em var(--color-secondary));
       }
     `
-    self.requestAnimationFrame(timeStamp => this.css = /* css */`
+    self.requestAnimationFrame(timeStamp => (this.css = /* css */`
       :host(:not([has-height])) {
         min-height: ${Math.round(this.clientWidth / 1.89)}px;
       }
-    `)
+    `))
     return Promise.resolve()
   }
 
@@ -245,14 +245,16 @@ export default class P2pGraph extends Intersection() {
   updateHeight (height, clear = false) {
     this.removeAttribute('has-height')
     this.customStyleHeight.textContent = ''
-    if (!clear) self.requestAnimationFrame(timeStamp => {
-      this.customStyleHeight.textContent = /* css */`
+    if (!clear) {
+      self.requestAnimationFrame(timeStamp => {
+        this.customStyleHeight.textContent = /* css */`
         :host {
           min-height: ${height || this.offsetHeight}px;
         }
       `
-      this.setAttribute('has-height', '')
-    })
+        this.setAttribute('has-height', '')
+      })
+    }
   }
 
   get div () {

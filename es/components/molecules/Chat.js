@@ -208,7 +208,7 @@ export default class Chat extends Shadow() {
         composed: true
       }))).then(room => {
         if (room?.scrollEl && this.ulGetScrollElFunc(room.scrollEl)()) {
-          self.requestAnimationFrame(timeStamp => scrollElIntoView(this.ulGetScrollElFunc(room.scrollEl), ':not([intersecting])', undefined, {behavior: 'instant'}))
+          self.requestAnimationFrame(timeStamp => scrollElIntoView(this.ulGetScrollElFunc(room.scrollEl), ':not([intersecting])', undefined, { behavior: 'instant' }))
         } else if (room?.scrollTop) {
           // backwards compatible behavior and if no scrollTop scrolls to bottom
           this.dispatchEvent(new CustomEvent('main-scroll', {
@@ -450,7 +450,7 @@ export default class Chat extends Shadow() {
     }
     promise.then(room => {
       if (room?.scrollEl && this.ulGetScrollElFunc(room.scrollEl)()) {
-        scrollElIntoView(this.ulGetScrollElFunc(room.scrollEl), ':not([intersecting])', undefined, {behavior: 'instant'})
+        scrollElIntoView(this.ulGetScrollElFunc(room.scrollEl), ':not([intersecting])', undefined, { behavior: 'instant' })
       } else if (room?.scrollTop) {
         // backwards compatible behavior and if no scrollTop scrolls to bottom
         this.dispatchEvent(new CustomEvent('main-scroll', {
@@ -472,7 +472,7 @@ export default class Chat extends Shadow() {
           composed: true
         })), 200)
       } else if (this.ul?.lastElementChild) {
-        scrollElIntoView(this.ulGetScrollElFunc(this.ul.lastElementChild.getAttribute('timestamp')), ':not([intersecting])', undefined, {behavior: 'instant'})
+        scrollElIntoView(this.ulGetScrollElFunc(this.ul.lastElementChild.getAttribute('timestamp')), ':not([intersecting])', undefined, { behavior: 'instant' })
       }
     })
   }
@@ -518,7 +518,7 @@ export default class Chat extends Shadow() {
         encrypted: textObj.sharedEncrypted,
         publicKey,
         dispatch: true,
-        setActiveRoomDefaultKey: defaultKeyContainer ? false : true
+        setActiveRoomDefaultKey: !defaultKeyContainer
       },
       bubbles: true,
       cancelable: true,

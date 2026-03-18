@@ -4,6 +4,7 @@ import { escapeHTML } from '../../../../event-driven-web-components-prototypes/s
 import { separator } from '../../../../event-driven-web-components-yjs/src/es/controllers/Users.js'
 
 /* global Environment */
+/* global self */
 
 /**
 * @export
@@ -131,7 +132,8 @@ export default class ConnectedUsers extends Shadow() {
         }
       </style>
     `
-    if (!this.loneProviders) this.html = /* html */`
+    if (!this.loneProviders) {
+      this.html = /* html */`
       <div id=lone-providers>
         <wct-details open-event-name='connected-users-details-open-${this.getAttribute('uid')}' animationend-event-name=wct-details-animationend empty-hide>
           ${style}
@@ -147,6 +149,7 @@ export default class ConnectedUsers extends Shadow() {
         </wct-details>
       </div>
     `
+    }
     if (!this.placeholder) this.html = '<div class=placeholder>---</div>'
     // go through all connections and create the needed summary/details
     Object.keys(this.connectedUsers).forEach(providerName => {
@@ -220,7 +223,7 @@ export default class ConnectedUsers extends Shadow() {
         let counter = detail.summary.querySelector('.counter')
         if (!counter) {
           counter = document.createElement('span')
-          counter.classList.add('counter');
+          counter.classList.add('counter')
           detail.summary.querySelector('chat-a-nick-name').after(counter)
         }
         counter.textContent = `(${getProviderNames().length})`
@@ -232,14 +235,13 @@ export default class ConnectedUsers extends Shadow() {
     let detail
     if ((detail = this.loneProviders.querySelector('wct-details'))) {
       detail.root.querySelectorAll('chat-a-provider-name').forEach(providerName => {
-        let keys
-        if (!(keys = Object.keys(this.connectedUsers)).includes(providerName.dataName) || this.connectedUsers[providerName.dataName]?.length) providerName.remove()
+        if (!Object.keys(this.connectedUsers).includes(providerName.dataName) || this.connectedUsers[providerName.dataName]?.length) providerName.remove()
       })
       // count all the loneProviders
       let counter = detail.summary.querySelector('.counter')
       if (!counter) {
         counter = document.createElement('span')
-        counter.classList.add('counter');
+        counter.classList.add('counter')
         detail.summary.querySelector('.title').appendChild(counter)
       }
       counter.textContent = `(${detail.details.children.length - 1})`

@@ -3,7 +3,7 @@ import { Shadow } from '../../../../../web-components-toolbox/src/es/components/
 
 /**
 * https://prismic.io/blog/css-animation-examples#8-glide-to-reveal
-* 
+*
 * @export
 * @class GlideToReveal
 * @type {CustomElementConstructor}
@@ -27,7 +27,7 @@ export default class GlideToReveal extends Shadow() {
       this.removeAttribute('mousemove')
       this.ul.removeEventListener('mousemove', this.mousemoveEventListener)
     }
-    this.mousemoveEventListener = event => this.ul.scroll(0, this.ul.scrollTop -= event.movementY)
+    this.mousemoveEventListener = event => this.ul.scroll(0, (this.ul.scrollTop -= event.movementY))
   }
 
   connectedCallback () {

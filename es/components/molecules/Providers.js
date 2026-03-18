@@ -79,7 +79,7 @@ export default class Providers extends WebWorker(Shadow()) {
               return new Promise(resolve => {
                 // @ts-ignore
                 const oldOs = (performanceResults || []).find(performanceResult => performanceResult.hostname === url.hostname)?.os
-                data.getWebsocketInfo(url.origin, true).then(async result => resolve({...result, os: await this.webWorker(Providers.calcPerformanceLoad, result.os, oldOs), hostname: url.hostname, origin: url.origin}))
+                data.getWebsocketInfo(url.origin, true).then(async result => resolve({ ...result, os: await this.webWorker(Providers.calcPerformanceLoad, result.os, oldOs), hostname: url.hostname, origin: url.origin }))
               })
             } catch (error) {
               // @ts-ignore
@@ -187,7 +187,7 @@ export default class Providers extends WebWorker(Shadow()) {
         this.dispatchEvent(new CustomEvent('yjs-update-providers', {
           detail: {
             // @ts-ignore
-            [isWebsocket ? 'websocketUrl': 'webrtcUrl']: urls.join(',')
+            [isWebsocket ? 'websocketUrl' : 'webrtcUrl']: urls.join(',')
           },
           bubbles: true,
           cancelable: true,
@@ -210,7 +210,7 @@ export default class Providers extends WebWorker(Shadow()) {
         this.dispatchEvent(new CustomEvent('yjs-update-providers', {
           detail: {
             // @ts-ignore
-            [isWebsocket ? 'websocketUrl': 'webrtcUrl']: urls.join(',')
+            [isWebsocket ? 'websocketUrl' : 'webrtcUrl']: urls.join(',')
           },
           bubbles: true,
           cancelable: true,
@@ -584,7 +584,7 @@ export default class Providers extends WebWorker(Shadow()) {
       let websocketInput
       if ((websocketInput = this.websocketInput) && websocketUrl !== websocketInput.value) {
         if (websocketInput.matches(':focus')) {
-          websocketInput.addEventListener('blur', event => (websocketInput.value = websocketUrl), {once: true})
+          websocketInput.addEventListener('blur', event => (websocketInput.value = websocketUrl), { once: true })
         } else {
           websocketInput.value = websocketUrl
         }
@@ -593,7 +593,7 @@ export default class Providers extends WebWorker(Shadow()) {
       let webrtcInput
       if ((webrtcInput = this.webrtcInput) && webrtcUrl !== webrtcInput.value) {
         if (webrtcInput.matches(':focus')) {
-          webrtcInput.addEventListener('blur', event => (webrtcInput.value = webrtcUrl), {once: true})
+          webrtcInput.addEventListener('blur', event => (webrtcInput.value = webrtcUrl), { once: true })
         } else {
           webrtcInput.value = webrtcUrl
         }
@@ -603,7 +603,7 @@ export default class Providers extends WebWorker(Shadow()) {
 
   /**
    * Description
-   * 
+   *
    * @async
    * @param {string} attributeName
    * @param {string} attributeValue
@@ -632,11 +632,13 @@ export default class Providers extends WebWorker(Shadow()) {
         }, await (await this.roomPromise).room, true)
         Array.from(tempDiv.children).forEach(child => this.providersDiv.appendChild(child))
       }
-      if (scroll) scrollElIntoView(() => {
-        let node
-        if(parentNodes.some(parentNode => (node = parentNode.querySelector('.active')))) return node
-        return null
-      }, ':not([intersecting])', this.dialogEl, { behavior: 'smooth', block: 'nearest' }, 500)
+      if (scroll) {
+        scrollElIntoView(() => {
+          let node
+          if (parentNodes.some(parentNode => (node = parentNode.querySelector('.active')))) return node
+          return null
+        }, ':not([intersecting])', this.dialogEl, { behavior: 'smooth', block: 'nearest' }, 500)
+      }
     }
     if (node) {
       this.setAttribute('active', attributeValue)
@@ -646,11 +648,11 @@ export default class Providers extends WebWorker(Shadow()) {
   }
 
   static async toggleIconStates (iconStatesEl, data, online, hasPerformanceIssueProviders) {
-    let counter = 0
     const sessionProvidersByStatus = await data.getSessionProvidersByStatus()
+    const counter = sessionProvidersByStatus.connected.length
     // no-active only works when no connection was made at all, like opening a room without any providers, since it is too hard right now to evaluate if providers are trying to connect
     iconStatesEl.setAttribute('state', online
-      ? (counter = sessionProvidersByStatus.connected.length)
+      ? counter
         ? hasPerformanceIssueProviders
           ? 'performance-issue'
           : 'connected'
@@ -702,7 +704,7 @@ export default class Providers extends WebWorker(Shadow()) {
 
   /**
    * Render a provider component
-   * 
+   *
    * @static
    * @param {string} id
    * @param {string} name
@@ -743,7 +745,7 @@ export default class Providers extends WebWorker(Shadow()) {
         acc.total += cpu.times[key]
       }
       return acc
-    }, {total: 0, idle: 0})
+    }, { total: 0, idle: 0 })
     return {
       times,
       freemem: os.freemem,

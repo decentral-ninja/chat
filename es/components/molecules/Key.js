@@ -4,6 +4,7 @@ import { Intersection } from '../../../../event-driven-web-components-prototypes
 import { escapeHTML } from '../../../../event-driven-web-components-prototypes/src/helpers/Helpers.js'
 
 /* global Environment */
+/* global self */
 
 /**
 * @export
@@ -32,7 +33,7 @@ export default class Key extends Intersection() {
       a.target = '_blank'
       a.download = 'decentral-ninja_' + this.keyContainer.private.name
       a.click()
-      URL.revokeObjectURL(url)      
+      URL.revokeObjectURL(url)
     }
 
     this.trashIconClickEventListener = event => {
@@ -51,15 +52,17 @@ export default class Key extends Intersection() {
       } else {
         this.removeAttribute('checked')
       }
-      if (dispatch) this.dispatchEvent(new CustomEvent('key-checked', {
-        detail: {
-          event,
-          checked: this.checkbox.checked
-        },
-        bubbles: true,
-        cancelable: true,
-        composed: true
-      }))
+      if (dispatch) {
+        this.dispatchEvent(new CustomEvent('key-checked', {
+          detail: {
+            event,
+            checked: this.checkbox.checked
+          },
+          bubbles: true,
+          cancelable: true,
+          composed: true
+        }))
+      }
     }
 
     this.closeDetailsEventListener = event => this.updateHeight(true)
@@ -343,7 +346,7 @@ export default class Key extends Intersection() {
                 <div>
                   <div>
                     <chat-a-room-name>
-                      <template>${JSON.stringify({roomName: this.keyContainer.private.origin.room})}</template>
+                      <template>${JSON.stringify({ roomName: this.keyContainer.private.origin.room })}</template>
                     </chat-a-room-name> - 
                     <chat-a-nick-name ${this.keyContainer.private.origin.uid ? `uid='${this.keyContainer.private.origin.uid}'` : ''}${this.keyContainer.private.origin.nickname ? ` nickname='${escapeHTML(this.keyContainer.private.origin.nickname)}'` : ''}${this.keyContainer.private.origin.self ? ' self user-dialog-show-event-only-on-avatar' : ' user-dialog-show-event'}></chat-a-nick-name> - 
                     <span>${this.keyContainer.private.origin.self ? 'self made' : 'received'}:<br><time class="timestamp">${(new Date(this.keyContainer.private.origin.timestamp)).toLocaleString(navigator.language)}</time></span>
@@ -460,11 +463,13 @@ export default class Key extends Intersection() {
   update (keyContainer, order, updateOrder = false, updateNameEls = true) {
     this.keyContainer = keyContainer
     this.order = order
-    if (updateOrder) this.customStyle.textContent = /* css */`
+    if (updateOrder) {
+      this.customStyle.textContent = /* css */`
       :host {
         order: ${order};
       }
     `
+    }
     this.doOnIntersection = () => {
       if (updateNameEls) {
         this.privateNameEl.setAttribute('name', keyContainer.private.name || '')
@@ -476,7 +481,7 @@ export default class Key extends Intersection() {
         ${acc}
         <div>
           <chat-a-room-name>
-            <template>${JSON.stringify({roomName: curr.room})}</template>
+            <template>${JSON.stringify({ roomName: curr.room })}</template>
           </chat-a-room-name> - 
           ${useNickName ? /* html */`<chat-a-nick-name ${curr.uid ? `uid='${curr.uid}'` : ''}${curr.nickname ? ` nickname='${escapeHTML(curr.nickname)}'` : ''}${curr.self ? ' self user-dialog-show-event-only-on-avatar' : ' user-dialog-show-event'}></chat-a-nick-name> - ` : ''}
           <span>${label}:<br><time class="timestamp">${(new Date(curr.timestamp)).toLocaleString(navigator.language)}</time></span>
@@ -530,18 +535,20 @@ export default class Key extends Intersection() {
     this._timeoutUpdateHeight = setTimeout(() => {
       this.removeAttribute('has-height')
       this.customStyleHeight.textContent = ''
-      if (!clear) self.requestAnimationFrame(timeStamp => {
-        this.customStyleHeight.textContent = /* css */`
+      if (!clear) {
+        self.requestAnimationFrame(timeStamp => {
+          this.customStyleHeight.textContent = /* css */`
           :host([has-height]:not([intersecting])) {
             min-height: ${this.offsetHeight}px;
           }
         `
-        this.setAttribute('has-height', '')
-      })
+          this.setAttribute('has-height', '')
+        })
+      }
     }, clear ? 0 : 350)
   }
 
-  // Keys.js tells this node by class="is-default" 
+  // Keys.js tells this node by class="is-default"
   updateDefault (isDefault) {
     if (isDefault) {
       this.checkbox.checked = true

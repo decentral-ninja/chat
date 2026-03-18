@@ -18,17 +18,19 @@ export default class KeyName extends Shadow() {
     /** @type {import("../../../../../event-driven-web-components-yjs/src/es/controllers/Keys.js").KEY_CONTAINER | undefined} */
     let keyContainer
     this.clickEventListener = event => {
-      if (['has-key', 'default'].includes(this.getAttribute('state'))) this.dispatchEvent(new CustomEvent('keys-dialog-show-event', {
-        detail: {
-          command: 'show-modal',
-          checkbox: this.hasAttribute('checkbox'),
-          epoch: keyContainer?.key.epoch,
-          messageUid: this.getAttribute('message-uid')
-        },
-        bubbles: true,
-        cancelable: true,
-        composed: true
-      }))
+      if (['has-key', 'default'].includes(this.getAttribute('state'))) {
+        this.dispatchEvent(new CustomEvent('keys-dialog-show-event', {
+          detail: {
+            command: 'show-modal',
+            checkbox: this.hasAttribute('checkbox'),
+            epoch: keyContainer?.key.epoch,
+            messageUid: this.getAttribute('message-uid')
+          },
+          bubbles: true,
+          cancelable: true,
+          composed: true
+        }))
+      }
     }
 
     this.keyEventListener = async (event, keyPromise) => {
@@ -49,7 +51,7 @@ export default class KeyName extends Shadow() {
         })
         this.iconStates.setAttribute('state', this.hasAttribute('is-message-child') ? 'decrypted' : 'has-key')
         this.setAttribute('state', 'has-key')
-      } else if(this.hasAttribute('epoch')) {
+      } else if (this.hasAttribute('epoch')) {
         this.keyNameEl.textContent = this.hasAttribute('public-name')
           ? `Unknown key: ${this.getAttribute('public-name')}`
           : 'Unknown key!'

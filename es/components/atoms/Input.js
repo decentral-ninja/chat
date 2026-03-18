@@ -279,6 +279,7 @@ export default class Input extends Shadow() {
         transition: height 0.3s ease-out;
         resize: none;
         padding-left: 2.5em;
+        padding-bottom: 1em;
         min-height: 4.365em;
         max-height: 50dvh;
         overflow-y: auto;
@@ -445,14 +446,16 @@ export default class Input extends Shadow() {
 
   clearReplyToSection () {
     this.replyToSection.innerHTML = ''
-    if (this.beforeReplyDefaultKeyEpoch !== undefined) this.dispatchEvent(new CustomEvent('yjs-set-active-room-default-key', {
-      detail: {
-        epoch: this.beforeReplyDefaultKeyEpoch
-      },
-      bubbles: true,
-      cancelable: true,
-      composed: true
-    }))
+    if (this.beforeReplyDefaultKeyEpoch !== undefined) {
+      this.dispatchEvent(new CustomEvent('yjs-set-active-room-default-key', {
+        detail: {
+          epoch: this.beforeReplyDefaultKeyEpoch
+        },
+        bubbles: true,
+        cancelable: true,
+        composed: true
+      }))
+    }
   }
 
   get isMobile () {

@@ -2,7 +2,6 @@
 import { Shadow } from '../../../../../event-driven-web-components-prototypes/src/Shadow.js'
 import { escapeHTML } from '../../../../../event-driven-web-components-prototypes/src/helpers/Helpers.js'
 
-/* global Environment */
 /* global self */
 
 /**
@@ -32,7 +31,7 @@ export default class RoomName extends Shadow() {
     /** @type {Promise<{room: any, isActiveRoom: boolean}>} */
     this.roomPromise = new Promise(resolve => (this.roomResolve = resolve))
 
-    this.roomPromise.then(({room, isActiveRoom}) => {
+    this.roomPromise.then(({ room, isActiveRoom }) => {
       this.renderHTML(room)
       if (isActiveRoom) {
         this.setAttribute('is-active-room', '')
@@ -50,7 +49,7 @@ export default class RoomName extends Shadow() {
 
   connectedCallbackOnce () {
     if (this.room) {
-      this.roomResolve({room: this.room, isActiveRoom: this.isActiveRoom})
+      this.roomResolve({ room: this.room, isActiveRoom: this.isActiveRoom })
     } else {
       this.dispatchEvent(new CustomEvent('yjs-get-specific-room', {
         detail: {

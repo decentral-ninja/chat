@@ -1,8 +1,7 @@
 // @ts-check
 import { Shadow } from '../../../../event-driven-web-components-prototypes/src/Shadow.js'
-import { escapeHTML } from '../../../../event-driven-web-components-prototypes/src/helpers/Helpers.js'
+import { escapeHTML, scrollElIntoView } from '../../../../event-driven-web-components-prototypes/src/helpers/Helpers.js'
 import { getHexColor, jsonStringifyMapUrlReplacer } from '../../../../Helpers.js'
-import { scrollElIntoView } from '../../../../event-driven-web-components-prototypes/src/helpers/Helpers.js'
 
 /* global self */
 /* global Environment */
@@ -56,7 +55,7 @@ export default class Users extends Shadow() {
         }
       })
     }
-    
+
     this.userDialogShowEventEventListener = event => {
       this.dialog.close()
       this.openDialog(event).then(() => {
@@ -423,11 +422,13 @@ export default class Users extends Shadow() {
     if (active) {
       // @ts-ignore
       if (parentNodes.some(parentNode => (node = parentNode.querySelector(`[${attributeName}='${attributeValue}']`)))) node.classList.add('active')
-      if (scroll) scrollElIntoView(() => {
-        let node
-        if(parentNodes.some(parentNode => (node = parentNode.querySelector('.active')))) return node
-        return null
-      }, ':not([intersecting])', this.dialogEl, { behavior: 'smooth', block: 'nearest' })
+      if (scroll) {
+        scrollElIntoView(() => {
+          let node
+          if (parentNodes.some(parentNode => (node = parentNode.querySelector('.active')))) return node
+          return null
+        }, ':not([intersecting])', this.dialogEl, { behavior: 'smooth', block: 'nearest' })
+      }
     }
     if (node) {
       this.setAttribute('active', attributeValue)

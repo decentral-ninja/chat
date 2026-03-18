@@ -20,16 +20,18 @@ export default class KeyNameDialog extends SetStringDialog {
       event.stopPropagation()
       this.dialog.close()
       const inputField = event.composedPath()[0].inputField || event.composedPath()[0].previousElementSibling?.inputField
-      if (inputField?.value) this.dispatchEvent(new CustomEvent(`yjs-set-key-${this.hasAttribute('private') ? 'private' : 'public'}-name`, {
-        detail: {
-          epoch: this.getAttribute('epoch'),
-          propertyValue: inputField.value,
-          adjustRandomNames: true
-        },
-        bubbles: true,
-        cancelable: true,
-        composed: true
-      }))
+      if (inputField?.value) {
+        this.dispatchEvent(new CustomEvent(`yjs-set-key-${this.hasAttribute('private') ? 'private' : 'public'}-name`, {
+          detail: {
+            epoch: this.getAttribute('epoch'),
+            propertyValue: inputField.value,
+            adjustRandomNames: true
+          },
+          bubbles: true,
+          cancelable: true,
+          composed: true
+        }))
+      }
     }
   }
 
@@ -64,8 +66,8 @@ export default class KeyNameDialog extends SetStringDialog {
     return super.renderCustomHTML(name, name, '', /* html */`
         <h4>Set the ${this.hasAttribute('private') ? 'private' : 'public'} key name:</h4>
         ${this.hasAttribute('private')
-          ? /* html */ `<p>The private key name is saved locally and not shared with anyone but helps you as a mental note.</p>`
-          : /* html */ `<p>The public key name is visible to the user with whom the key is shared.</p>`
+          ? /* html */ '<p>The private key name is saved locally and not shared with anyone but helps you as a mental note.</p>'
+          : /* html */ '<p>The public key name is visible to the user with whom the key is shared.</p>'
         }
       `, '', '')
   }

@@ -4,6 +4,7 @@ import { escapeHTML } from '../../../../event-driven-web-components-prototypes/s
 import { jsonParseMapUrlReviver } from '../../../../Helpers.js'
 
 /* global Environment */
+/* global self */
 
 /**
 * @export
@@ -51,7 +52,7 @@ export default class User extends Intersection() {
     this.addEventListener('wct-details-animationend', this.detailsAnimationendEventListener)
     self.addEventListener('resize', this.resizeEventListener)
   }
-  
+
   disconnectedCallback () {
     super.disconnectedCallback()
     this.removeEventListener('close', this.closeDetailsEventListener)
@@ -439,14 +440,16 @@ export default class User extends Intersection() {
     this._timeoutUpdateHeight = setTimeout(() => {
       this.removeAttribute('has-height')
       this.customStyleHeight.textContent = ''
-      if (!clear) self.requestAnimationFrame(timeStamp => {
-        this.customStyleHeight.textContent = /* css */`
+      if (!clear) {
+        self.requestAnimationFrame(timeStamp => {
+          this.customStyleHeight.textContent = /* css */`
           :host([has-height]:not([intersecting])) {
             min-height: ${this.offsetHeight}px;
           }
         `
-        this.setAttribute('has-height', '')
-      })
+          this.setAttribute('has-height', '')
+        })
+      }
     }, clear ? 0 : 350)
   }
 
@@ -488,17 +491,19 @@ export default class User extends Intersection() {
 
   /**
    * Enrich initial user value with the full user
-   * 
+   *
    * @param {import('../../../../event-driven-web-components-yjs/src/es/controllers/Users.js').ConnectedUsers} connectedUsers
    * @param {import('../../../../event-driven-web-components-yjs/src/es/controllers/Users.js').UsersContainer} allUsers
    * @returns {void}
    */
   static enrichUserWithFullUserNickname (connectedUsers, allUsers) {
     Object.keys(connectedUsers).forEach(providerName => {
-      if (Array.isArray(connectedUsers[providerName])) connectedUsers[providerName].forEach((connectedUser, i) => {
-        let fullUser
-        if ((fullUser = allUsers.get(connectedUser?.uid))) connectedUser.nickname = fullUser.nickname
-      })
+      if (Array.isArray(connectedUsers[providerName])) {
+        connectedUsers[providerName].forEach((connectedUser, i) => {
+          let fullUser
+          if ((fullUser = allUsers.get(connectedUser?.uid))) connectedUser.nickname = fullUser.nickname
+        })
+      }
     })
   }
 

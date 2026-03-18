@@ -1,11 +1,11 @@
 // @ts-check
 import { Intersection } from '../../../../event-driven-web-components-prototypes/src/Intersection.js'
-import { escapeHTML } from '../../../../event-driven-web-components-prototypes/src/helpers/Helpers.js'
+import { escapeHTML, scrollElIntoView } from '../../../../event-driven-web-components-prototypes/src/helpers/Helpers.js'
 import { getHexColor, jsonParseMapUrlReviver } from '../../../../Helpers.js'
 import { separator } from '../../../../event-driven-web-components-yjs/src/es/controllers/Users.js'
-import { scrollElIntoView } from '../../../../event-driven-web-components-prototypes/src/helpers/Helpers.js'
 
 /* global Environment */
+/* global self */
 
 /**
 * @export
@@ -666,11 +666,13 @@ export default class Provider extends Intersection() {
     this.data = data
     this.order = order
     this.providerHasPerformanceIssues = providerHasPerformanceIssues
-    if (updateOrder) this.customStyle.textContent = /* css */`
+    if (updateOrder) {
+      this.customStyle.textContent = /* css */`
       :host {
         order: ${order};
       }
     `
+    }
     if (removeDataUpdating && this.hasAttribute('updating')) {
       this.dispatchEvent(new CustomEvent('yjs-request-notifications', {
         detail: { force: true },
@@ -769,14 +771,16 @@ export default class Provider extends Intersection() {
     this._timeoutUpdateHeight = setTimeout(() => {
       this.removeAttribute('has-height')
       this.customStyleHeight.textContent = ''
-      if (!clear) self.requestAnimationFrame(timeStamp => {
-        this.customStyleHeight.textContent = /* css */`
+      if (!clear) {
+        self.requestAnimationFrame(timeStamp => {
+          this.customStyleHeight.textContent = /* css */`
           :host([has-height]:not([intersecting])) {
             min-height: ${this.offsetHeight}px;
           }
         `
-        this.setAttribute('has-height', '')
-      })
+          this.setAttribute('has-height', '')
+        })
+      }
     }, clear ? 0 : 350)
   }
 
@@ -797,7 +801,7 @@ export default class Provider extends Intersection() {
         ${origin.includes(this.roomNamePrefix)
           ? `
             <chat-a-room-name>
-              <template>${JSON.stringify({roomName: origin})}</template>
+              <template>${JSON.stringify({ roomName: origin })}</template>
             </chat-a-room-name>
           `
           : `<span>${escapeHTML(origin)}</span>`
@@ -892,7 +896,7 @@ export default class Provider extends Intersection() {
     let url
     try {
       url = new URL(urlsArr[0][1].url.href)
-      if (this.selectProtocol.value) url.protocol =  this.selectProtocol.value
+      if (this.selectProtocol.value) url.protocol = this.selectProtocol.value
       if (this.inputPort.value) {
         url.port = this.inputPort.value
       } else {
@@ -976,6 +980,7 @@ export default class Provider extends Intersection() {
   get spanKeepAliveCounter () {
     return this.root.querySelector('span[id=keep-alive-counter]')
   }
+
   get spanKeepAliveText () {
     return this.root.querySelector('span[id=keep-alive-text]')
   }

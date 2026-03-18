@@ -4,6 +4,7 @@ import { scrollElIntoView } from '../../../../../event-driven-web-components-pro
 
 /* global self */
 /* global Environment */
+/* global FileReader */
 
 /**
 * @export
@@ -18,7 +19,7 @@ export default class KeysDialog extends Dialog {
     const superShow = this.show
     this.show = command => {
       new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-keys', {
-        detail: {resolve},
+        detail: { resolve },
         bubbles: true,
         cancelable: true,
         composed: true
@@ -62,16 +63,18 @@ export default class KeysDialog extends Dialog {
     this.dialogWasClosed = false
     const superClose = this.close
     this.close = () => {
-      if (this.deletedKeyEls.length) new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-delete-key', {
-        detail: {
-          resolve,
-          epochs: this.deletedKeyEls.map(el => el.getAttribute('epoch')),
-          dispatch: true
-        },
-        bubbles: true,
-        cancelable: true,
-        composed: true
-      }))).then(result => this.deletedKeyEls.forEach(el => el.remove()))
+      if (this.deletedKeyEls.length) {
+        new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-delete-key', {
+          detail: {
+            resolve,
+            epochs: this.deletedKeyEls.map(el => el.getAttribute('epoch')),
+            dispatch: true
+          },
+          bubbles: true,
+          cancelable: true,
+          composed: true
+        }))).then(result => this.deletedKeyEls.forEach(el => el.remove()))
+      }
       this.dialogWasClosed = true
       this.removeAttribute('touched')
       return superClose()
@@ -81,7 +84,7 @@ export default class KeysDialog extends Dialog {
       this.addKeyEl.setAttribute('updating', '')
       this.dispatchEvent(new CustomEvent('yjs-set-new-key', {
         detail: {
-          setActiveRoomDefaultKey: this.keyEls.some(keyEl => keyEl.hasAttribute('checked') || keyEl.classList.contains('is-default')) ? false : true
+          setActiveRoomDefaultKey: !this.keyEls.some(keyEl => keyEl.hasAttribute('checked') || keyEl.classList.contains('is-default'))
         },
         bubbles: true,
         cancelable: true,
@@ -101,7 +104,7 @@ export default class KeysDialog extends Dialog {
           reader.onload = () => this.dispatchEvent(new CustomEvent('yjs-set-key', {
             detail: {
               keyContainer: reader.result,
-              setActiveRoomDefaultKey: this.keyEls.some(keyEl => keyEl.hasAttribute('checked') || keyEl.classList.contains('is-default')) ? false : true
+              setActiveRoomDefaultKey: !this.keyEls.some(keyEl => keyEl.hasAttribute('checked') || keyEl.classList.contains('is-default'))
             },
             bubbles: true,
             cancelable: true,
@@ -127,7 +130,7 @@ export default class KeysDialog extends Dialog {
 
     this.clickEncryptElEventListener = event => {
       this.close()
-      const epoch = this.hasAttribute('has-checked') ? this.keyEls.find((keyEl => keyEl.hasAttribute('checked')))?.getAttribute('epoch') : ''
+      const epoch = this.hasAttribute('has-checked') ? this.keyEls.find(keyEl => keyEl.hasAttribute('checked'))?.getAttribute('epoch') : ''
       if (this.messageUid) {
         // TODO: Supply a checkbox to allow this new key become the ActiveRoomDefaultKey
         console.log('****TODO:*****', 'dispatch message change encryption with this.messageUid + epoch at Chat.js through Keys.js')
@@ -393,7 +396,7 @@ export default class KeysDialog extends Dialog {
 
   /**
    * initializes the rendering of the keys
-   * 
+   *
    * @param {import('../../../../../event-driven-web-components-yjs/src/es/controllers/Keys.js').KEY_CONTAINERS|import('../../../../../event-driven-web-components-prototypes/src/controllers/Crypto.js').JSON_WEB_KEY_TO_CRYPTOKEY_ERROR|null} keyContainers
    * @returns {Promise<void>}
    */
@@ -414,7 +417,7 @@ export default class KeysDialog extends Dialog {
 
   /**
    * Description
-   * 
+   *
    * @param {any} div
    * @param {import('../../../../../event-driven-web-components-yjs/src/es/controllers/Keys.js').KEY_CONTAINERS|import('../../../../../event-driven-web-components-prototypes/src/controllers/Crypto.js').JSON_WEB_KEY_TO_CRYPTOKEY_ERROR} keyContainers
    * @param {boolean} dialogWasClosed
@@ -430,36 +433,36 @@ export default class KeysDialog extends Dialog {
       ? `<span style="color: red;">Error: ${JSON.stringify(keyContainers.error)}</span>`
       : keyContainers
       // @ts-ignore
-      .sort((a, b) => Math.max(a.private.origin?.timestamp || '', a.private.shared?.[0]?.timestamp || '', a.private.received?.[0]?.timestamp || '', a.private.encrypted?.[0]?.timestamp || '', a.private.decrypted?.[0]?.timestamp || '') - Math.max(b.private.origin?.timestamp || '', b.private.shared?.[0]?.timestamp || '', b.private.received?.[0]?.timestamp || '', b.private.encrypted?.[0]?.timestamp || '', b.private.decrypted?.[0]?.timestamp || ''))
-      .reverse()
-      .reduce((acc, keyContainer, i) => {
+        .sort((a, b) => Math.max(a.private.origin?.timestamp || '', a.private.shared?.[0]?.timestamp || '', a.private.received?.[0]?.timestamp || '', a.private.encrypted?.[0]?.timestamp || '', a.private.decrypted?.[0]?.timestamp || '') - Math.max(b.private.origin?.timestamp || '', b.private.shared?.[0]?.timestamp || '', b.private.received?.[0]?.timestamp || '', b.private.encrypted?.[0]?.timestamp || '', b.private.decrypted?.[0]?.timestamp || ''))
+        .reverse()
+        .reduce((acc, keyContainer, i) => {
         /// / render or update
         // @ts-ignore
-        const epoch = keyContainer.key.epoch
-        const isDefault = defaultKeyEpoch
-          ? defaultKeyEpoch === epoch
-          : false
-        const renderKey = () => KeysDialog.renderKey(epoch, keyContainer, i, false, hasChecked, isDefault)
-        let key
-        if ((key = div.querySelector(`[epoch='${epoch}']`))) {
-          if (typeof key.update === 'function') {
+          const epoch = keyContainer.key.epoch
+          const isDefault = defaultKeyEpoch
+            ? defaultKeyEpoch === epoch
+            : false
+          const renderKey = () => KeysDialog.renderKey(epoch, keyContainer, i, false, hasChecked, isDefault)
+          let key
+          if ((key = div.querySelector(`[epoch='${epoch}']`))) {
+            if (typeof key.update === 'function') {
             // dialogWasClosed gives indication to provider updateOrder
-            key.update(keyContainer, i, dialogWasClosed)
-            key.classList[isDefault ? 'add' : 'remove']('is-default')
+              key.update(keyContainer, i, dialogWasClosed)
+              key.classList[isDefault ? 'add' : 'remove']('is-default')
+            } else {
+              key.outerHTML = renderKey()
+            }
           } else {
-            key.outerHTML = renderKey()
+            return acc + renderKey()
           }
-        } else {
-          return acc + renderKey()
-        }
-        return acc
-      }, '')
+          return acc
+        }, '')
     Array.from(tempDiv.children).forEach(child => div.prepend(child))
   }
 
   /**
    * Render a key component
-   * 
+   *
    * @static
    * @param {string} epoch
    * @param {import('../../../../../event-driven-web-components-yjs/src/es/controllers/Keys.js').KEY_CONTAINER} keyContainer
@@ -495,7 +498,7 @@ export default class KeysDialog extends Dialog {
 
   /**
    * Description
-   * 
+   *
    * @async
    * @param {string} attributeName
    * @param {string} attributeValue
@@ -528,11 +531,13 @@ export default class KeysDialog extends Dialog {
           }
         }
       }
-      if (scroll) scrollElIntoView(() => {
-        let node
-        if(parentNodes.some(parentNode => (node = parentNode.querySelector('.active')))) return node
-        return null
-      }, ':not([intersecting])', this.dialog, { behavior: 'smooth', block: 'nearest' }, 500)
+      if (scroll) {
+        scrollElIntoView(() => {
+          let node
+          if (parentNodes.some(parentNode => (node = parentNode.querySelector('.active')))) return node
+          return null
+        }, ':not([intersecting])', this.dialog, { behavior: 'smooth', block: 'nearest' }, 500)
+      }
     }
     if (node) {
       this.setAttribute('active', attributeValue)

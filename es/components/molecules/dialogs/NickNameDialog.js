@@ -104,7 +104,7 @@ export default class NickNameDialog extends SetStringDialog {
     if (this.getNicknameInput?.inputField) {
       this.getNicknameInput.inputField.setAttribute('placeholder', nickname)
       if (this.getNicknameInput.inputField.matches(':focus')) {
-        this.getNicknameInput.inputField.addEventListener('blur', event => (this.getNicknameInput.inputField.value = nickname), {once: true})
+        this.getNicknameInput.inputField.addEventListener('blur', event => (this.getNicknameInput.inputField.value = nickname), { once: true })
       } else {
         this.getNicknameInput.inputField.value = nickname
       }

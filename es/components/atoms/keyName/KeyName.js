@@ -195,7 +195,7 @@ export default class KeyName extends Shadow() {
         <span class=avatar></span>
         <${this.hTagName}>${keyName}</${this.hTagName}>
         ${this.hasAttribute('is-editable')
-          ? /* html */`<wct-icon-mdx hover-on-parent-element id="show-modal" title="edit key name" icon-url="../../../../../../img/icons/pencil.svg" size="1em"></wct-icon-mdx>`
+          ? /* html */'<wct-icon-mdx hover-on-parent-element id="show-modal" title="edit key name" icon-url="../../../../../../img/icons/pencil.svg" size="1em"></wct-icon-mdx>'
           : ''
         }
       </${this.linkTagName}>

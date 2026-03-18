@@ -3,7 +3,6 @@ import { Shadow } from '../../../../../event-driven-web-components-prototypes/sr
 import { escapeHTML } from '../../../../../event-driven-web-components-prototypes/src/helpers/Helpers.js'
 import { getHexColor } from '../../../../../Helpers.js'
 
-/* global self */
 /* global Environment */
 
 /**
