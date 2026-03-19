@@ -222,10 +222,10 @@ export default class Chat extends Shadow() {
           }))
         }
       })
+      this.addEventListener('message-intersection', this.messageIntersectionEventListener) // add this listener after render, to avoid intersection events before all messages are loaded
     }
     this.globalEventTarget.addEventListener('chat-scroll', this.chatScrollEventListener)
     this.globalEventTarget.addEventListener('yjs-chat-update', this.chatUpdateEventListener)
-    // this.addEventListener('message-intersection', this.messageIntersectionEventListener) // add this listener after render, to avoid intersection events before all messages are loaded
     self.addEventListener('resize', this.resizeListener)
   }
 
