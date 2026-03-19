@@ -9,7 +9,6 @@ import { scrollElIntoView } from '../../../../event-driven-web-components-protot
 
 /**
  * The chat view
- * TODO: forward multiple messages
  *
  * @export
  * @class Providers

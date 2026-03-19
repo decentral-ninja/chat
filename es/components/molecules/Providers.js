@@ -471,7 +471,7 @@ export default class Providers extends WebWorker(Shadow()) {
               <li><a href="https://github.com/Weedshaker/y-websocket/tree/master" target="_blank">Host your own websocket - github</a></li>
               <li><a href="https://hub.docker.com/repository/docker/weedshaker/y-websocket/general" target="_blank">Host your own websocket - docker container</a></li>
             </ul>
-            <!-- TODO: ******************************* Below only reproduces the old behavior ******************************* -->
+            <!-- ******************************* Below only reproduces the old behavior ******************************* -->
             <wct-details namespace="details-default-" id=set-providers-manually mode=false>
               <details>
                 <summary>
@@ -498,7 +498,7 @@ export default class Providers extends WebWorker(Shadow()) {
                 </div>
               </details>
             </wct-details>
-            <!-- TODO: ******************************* Above only reproduces the old behavior ******************************* -->
+            <!-- ******************************* Above only reproduces the old behavior ******************************* -->
           </div>
         </dialog>
       </wct-dialog>
@@ -579,7 +579,7 @@ export default class Providers extends WebWorker(Shadow()) {
       Providers.toggleIconStates(this.iconStatesEl, data, this.hasAttribute('online'), this.performanceIssueProviders?.length)
       this.lastP2pGraphData = Providers.renderProvidersList(this.providersDiv, data, roomName, this.providersGraph, this.providerDialogWasClosed, this.performanceIssueProviders, force)
       this.providerDialogWasClosed = false
-      // TODO: ******************************* Below only reproduces the old behavior *******************************
+      // ******************************* Below only reproduces the old behavior *******************************
       /** @type {HTMLInputElement | any} */
       let websocketInput
       if ((websocketInput = this.websocketInput) && websocketUrl !== websocketInput.value) {

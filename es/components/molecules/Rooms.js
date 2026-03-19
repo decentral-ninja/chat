@@ -358,7 +358,6 @@ export default class Rooms extends Shadow() {
         }
       ])
     ]).then(async ([{ room }, getRoomsResult]) => {
-      // TODO: Consider to only rerender the necessary parts like renderRoomList (updateRoomList with Room.js component) but keep the dialog
       let roomName
       this.html = ''
       this.shareDialogMap = new Map()
