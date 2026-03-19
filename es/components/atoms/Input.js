@@ -83,6 +83,9 @@ export default class Input extends Shadow() {
     // past wormhole url
     const wormholeUrls = []
     this.focusEventListener = async event => {
+      clearTimeout(blurTimeoutId)
+      this.classList.add('focus')
+      this.textarea.classList.add('hover')
       if (wormholeOpened) {
         try {
           const clipboardContents = await navigator.clipboard.read()
@@ -108,6 +111,16 @@ export default class Input extends Shadow() {
         }
         wormholeOpened = false
       }
+    }
+
+    // this should fix smartphone issue, where blur triggers before the send button click is registered
+    let blurTimeoutId
+    this.blurEventListener = async event => {
+      clearTimeout(blurTimeoutId)
+      blurTimeoutId = setTimeout(() => {
+        this.classList.remove('focus')
+        this.textarea.classList.remove('hover')
+      }, 50)
     }
 
     this.jitsiVideoStartedEventListener = event => {
@@ -201,6 +214,7 @@ export default class Input extends Shadow() {
     this.addEventListener('emoji-clicked', this.emojiClickedEventListener)
     self.addEventListener('click', this.windowClickEventListener)
     this.textarea.addEventListener('focus', this.focusEventListener)
+    this.textarea.addEventListener('blur', this.blurEventListener)
     this.globalEventTarget.addEventListener('jitsi-video-started', this.jitsiVideoStartedEventListener)
     this.globalEventTarget.addEventListener('jitsi-video-stopped', this.jitsiVideoStoppedEventListener)
     this.globalEventTarget.addEventListener('reply-to-message', this.replyToMessageEventListener)
@@ -213,6 +227,7 @@ export default class Input extends Shadow() {
     this.removeEventListener('emoji-clicked', this.emojiClickedEventListener)
     self.removeEventListener('click', this.windowClickEventListener)
     this.textarea.removeEventListener('focus', this.focusEventListener)
+    this.textarea.removeEventListener('blur', this.blurEventListener)
     this.globalEventTarget.removeEventListener('jitsi-video-started', this.jitsiVideoStartedEventListener)
     this.globalEventTarget.removeEventListener('jitsi-video-stopped', this.jitsiVideoStoppedEventListener)
     this.globalEventTarget.removeEventListener('reply-to-message', this.replyToMessageEventListener)
@@ -370,6 +385,15 @@ export default class Input extends Shadow() {
       @media only screen and (max-width: _max-width_) {
         :host > div > textarea {
           min-height: 3.8em;
+        }
+        :host(:where(:focus, .focus)) > div > textarea:where(:hover, .hover) ~ wct-icon-mdx {
+          width: 0;
+          padding: 0;
+          opacity: 0;
+          transition: var(--transition);
+        }
+        :host(:where(:focus, .focus)) > div > textarea:where(:hover, .hover) ~ wct-button {
+          padding: 0;
         }
       }
     `
