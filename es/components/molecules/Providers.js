@@ -86,7 +86,7 @@ export default class Providers extends WebWorker(Shadow()) {
               return console.warn('url is broken', provider.split(data.separator)[1]) || null
             }
           }))).filter(result => result && !result.error)
-          const threshold = 90
+          const threshold = 95
           this.performanceIssueProviders = performanceResults.reduce((acc, result) => {
             if (result.os?.cpuLoad < threshold && result.os?.memoryLoad < threshold) return acc
             acc.push(result.hostname)
