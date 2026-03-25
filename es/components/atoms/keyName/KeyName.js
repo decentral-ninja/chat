@@ -124,7 +124,7 @@ export default class KeyName extends Shadow() {
         display: flex;
         padding-bottom: var(--spacing);
         tap-highlight-color: transparent;
-        --webkit-tap-highlight-color: transparent;
+        -webkit-tap-highlight-color: transparent;
       }
       :host > ${this.linkTagName}:hover {
         --h4-color: var(--color-hover);

@@ -135,7 +135,7 @@ export default class ProviderName extends Shadow() {
         display: flex;
         padding-bottom: var(--spacing);
         tap-highlight-color: transparent;
-        --webkit-tap-highlight-color: transparent;
+        -webkit-tap-highlight-color: transparent;
       }
       :host > a > wct-icon-mdx {
         display: flex;

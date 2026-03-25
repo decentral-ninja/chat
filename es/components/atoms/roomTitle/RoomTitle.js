@@ -113,7 +113,7 @@ export default class RoomTitle extends Shadow() {
         align-items: end;
         display: flex;
         tap-highlight-color: transparent;
-        --webkit-tap-highlight-color: transparent;
+        -webkit-tap-highlight-color: transparent;
       }
       :host > a wct-icon-mdx {
         display: flex;
