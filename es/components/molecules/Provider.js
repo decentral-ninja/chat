@@ -473,7 +473,7 @@ export default class Provider extends Intersection() {
             <template>
               <wct-icon-mdx state="default" title="pinging..." icon-url="../../../../../../img/icons/network.svg" size="2em"></wct-icon-mdx>
               <wct-icon-mdx state="fetch-success" title="fetch successful!" style="color:var(--color-green-full)" icon-url="../../../../../../img/icons/network.svg" size="2em"></wct-icon-mdx>
-              <wct-icon-mdx state="ping-success" title="ping successful!" style="color:var(--color-orange)" icon-url="../../../../../../img/icons/network.svg" size="2em"></wct-icon-mdx>
+              <wct-icon-mdx state="ping-success" title="ping successful!" style="color:var(--color-green)" icon-url="../../../../../../img/icons/network.svg" size="2em"></wct-icon-mdx>
               <wct-icon-mdx state="error" title="not able to fetch nor ping the provider" style="color:var(--color-error)" icon-url="../../../../../../img/icons/network-off.svg" size="2em"></wct-icon-mdx>
             </template>
           </a-icon-states>

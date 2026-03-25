@@ -15,6 +15,12 @@ export default class MessageDialog extends Dialog {
   constructor (options = {}, ...args) {
     super({ ...options }, ...args)
 
+    const superShow = this.show
+    this.show = command => {
+      this.shareDialog.setAttribute('href', this.shareDialogHref)
+      return superShow(command)
+    }
+
     const superClose = this.close
     this.close = async () => {
       if (this.hasAttribute('deleted')) {
@@ -166,7 +172,7 @@ export default class MessageDialog extends Dialog {
           </wct-dialog-clipboard>
           <chat-m-share-dialog
             namespace="dialog-top-slide-in-"
-            href="${location.href + `#${this.getAttribute('timestamp')}`}"
+            href="${this.shareDialogHref}"
             title-append=" with anchor to this message"
             no-share-in-chat
           >
@@ -217,6 +223,14 @@ export default class MessageDialog extends Dialog {
 
   get messageClone () {
     return this.root.querySelector('chat-m-message')
+  }
+
+  get shareDialog () {
+    return this.root.querySelector('chat-m-share-dialog')
+  }
+
+  get shareDialogHref () {
+    return location.href + `#${this.getAttribute('timestamp')}`
   }
 
   get template () {

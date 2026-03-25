@@ -18,6 +18,12 @@ export default class ShareDialog extends Dialog {
   constructor (options = {}, ...args) {
     super({ ...options }, ...args)
 
+    const superShow = this.show
+    this.show = command => {
+      this.locationHref.then(locationHref => (this.textarea.value = locationHref))
+      return superShow(command)
+    }
+
     this.inputEventListener = event => {
       this.qrCodeSvg.setAttribute('data', this.textarea.value)
       this.dialogClipboard.setAttribute('data', this.textarea.value)
@@ -164,18 +170,7 @@ export default class ShareDialog extends Dialog {
       </dialog>
     `
     return Promise.all([
-      (this.getAttribute('room-name')
-        ? new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-rooms', {
-          detail: {
-            resolve
-          },
-          bubbles: true,
-          cancelable: true,
-          composed: true
-        })))
-        : Promise.resolve(this.getAttribute('href'))
-      ).then(getRoomsResult => {
-        const locationHref = this.getAttribute('room-name') ? getRoomsResult.value[this.getAttribute('room-name')].locationHref : getRoomsResult
+      this.locationHref.then(locationHref => {
         this.root.querySelector('dialog').insertAdjacentHTML('beforeend', /* html */`
           <p><wct-qr-code-svg namespace="qr-code-svg-default-" data='${locationHref}'></wct-qr-code-svg></p>
           <textarea>${locationHref}</textarea>
@@ -235,5 +230,19 @@ export default class ShareDialog extends Dialog {
 
   get shareApiIcon () {
     return this.root.querySelector('#share-api')
+  }
+
+  get locationHref () {
+    return (this.getAttribute('room-name')
+        ? new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-rooms', {
+          detail: {
+            resolve
+          },
+          bubbles: true,
+          cancelable: true,
+          composed: true
+        })))
+        : Promise.resolve(this.getAttribute('href'))
+      ).then(getRoomsResult => this.getAttribute('room-name') ? getRoomsResult.value[this.getAttribute('room-name')].locationHref : getRoomsResult)
   }
 }
