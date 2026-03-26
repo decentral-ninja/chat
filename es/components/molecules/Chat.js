@@ -425,12 +425,13 @@ export default class Chat extends Shadow() {
     let promise = null
     // @ts-ignore
     if (location.hash.includes(self.Environment?.timestampNamespace || 't_')) {
+      const locationHash = location.hash.replace(/#/g, '')
       promise = Promise.resolve({
-        scrollEl: location.hash.replace('#', '')
+        scrollEl: locationHash
       })
       this.dispatchEvent(new CustomEvent('yjs-merge-active-room', {
         detail: {
-          scrollEl: location.hash.replace('#', '')
+          scrollEl: locationHash
         },
         bubbles: true,
         cancelable: true,
