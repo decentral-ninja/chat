@@ -37,7 +37,15 @@ export default class Rooms extends Shadow() {
             bubbles: true,
             cancelable: true,
             composed: true
-          }))).then(getRoomsResult => target.setAttribute('href', getRoomsResult.value[this.roomKeys[target.getAttribute('route').replace('room-key-index-', '')]]?.locationHref || ''))
+          }))).then(getRoomsResult => {
+            let url
+            try {
+              const roomName = this.roomKeys[target.getAttribute('route').replace('room-key-index-', '')]
+              url = new URL(getRoomsResult.value[roomName]?.locationHref)
+              if (!url.searchParams.get('room')) url.searchParams.set('room', roomName)
+            } catch (error) {}
+            target.setAttribute('href', url?.href || '')
+          })
           target.click()
         } else if ((await this.roomPromise).room.done) {
           // enter new room
