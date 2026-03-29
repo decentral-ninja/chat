@@ -454,7 +454,7 @@ export default class Users extends Shadow() {
 
   // showAllConnectedUsers = false means to use mutuallyConnectedUsers
   static renderP2pGraph (graph, data, separator, activeUid, showAllConnectedUsers = false, force = false) {
-    const stringifiedData = JSON.stringify(Array.isArray(data) ? data : Array.from(data))
+    const stringifiedData = JSON.stringify((Array.isArray(data) ? data : Array.from(data)).map(([key, user]) => [key, {connectedUsers: user.connectedUsers, isSelf: user.isSelf, mutuallyConnectedUsers: user.mutuallyConnectedUsers, nickname: user.nickname}]))
     const isSame = graph.children[0]?.template.content.textContent === stringifiedData
     if (force || !isSame) {
       graph.setAttribute('style', `height: ${graph.offsetHeight}px;`)
