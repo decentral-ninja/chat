@@ -442,6 +442,7 @@ export default class Message extends WebWorker(Intersection()) {
             textObjSync.text = decryptedObj.text
             textObjSync.id = decryptedObj.id
             textObjSync.src = decryptedObj.src
+            this.textObj = Promise.resolve(textObjSync)
           } catch (error) {
             textObjSync.text = decrypted.text
           }

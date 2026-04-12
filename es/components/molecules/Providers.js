@@ -62,7 +62,7 @@ export default class Providers extends WebWorker(Shadow()) {
     this.providersEventListener = (event, setUpdating = true) => {
       lastProvidersEventGetData = event.detail.getData
       this.dialog.removeAttribute('updating')
-      if (!setUpdating) this.iconStatesEl.setAttribute('updating', '')
+      if (setUpdating) this.iconStatesEl.setAttribute('updating', '')
       if (timeoutCounter % skipTimeoutClear) clearTimeout(timeoutId)
       timeoutCounter++
       timeoutId = setTimeout(async () => {
