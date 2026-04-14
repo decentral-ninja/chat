@@ -133,19 +133,18 @@ export default class Message extends WebWorker(Intersection()) {
         if (this.getAttribute('type') === 'default') this.hidden = false
       })
     }
+    const updateReadyFunc = () => {
+      this.hidden = false
+      this.dispatchEvent(new CustomEvent('message-rendered', {
+        detail: {
+          message: this
+        },
+        bubbles: true,
+        cancelable: true,
+        composed: true
+      }))
+    }
     const htmlReadyFunc = () => {
-      this.addEventListeners()
-      const updateReadyFunc = () => {
-        this.hidden = false
-        this.dispatchEvent(new CustomEvent('message-rendered', {
-          detail: {
-            message: this
-          },
-          bubbles: true,
-          cancelable: true,
-          composed: true
-        }))
-      }
       // request most recent synced state
       if (this.hasAttribute('update-on-connected-callback') && !this.hasAttribute('static')) {
         this.doOnIntersection = () => {
@@ -158,8 +157,12 @@ export default class Message extends WebWorker(Intersection()) {
       }
     }
     if (this.shouldRenderHTML()) {
-      this.renderHTML().then(htmlReadyFunc)
+      this.renderHTML().then(() => {
+        this.addEventListeners()
+        updateReadyFunc()
+    })
     } else {
+      this.addEventListeners()
       htmlReadyFunc()
     }
   }

@@ -23,7 +23,7 @@ export default class KeyName extends Shadow() {
           detail: {
             command: 'show-modal',
             checkbox: this.hasAttribute('checkbox'),
-            epoch: keyContainer?.key.epoch,
+            epoch: keyContainer?.key?.epoch,
             messageUid: this.getAttribute('message-uid')
           },
           bubbles: true,

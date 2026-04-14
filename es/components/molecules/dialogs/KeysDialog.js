@@ -411,7 +411,7 @@ export default class KeysDialog extends Dialog {
       cancelable: true,
       composed: true
     })))
-    KeysDialog.renderKeys(this.keysDiv, keyContainers, this.dialogWasClosed, this.hasAttribute('has-checked'), defaultKeyContainer?.key.epoch)
+    KeysDialog.renderKeys(this.keysDiv, keyContainers, this.dialogWasClosed, this.hasAttribute('has-checked'), defaultKeyContainer?.key?.epoch)
     this.dialogWasClosed = false
   }
 

@@ -168,7 +168,7 @@ export default class Input extends Shadow() {
             cancelable: true,
             composed: true
           }))).then(keyContainer => {
-            this.beforeReplyDefaultKeyEpoch = keyContainer?.key.epoch || ''
+            this.beforeReplyDefaultKeyEpoch = keyContainer?.key?.epoch || ''
             this.dispatchEvent(new CustomEvent('yjs-set-active-room-default-key', {
               detail: {
                 epoch: event.detail.textObj.encrypted.key.epoch
