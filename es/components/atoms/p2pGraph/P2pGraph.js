@@ -40,6 +40,7 @@ export default class P2pGraph extends Intersection() {
   intersectionCallback (entries, observer) {
     if (this.areEntriesIntersecting(entries)) {
       this.setAttribute('intersecting', '')
+      if (this.hidden) this.hidden = false
       if (this.doOnIntersection) this.doOnIntersection()
       return
     }

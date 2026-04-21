@@ -231,6 +231,7 @@ export default class Provider extends Intersection() {
   intersectionCallback (entries, observer) {
     if (this.areEntriesIntersecting(entries)) {
       this.setAttribute('intersecting', '')
+      if (this.hidden) this.hidden = false
       if (navigator.onLine) {
         this.renderProviderInfo(this.renderProviderInfoForce)
         this.renderProviderInfoForce = false
