@@ -736,7 +736,12 @@ export default class Provider extends Intersection() {
         Provider.updateSelect(this.selectProtocol, urlContainer.url.protocol, selected)
         this.selectProtocol.setAttribute('value', this.selectProtocol.value)
         if (i === 0) {
-          this.titleEl.textContent = urlContainer.url.hostname
+          if (urlContainer.url.hostname.includes('webrtc-trystero')) {
+            this.titleEl.textContent = 'BitTorrent - Nostr - MQTT - IPFS'
+            this.disableAndHideAllInputs()
+          } else {
+            this.titleEl.textContent = urlContainer.url.hostname
+          }
           this.spanHostname.textContent = urlContainer.url.hostname
         }
         if (selected) this.inputPort.value = urlContainer.url.port ? urlContainer.url.port : ''
@@ -912,6 +917,17 @@ export default class Provider extends Intersection() {
       url.searchParams.delete('keep-alive')
     }
     return { url, href: url.href, name: this.selectName.value }
+  }
+
+  disableAndHideAllInputs () {
+    this.selectName.disabled = true
+    this.selectName.hidden = true
+    this.selectProtocol.disabled = true
+    this.selectProtocol.hidden = true
+    this.inputPort.disabled = true
+    this.inputPort.hidden = true
+    this.inputKeepAlive.disabled = true
+    this.inputKeepAlive.hidden = true
   }
 
   get iconConnectionState () {

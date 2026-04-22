@@ -94,6 +94,9 @@ export default class P2pGraph extends Intersection() {
       :host > div > svg .node.is-self > circle {
         filter: drop-shadow(0px 0px 0.5em var(--color-secondary));
       }
+      :host > div > svg .provider > circle {
+        transform: scale(1.3);
+      }
     `
     self.requestAnimationFrame(timeStamp => (this.css = /* css */`
       :host(:not([has-height])) {
