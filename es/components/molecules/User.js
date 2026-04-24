@@ -485,7 +485,9 @@ export default class User extends Intersection() {
               ? new Date(JSON.parse(user[key]).epoch).toLocaleString(navigator.language)
               : typeof user[key] === 'object'
                 ? JSON.stringify(user[key])
-                : user[key]
+                : key === 'locationOrigin'
+                  ? `<a href="${user[key]}" target=_blank>${user[key]}</a>`
+                  : user[key]
       }</td>
     `
   }
