@@ -619,6 +619,10 @@ export default class Providers extends WebWorker(Shadow()) {
     let node
     if (active) {
       // @ts-ignore
+      if (self.Environment?.replaceHosts) self.Environment.replaceHosts.forEach(replaceHost => {
+        if (attributeValue === replaceHost.idPattern) attributeValue = replaceHost.idReplacement
+      })
+      // @ts-ignore
       if (parentNodes.some(parentNode => (node = parentNode.querySelector(`[${attributeName}='${attributeValue}']`)))) node.classList.add('active')
       // generate provider in case this provider is not present
       if (!node && name && href) {
