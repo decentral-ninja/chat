@@ -465,6 +465,7 @@ export default class Provider extends Intersection() {
    * @returns Promise<void>
    */
   renderHTML () {
+    const isWebrtcTrystero = (this.getAttribute('id') || '').includes('webrtc-trystero')
     // keep-alive max=10days, value=1day, step=1h
     this.html = /* html */`
       <section id=grid>
@@ -481,7 +482,7 @@ export default class Provider extends Intersection() {
           <a-icon-states id=connection-state state="disconnected">
             <template>
               <wct-icon-mdx state="connected" id=connected title=connected style="--color: var(--color-green-full);" no-hover icon-url="../../../../../../img/icons/plug-connected.svg" size="2em"></wct-icon-mdx>
-              <wct-icon-mdx state="connecting" id=connecting title="trying to connect" style="--color: var(--color-orange);" no-hover icon-url="../../../../../../img/icons/plug-connected.svg" size="2em"></wct-icon-mdx>
+              <wct-icon-mdx state="connecting" id=connecting title="${isWebrtcTrystero ? 'syncing and waiting for users to join...' : 'trying to connect'}" style="--color: var(--color-orange);${isWebrtcTrystero ? '--color-disabled: var(--color-green-original);' : ''}" no-hover icon-url="../../../../../../img/icons/plug-connected.svg" size="2em"></wct-icon-mdx>
               <wct-icon-mdx state="disconnected" id=disconnected title=disconnected style="--color: var(--color-error);" no-hover icon-url="../../../../../../img/icons/plug-connected-x.svg" size="2em"></wct-icon-mdx>
               <wct-icon-mdx state="offline" title="You are offline!" style="color:var(--color-error)" no-hover icon-url="../../../../../../img/icons/plug-connected-x.svg" size="2em"></wct-icon-mdx>
               <wct-icon-mdx state="performance-issue" title="This provider has performance issues! Switch to a fallback provider!!!" style="color:var(--color-error)" icon-url="../../../../../../img/icons/alert-triangle.svg" size="2em"></wct-icon-mdx>
