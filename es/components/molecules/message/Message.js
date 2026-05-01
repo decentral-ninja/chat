@@ -499,6 +499,11 @@ export default class Message extends WebWorker(Intersection()) {
         // @ts-ignore
           path: `${this.importMetaUrl}../../../../../web-components-toolbox/src/es/components/atoms/button/Button.js?${Environment?.version || ''}`,
           name: 'wct-button'
+        },
+        {
+        // @ts-ignore
+          path: `${this.importMetaUrl}../../../../../event-driven-web-components-webtorrent/src/views/Webtorrent.js?${Environment?.version || ''}`,
+          name: 'v-webtorrent'
         }
       ])])
   }
@@ -604,6 +609,15 @@ export default class Message extends WebWorker(Intersection()) {
         break
       default:
         if (!textObj.text.includes('<')) textObj.text = textObj.text?.replace(/(https?:\/\/[^\s]+)/g, url => /* html */`<a href="${url}"${url.includes(locationHost) && url.includes('room=') ? ' route' : ''} target="${url.includes(locationHost) ? '_self' : '_blank'}">${url}</a>`)
+        if (textObj.text.includes('magnet:')) {
+          textObj.text = textObj.text?.replace(/(magnet?:[^\s]+)/g, url => /* html */`<v-webtorrent torrent-id="${url}" open>
+            <video hidden slot=video controls style="padding: 10px; background-color: blueviolet;"></video>
+            <audio hidden slot=audio controls style="padding: 10px; background-color: burlywood;"></audio>
+            <img hidden slot=img style="padding: 10px; background-color: palevioletred;">
+            <div id=reset slot=reset style="padding: 10px;">&#9850;</div>
+            <div id=error slot=error style="padding: 10px; background-color: red;">&#9854;</div>
+          </v-webtorrent>`)
+        }
         break
     }
     return textObj
