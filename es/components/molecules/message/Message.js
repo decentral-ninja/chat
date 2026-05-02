@@ -460,7 +460,7 @@ export default class Message extends WebWorker(Intersection()) {
     return Promise.all([
       textObjSync.deleted
         ? null
-        : this.webWorker(Message.processText, textObjSync, location.host).then(textObj => (this.textSpan.innerHTML = Message.htmlPurify(textObj.text))),
+        : this.webWorker(Message.processText, textObjSync, location.host, this.hasAttribute('no-dialog')).then(textObj => (this.textSpan.innerHTML = Message.htmlPurify(textObj.text))),
       textObjSync.replyTo && this.hasAttribute('show-reply-to')
         ? this.renderReplyTo(textObjSync)
         : null,
@@ -578,7 +578,7 @@ export default class Message extends WebWorker(Intersection()) {
 
   // make aTags with href when first link is detected https://stackoverflow.com/questions/1500260/detect-urls-in-text-with-javascript
   // location.host is not available within web workers
-  static processText (textObj, locationHost = location.host) {
+  static processText (textObj, locationHost = location.host, isInsideDialog = false) {
     if (textObj.encrypted && !textObj.decrypted) {
       textObj.text = /* html */`<chat-a-key-request-button>
         <template>${JSON.stringify(textObj)}</template>
@@ -609,7 +609,7 @@ export default class Message extends WebWorker(Intersection()) {
         break
       default:
         if (!textObj.text.includes('<')) textObj.text = textObj.text?.replace(/(https?:\/\/[^\s]+)/g, url => /* html */`<a href="${url}"${url.includes(locationHost) && url.includes('room=') ? ' route' : ''} target="${url.includes(locationHost) ? '_self' : '_blank'}">${url}</a>`)
-        if (textObj.text.includes('magnet:')) {
+        if (textObj.text.includes('magnet:') && !isInsideDialog) {
           textObj.text = textObj.text?.replace(/(magnet?:[^\s]+)/g, url => /* html */`<v-webtorrent torrent-id="${url}" open>
             <video hidden slot=video controls style="padding: 10px; background-color: blueviolet;"></video>
             <audio hidden slot=audio controls style="padding: 10px; background-color: burlywood;"></audio>
