@@ -44,10 +44,6 @@ export default class Input extends Shadow() {
 
     this.buttonClickEventListener = event => {
       switch (event.composedPath().find(node => (node.tagName === 'WCT-BUTTON' || node.tagName === 'WCT-ICON-MDX') && node.hasAttribute('id')).getAttribute('id')) {
-        case 'wormhole':
-          self.open(wormholeUrl)
-          wormholeOpened = true
-          break
         case 'send':
           this.sendEventListener(undefined, this.textarea)
           break
@@ -62,6 +58,39 @@ export default class Input extends Shadow() {
           }))
           break
       }
+    }
+
+    let fileUploadTimeoutId = null
+    this.fileUploadClickEventListener = event => {
+      clearTimeout(fileUploadTimeoutId)
+      fileUploadTimeoutId = setTimeout(() => {
+        self.open(wormholeUrl)
+        wormholeOpened = true
+      }, 300)
+    }
+
+    this.fileUploadDblClickEventListener = event => {
+      clearTimeout(fileUploadTimeoutId)
+      // TODO: Make a dialog to choose fileUpload webtorrent or wormhole
+      const input = document.createElement('input')
+      input.type = 'file'
+      input.multiple = true
+      input.onchange = () => {
+        if (!input.files?.length) return
+        new Promise(resolve => this.dispatchEvent(new CustomEvent('webtorrent-seed', {
+          detail: {
+            input: input.files,
+            resolve
+          },
+          bubbles: true,
+          cancelable: true,
+          composed: true
+        }))).then(({torrent}) => {
+          // TODO: set cursor before magnet with a new line
+          this.textarea.value = torrent.magnetURI
+        })
+      }
+      input.click()
     }
 
     /* Put cursor into input on click of chat area */
@@ -209,6 +238,8 @@ export default class Input extends Shadow() {
     if (this.shouldRenderCSS()) this.renderCSS()
     if (this.shouldRenderHTML()) this.renderHTML()
     this.buttons.forEach(button => button.addEventListener('click', this.buttonClickEventListener))
+    this.fileUpload.addEventListener('click', this.fileUploadClickEventListener)
+    this.fileUpload.addEventListener('dblclick', this.fileUploadDblClickEventListener)
     this.root.addEventListener('keyup', this.keyupEventListener)
     this.textarea.addEventListener('input', this.inputEventListener)
     this.addEventListener('emoji-clicked', this.emojiClickedEventListener)
@@ -222,6 +253,8 @@ export default class Input extends Shadow() {
 
   disconnectedCallback () {
     this.buttons.forEach(button => button.removeEventListener('click', this.buttonClickEventListener))
+    this.fileUpload.removeEventListener('click', this.fileUploadClickEventListener)
+    this.fileUpload.removeEventListener('dblclick', this.fileUploadDblClickEventListener)
     this.root.removeEventListener('keyup', this.keyupEventListener)
     this.textarea.removeEventListener('input', this.inputEventListener)
     this.removeEventListener('emoji-clicked', this.emojiClickedEventListener)
@@ -491,7 +524,11 @@ export default class Input extends Shadow() {
   }
 
   get buttons () {
-    return this.root.querySelectorAll(':host > div > wct-button, :host > div > wct-icon-mdx')
+    return this.root.querySelectorAll(':host > div > wct-button, :host > div > wct-icon-mdx:not(#wormhole)')
+  }
+
+  get fileUpload () {
+    return this.root.querySelector(':host > div > wct-icon-mdx#wormhole')
   }
 
   get jitsiButton () {
