@@ -86,8 +86,8 @@ export default class Input extends Shadow() {
           cancelable: true,
           composed: true
         }))).then(({torrent}) => {
-          // TODO: set cursor before magnet with a new line
           this.textarea.value = torrent.magnetURI
+          this.textarea.focus()
         })
       }
       input.click()
