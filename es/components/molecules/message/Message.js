@@ -122,6 +122,11 @@ export default class Message extends WebWorker(Intersection()) {
       this.globalEventTarget.removeEventListener('yjs-received-key', this.keysEventListener)
       this.update(keyContainersAreIdentical)
     }
+
+    /** @type {(any)=>void} */
+    this.roomResolve = map => map
+    /** @type {Promise<{ locationHref: string, room: Promise<string> & {done: boolean} }>} */
+    this.roomPromise = new Promise(resolve => (this.roomResolve = resolve))
   }
 
   connectedCallback () {
@@ -194,6 +199,14 @@ export default class Message extends WebWorker(Intersection()) {
       console.error('Could not parse message:', { message: this, error })
       this.setAttribute('type', 'error')
     }
+    this.dispatchEvent(new CustomEvent('yjs-get-room', {
+      detail: {
+        resolve: this.roomResolve
+      },
+      bubbles: true,
+      cancelable: true,
+      composed: true
+    }))
     this.connectedCallbackOnce = () => {}
   }
 
@@ -460,7 +473,7 @@ export default class Message extends WebWorker(Intersection()) {
     return Promise.all([
       textObjSync.deleted
         ? null
-        : this.webWorker(Message.processText, textObjSync, location.host, this.hasAttribute('no-dialog')).then(textObj => (this.textSpan.innerHTML = Message.htmlPurify(textObj.text))),
+        : this.webWorker(Message.processText, textObjSync, escapeHTML(await (await this.roomPromise).room), location.host, this.hasAttribute('no-dialog')).then(textObj => (this.textSpan.innerHTML = Message.htmlPurify(textObj.text))),
       textObjSync.replyTo && this.hasAttribute('show-reply-to')
         ? this.renderReplyTo(textObjSync)
         : null,
@@ -578,7 +591,7 @@ export default class Message extends WebWorker(Intersection()) {
 
   // make aTags with href when first link is detected https://stackoverflow.com/questions/1500260/detect-urls-in-text-with-javascript
   // location.host is not available within web workers
-  static processText (textObj, locationHost = location.host, isInsideDialog = false) {
+  static processText (textObj, roomName, locationHost = location.host, isInsideDialog = false) {
     if (textObj.encrypted && !textObj.decrypted) {
       textObj.text = /* html */`<chat-a-key-request-button>
         <template>${JSON.stringify(textObj)}</template>
@@ -610,7 +623,7 @@ export default class Message extends WebWorker(Intersection()) {
       default:
         if (!textObj.text.includes('<')) textObj.text = textObj.text?.replace(/(https?:\/\/[^\s]+)/g, url => /* html */`<a href="${url}"${url.includes(locationHost) && url.includes('room=') ? ' route' : ''} target="${url.includes(locationHost) ? '_self' : '_blank'}">${url}</a>`)
         if (textObj.text.includes('magnet:') && !isInsideDialog) {
-          textObj.text = textObj.text?.replace(/(magnet?:[^\s]+)/g, url => /* html */`<v-webtorrent torrent-id="${url}" open>
+          textObj.text = textObj.text?.replace(/(magnet?:[^\s]+)/g, url => /* html */`<v-webtorrent torrent-id="${url}" open uid='${textObj.uid}' room="${roomName}">
             <video hidden slot=video controls style="padding: 10px; background-color: blueviolet;"></video>
             <audio hidden slot=audio controls style="padding: 10px; background-color: burlywood;"></audio>
             <img hidden slot=img style="padding: 10px; background-color: palevioletred;">

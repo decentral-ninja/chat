@@ -77,8 +77,10 @@ export default class Input extends Shadow() {
       input.multiple = true
       input.onchange = () => {
         if (!input.files?.length) return
-        new Promise(resolve => this.dispatchEvent(new CustomEvent('webtorrent-seed', {
+        new Promise(async resolve => this.dispatchEvent(new CustomEvent('webtorrent-seed', {
           detail: {
+            uid: await this.uid,
+            room: await (await this.roomPromise).room,
             input: input.files,
             resolve
           },
@@ -86,7 +88,7 @@ export default class Input extends Shadow() {
           cancelable: true,
           composed: true
         }))).then(({torrent}) => {
-          this.textarea.value = torrent.magnetURI
+          this.textarea.value = `${torrent.magnetURI} `
           this.textarea.focus()
         })
       }
@@ -232,6 +234,23 @@ export default class Input extends Shadow() {
         this.textarea.focus()
       })
     }
+
+    this.usersEventListener = async event => {
+      if (event.detail.selfUser?.uid) {
+        this.uidResolve(event.detail.selfUser.uid)
+        this.globalEventTarget.removeEventListener('yjs-users', this.usersEventListener)
+      }
+    }
+
+    /** @type {(any)=>void} */
+    this.uidResolve = map => map
+    /** @type {Promise<string>} */
+    this.uid = new Promise(resolve => (this.uidResolve = resolve))
+
+    /** @type {(any)=>void} */
+    this.roomResolve = map => map
+    /** @type {Promise<{ locationHref: string, room: Promise<string> & {done: boolean} }>} */
+    this.roomPromise = new Promise(resolve => (this.roomResolve = resolve))
   }
 
   connectedCallback () {
@@ -249,6 +268,21 @@ export default class Input extends Shadow() {
     this.globalEventTarget.addEventListener('jitsi-video-started', this.jitsiVideoStartedEventListener)
     this.globalEventTarget.addEventListener('jitsi-video-stopped', this.jitsiVideoStoppedEventListener)
     this.globalEventTarget.addEventListener('reply-to-message', this.replyToMessageEventListener)
+    this.globalEventTarget.addEventListener('yjs-users', this.usersEventListener)
+    if (this.isConnected) this.connectedCallbackOnce()
+  }
+
+  connectedCallbackOnce () {
+    this.dispatchEvent(new CustomEvent('yjs-get-room', {
+      detail: {
+        resolve: this.roomResolve
+      },
+      bubbles: true,
+      cancelable: true,
+      composed: true
+    }))
+    // @ts-ignore
+    this.connectedCallbackOnce = () => {}
   }
 
   disconnectedCallback () {
@@ -264,6 +298,7 @@ export default class Input extends Shadow() {
     this.globalEventTarget.removeEventListener('jitsi-video-started', this.jitsiVideoStartedEventListener)
     this.globalEventTarget.removeEventListener('jitsi-video-stopped', this.jitsiVideoStoppedEventListener)
     this.globalEventTarget.removeEventListener('reply-to-message', this.replyToMessageEventListener)
+    this.globalEventTarget.removeEventListener('yjs-users', this.usersEventListener)
   }
 
   /**
