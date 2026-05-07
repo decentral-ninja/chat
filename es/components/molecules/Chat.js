@@ -179,7 +179,11 @@ export default class Chat extends Shadow() {
     }
 
     this.chatScrollEventListener = event => {
-      if (event?.detail?.scrollEl && this.ulGetScrollElFunc(event.detail.scrollEl)()) scrollElIntoView(this.ulGetScrollElFunc(event.detail.scrollEl), ':not([intersecting])')
+      if (event?.detail?.scrollEl && this.ulGetScrollElFunc(event.detail.scrollEl)()) {
+        scrollElIntoView(this.ulGetScrollElFunc(event.detail.scrollEl), ':not([intersecting])')
+      } else {
+        this.scrollLastMemorizedIntoView()
+      }
     }
 
     let resizeTimeout = null

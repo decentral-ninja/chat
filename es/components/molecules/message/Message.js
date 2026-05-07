@@ -78,6 +78,16 @@ export default class Message extends WebWorker(Intersection()) {
 
     this.dblclickEventListener = event => this.clickEventListener(event)
 
+    this.webtorrentLoadEventListener = event => {
+      if (this.hasAttribute('intersecting')) {
+        this.dispatchEvent(new CustomEvent('chat-scroll', {
+          bubbles: true,
+          cancelable: true,
+          composed: true
+        }))
+      }
+    }
+
     this.clickReplyToEventListener = async event => this.dispatchEvent(new CustomEvent('chat-scroll', {
       detail: {
         scrollEl: (await this.textObj).replyTo?.timestamp
@@ -215,6 +225,7 @@ export default class Message extends WebWorker(Intersection()) {
       this.openDialogIcon.addEventListener('click', this.clickEventListener)
       if (this.li) this.li.addEventListener('dblclick', this.dblclickEventListener)
     }
+    this.addEventListener('webtorrent-load', this.webtorrentLoadEventListener)
     if (this.replyToLi) this.replyToLi.addEventListener('click', this.clickReplyToEventListener)
     this.globalEventTarget.addEventListener(`chat-remove-${(await this.textObj).timestamp || ''}`, this.chatRemoveEventListener)
   }
@@ -229,6 +240,7 @@ export default class Message extends WebWorker(Intersection()) {
       this.openDialogIcon.removeEventListener('click', this.clickEventListener)
       if (this.li) this.li.removeEventListener('dblclick', this.dblclickEventListener)
     }
+    this.removeEventListener('webtorrent-load', this.webtorrentLoadEventListener)
     if (this.replyToLi) this.replyToLi.removeEventListener('click', this.clickReplyToEventListener)
     this.globalEventTarget.removeEventListener(`chat-remove-${(await this.textObj).timestamp || ''}`, this.chatRemoveEventListener)
   }
