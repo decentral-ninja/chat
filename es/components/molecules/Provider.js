@@ -159,7 +159,7 @@ export default class Provider extends Intersection() {
     let resizeTimeout = null
     this.resizeEventListener = event => {
       clearTimeout(resizeTimeout)
-      resizeTimeout = setTimeout(async () => this.updateHeight(), 200)
+      resizeTimeout = setTimeout(() => this.updateHeight(), 200)
     }
   }
 

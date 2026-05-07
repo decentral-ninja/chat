@@ -73,7 +73,7 @@ export default class Key extends Intersection() {
     let resizeTimeout = null
     this.resizeEventListener = event => {
       clearTimeout(resizeTimeout)
-      resizeTimeout = setTimeout(async () => this.updateHeight(), 200)
+      resizeTimeout = setTimeout(() => this.updateHeight(), 200)
     }
 
     this.defaultKeyEventListener = event => this.updateDefault(event.detail?.epoch === this.epoch)
