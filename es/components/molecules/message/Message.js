@@ -78,25 +78,16 @@ export default class Message extends WebWorker(Intersection()) {
 
     this.dblclickEventListener = event => this.clickEventListener(event)
 
-    let webtorrentLoadTimeoutId = null
     this.webtorrentLoadEventListener = event => {
-      clearTimeout(webtorrentLoadTimeoutId)
-      webtorrentLoadTimeoutId = setTimeout(async () => {
-        if (this.hasAttribute('intersecting') && this.hasAttribute('first-render')) {
-          // when resetting torrent scroll to this element else scroll to scrollLastMemorizedIntoView
-          const detail = event.detail.resetTorrent
-            ? {
-              scrollEl: (await this.textObj).timestamp
-            }
-            : null
-          this.dispatchEvent(new CustomEvent('chat-scroll', {
-            detail,
-            bubbles: true,
-            cancelable: true,
-            composed: true
-          }))
-        }
-      }, 200)
+      this.dispatchEvent(new CustomEvent('chat-scroll', {
+        detail: {
+          mainScroll: true,
+          onLoad: true
+        },
+        bubbles: true,
+        cancelable: true,
+        composed: true
+      }))
     }
 
     this.clickReplyToEventListener = async event => this.dispatchEvent(new CustomEvent('chat-scroll', {

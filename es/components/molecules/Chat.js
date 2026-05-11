@@ -179,7 +179,18 @@ export default class Chat extends Shadow() {
     }
 
     this.chatScrollEventListener = event => {
-      if (event?.detail?.scrollEl && this.ulGetScrollElFunc(event.detail.scrollEl)()) {
+      if (event?.detail?.mainScroll) {
+        this.dispatchEvent(new CustomEvent('main-scroll', {
+          detail: event.detail.onLoad
+            ? {
+              onLoad: true
+            }
+            : event.detail,
+          bubbles: true,
+          cancelable: true,
+          composed: true
+        }))
+      } else if (event?.detail?.scrollEl && this.ulGetScrollElFunc(event.detail.scrollEl)()) {
         scrollElIntoView(this.ulGetScrollElFunc(event.detail.scrollEl), ':not([intersecting])')
       } else {
         this.scrollLastMemorizedIntoView()
