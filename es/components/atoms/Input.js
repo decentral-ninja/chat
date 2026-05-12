@@ -75,20 +75,35 @@ export default class Input extends Shadow() {
       const input = document.createElement('input')
       input.type = 'file'
       input.multiple = true
-      input.onchange = () => {
+      input.onchange = async () => {
         if (!input.files?.length) return
-        new Promise(async resolve => this.dispatchEvent(new CustomEvent('webtorrent-seed', {
-          detail: {
-            uid: await this.uid,
-            room: await (await this.roomPromise).room,
-            input: input.files,
-            resolve
-          },
-          bubbles: true,
-          cancelable: true,
-          composed: true
-        }))).then(({torrent}) => {
-          this.textarea.value = `${torrent.magnetURI} `
+        const uid = await this.uid
+        const room = await (await this.roomPromise).room
+        Promise.all([
+          new Promise(resolve => this.dispatchEvent(new CustomEvent('webtorrent-seed', {
+            detail: {
+              uid,
+              room,
+              input: input.files,
+              resolve
+            },
+            bubbles: true,
+            cancelable: true,
+            composed: true
+          }))),
+          new Promise(resolve => this.dispatchEvent(new CustomEvent('ipfs-seed', {
+            detail: {
+              uid,
+              room,
+              input: input.files,
+              resolve
+            },
+            bubbles: true,
+            cancelable: true,
+            composed: true
+          })))
+        ]).then(([{torrent}, {cid}]) => {
+          this.textarea.value = `${torrent.magnetURI}&cid=${cid} `
           this.textarea.focus()
         })
       }
