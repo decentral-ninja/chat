@@ -79,6 +79,7 @@ export default class Input extends Shadow() {
         if (!input.files?.length) return
         const uid = await this.uid
         const room = await (await this.roomPromise).room
+        /*
         Promise.all([
           new Promise(resolve => this.dispatchEvent(new CustomEvent('webtorrent-seed', {
             detail: {
@@ -103,6 +104,30 @@ export default class Input extends Shadow() {
             composed: true
           })))
         ]).then(([{torrent}, {cid}]) => {
+          this.textarea.value = `${torrent.magnetURI}&cid=${cid} `
+          this.textarea.focus()
+        })
+        */
+        new Promise(resolve => this.dispatchEvent(new CustomEvent('webtorrent-seed', {
+          detail: {
+            uid,
+            room,
+            input: input.files,
+            resolve
+          },
+          bubbles: true,
+          cancelable: true,
+          composed: true
+        }))).then(({torrent}) => new Promise(resolve => this.dispatchEvent(new CustomEvent('ipfs-seed', {
+          detail: {
+            torrent,
+            input: input.files,
+            resolve
+          },
+          bubbles: true,
+          cancelable: true,
+          composed: true
+        }))).then(({cid}) => [torrent, cid])).then(([torrent, cid]) => {
           this.textarea.value = `${torrent.magnetURI}&cid=${cid} `
           this.textarea.focus()
         })
