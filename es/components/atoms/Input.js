@@ -79,33 +79,79 @@ export default class Input extends Shadow() {
         if (!input.files?.length) return
         const uid = await this.uid
         const room = await (await this.roomPromise).room
+        // TODO: wormhole-crypto encryptStream()
         /*
-        Promise.all([
-          new Promise(resolve => this.dispatchEvent(new CustomEvent('webtorrent-seed', {
-            detail: {
-              uid,
-              room,
-              input: input.files,
-              resolve
-            },
-            bubbles: true,
-            cancelable: true,
-            composed: true
-          }))),
-          new Promise(resolve => this.dispatchEvent(new CustomEvent('ipfs-seed', {
-            detail: {
-              uid,
-              room,
-              input: input.files,
-              resolve
-            },
-            bubbles: true,
-            cancelable: true,
-            composed: true
-          })))
-        ]).then(([{torrent}, {cid}]) => {
-          this.textarea.value = `${torrent.magnetURI}&cid=${cid} `
-          this.textarea.focus()
+        import createKeychain from 'wormhole-crypto'
+
+        const keychain = await createKeychain({
+          password: 'super-secret'
+        })
+
+        const HEADER_PREFIX = 'WH01:'
+        const KEY_ID = 'key123'
+
+        // Convert string -> Uint8Array
+        const encoder = new TextEncoder()
+
+        async function encryptFile(file) {
+
+          // Original browser file stream
+          const plaintextStream = file.stream()
+
+          // Encrypt stream
+          const encryptedStream =
+            await keychain.encryptStream(plaintextStream)
+
+          // Small plaintext header
+          const headerBytes = encoder.encode(
+            `${HEADER_PREFIX}${KEY_ID}:`
+          )
+
+          // Combine header + encrypted stream
+          const combinedStream = new ReadableStream({
+            async start(controller) {
+
+              // Write header first
+              controller.enqueue(headerBytes)
+
+              // Pipe encrypted bytes
+              const reader = encryptedStream.getReader()
+
+              while (true) {
+                const { done, value } = await reader.read()
+
+                if (done) break
+
+                controller.enqueue(value)
+              }
+
+              controller.close()
+            }
+          })
+
+          // Create encrypted File
+          const encryptedFile = new File(
+            [combinedStream],
+            file.name, // preserve original name
+            {
+              type: file.type, // preserve mime
+              lastModified: file.lastModified
+            }
+          )
+
+          return encryptedFile
+        }
+        const encryptedFile = await encryptFile(file)
+        // client.seed(encryptedFile)
+        */
+        /*
+        // test for ios, else use a blob, bad for large files:
+        const encryptedBlob =
+          await new Response(combinedStream).blob()
+
+        const encryptedFile = new File([encryptedBlob], file.name, {
+          type: file.type,
+          lastModified: file.lastModified
         })
         */
         new Promise(resolve => this.dispatchEvent(new CustomEvent('webtorrent-seed', {
