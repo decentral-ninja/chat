@@ -58,6 +58,7 @@ export default class Input extends Shadow() {
           }))
           break
       }
+      event.target.blur()
     }
 
     let fileUploadTimeoutId = null
