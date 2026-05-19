@@ -165,11 +165,11 @@ export default class Input extends Shadow() {
           bubbles: true,
           cancelable: true,
           composed: true
-        }))).then(({torrent}) => new Promise(resolve => this.dispatchEvent(new CustomEvent('ipfs-seed', {
+        }))).then(({torrent}) => new Promise(resolveCid => this.dispatchEvent(new CustomEvent('ipfs-seed', {
           detail: {
             torrent,
             input: input.files,
-            resolve
+            resolveCid
           },
           bubbles: true,
           cancelable: true,
