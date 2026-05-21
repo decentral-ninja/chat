@@ -79,7 +79,7 @@ export default class Message extends WebWorker(Intersection()) {
     this.dblclickEventListener = event => this.clickEventListener(event)
 
     this.webtorrentLoadEventListener = event => {
-      this.dispatchEvent(new CustomEvent('chat-scroll', {
+      if (this.getAttribute('from-load-template-tag') === 'lazy') this.dispatchEvent(new CustomEvent('chat-scroll', {
         detail: {
           mainScroll: true,
           onLoad: true

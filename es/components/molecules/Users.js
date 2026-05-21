@@ -148,6 +148,7 @@ export default class Users extends Shadow() {
     self.addEventListener('online', this.onlineEventListener)
     self.addEventListener('offline', this.offlineEventListener)
     self.addEventListener('resize', this.resizeEventListener)
+    self.addEventListener('tab-active', this.resizeEventListener)
   }
 
   disconnectedCallback () {
@@ -160,6 +161,7 @@ export default class Users extends Shadow() {
     self.removeEventListener('online', this.onlineEventListener)
     self.removeEventListener('offline', this.offlineEventListener)
     self.removeEventListener('resize', this.resizeEventListener)
+    self.removeEventListener('tab-active', this.resizeEventListener)
     this.dialog?.close()
   }
 
@@ -254,16 +256,20 @@ export default class Users extends Shadow() {
             scrollbar-color: var(--color) var(--background-color);
             scrollbar-width: thin;
           }
-          :host > dialog :where(#users-graph, #users-graph-history) {
+          :host > dialog :where(#users-graph, #users-graph-history) > chat-a-p2p-graph {
+            padding: 0 5svh;
+            border: 1px dashed transparent;
+          }
+          :host > dialog :where(#users-graph, #users-graph-history) > chat-a-p2p-graph:not([updating]):not([no-data]) {
             border-radius: var(--border-radius);
-            padding: 5svh 10svw;
+            padding: 5svh;
             border: 1px dashed var(--color-secondary);
           }
-          :host([online]) > dialog #offline,
-          :host > dialog :where(#users-graph, #users-graph-history):empty,
-          :host > dialog :where(#users-graph, #users-graph-history):has(chat-a-p2p-graph[no-data]),
-          :host > dialog :where(#users-graph, #users-graph-history):has(chat-a-p2p-graph:not([no-data])) ~ .no-connections {
+          :host([online]) > dialog #offline {
             display: none;
+          }
+          :host > dialog :where(#users-graph, #users-graph-history):has(chat-a-p2p-graph:not([no-data])) ~ .no-connections {
+            visibility: hidden;
           }
           :host > dialog wct-m-tabs {
             --dialog-top-slide-in-ul-flex-direction: row;

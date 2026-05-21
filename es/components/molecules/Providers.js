@@ -423,7 +423,7 @@ export default class Providers extends WebWorker(Shadow()) {
           }
           :host > dialog > #providers > #providers-graph {
             border-radius: var(--border-radius);
-            padding: 5svh 10svw;
+            padding: 5svh;
             border: 1px dashed var(--color-secondary);
             position: relative;
           }
