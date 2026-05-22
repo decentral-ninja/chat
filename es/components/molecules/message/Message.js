@@ -78,16 +78,27 @@ export default class Message extends WebWorker(Intersection()) {
 
     this.dblclickEventListener = event => this.clickEventListener(event)
 
-    this.webtorrentLoadEventListener = event => {
-      if (this.getAttribute('from-load-template-tag') === 'lazy') this.dispatchEvent(new CustomEvent('chat-scroll', {
-        detail: {
-          mainScroll: true,
-          onLoad: true
-        },
-        bubbles: true,
-        cancelable: true,
-        composed: true
-      }))
+    this.webtorrentLoadEventListener = async event => {
+      if (this.getAttribute('from-load-template-tag') === 'lazy') {
+        this.dispatchEvent(new CustomEvent('chat-scroll', {
+          detail: {
+            mainScroll: true,
+            onLoad: true
+          },
+          bubbles: true,
+          cancelable: true,
+          composed: true
+        }))
+      } else if (this.hasAttribute('scroll-target')) {
+        this.dispatchEvent(new CustomEvent('chat-scroll', {
+          detail: {
+            scrollEl: (await this.textObj).replyTo?.timestamp
+          },
+          bubbles: true,
+          cancelable: true,
+          composed: true
+        }))
+      }
     }
 
     this.clickReplyToEventListener = async event => this.dispatchEvent(new CustomEvent('chat-scroll', {

@@ -408,7 +408,7 @@ export default class Chat extends Shadow() {
     // this molecules/chat updates by, modified and delete, the elements in the ul and needs timestamp and uid to pinpoint the target. This is done due to lazy loading support.
     // was not looking very nice, but tried some parallax stuff: <wct-intersection-scroll-effect css-property=filter effect="sepia" max-value="100%" scroll-el-query="main" offset="-50">...message...</wct-intersection-scroll-effect>
     return /* html */`
-      <wct-load-template-tag timestamp="${timestamp}" uid='${textObj.uid}' no-css>
+      <wct-load-template-tag timestamp="${timestamp}" uid='${textObj.uid}' no-css copy-attributes>
         <template>
           <chat-m-message update-on-connected-callback intersection-event-name timestamp="${timestamp}" uid='${textObj.uid}'${textObj.isSelf ? ' self' : ''}${wasLastMessage ? ' was-last-message' : ''}${isUlEmpty ? ' first-render' : ''} show-reply-to>
             <template>${JSON.stringify(textObj)}</template>
@@ -465,7 +465,9 @@ export default class Chat extends Shadow() {
       })))
     }
     promise.then(room => {
-      if (room?.scrollEl && this.ulGetScrollElFunc(room.scrollEl)()) {
+      let scrollEl
+      if (room?.scrollEl && (scrollEl = this.ulGetScrollElFunc(room.scrollEl)())) {
+        scrollEl.setAttribute('scroll-target', '')
         scrollElIntoView(this.ulGetScrollElFunc(room.scrollEl), ':not([intersecting])', undefined, { behavior: 'instant' })
       } else if (room?.scrollTop) {
         // backwards compatible behavior and if no scrollTop scrolls to bottom
