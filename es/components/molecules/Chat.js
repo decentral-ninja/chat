@@ -128,8 +128,8 @@ export default class Chat extends Shadow() {
         (await event.detail.getDeleted()).forEach(textObj => {
           let message
           if ((message = this.ulGetMessageFunc(textObj))) {
-            setTimeout(() => message.remove(), 3000)
-            message.addEventListener('animationend', event => message.remove(), { once: true })
+            setTimeout(() => this.ulGetMessageFunc(textObj)?.remove(), 3000)
+            message.addEventListener('animationend', event => this.ulGetMessageFunc(textObj)?.remove(), { once: true })
             message.classList.add('deleted')
             message.querySelector('chat-m-message')?.setAttribute('deleted', '')
             this.dispatchEvent(new CustomEvent(`chat-remove-${textObj.timestamp || ''}`, {
