@@ -168,7 +168,6 @@ export default class Input extends Shadow() {
         }))).then(({torrent}) => new Promise(resolveCid => this.dispatchEvent(new CustomEvent('ipfs-seed', {
           detail: {
             torrent,
-            input: input.files,
             resolveCid
           },
           bubbles: true,
