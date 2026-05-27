@@ -80,86 +80,57 @@ export default class Input extends Shadow() {
         if (!input.files?.length) return
         const uid = await this.uid
         const room = await (await this.roomPromise).room
-        // TODO: wormhole-crypto encryptStream()
-        /*
-        import createKeychain from 'wormhole-crypto'
-
-        const keychain = await createKeychain({
-          password: 'super-secret'
-        })
-
-        const HEADER_PREFIX = 'WH01:'
-        const KEY_ID = 'key123'
-
-        // Convert string -> Uint8Array
-        const encoder = new TextEncoder()
-
-        async function encryptFile(file) {
-
-          // Original browser file stream
-          const plaintextStream = file.stream()
-
-          // Encrypt stream
-          const encryptedStream =
-            await keychain.encryptStream(plaintextStream)
-
-          // Small plaintext header
-          const headerBytes = encoder.encode(
-            `${HEADER_PREFIX}${KEY_ID}:`
-          )
-
-          // Combine header + encrypted stream
-          const combinedStream = new ReadableStream({
-            async start(controller) {
-
-              // Write header first
-              controller.enqueue(headerBytes)
-
-              // Pipe encrypted bytes
-              const reader = encryptedStream.getReader()
-
-              while (true) {
-                const { done, value } = await reader.read()
-
-                if (done) break
-
-                controller.enqueue(value)
+        /** @type {File[]} */
+        let files = Array.from(input.files)
+        let keyEpoch = null
+        let iv = null
+        let seedingDoneFunction = () => {}
+        const keyContainer = await new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-active-room-default-key', {
+          detail: {
+            resolve
+          },
+          bubbles: true,
+          cancelable: true,
+          composed: true
+        })))
+        if (keyContainer) {
+          iv = self.crypto.getRandomValues(new Uint8Array(16))
+          files = await Promise.all(Array.from(files).map(async file => {
+            const { encrypted } = await new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-encrypt', {
+              detail: {
+                resolve,
+                text: file.stream(),
+                key: keyContainer,
+                iv
+              },
+              bubbles: true,
+              cancelable: true,
+              composed: true
+            })))
+            if (encrypted.error) return file
+            keyEpoch = encrypted.key.epoch
+            iv = encrypted.iv
+            // temporarily save the stream to OPFS to later feed the encryptedFile to webtorrent, since that does not accept ReadableStream from browser and OPFS lets us avoid using memory by blob in runtime
+            const root = await navigator.storage.getDirectory()
+            const tempName = `${self.crypto.randomUUID()}-${file.name}.enc'`
+            const handle = await root.getFileHandle(tempName, {create: true})
+            await encrypted.text.pipeTo(await handle.createWritable())
+            seedingDoneFunction = () => root.removeEntry(tempName)
+            return new File(
+              [await handle.getFile()],
+              file.name,
+              {
+                type: file.type,
+                lastModified: file.lastModified
               }
-
-              controller.close()
-            }
-          })
-
-          // Create encrypted File
-          const encryptedFile = new File(
-            [combinedStream],
-            file.name, // preserve original name
-            {
-              type: file.type, // preserve mime
-              lastModified: file.lastModified
-            }
-          )
-
-          return encryptedFile
+            )
+          }))
         }
-        const encryptedFile = await encryptFile(file)
-        // client.seed(encryptedFile)
-        */
-        /*
-        // test for ios, else use a blob, bad for large files:
-        const encryptedBlob =
-          await new Response(combinedStream).blob()
-
-        const encryptedFile = new File([encryptedBlob], file.name, {
-          type: file.type,
-          lastModified: file.lastModified
-        })
-        */
         new Promise(resolve => this.dispatchEvent(new CustomEvent('webtorrent-seed', {
           detail: {
             uid,
             room,
-            input: input.files,
+            input: files,
             resolve
           },
           bubbles: true,
@@ -168,15 +139,16 @@ export default class Input extends Shadow() {
         }))).then(({torrent}) => new Promise(resolveCid => this.dispatchEvent(new CustomEvent('ipfs-seed', {
           detail: {
             torrent,
-            input: input.files,
+            input: files,
             resolveCid
           },
           bubbles: true,
           cancelable: true,
           composed: true
         }))).then(({cid}) => [torrent, cid])).then(([torrent, cid]) => {
-          this.textarea.value = `${torrent.magnetURI}&cid=${cid} `
+          this.textarea.value = `${torrent.magnetURI}&cid=${cid}${keyEpoch ? `&key-epoch=${encodeURIComponent(keyEpoch)}` : ''}${iv ? `&iv=${encodeURIComponent(iv)}` : ''} `
           this.textarea.focus()
+          seedingDoneFunction()
         })
       }
       input.click()
