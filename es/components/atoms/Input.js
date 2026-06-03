@@ -80,11 +80,11 @@ export default class Input extends Shadow() {
         if (!input.files?.length) return
         const uid = await this.uid
         const room = await (await this.roomPromise).room
-        /** @type {File[]} */
+        /** @type {(File|{error: boolean, message: string}|any)[]} */
         let files = Array.from(input.files)
         let keyEpoch = null
         let iv = null
-        let seedingDoneFunction = () => {}
+        let seedingDoneFunctions = []
         const keyContainer = await new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-active-room-default-key', {
           detail: {
             resolve
@@ -107,15 +107,22 @@ export default class Input extends Shadow() {
               cancelable: true,
               composed: true
             })))
-            if (encrypted.error) return file
+            if (encrypted.error) return { error: true, message: encrypted.error }
             keyEpoch = encrypted.key.epoch
             iv = encrypted.iv
             // temporarily save the stream to OPFS to later feed the encryptedFile to webtorrent, since that does not accept ReadableStream from browser and OPFS lets us avoid using memory by blob in runtime
             const root = await navigator.storage.getDirectory()
             const tempName = `${self.crypto.randomUUID()}-${file.name}.enc'`
             const handle = await root.getFileHandle(tempName, {create: true})
-            await encrypted.text.pipeTo(await handle.createWritable())
-            seedingDoneFunction = () => root.removeEntry(tempName)
+            const writable = await handle.createWritable()
+            try {
+              await encrypted.text.pipeTo(writable)
+            } catch (error) {
+              await writable.close()
+              await root.removeEntry(tempName)
+              return { error: true, message: error }
+            }
+            seedingDoneFunctions.push(() => root.removeEntry(tempName))
             return new File(
               [await handle.getFile()],
               file.name,
@@ -125,6 +132,16 @@ export default class Input extends Shadow() {
               }
             )
           }))
+        }
+        let error
+        if (files.some(file => {
+          error = file.message
+          return file.error
+        })) {
+          this.textarea.value += ` ${error}`
+          this.textarea.focus()
+          seedingDoneFunctions.forEach(func => func())
+          return
         }
         new Promise(resolve => this.dispatchEvent(new CustomEvent('webtorrent-seed', {
           detail: {
@@ -146,18 +163,12 @@ export default class Input extends Shadow() {
           cancelable: true,
           composed: true
         }))).then(({cid}) => [torrent, cid])).then(([torrent, cid]) => {
-          this.textarea.value = `${torrent.magnetURI}&cid=${cid}${keyEpoch ? `&key-epoch=${encodeURIComponent(keyEpoch)}` : ''}${iv ? `&iv=${encodeURIComponent(iv)}` : ''} `
+          this.textarea.value += `${torrent.magnetURI}&cid=${cid}${keyEpoch ? `&key-epoch=${encodeURIComponent(keyEpoch)}` : ''}${iv ? `&iv=${encodeURIComponent(iv)}` : ''} `
           this.textarea.focus()
-          seedingDoneFunction()
+          seedingDoneFunctions.forEach(func => func())
         })
       }
       input.click()
-    }
-
-    /* Put cursor into input on click of chat area */
-    this.windowClickEventListener = event => {
-      const target = event.composedPath()[0]
-      if (target.classList.contains('pattern')) this.textarea.focus()
     }
 
     this.emojiClickedEventListener = event => {
@@ -321,7 +332,6 @@ export default class Input extends Shadow() {
     this.root.addEventListener('keyup', this.keyupEventListener)
     this.textarea.addEventListener('input', this.inputEventListener)
     this.addEventListener('emoji-clicked', this.emojiClickedEventListener)
-    self.addEventListener('click', this.windowClickEventListener)
     this.textarea.addEventListener('focus', this.focusEventListener)
     this.textarea.addEventListener('blur', this.blurEventListener)
     this.globalEventTarget.addEventListener('jitsi-video-started', this.jitsiVideoStartedEventListener)
@@ -351,7 +361,6 @@ export default class Input extends Shadow() {
     this.root.removeEventListener('keyup', this.keyupEventListener)
     this.textarea.removeEventListener('input', this.inputEventListener)
     this.removeEventListener('emoji-clicked', this.emojiClickedEventListener)
-    self.removeEventListener('click', this.windowClickEventListener)
     this.textarea.removeEventListener('focus', this.focusEventListener)
     this.textarea.removeEventListener('blur', this.blurEventListener)
     this.globalEventTarget.removeEventListener('jitsi-video-started', this.jitsiVideoStartedEventListener)
