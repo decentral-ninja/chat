@@ -652,7 +652,8 @@ export default class Message extends WebWorker(Intersection()) {
             <video hidden slot=video controls style="padding: 10px; background-color: blueviolet;"></video>
             <audio hidden slot=audio controls style="padding: 10px; background-color: burlywood;"></audio>
             <img hidden slot=img style="padding: 10px; background-color: palevioletred;">
-            <div id=reset slot=reset style="padding: 10px;">&#9850;</div>
+            <wct-icon-mdx id=reset slot=reset state="default" title="reset" icon-url="../../../../../../img/icons/reload.svg" size="2em"></wct-icon-mdx>
+            <wct-icon-mdx hidden id=trash slot=trash state="default" title="delete" icon-url="../../../../../../img/icons/trash.svg" size="2em"></wct-icon-mdx>
             <div id=error slot=error style="padding: 10px; background-color: red;">&#9854;</div>
           </v-webtorrent>`)
         }
