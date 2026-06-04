@@ -278,6 +278,7 @@ export default class Chat extends Shadow() {
     this.css = /* css */`
       :host {
         --chat-m-message-min-height: 5em;
+        --webtorrent-view-min-height: 10em;
       }
       :host > ul {
         display: flex;
