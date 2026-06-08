@@ -495,6 +495,16 @@ export default class Message extends WebWorker(Intersection()) {
         this.globalEventTarget.addEventListener('yjs-received-key', this.keysEventListener)
       }
     }
+    // height of the processed text message is going to vary to the default placeholder height, this shall correct for this while scrolling
+    this.dispatchEvent(new CustomEvent('chat-scroll', {
+      detail: {
+        mainScroll: true,
+        onLoad: true
+      },
+      bubbles: true,
+      cancelable: true,
+      composed: true
+    }))
     return Promise.all([
       textObjSync.deleted
         ? null
@@ -648,12 +658,12 @@ export default class Message extends WebWorker(Intersection()) {
       default:
         if (!textObj.text.includes('<')) textObj.text = textObj.text?.replace(/(https?:\/\/[^\s]+)/g, url => /* html */`<a href="${url}"${url.includes(locationHost) && url.includes('room=') ? ' route' : ''} target="${url.includes(locationHost) ? '_self' : '_blank'}">${url}</a>`)
         if (textObj.text.includes('magnet:') && !isInsideDialog) {
-          textObj.text = textObj.text?.replace(/(magnet?:[^\s]+)/g, url => /* html */`<v-webtorrent torrent-id="${url}" open uid='${textObj.uid}' room="${roomName}">
-            <video hidden slot=video controls style="padding: 10px; background-color: blueviolet;"></video>
-            <audio hidden slot=audio controls style="padding: 10px; background-color: burlywood;"></audio>
-            <img hidden slot=img style="padding: 10px; background-color: palevioletred;">
+          textObj.text = textObj.text?.replace(/(magnet?:[^\s]+)/g, url => /* html */`<v-webtorrent torrent-id="${url}" open uid='${textObj.uid}' room="${roomName}" timestamp="${textObj.timestamp}">
+            <video hidden slot=video controls></video>
+            <audio hidden slot=audio controls></audio>
+            <img hidden slot=img>
             <wct-icon-mdx id=reset slot=reset state="default" title="reset" icon-url="../../../../../../img/icons/reload.svg" size="2em"></wct-icon-mdx>
-            <wct-icon-mdx hidden id=trash slot=trash state="default" title="delete" icon-url="../../../../../../img/icons/trash.svg" size="2em"></wct-icon-mdx>
+            <wct-icon-mdx style="display: none;" id=trash slot=trash state="default" title="delete" icon-url="../../../../../../img/icons/trash.svg" size="2em"></wct-icon-mdx>
             <div id=error slot=error style="padding: 10px; background-color: red;">&#9854;</div>
           </v-webtorrent>`)
         }
