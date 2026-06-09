@@ -663,7 +663,6 @@ export default class Message extends WebWorker(Intersection()) {
             <audio hidden slot=audio controls></audio>
             <img hidden slot=img>
             <wct-icon-mdx id=reset slot=reset state="default" title="reset" icon-url="../../../../../../img/icons/reload.svg" size="2em"></wct-icon-mdx>
-            <wct-icon-mdx style="display: none;" id=trash slot=trash state="default" title="delete" icon-url="../../../../../../img/icons/trash.svg" size="2em"></wct-icon-mdx>
             <div id=error slot=error style="padding: 10px; background-color: red;">&#9854;</div>
           </v-webtorrent>`)
         }
