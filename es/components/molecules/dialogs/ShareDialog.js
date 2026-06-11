@@ -18,9 +18,12 @@ export default class ShareDialog extends Dialog {
   constructor (options = {}, ...args) {
     super({ ...options }, ...args)
 
+    // @ts-ignore
+    this.roomNamePrefix = self.Environment?.roomNamePrefix || 'chat-'
+
     const superShow = this.show
     this.show = command => {
-      this.locationHref.then(locationHref => (this.textarea.value = locationHref))
+      this.getLocationHref(true).then(locationHref => (this.textarea.value = locationHref))
       return superShow(command)
     }
 
@@ -170,7 +173,7 @@ export default class ShareDialog extends Dialog {
       </dialog>
     `
     return Promise.all([
-      this.locationHref.then(locationHref => {
+      this.getLocationHref(false).then(locationHref => {
         this.root.querySelector('dialog').insertAdjacentHTML('beforeend', /* html */`
           <p><wct-qr-code-svg namespace="qr-code-svg-default-" data='${locationHref}'></wct-qr-code-svg></p>
           <textarea>${locationHref}</textarea>
@@ -232,17 +235,27 @@ export default class ShareDialog extends Dialog {
     return this.root.querySelector('#share-api')
   }
 
-  get locationHref () {
-    return (this.getAttribute('room-name')
-        ? new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-rooms', {
+  getLocationHref (renew = false) {
+    const href = Promise.resolve(`${this.hasAttribute('href')
+      ? Promise.resolve(this.getAttribute('href'))
+      : Promise.resolve(location.href)}${this.hasAttribute('hash') ? this.getAttribute('hash') : ''}`)
+    if (renew) return this.hasAttribute('room-name')
+      ? new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-take-snapshot', {
           detail: {
             resolve
           },
           bubbles: true,
           cancelable: true,
           composed: true
-        })))
-        : Promise.resolve(this.getAttribute('href'))
-      ).then(getRoomsResult => this.getAttribute('room-name') ? getRoomsResult.value[this.getAttribute('room-name')].locationHref : getRoomsResult)
+        }))).then(() => this.dispatchEvent(new CustomEvent('yjs-merge-active-room', {
+          detail: {
+            locationHref: location.href
+          },
+          bubbles: true,
+          cancelable: true,
+          composed: true
+        }))).then(() => Promise.resolve(`${location.href}${this.hasAttribute('hash') ? this.getAttribute('hash') : ''}`))
+      : href
+    return href
   }
 }

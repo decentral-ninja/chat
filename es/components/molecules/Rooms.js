@@ -165,6 +165,8 @@ export default class Rooms extends Shadow() {
         if ((await this.roomPromise).room.done) {
           // enter new room
           if (inputField) inputField.value = ''
+          url.searchParams.delete('magnet')
+          url.searchParams.delete('cid')
           url.searchParams.set('room', roomName)
           history.pushState({ ...history.state, pageTitle: roomName }, roomName, url.href)
         } else {

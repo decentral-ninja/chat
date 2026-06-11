@@ -17,7 +17,7 @@ export default class MessageDialog extends Dialog {
 
     const superShow = this.show
     this.show = command => {
-      this.shareDialog.setAttribute('href', this.shareDialogHref)
+      this.shareDialog.setAttribute('hash', this.shareDialogHash)
       return superShow(command)
     }
 
@@ -172,9 +172,10 @@ export default class MessageDialog extends Dialog {
           </wct-dialog-clipboard>
           <chat-m-share-dialog
             namespace="dialog-top-slide-in-"
-            href="${this.shareDialogHref}"
+            room-name
             title-append=" with anchor to this message"
             no-share-in-chat
+            hash="${this.shareDialogHash}"
           >
             <wct-icon-mdx id="show-modal" title="share" icon-url="../../../../../../img/icons/share-3.svg" size="2em"></wct-icon-mdx>
           </chat-m-share-dialog>
@@ -229,8 +230,8 @@ export default class MessageDialog extends Dialog {
     return this.root.querySelector('chat-m-share-dialog')
   }
 
-  get shareDialogHref () {
-    return location.href + `#${this.getAttribute('timestamp')}`
+  get shareDialogHash () {
+    return `#${this.getAttribute('timestamp')}`
   }
 
   get template () {
