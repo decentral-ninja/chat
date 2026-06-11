@@ -237,8 +237,8 @@ export default class ShareDialog extends Dialog {
 
   getLocationHref (renew = false) {
     const href = Promise.resolve(`${this.hasAttribute('href')
-      ? Promise.resolve(this.getAttribute('href'))
-      : Promise.resolve(location.href)}${this.hasAttribute('hash') ? this.getAttribute('hash') : ''}`)
+      ? this.getAttribute('href')
+      : location.href}${this.hasAttribute('hash') ? this.getAttribute('hash') : ''}`)
     if (renew) return this.hasAttribute('room-name')
       ? new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-take-snapshot', {
           detail: {
@@ -254,7 +254,7 @@ export default class ShareDialog extends Dialog {
           bubbles: true,
           cancelable: true,
           composed: true
-        }))).then(() => Promise.resolve(`${location.href}${this.hasAttribute('hash') ? this.getAttribute('hash') : ''}`))
+        }))).then(() => `${location.href}${this.hasAttribute('hash') ? this.getAttribute('hash') : ''}`)
       : href
     return href
   }
