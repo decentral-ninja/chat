@@ -658,7 +658,7 @@ export default class Message extends WebWorker(Intersection()) {
       default:
         if (!textObj.text.includes('<')) textObj.text = textObj.text?.replace(/(https?:\/\/[^\s]+)/g, url => /* html */`<a href="${url}"${url.includes(locationHost) && url.includes('room=') ? ' route' : ''} target="${url.includes(locationHost) ? '_self' : '_blank'}">${url}</a>`)
         if (textObj.text.includes('magnet:') && !isInsideDialog) {
-          textObj.text = textObj.text?.replace(/(magnet?:[^\s]+)/g, url => /* html */`<v-webtorrent torrent-id="${url}" open uid='${textObj.uid}' room="${roomName}" timestamp="${textObj.timestamp}">
+          textObj.text = textObj.text?.replace(/(magnet?:[^\s]+)/g, url => /* html */`<v-webtorrent torrent-id="${url}" open uid='${textObj.uid}' room="${escapeHTML(this.roomName)}" timestamp="${textObj.timestamp}">
             <video hidden slot=video controls></video>
             <audio hidden slot=audio controls></audio>
             <img hidden slot=img>
