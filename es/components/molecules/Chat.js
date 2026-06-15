@@ -152,6 +152,7 @@ export default class Chat extends Shadow() {
     this.messageIntersectionEventListener = event => {
       // messages intersecting with the upper half resp. top of the screen
       if (event.detail.entry.boundingClientRect.top < self.innerHeight / 2) {
+        event.detail.target.removeAttribute('anchor')
         clearTimeout(timeout)
         timeout = setTimeout(async () => {
           let ulChildrenArr = []
@@ -176,6 +177,8 @@ export default class Chat extends Shadow() {
             }))
           }
         }, 1000)
+      } else {
+        event.detail.target.setAttribute('anchor', '')
       }
     }
 
@@ -293,7 +296,7 @@ export default class Chat extends Shadow() {
       :host > ul > * {
         overflow-anchor: none;
       }
-      :host > ul > [scroll-target] {
+      :host > ul > [anchor], :host > ul:not(:has(> [anchor])) > *:last-child {
         overflow-anchor: auto;
       }
       :host > ul > .deleted {
