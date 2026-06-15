@@ -496,8 +496,10 @@ export default class Message extends WebWorker(Intersection()) {
         this.globalEventTarget.addEventListener('yjs-received-key', this.keysEventListener)
       }
     }
+    // made it worse, so commented out
     // got enhanced with better overflow-anchor at molecules/Chat.js
     // height of the processed text message is going to vary to the default placeholder height, this shall correct for this while scrolling
+    /*
     this.dispatchEvent(new CustomEvent('chat-scroll', {
       detail: {
         mainScroll: true,
@@ -507,6 +509,7 @@ export default class Message extends WebWorker(Intersection()) {
       cancelable: true,
       composed: true
     }))
+    */
     return Promise.all([
       textObjSync.deleted
         ? null
