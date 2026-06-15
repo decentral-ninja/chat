@@ -80,6 +80,8 @@ export default class Message extends WebWorker(Intersection()) {
 
     this.webtorrentLoadEventListener = async event => {
       if (this.getAttribute('from-load-template-tag') === 'lazy') {
+        // got replaced with better overflow-anchor at molecules/Chat.js
+        /*
         this.dispatchEvent(new CustomEvent('chat-scroll', {
           detail: {
             mainScroll: true,
@@ -89,6 +91,7 @@ export default class Message extends WebWorker(Intersection()) {
           cancelable: true,
           composed: true
         }))
+        */
       } else if (this.hasAttribute('scroll-target')) {
         this.dispatchEvent(new CustomEvent('chat-scroll', {
           detail: {
@@ -495,7 +498,9 @@ export default class Message extends WebWorker(Intersection()) {
         this.globalEventTarget.addEventListener('yjs-received-key', this.keysEventListener)
       }
     }
+    // got replaced with better overflow-anchor at molecules/Chat.js
     // height of the processed text message is going to vary to the default placeholder height, this shall correct for this while scrolling
+    /*
     this.dispatchEvent(new CustomEvent('chat-scroll', {
       detail: {
         mainScroll: true,
@@ -505,6 +510,7 @@ export default class Message extends WebWorker(Intersection()) {
       cancelable: true,
       composed: true
     }))
+    */
     return Promise.all([
       textObjSync.deleted
         ? null

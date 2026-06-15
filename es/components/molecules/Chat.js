@@ -167,12 +167,17 @@ export default class Chat extends Shadow() {
                   ? this.ul.lastElementChild.getAttribute('timestamp')
                 // topBorder + 50 is for making sure that not only the bottom of the message is seen but 50px parts of it
                   : ulChildrenArr.find(child => child.getBoundingClientRect().bottom > topBorder + 50)?.getAttribute('timestamp') || event.detail.scrollEl
-            this.dispatchEvent(new CustomEvent('yjs-merge-active-room', {
-              detail: { scrollEl },
-              bubbles: true,
-              cancelable: true,
-              composed: true
-            }))
+                  let ulChild
+            if ((ulChild = this.ul.querySelector(`[timestamp=${scrollEl}]`))) {
+              Array.from(this.ul.querySelectorAll('[scroll-target]')).forEach(child => this.removeAttribute('scroll-target'))
+              ulChild.setAttribute('scroll-target', '')
+              this.dispatchEvent(new CustomEvent('yjs-merge-active-room', {
+                detail: { scrollEl },
+                bubbles: true,
+                cancelable: true,
+                composed: true
+              }))
+            }
           }
         }, 1000)
       }
@@ -288,6 +293,12 @@ export default class Chat extends Shadow() {
       }
       :host > ul > wct-load-template-tag {
         min-height: var(--chat-m-message-min-height);
+      }
+      :host > ul > * {
+        overflow-anchor: none;
+      }
+      :host > ul > [scroll-target] {
+        overflow-anchor: auto;
       }
       :host > ul > .deleted {
         overflow: hidden;
