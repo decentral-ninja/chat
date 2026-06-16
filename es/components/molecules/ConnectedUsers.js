@@ -110,7 +110,7 @@ export default class ConnectedUsers extends Shadow() {
    * @returns Promise<void>
    */
   renderHTML () {
-    const style = /* css */`
+    const style = `
       <style protected>
         :host {
           --child-margin: 0 0 0 1em;
