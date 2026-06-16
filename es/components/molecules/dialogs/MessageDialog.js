@@ -148,7 +148,7 @@ export default class MessageDialog extends Dialog {
    * Render HTML
    * @returns Promise<void>
    */
-  renderCustomHTML () {
+  async renderCustomHTML () {
     let parsedTemplateTextContent
     try {
       parsedTemplateTextContent = JSON.parse(this.template.content.textContent)
@@ -176,6 +176,7 @@ export default class MessageDialog extends Dialog {
             title-append=" with anchor to this message"
             no-share-in-chat
             hash="${this.shareDialogHash}"
+            is-active-room
           >
             <wct-icon-mdx id="show-modal" title="share" icon-url="../../../../../../img/icons/share-3.svg" size="2em"></wct-icon-mdx>
           </chat-m-share-dialog>

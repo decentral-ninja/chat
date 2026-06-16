@@ -23,7 +23,7 @@ export default class ShareDialog extends Dialog {
 
     const superShow = this.show
     this.show = command => {
-      this.getLocationHref(true).then(locationHref => (this.textarea.value = locationHref))
+      this.getLocationHref().then(locationHref => (this.textarea.value = locationHref))
       return superShow(command)
     }
 
@@ -173,7 +173,7 @@ export default class ShareDialog extends Dialog {
       </dialog>
     `
     return Promise.all([
-      this.getLocationHref(false).then(locationHref => {
+      this.getLocationHref().then(locationHref => {
         this.root.querySelector('dialog').insertAdjacentHTML('beforeend', /* html */`
           <p><wct-qr-code-svg namespace="qr-code-svg-default-" data='${locationHref}'></wct-qr-code-svg></p>
           <textarea>${locationHref}</textarea>
@@ -235,11 +235,11 @@ export default class ShareDialog extends Dialog {
     return this.root.querySelector('#share-api')
   }
 
-  getLocationHref (renew = false) {
-    const href = Promise.resolve(`${this.hasAttribute('href')
+  getLocationHref () {
+    const href = `${this.hasAttribute('href')
       ? this.getAttribute('href')
-      : location.href}${this.hasAttribute('hash') ? this.getAttribute('hash') : ''}`)
-    if (renew) return this.hasAttribute('room-name')
+      : location.href}${this.hasAttribute('hash') ? this.getAttribute('hash') : ''}`
+    if (this.hasAttribute('is-active-room')) return this.hasAttribute('room-name')
       ? new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-take-snapshot', {
           detail: {
             resolve
@@ -255,7 +255,17 @@ export default class ShareDialog extends Dialog {
           cancelable: true,
           composed: true
         }))).then(() => `${location.href}${this.hasAttribute('hash') ? this.getAttribute('hash') : ''}`)
-      : href
-    return href
+      : Promise.resolve(href)
+    return (this.getAttribute('room-name')
+        ? new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-rooms', {
+          detail: {
+            resolve
+          },
+          bubbles: true,
+          cancelable: true,
+          composed: true
+        })))
+        : Promise.resolve(href)
+      ).then(getRoomsResult => this.getAttribute('room-name') ? getRoomsResult.value[this.getAttribute('room-name')].locationHref : getRoomsResult)
   }
 }
