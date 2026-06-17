@@ -76,98 +76,7 @@ export default class Input extends Shadow() {
       const input = document.createElement('input')
       input.type = 'file'
       input.multiple = true
-      input.onchange = async () => {
-        if (!input.files?.length) return
-        const uid = await this.uid
-        const room = await (await this.roomPromise).room
-        /** @type {(File|{error: boolean, message: string}|any)[]} */
-        let files = Array.from(input.files)
-        let keyEpoch = null
-        let iv = null
-        let seedingDoneFunctions = []
-        const keyContainer = await new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-active-room-default-key', {
-          detail: {
-            resolve
-          },
-          bubbles: true,
-          cancelable: true,
-          composed: true
-        })))
-        if (keyContainer) {
-          iv = self.crypto.getRandomValues(new Uint8Array(16))
-          files = await Promise.all(Array.from(files).map(async file => {
-            const { encrypted } = await new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-encrypt', {
-              detail: {
-                resolve,
-                text: file.stream(),
-                key: keyContainer,
-                iv
-              },
-              bubbles: true,
-              cancelable: true,
-              composed: true
-            })))
-            if (encrypted.error) return { error: true, message: encrypted.error }
-            keyEpoch = encrypted.key.epoch
-            iv = encrypted.iv
-            // temporarily save the stream to OPFS to later feed the encryptedFile to webtorrent, since that does not accept ReadableStream from browser and OPFS lets us avoid using memory by blob in runtime
-            const root = await navigator.storage.getDirectory()
-            const tempName = `${self.crypto.randomUUID()}-${file.name}.enc'`
-            const handle = await root.getFileHandle(tempName, {create: true})
-            const writable = await handle.createWritable()
-            try {
-              await encrypted.text.pipeTo(writable)
-            } catch (error) {
-              await writable.close()
-              await root.removeEntry(tempName)
-              return { error: true, message: error }
-            }
-            seedingDoneFunctions.push(() => root.removeEntry(tempName))
-            return new File(
-              [await handle.getFile()],
-              file.name,
-              {
-                type: file.type,
-                lastModified: file.lastModified
-              }
-            )
-          }))
-        }
-        let error
-        if (files.some(file => {
-          error = file.message
-          return file.error
-        })) {
-          this.textarea.value += ` ${error}`
-          this.textarea.focus()
-          seedingDoneFunctions.forEach(func => func())
-          return
-        }
-        new Promise(resolve => this.dispatchEvent(new CustomEvent('webtorrent-seed', {
-          detail: {
-            uid,
-            room,
-            input: files,
-            resolve
-          },
-          bubbles: true,
-          cancelable: true,
-          composed: true
-        }))).then(({torrent}) => new Promise(resolveCid => this.dispatchEvent(new CustomEvent('ipfs-seed', {
-          detail: {
-            torrent,
-            input: files,
-            resolveCid
-          },
-          bubbles: true,
-          cancelable: true,
-          composed: true
-        }))).then(({cid}) => [torrent, cid])).then(([torrent, cid]) => {
-          this.textarea.value += `${torrent.magnetURI}&cid=${cid}${keyEpoch ? `&key-epoch=${encodeURIComponent(keyEpoch)}` : ''}${iv ? `&iv=${encodeURIComponent(iv)}` : ''} `
-          this.textarea.focus()
-          seedingDoneFunctions.forEach(func => func())
-        })
-      }
+      input.onchange = () => this.uploadFiles(input.files)
       input.click()
     }
 
@@ -212,6 +121,22 @@ export default class Input extends Shadow() {
         }
         wormholeOpened = false
       }
+    }
+
+    this.dragoverEventListener = event => event.preventDefault()
+
+    this.dropEventListener = event => {
+      if (!event.dataTransfer?.files?.length) return
+      event.preventDefault()
+      this.uploadFiles(event.dataTransfer.files)
+    }
+
+    this.pasteEventListener = event => {
+      const items = Array.from(event.clipboardData?.items || [])
+      const files = items.filter(item => item.kind === 'file').map(item => item.getAsFile()).filter(Boolean)
+      if (!files.length) return
+      event.preventDefault()
+      this.uploadFiles(files)
     }
 
     // this should fix smartphone issue, where blur triggers before the send button click is registered
@@ -333,6 +258,9 @@ export default class Input extends Shadow() {
     this.textarea.addEventListener('input', this.inputEventListener)
     this.addEventListener('emoji-clicked', this.emojiClickedEventListener)
     this.textarea.addEventListener('focus', this.focusEventListener)
+    this.addEventListener('dragover', this.dragoverEventListener)
+    this.addEventListener('drop', this.dropEventListener)
+    document.addEventListener('paste', this.pasteEventListener)
     this.textarea.addEventListener('blur', this.blurEventListener)
     this.globalEventTarget.addEventListener('jitsi-video-started', this.jitsiVideoStartedEventListener)
     this.globalEventTarget.addEventListener('jitsi-video-stopped', this.jitsiVideoStoppedEventListener)
@@ -362,6 +290,9 @@ export default class Input extends Shadow() {
     this.textarea.removeEventListener('input', this.inputEventListener)
     this.removeEventListener('emoji-clicked', this.emojiClickedEventListener)
     this.textarea.removeEventListener('focus', this.focusEventListener)
+    this.removeEventListener('dragover', this.dragoverEventListener)
+    this.removeEventListener('drop', this.dropEventListener)
+    document.removeEventListener('paste', this.pasteEventListener)
     this.textarea.removeEventListener('blur', this.blurEventListener)
     this.globalEventTarget.removeEventListener('jitsi-video-started', this.jitsiVideoStartedEventListener)
     this.globalEventTarget.removeEventListener('jitsi-video-stopped', this.jitsiVideoStoppedEventListener)
@@ -616,6 +547,99 @@ export default class Input extends Shadow() {
         composed: true
       }))
     }
+  }
+
+  async uploadFiles(files) {
+    if (!files?.length) return
+    const uid = await this.uid
+    const room = await (await this.roomPromise).room
+    /** @type {(File|{error: boolean, message: string}|any)[]} */
+    if (!Array.isArray(files)) files = Array.from(files)
+    let keyEpoch = null
+    let iv = null
+    let seedingDoneFunctions = []
+    const keyContainer = await new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-active-room-default-key', {
+      detail: {
+        resolve
+      },
+      bubbles: true,
+      cancelable: true,
+      composed: true
+    })))
+    if (keyContainer) {
+      iv = self.crypto.getRandomValues(new Uint8Array(16))
+      files = await Promise.all(Array.from(files).map(async file => {
+        const { encrypted } = await new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-encrypt', {
+          detail: {
+            resolve,
+            text: file.stream(),
+            key: keyContainer,
+            iv
+          },
+          bubbles: true,
+          cancelable: true,
+          composed: true
+        })))
+        if (encrypted.error) return { error: true, message: encrypted.error }
+        keyEpoch = encrypted.key.epoch
+        iv = encrypted.iv
+        // temporarily save the stream to OPFS to later feed the encryptedFile to webtorrent, since that does not accept ReadableStream from browser and OPFS lets us avoid using memory by blob in runtime
+        const root = await navigator.storage.getDirectory()
+        const tempName = `${self.crypto.randomUUID()}-${file.name}.enc'`
+        const handle = await root.getFileHandle(tempName, {create: true})
+        const writable = await handle.createWritable()
+        try {
+          await encrypted.text.pipeTo(writable)
+        } catch (error) {
+          await writable.close()
+          await root.removeEntry(tempName)
+          return { error: true, message: error }
+        }
+        seedingDoneFunctions.push(() => root.removeEntry(tempName))
+        return new File(
+          [await handle.getFile()],
+          file.name,
+          {
+            type: file.type,
+            lastModified: file.lastModified
+          }
+        )
+      }))
+    }
+    let error
+    if (files.some(file => {
+      error = file.message
+      return file.error
+    })) {
+      this.textarea.value += ` ${error}`
+      this.textarea.focus()
+      seedingDoneFunctions.forEach(func => func())
+      return
+    }
+    new Promise(resolve => this.dispatchEvent(new CustomEvent('webtorrent-seed', {
+      detail: {
+        uid,
+        room,
+        input: files,
+        resolve
+      },
+      bubbles: true,
+      cancelable: true,
+      composed: true
+    }))).then(({torrent}) => new Promise(resolveCid => this.dispatchEvent(new CustomEvent('ipfs-seed', {
+      detail: {
+        torrent,
+        input: files,
+        resolveCid
+      },
+      bubbles: true,
+      cancelable: true,
+      composed: true
+    }))).then(({cid}) => [torrent, cid])).then(([torrent, cid]) => {
+      this.textarea.value += `${torrent.magnetURI}&cid=${cid}${keyEpoch ? `&key-epoch=${encodeURIComponent(keyEpoch)}` : ''}${iv ? `&iv=${encodeURIComponent(iv)}` : ''} `
+      this.textarea.focus()
+      seedingDoneFunctions.forEach(func => func())
+    })
   }
 
   get isMobile () {
