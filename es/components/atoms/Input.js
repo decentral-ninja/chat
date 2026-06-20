@@ -566,7 +566,8 @@ export default class Input extends Shadow() {
       cancelable: true,
       composed: true
     })))
-    if (keyContainer) {
+    // TODO: replace confirm with proper upload dialog
+    if (keyContainer && self.confirm(`Do you want to encrypt "${files[0].name}", ... with key "${keyContainer.private.name}"?\n\nNote: Only encrypt private files because encrypting files may break streaming and take longer to download...`)) {
       iv = self.crypto.getRandomValues(new Uint8Array(16))
       files = await Promise.all(Array.from(files).map(async file => {
         const { encrypted } = await new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-encrypt', {
