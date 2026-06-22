@@ -14,6 +14,7 @@ import { Intersection } from '../../../../../event-driven-web-components-prototy
   nickname?: string,
   sendNotifications?: boolean,
   text?: string,
+  includesMagnet?: boolean,
   timestamp?: number,
   uid?: string,
   updatedNickname?: string,
@@ -668,6 +669,7 @@ export default class Message extends WebWorker(Intersection()) {
             <audio hidden slot=audio controls></audio>
             <img hidden slot=img>
             <wct-icon-mdx id=pin slot=pin state="default" title="pin" icon-url="../../../../../../img/icons/pin.svg" size="2em"></wct-icon-mdx>
+            <wct-icon-mdx id=download slot=download state="default" title="download" icon-url="../../../../../../img/icons/download.svg" size="2em"></wct-icon-mdx>
             <wct-icon-mdx id=reset slot=reset state="default" title="reset" icon-url="../../../../../../img/icons/reload.svg" size="2em"></wct-icon-mdx>
             <chat-a-key-status id=key slot=key is-message-child ${textObj.isSelf ? 'self' : ''}></chat-a-key-status>
             <div id=error slot=error style="padding: 10px; background-color: red;">&#9854;</div>

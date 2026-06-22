@@ -416,12 +416,15 @@ export default class Chat extends Shadow() {
   }
 
   getMessageHTML (textObj, timestamp, wasLastMessage, isUlEmpty) {
+    const includesMagnet = textObj.includesMagnet
+      ? ' includes-magnet '
+      : ''
     // this molecules/chat updates by, modified and delete, the elements in the ul and needs timestamp and uid to pinpoint the target. This is done due to lazy loading support.
     // was not looking very nice, but tried some parallax stuff: <wct-intersection-scroll-effect css-property=filter effect="sepia" max-value="100%" scroll-el-query="main" offset="-50">...message...</wct-intersection-scroll-effect>
     return /* html */`
-      <wct-load-template-tag timestamp="${timestamp}" uid='${textObj.uid}' no-css copy-attributes>
+      <wct-load-template-tag timestamp="${timestamp}" uid='${textObj.uid}'${includesMagnet}no-css copy-attributes>
         <template>
-          <chat-m-message update-on-connected-callback intersection-event-name timestamp="${timestamp}" uid='${textObj.uid}'${textObj.isSelf ? ' self' : ''}${wasLastMessage ? ' was-last-message' : ''}${isUlEmpty ? ' first-render' : ''} show-reply-to>
+          <chat-m-message update-on-connected-callback intersection-event-name timestamp="${timestamp}" uid='${textObj.uid}'${textObj.isSelf ? ' self' : ''}${includesMagnet}${wasLastMessage ? ' was-last-message' : ''}${isUlEmpty ? ' first-render' : ''} show-reply-to>
             <template>${JSON.stringify(textObj)}</template>
           </chat-m-message>
         </template>

@@ -9,6 +9,7 @@ import { WebWorker } from '../../../../event-driven-web-components-prototypes/sr
   nickname?: string,
   sendNotifications?: boolean,
   text?: string,
+  includesMagnet?: boolean,
   timestamp: number,
   uid: string,
   updatedNickname?: string,
@@ -133,7 +134,8 @@ export const Chat = (ChosenHTMLElement = WebWorker()) => class Chat extends Chos
           if (event.detail.input.value) {
             textObj = {
               ...mandatoryData,
-              text: event.detail.input.value
+              text: event.detail.input.value,
+              includesMagnet: event.detail.input.value.includes('magnet:')
             }
             // @ts-ignore
             if (event.detail.replyToTextObj) {
