@@ -561,7 +561,7 @@ export default class Provider extends Intersection() {
           </style>
           <details>
             <summary>
-              <h2 part=title>Title</h2>
+              <h2 part=title>Loading...</h2>
             </summary>
             <table>
               <tbody>

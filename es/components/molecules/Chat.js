@@ -147,7 +147,11 @@ export default class Chat extends Shadow() {
       }
     }
 
-    const topBorder = Chat.walksUpDomQueryMatches(this, 'main').getBoundingClientRect().top
+    // use mainScrollElement as intersection options root
+    // @ts-ignore
+    self.mainScrollElement = Chat.walksUpDomQueryMatches(this, 'main')
+    // @ts-ignore
+    const topBorder = self.mainScrollElement.getBoundingClientRect().top
     let timeout = null
     this.messageIntersectionEventListener = event => {
       // messages intersecting with the upper half resp. top of the screen
@@ -296,7 +300,9 @@ export default class Chat extends Shadow() {
       :host > ul > * {
         overflow-anchor: none;
       }
-      :host > ul > [anchor], :host > ul:not(:has(> [anchor])) > *:last-child, :host > ul > [scroll-target] {
+      :host > ul:not(:has(> [anchor])) > *:last-child,
+      :host > ul > [anchor] + *, :host > ul > [anchor]:not(:has( + *)),
+      :host > ul > [scroll-target] + *, :host > ul > [scroll-target]:not(:has( + *)) {
         overflow-anchor: auto;
       }
       :host > ul > .deleted {
@@ -422,7 +428,7 @@ export default class Chat extends Shadow() {
     // this molecules/chat updates by, modified and delete, the elements in the ul and needs timestamp and uid to pinpoint the target. This is done due to lazy loading support.
     // was not looking very nice, but tried some parallax stuff: <wct-intersection-scroll-effect css-property=filter effect="sepia" max-value="100%" scroll-el-query="main" offset="-50">...message...</wct-intersection-scroll-effect>
     return /* html */`
-      <wct-load-template-tag timestamp="${timestamp}" uid='${textObj.uid}'${includesMagnet}no-css copy-attributes>
+      <wct-load-template-tag timestamp="${timestamp}" uid='${textObj.uid}'${includesMagnet}no-css copy-attributes intersectionObserverInit="{'rootMargin': '${self.innerHeight}px 0px ${self.innerHeight}px 0px'}" self-root-name="mainScrollElement">
         <template>
           <chat-m-message update-on-connected-callback intersection-event-name timestamp="${timestamp}" uid='${textObj.uid}'${textObj.isSelf ? ' self' : ''}${includesMagnet}${wasLastMessage ? ' was-last-message' : ''}${isUlEmpty ? ' first-render' : ''} show-reply-to>
             <template>${JSON.stringify(textObj)}</template>
