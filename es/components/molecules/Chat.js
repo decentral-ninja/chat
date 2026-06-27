@@ -56,6 +56,9 @@ export default class Chat extends Shadow() {
             this.sectionEmpty.classList.remove('hidden')
           }
         }
+        // use mainScrollElement as intersection options root
+        // @ts-ignore
+        self.mainScrollElement = Chat.walksUpDomQueryMatches(this, 'main')
         // Attention: NO async here when appending to the dom!
         textObjs.sort((a, b) => a.timestamp - b.timestamp).forEach((textObj, i, textObjs) => {
           // @ts-ignore
@@ -217,6 +220,9 @@ export default class Chat extends Shadow() {
   }
 
   connectedCallback () {
+    // use mainScrollElement as intersection options root
+    // @ts-ignore
+    self.mainScrollElement = Chat.walksUpDomQueryMatches(this, 'main')
     if (this.shouldRenderCSS()) this.renderCSS()
     if (this.shouldRenderHTML()) {
       this.renderHTML()
