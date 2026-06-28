@@ -307,8 +307,8 @@ export default class Chat extends Shadow() {
         overflow-anchor: none;
       }
       :host > ul:not(:has(> [anchor])) > *:last-child,
-      :host > ul > [anchor] + *, :host > ul > [anchor]:not(:has( + *)),
-      :host > ul > [scroll-target] + *, :host > ul > [scroll-target]:not(:has( + *)) {
+      :host > ul > [anchor],
+      :host > ul > [scroll-target] {
         overflow-anchor: auto;
       }
       :host > ul > .deleted {
