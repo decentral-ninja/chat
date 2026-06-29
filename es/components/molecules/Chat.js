@@ -1,5 +1,5 @@
 // @ts-check
-import { Shadow } from '../../../../event-driven-web-components-prototypes/src/Shadow.js'
+import { Resize } from '../../../../event-driven-web-components-prototypes/src/Resize.js'
 import { scrollElIntoView } from '../../../../event-driven-web-components-prototypes/src/helpers/Helpers.js'
 
 /* global Environment */
@@ -13,7 +13,7 @@ import { scrollElIntoView } from '../../../../event-driven-web-components-protot
  * @export
  * @class Providers
  */
-export default class Chat extends Shadow() {
+export default class Chat extends Resize() {
   constructor (options = {}, ...args) {
     super({ importMetaUrl: import.meta.url, tabindex: 'no-tabindex', ...options }, ...args)
 
@@ -58,7 +58,7 @@ export default class Chat extends Shadow() {
         }
         // use mainScrollElement as intersection options root
         // @ts-ignore
-        self.mainScrollElement = Chat.walksUpDomQueryMatches(this, 'main')
+        this.getMainScrollElDetail().then(mainScrollElDetail => (self.mainScrollElement = mainScrollElDetail.el))
         // Attention: NO async here when appending to the dom!
         textObjs.sort((a, b) => a.timestamp - b.timestamp).forEach((textObj, i, textObjs) => {
           // @ts-ignore
@@ -113,7 +113,7 @@ export default class Chat extends Shadow() {
               // wait for intersection to happen before we can decide to scroll or not
               setTimeout(() => {
                 if (textObj.isSelf || this.ul.lastElementChild.matches('chat-m-message[intersecting]')) {
-                  scrollElIntoView(() => this.ul.lastElementChild, ':not([intersecting])')
+                  this.scrollElIntoView(() => this.ul.lastElementChild, ':not([intersecting])')
                 } else {
                   this.dispatchEvent(new CustomEvent('scroll-icon-show-event', {
                     bubbles: true,
@@ -150,11 +150,6 @@ export default class Chat extends Shadow() {
       }
     }
 
-    // use mainScrollElement as intersection options root
-    // @ts-ignore
-    self.mainScrollElement = Chat.walksUpDomQueryMatches(this, 'main')
-    // @ts-ignore
-    const topBorder = self.mainScrollElement.getBoundingClientRect().top
     let timeout = null
     this.messageIntersectionEventListener = event => {
       // messages intersecting with the upper half resp. top of the screen
@@ -162,14 +157,15 @@ export default class Chat extends Shadow() {
         event.detail.target.removeAttribute('anchor')
         clearTimeout(timeout)
         timeout = setTimeout(async () => {
+          const mainScrollElDetail = await this.getMainScrollElDetail()
+          const topBorder = mainScrollElDetail.el.getBoundingClientRect().top
           let ulChildrenArr = []
           // avoid saving scrollEl on first time intersection of message after connect, since the initial event does not grab the most top message
           if ((ulChildrenArr = Array.from(this.ul.children)) && (ulChildrenArr = ulChildrenArr.splice(ulChildrenArr.indexOf(event.detail.target)))) {
             const scrollEl = this.ul.lastElementChild.hasAttribute('intersecting')
               ? this.ul.lastElementChild.getAttribute('timestamp')
               : (await new Promise(async resolve => { // eslint-disable-line
-                // if scrolled to bottom send last message as ref to storage
-                  const mainScrollElDetail = await this.getMainScrollElDetail()
+                  // if scrolled to bottom send last message as ref to storage
                   setTimeout(() => resolve(mainScrollElDetail.isScrolledBottom()), mainScrollElDetail.scrollTimer)
                 }))
                   ? this.ul.lastElementChild.getAttribute('timestamp')
@@ -202,7 +198,7 @@ export default class Chat extends Shadow() {
           composed: true
         }))
       } else if (event?.detail?.scrollEl && this.ulGetScrollElFunc(event.detail.scrollEl)()) {
-        scrollElIntoView(this.ulGetScrollElFunc(event.detail.scrollEl), ':not([intersecting])')
+        this.scrollElIntoView(this.ulGetScrollElFunc(event.detail.scrollEl), ':not([intersecting])')
       } else {
         this.scrollLastMemorizedIntoView()
       }
@@ -217,12 +213,17 @@ export default class Chat extends Shadow() {
         this.addEventListener('message-intersection', this.messageIntersectionEventListener)
       }, 200)
     }
+
+    this.scrollEventListener = event => this.getMainScrollElDetail().then(mainScrollElDetail => (this.mainScrollFromBottom = mainScrollElDetail.el.scrollHeight - mainScrollElDetail.el.scrollTop))
   }
 
   connectedCallback () {
     // use mainScrollElement as intersection options root
-    // @ts-ignore
-    self.mainScrollElement = Chat.walksUpDomQueryMatches(this, 'main')
+    this.getMainScrollElDetail().then(mainScrollElDetail => {
+      // @ts-ignore
+      self.mainScrollElement = mainScrollElDetail.el
+      mainScrollElDetail.el.addEventListener('scroll', this.scrollEventListener)
+    })
     if (this.shouldRenderCSS()) this.renderCSS()
     if (this.shouldRenderHTML()) {
       this.renderHTML()
@@ -237,7 +238,7 @@ export default class Chat extends Shadow() {
         composed: true
       }))).then(room => {
         if (room?.scrollEl && this.ulGetScrollElFunc(room.scrollEl)()) {
-          self.requestAnimationFrame(timeStamp => scrollElIntoView(this.ulGetScrollElFunc(room.scrollEl), ':not([intersecting])', undefined, { behavior: 'instant' }))
+          self.requestAnimationFrame(timeStamp => this.scrollElIntoView(this.ulGetScrollElFunc(room.scrollEl), ':not([intersecting])', undefined, { behavior: 'instant' }))
         } else if (room?.scrollTop) {
           // backwards compatible behavior and if no scrollTop scrolls to bottom
           this.dispatchEvent(new CustomEvent('main-scroll', {
@@ -253,16 +254,29 @@ export default class Chat extends Shadow() {
       })
       this.addEventListener('message-intersection', this.messageIntersectionEventListener) // add this listener after render, to avoid intersection events before all messages are loaded
     }
+    this.resizeObserveStart(this.ul)
     this.globalEventTarget.addEventListener('chat-scroll', this.chatScrollEventListener)
     this.globalEventTarget.addEventListener('yjs-chat-update', this.chatUpdateEventListener)
     self.addEventListener('resize', this.resizeListener)
   }
 
   disconnectedCallback () {
+    super.disconnectedCallback()
+    // use mainScrollElement as intersection options root
+    this.getMainScrollElDetail().then(mainScrollElDetail => mainScrollElDetail.el.removeEventListener('scroll', this.scrollEventListener))
     this.globalEventTarget.removeEventListener('chat-scroll', this.chatScrollEventListener)
     this.globalEventTarget.removeEventListener('yjs-chat-update', this.chatUpdateEventListener)
     this.removeEventListener('message-intersection', this.messageIntersectionEventListener)
     self.removeEventListener('resize', this.resizeListener)
+  }
+
+  resizeCallback (entries) {
+    this.getMainScrollElDetail().then(mainScrollElDetail => {
+      // to fix main scrollTop it must be at least 100px different
+      if (this.mainScrollFromBottom !== undefined && Math.abs(mainScrollElDetail.el.scrollHeight - this.mainScrollHeight) > 100) mainScrollElDetail.el.scrollTop = mainScrollElDetail.el.scrollHeight - this.mainScrollFromBottom
+      this.mainScrollHeight = mainScrollElDetail.el.scrollHeight
+      this.mainScrollFromBottom = mainScrollElDetail.el.scrollHeight - mainScrollElDetail.el.scrollTop
+    })
   }
 
   /**
@@ -494,7 +508,7 @@ export default class Chat extends Shadow() {
       let scrollEl
       if (room?.scrollEl && (scrollEl = this.ulGetScrollElFunc(room.scrollEl)())) {
         scrollEl.setAttribute('scroll-target', '')
-        scrollElIntoView(this.ulGetScrollElFunc(room.scrollEl), ':not([intersecting])', undefined, { behavior: 'instant' })
+        this.scrollElIntoView(this.ulGetScrollElFunc(room.scrollEl), ':not([intersecting])', undefined, { behavior: 'instant' })
       } else if (room?.scrollTop) {
         // backwards compatible behavior and if no scrollTop scrolls to bottom
         this.dispatchEvent(new CustomEvent('main-scroll', {
@@ -516,9 +530,16 @@ export default class Chat extends Shadow() {
           composed: true
         })), 200)
       } else if (this.ul?.lastElementChild) {
-        scrollElIntoView(this.ulGetScrollElFunc(this.ul.lastElementChild.getAttribute('timestamp')), ':not([intersecting])', undefined, { behavior: 'instant' })
+        this.scrollElIntoView(this.ulGetScrollElFunc(this.ul.lastElementChild.getAttribute('timestamp')), ':not([intersecting])', undefined, { behavior: 'instant' })
       }
     })
+  }
+
+  scrollElIntoView (...args) {
+    // @ts-ignore
+    const result = scrollElIntoView(...args)
+    this.getMainScrollElDetail().then(mainScrollElDetail => (this.mainScrollFromBottom = mainScrollElDetail.el.scrollHeight - mainScrollElDetail.el.scrollTop))
+    return result
   }
 
   async getMainScrollElDetail () {
