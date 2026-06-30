@@ -522,6 +522,11 @@ export default class Message extends WebWorker(Intersection()) {
         },
         {
           // @ts-ignore
+          path: `${this.importMetaUrl}../../../../../components/atoms/iconStates/IconStates.js?${Environment?.version || ''}`,
+          name: 'a-icon-states'
+        },
+        {
+          // @ts-ignore
           path: `${this.importMetaUrl}../../atoms/keyRequestButton/KeyRequestButton.js?${Environment?.version || ''}`,
           name: 'chat-a-key-request-button'
         },
@@ -654,7 +659,12 @@ export default class Message extends WebWorker(Intersection()) {
             <video hidden slot=video controls></video>
             <audio hidden slot=audio controls></audio>
             <img hidden slot=img>
-            <wct-icon-mdx id=pin slot=pin state="default" title="pin" icon-url="../../../../../../img/icons/pin.svg" size="2em"></wct-icon-mdx>
+            <a-icon-states id=key-icon id=pin slot=pin>
+              <template>
+                <wct-icon-mdx state="default" title="pin file" icon-url="../../../../../../img/icons/pin.svg" size="2em"></wct-icon-mdx>
+                <wct-icon-mdx state="pinned" title="unpin file" icon-url="../../../../../../img/icons/pin-filled.svg" size="2em" rotate="-45deg" no-hover-transform></wct-icon-mdx>
+              </template>
+            </a-icon-states>
             <wct-icon-mdx id=download slot=download state="default" title="download" icon-url="../../../../../../img/icons/download.svg" size="2em"></wct-icon-mdx>
             <wct-icon-mdx id=reset slot=reset state="default" title="reset" icon-url="../../../../../../img/icons/reload.svg" size="2em"></wct-icon-mdx>
             <chat-a-key-status id=key slot=key is-message-child ${textObj.isSelf ? 'self' : ''}></chat-a-key-status>
