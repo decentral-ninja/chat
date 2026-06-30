@@ -239,17 +239,6 @@ export default class Chat extends Resize() {
       }))).then(room => {
         if (room?.scrollEl && this.ulGetScrollElFunc(room.scrollEl)()) {
           self.requestAnimationFrame(timeStamp => this.scrollElIntoView(this.ulGetScrollElFunc(room.scrollEl), ':not([intersecting])', undefined, { behavior: 'instant' }))
-        } else if (room?.scrollTop) {
-          // backwards compatible behavior and if no scrollTop scrolls to bottom
-          this.dispatchEvent(new CustomEvent('main-scroll', {
-            detail: {
-              behavior: 'instant',
-              y: room.scrollTop
-            },
-            bubbles: true,
-            cancelable: true,
-            composed: true
-          }))
         }
       })
       this.addEventListener('message-intersection', this.messageIntersectionEventListener) // add this listener after render, to avoid intersection events before all messages are loaded
@@ -509,27 +498,8 @@ export default class Chat extends Resize() {
       if (room?.scrollEl && (scrollEl = this.ulGetScrollElFunc(room.scrollEl)())) {
         scrollEl.setAttribute('scroll-target', '')
         this.scrollElIntoView(this.ulGetScrollElFunc(room.scrollEl), ':not([intersecting])', undefined, { behavior: 'instant' })
-      } else if (room?.scrollTop) {
-        // backwards compatible behavior and if no scrollTop scrolls to bottom
-        this.dispatchEvent(new CustomEvent('main-scroll', {
-          detail: {
-            behavior: 'instant',
-            y: room.scrollTop
-          },
-          bubbles: true,
-          cancelable: true,
-          composed: true
-        }))
-        setTimeout(() => this.dispatchEvent(new CustomEvent('main-scroll', {
-          detail: {
-            behavior: 'smooth',
-            y: room.scrollTop
-          },
-          bubbles: true,
-          cancelable: true,
-          composed: true
-        })), 200)
       } else if (this.ul?.lastElementChild) {
+        // TODO: scroll to last read message once feature gets implemented
         this.scrollElIntoView(this.ulGetScrollElFunc(this.ul.lastElementChild.getAttribute('timestamp')), ':not([intersecting])', undefined, { behavior: 'instant' })
       }
     })
