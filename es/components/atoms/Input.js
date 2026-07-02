@@ -61,18 +61,7 @@ export default class Input extends Shadow() {
       event.target.blur()
     }
 
-    let fileUploadTimeoutId = null
     this.fileUploadClickEventListener = event => {
-      clearTimeout(fileUploadTimeoutId)
-      fileUploadTimeoutId = setTimeout(() => {
-        self.open(wormholeUrl)
-        wormholeOpened = true
-      }, 300)
-    }
-
-    this.fileUploadDblClickEventListener = event => {
-      clearTimeout(fileUploadTimeoutId)
-      // TODO: Make a dialog to choose fileUpload webtorrent or wormhole
       const input = document.createElement('input')
       input.type = 'file'
       input.multiple = true
@@ -253,7 +242,6 @@ export default class Input extends Shadow() {
     if (this.shouldRenderHTML()) this.renderHTML()
     this.buttons.forEach(button => button.addEventListener('click', this.buttonClickEventListener))
     this.fileUpload.addEventListener('click', this.fileUploadClickEventListener)
-    this.fileUpload.addEventListener('dblclick', this.fileUploadDblClickEventListener)
     this.root.addEventListener('keyup', this.keyupEventListener)
     this.textarea.addEventListener('input', this.inputEventListener)
     this.addEventListener('emoji-clicked', this.emojiClickedEventListener)
@@ -285,7 +273,6 @@ export default class Input extends Shadow() {
   disconnectedCallback () {
     this.buttons.forEach(button => button.removeEventListener('click', this.buttonClickEventListener))
     this.fileUpload.removeEventListener('click', this.fileUploadClickEventListener)
-    this.fileUpload.removeEventListener('dblclick', this.fileUploadDblClickEventListener)
     this.root.removeEventListener('keyup', this.keyupEventListener)
     this.textarea.removeEventListener('input', this.inputEventListener)
     this.removeEventListener('emoji-clicked', this.emojiClickedEventListener)
