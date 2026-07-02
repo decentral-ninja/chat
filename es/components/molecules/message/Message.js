@@ -655,7 +655,7 @@ export default class Message extends WebWorker(Intersection()) {
       default:
         if (!textObj.text.includes('<')) textObj.text = textObj.text?.replace(/(https?:\/\/[^\s]+)/g, url => /* html */`<a href="${url}"${url.includes(locationHost) && url.includes('room=') ? ' route' : ''} target="${url.includes(locationHost) ? '_self' : '_blank'}">${url}</a>`)
         if (textObj.text.includes('magnet:') && !isInsideDialog) {
-          textObj.text = textObj.text?.replace(/(magnet?:[^\s]+)/g, url => /* html */`<v-webtorrent torrent-id="${url}" open uid='${textObj.uid}' room="${roomName}" timestamp="${textObj.timestamp}">
+          textObj.text = textObj.text?.replace(/(magnet?:[^\s]+)/g, url => /* html */`<v-webtorrent torrent-id="${url}" open uid='${textObj.uid}' room="${roomName}" timestamp="${textObj.timestamp}"${textObj.isSelf ? ' self' : ''}>
             <video hidden slot=video controls></video>
             <audio hidden slot=audio controls></audio>
             <img hidden slot=img>
@@ -667,6 +667,7 @@ export default class Message extends WebWorker(Intersection()) {
             </a-icon-states>
             <wct-icon-mdx id=download slot=download title="download" icon-url="../../../../../../img/icons/download.svg" size="2em"></wct-icon-mdx>
             <wct-icon-mdx id=reset slot=reset title="reset" icon-url="../../../../../../img/icons/reload.svg" size="2em"></wct-icon-mdx>
+            <wct-icon-mdx id=trash slot=trash title="delete" icon-url="../../../../../../img/icons/trash.svg" size="2em"></wct-icon-mdx>
             <chat-a-key-status id=key slot=key is-message-child ${textObj.isSelf ? 'self' : ''}></chat-a-key-status>
             <div id=error slot=error><wct-icon-mdx title="download" icon-url="../../../../../../img/icons/download.svg" size="4em"></wct-icon-mdx></div>
           </v-webtorrent>`)
