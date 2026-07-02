@@ -665,10 +665,10 @@ export default class Message extends WebWorker(Intersection()) {
                 <wct-icon-mdx state="pinned" title="unpin file" icon-url="../../../../../../img/icons/pin-filled.svg" size="2em" rotate="-45deg" no-hover-transform></wct-icon-mdx>
               </template>
             </a-icon-states>
-            <wct-icon-mdx id=download slot=download state="default" title="download" icon-url="../../../../../../img/icons/download.svg" size="2em"></wct-icon-mdx>
-            <wct-icon-mdx id=reset slot=reset state="default" title="reset" icon-url="../../../../../../img/icons/reload.svg" size="2em"></wct-icon-mdx>
+            <wct-icon-mdx id=download slot=download title="download" icon-url="../../../../../../img/icons/download.svg" size="2em"></wct-icon-mdx>
+            <wct-icon-mdx id=reset slot=reset title="reset" icon-url="../../../../../../img/icons/reload.svg" size="2em"></wct-icon-mdx>
             <chat-a-key-status id=key slot=key is-message-child ${textObj.isSelf ? 'self' : ''}></chat-a-key-status>
-            <div id=error slot=error style="padding: 10px; background-color: red;">&#9854;</div>
+            <div id=error slot=error><wct-icon-mdx title="download" icon-url="../../../../../../img/icons/download.svg" size="4em"></wct-icon-mdx></div>
           </v-webtorrent>`)
         }
         break

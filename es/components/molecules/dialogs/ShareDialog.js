@@ -23,7 +23,7 @@ export default class ShareDialog extends Dialog {
 
     const superShow = this.show
     this.show = command => {
-      this.getLocationHref().then(locationHref => (this.textarea.value = locationHref))
+      this.getLocationHref(true).then(locationHref => (this.textarea.value = locationHref))
       return superShow(command)
     }
 
@@ -235,11 +235,11 @@ export default class ShareDialog extends Dialog {
     return this.root.querySelector('#share-api')
   }
 
-  getLocationHref () {
+  getLocationHref (takeSnapshot = false) {
     const href = `${this.hasAttribute('href')
       ? this.getAttribute('href')
       : location.href}${this.hasAttribute('hash') ? this.getAttribute('hash') : ''}`
-    if (this.hasAttribute('is-active-room')) return this.hasAttribute('room-name')
+    if (this.hasAttribute('is-active-room')) return this.hasAttribute('room-name') && takeSnapshot
       ? new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-take-snapshot', {
           detail: {
             resolve

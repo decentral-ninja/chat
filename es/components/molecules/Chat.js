@@ -109,7 +109,7 @@ export default class Chat extends Resize() {
               }
               // don't save message locations after render some time, since all messages intersect and we may receive some message not on top
               setTimeout(() => this.addEventListener('message-intersection', this.messageIntersectionEventListener), 1000)
-            } else {
+            } else if (!event.detail.deleted) {
               // wait for intersection to happen before we can decide to scroll or not
               setTimeout(() => {
                 if (textObj.isSelf || this.ul.lastElementChild.matches('chat-m-message[intersecting]')) {
@@ -306,13 +306,16 @@ export default class Chat extends Resize() {
       :host > ul > wct-load-template-tag {
         min-height: var(--chat-m-message-min-height);
       }
-      :host > ul > * {
-        overflow-anchor: none;
-      }
-      :host > ul:not(:has(> [anchor])) > *:last-child,
-      :host > ul > [anchor],
-      :host > ul > [scroll-target] {
+      
+      :host > ul:not(:has(> :where([anchor], [scroll-target]))) > *:last-child,
+      :host > ul:not(:has(> [anchor])) > [scroll-target],
+      :host > ul:not(:has(> [scroll-target])) > [anchor],
+      :host > ul > [anchor]:has(~ [scroll-target]),
+      :host > ul > .deleted {
         overflow-anchor: auto;
+      }
+      :host > ul > *, :host > ul > [anchor]:has(~ [scroll-target]) ~ [anchor] {
+        overflow-anchor: none;
       }
       :host > ul > .deleted {
         overflow: hidden;
