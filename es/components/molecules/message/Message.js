@@ -659,7 +659,7 @@ export default class Message extends WebWorker(Intersection()) {
             <video hidden slot=video controls></video>
             <audio hidden slot=audio controls></audio>
             <img hidden slot=img>
-            <a-icon-states id=key-icon id=pin slot=pin>
+            <a-icon-states id=pin slot=pin>
               <template>
                 <wct-icon-mdx state="default" title="pin file" icon-url="../../../../../../img/icons/pin.svg" size="2em"></wct-icon-mdx>
                 <wct-icon-mdx state="pinned" title="unpin file" icon-url="../../../../../../img/icons/pin-filled.svg" size="2em" rotate="-45deg" no-hover-transform></wct-icon-mdx>
