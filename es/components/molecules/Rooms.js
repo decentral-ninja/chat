@@ -79,6 +79,7 @@ export default class Rooms extends Shadow() {
               <chat-m-share-dialog
                 namespace="dialog-top-slide-in-"
                 open="show-modal"
+                take-snapshot-on-show
                 room-name="${escapeHTML(shareKey)}"
                 ${(await this.roomPromise).room.done
                   ? await (await this.roomPromise).room === shareKey

@@ -177,6 +177,7 @@ export default class MessageDialog extends Dialog {
             no-share-in-chat
             hash="${this.shareDialogHash}"
             is-active-room
+            take-snapshot-on-show
           >
             <wct-icon-mdx id="show-modal" title="share" icon-url="../../../../../../img/icons/share-3.svg" size="2em"></wct-icon-mdx>
           </chat-m-share-dialog>

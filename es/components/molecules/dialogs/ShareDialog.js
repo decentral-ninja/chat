@@ -23,14 +23,17 @@ export default class ShareDialog extends Dialog {
 
     const superShow = this.show
     this.show = command => {
-      this.getLocationHref(true).then(locationHref => (this.textarea.value = locationHref))
+      this.getLocationHref(this.hasAttribute('take-snapshot-on-show') || undefined).then(locationHref => {
+        this.textarea.value = locationHref
+        this.qrCodeSvg.setAttribute('data', this.textarea.value)
+        this.dialogClipboard.setAttribute('data', this.textarea.value)
+      })
       return superShow(command)
     }
 
     this.inputEventListener = event => {
       this.qrCodeSvg.setAttribute('data', this.textarea.value)
       this.dialogClipboard.setAttribute('data', this.textarea.value)
-      this.titleValue.textContent = this.textarea.value
     }
 
     this.shareApiIconClickEventListener = async event => {
@@ -173,7 +176,7 @@ export default class ShareDialog extends Dialog {
       </dialog>
     `
     return Promise.all([
-      this.getLocationHref().then(locationHref => {
+      this.getLocationHref(this.hasAttribute('take-snapshot-on-render') || undefined).then(locationHref => {
         this.root.querySelector('dialog').insertAdjacentHTML('beforeend', /* html */`
           <p><wct-qr-code-svg namespace="qr-code-svg-default-" data='${locationHref}'></wct-qr-code-svg></p>
           <textarea>${locationHref}</textarea>
@@ -235,7 +238,7 @@ export default class ShareDialog extends Dialog {
     return this.root.querySelector('#share-api')
   }
 
-  getLocationHref (takeSnapshot = false) {
+  getLocationHref (takeSnapshot = this.hasAttribute('take-snapshot')) {
     const href = `${this.hasAttribute('href')
       ? this.getAttribute('href')
       : location.href}${this.hasAttribute('hash') ? this.getAttribute('hash') : ''}`
