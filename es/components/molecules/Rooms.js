@@ -42,7 +42,11 @@ export default class Rooms extends Shadow() {
             try {
               const roomName = this.roomKeys[target.getAttribute('route').replace('room-key-index-', '')]
               url = new URL(getRoomsResult.value[roomName]?.locationHref)
-              if (!url.searchParams.get('room') || url.searchParams.get('room') !== roomName) url.searchParams.set('room', roomName)
+              if (!url.searchParams.get('room') || url.searchParams.get('room') !== roomName) {
+                url.searchParams.set('room', roomName)
+                const pageValue = `/${this.roomNamePrefix.replace('-', '')}`
+                if (!url.searchParams.get('page') || url.searchParams.get('page') !== pageValue) url.searchParams.set('page', pageValue)
+              }
             } catch (error) {}
             target.setAttribute('href', url?.href || '')
           })
