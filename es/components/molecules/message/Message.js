@@ -497,6 +497,7 @@ export default class Message extends WebWorker(Intersection()) {
         this.globalEventTarget.addEventListener('yjs-received-key', this.keysEventListener)
       }
     }
+    textObjSync.text = escapeHTML(textObjSync.text, true)
     return Promise.all([
       textObjSync.deleted
         ? null
