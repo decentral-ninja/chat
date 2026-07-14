@@ -47,6 +47,8 @@ export default class Rooms extends Shadow() {
                 const pageValue = `/${this.roomNamePrefix.replace('-', '')}`
                 if (!url.searchParams.get('page') || url.searchParams.get('page') !== pageValue) url.searchParams.set('page', pageValue)
               }
+              // route pathname on ipfs hosts within the same origin
+              if ((url.href.includes('/ipfs/') || url.href.includes('.ipfs.'))) url = new URL(url.href.replace(url.origin, location.origin).replace(url.pathname, location.pathname))
             } catch (error) {}
             target.setAttribute('href', url?.href || '')
           })
