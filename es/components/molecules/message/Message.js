@@ -501,7 +501,7 @@ export default class Message extends WebWorker(Intersection()) {
     return Promise.all([
       textObjSync.deleted
         ? null
-        : this.webWorker(Message.processText, textObjSync, escapeHTML(await (await this.roomPromise).room), location.host, this.hasAttribute('no-dialog')).then(textObj => (this.textSpan.innerHTML = Message.htmlPurify(textObj.text))),
+        : this.webWorker(Message.processText, textObjSync, escapeHTML(await (await this.roomPromise).room), JSON.parse(JSON.stringify(location)), this.hasAttribute('no-dialog')).then(textObj => (this.textSpan.innerHTML = Message.htmlPurify(textObj.text))),
       textObjSync.replyTo && this.hasAttribute('show-reply-to')
         ? this.renderReplyTo(textObjSync)
         : null,
@@ -624,7 +624,7 @@ export default class Message extends WebWorker(Intersection()) {
 
   // make aTags with href when first link is detected https://stackoverflow.com/questions/1500260/detect-urls-in-text-with-javascript
   // location.host is not available within web workers
-  static processText (textObj, roomName, locationHost = location.host, isInsideDialog = false) {
+  static processText (textObj, roomName, location, isInsideDialog = false) {
     if (textObj.encrypted && !textObj.decrypted) {
       textObj.text = /* html */`<chat-a-key-request-button>
         <template>${JSON.stringify(textObj)}</template>
@@ -654,7 +654,19 @@ export default class Message extends WebWorker(Intersection()) {
         </span>`
         break
       default:
-        if (!textObj.text.includes('<')) textObj.text = textObj.text?.replace(/(https?:\/\/[^\s]+)/g, url => /* html */`<a href="${url}"${url.includes(locationHost) && url.includes('room=') ? ' route' : ''} target="${url.includes(locationHost) ? '_self' : '_blank'}">${url}</a>`)
+        if (!textObj.text.includes('<')) textObj.text = textObj.text?.replace(/(https?:\/\/[^\s]+)/g, url => {
+          // route room on ipfs hosts within the same origin
+          let linkUrl = url
+          if ((url.includes('/ipfs/') || url.includes('.ipfs.')) && url.includes('room=')) {
+            try {
+              const urlObj = new URL(url)
+              linkUrl = urlObj.href.replace(urlObj.origin, location.origin).replace(urlObj.pathname, location.pathname)
+            } catch (error) {
+              // fail silently
+            }
+          }
+          return /* html */`<a href="${linkUrl}"${linkUrl.includes(location.host) && linkUrl.includes('room=') ? ' route' : ''} target="${linkUrl.includes(location.host) ? '_self' : '_blank'}">${url}</a>`
+        })
         if (textObj.text.includes('magnet:') && !isInsideDialog) {
           textObj.text = textObj.text?.replace(/(magnet?:[^\s]+)/g, url => /* html */`<v-webtorrent torrent-id="${url}" open uid='${textObj.uid}' room="${roomName}" timestamp="${textObj.timestamp}"${textObj.isSelf ? ' self' : ''}>
             <video hidden slot=video controls></video>
