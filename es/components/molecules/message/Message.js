@@ -337,6 +337,9 @@ export default class Message extends WebWorker(Intersection()) {
         display: flex;
         justify-content: space-between;
       }
+      :host li > div > div {
+        max-width: 100%;
+      }
       :host li > div > div:has(> chat-a-key-status) {
         flex: 1;
         display: flex;
