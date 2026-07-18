@@ -156,17 +156,19 @@ export default class P2pGraph extends Intersection() {
           // only show providers with mutually connected users
           const separator = this.getAttribute('separator') || '<>'
           for (const providerName in user[this.hasAttribute('connected-users') ? 'connectedUsers' : 'mutuallyConnectedUsers']) {
-            const graphProviderObj = nodes.includes(providerName)
+            // match without wss:// or ws:// to cover edge case
+            const id = (providerName.split(separator)[1] || providerName).replace(/^[a-zA-Z0-9+.-]*:\/\//, '')
+            const graphProviderObj = nodes.includes(id)
               ? null
               : this.add(graph, this.svg, {
-                id: providerName,
+                id,
                 fixed: true,
-                name: providerName.split(separator)[1] || providerName
+                name: id
               })
             if (graphProviderObj) {
-              nodes.push(providerName)
+              nodes.push(id)
               graphProviderObj.svgNode.classList.add('provider')
-              graphProviderObj.svgNode.classList.add(providerName.split(separator)[0])
+              graphProviderObj.svgNode.classList.add(id)
               graphProviderObj.svgNode.addEventListener('click', event => this.dispatchEvent(new CustomEvent('p2p-graph-click', {
                 detail: { graphProviderObj, isActive: !!this.svg.querySelector('[style="opacity: 0.2;"]') },
                 bubbles: true,
@@ -174,7 +176,7 @@ export default class P2pGraph extends Intersection() {
                 composed: true
               })))
             }
-            graph.connect(providerName, key)
+            graph.connect(id, key)
           }
         })
         if (!nodes.length || !users.length) {

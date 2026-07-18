@@ -53,7 +53,12 @@ export default class ProviderName extends Shadow() {
       timeoutId = setTimeout(async () => {
         timeoutCounter = 1
         const providers = (await (await event.detail.getData(false)).getSessionProvidersByStatus()).connected
-        if (providers.find(provider => provider.includes(this.dataName))) {
+        if (providers.find(provider => {
+          if (provider.includes(this.dataName)) return true
+          // match without wss:// or ws:// to cover edge case
+          const [name, providerName] = this.dataName.split(separator)
+          return provider.includes(name) && provider.includes(providerName.replace(/^[a-zA-Z0-9+.-]*:\/\//, ''))
+        })) {
           this.setAttribute('is-connected-with-self', '')
         } else {
           this.removeAttribute('is-connected-with-self')
