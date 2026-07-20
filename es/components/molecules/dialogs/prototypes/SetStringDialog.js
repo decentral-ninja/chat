@@ -1,5 +1,6 @@
 // @ts-check
 import Dialog from '../../../../../../web-components-toolbox/src/es/components/molecules/dialog/Dialog.js'
+import { escapeHTML } from '../../../../../../event-driven-web-components-prototypes/src/helpers/Helpers.js'
 
 /* global Environment */
 
@@ -93,7 +94,7 @@ export default class SetStringDialog extends Dialog {
         <wct-grid auto-fill="20%">
           <section>
             ${prependGridSection}
-            <wct-input id="input" maxlength="500" inputId="input" placeholder="${placeholder}" namespace="wct-input-" namespace-fallback grid-column="1/5" value="${value}" submit-search autofocus force></wct-input>
+            <wct-input id="input" maxlength="500" inputId="input" placeholder="${escapeHTML(placeholder, true)}" namespace="wct-input-" namespace-fallback grid-column="1/5" value="${escapeHTML(value, true)}" submit-search autofocus force></wct-input>
             <wct-button namespace="button-primary-" request-event-name="submit-input">set</wct-button>
             ${appendGridSection}
           </section>

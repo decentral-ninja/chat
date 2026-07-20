@@ -36,7 +36,7 @@ export default class KeyName extends Shadow() {
     this.keyEventListener = async (event, keyPromise) => {
       keyContainer = event?.detail || await keyPromise
       if (keyContainer) {
-        this.keyNameEl.innerHTML = /* html */`<chat-a-key-name private name="${escapeHTML(keyContainer.private.name)}" epoch='${keyContainer.key.epoch}' no-avatar></chat-a-key-name>`
+        this.keyNameEl.innerHTML = /* html */`<chat-a-key-name private name="${escapeHTML(keyContainer.private.name, true)}" epoch='${keyContainer.key.epoch}' no-avatar></chat-a-key-name>`
         getHexColor(keyContainer.key.epoch).then(hex => {
           this.customStyle.textContent = /* css */`
             :host {
@@ -180,7 +180,7 @@ export default class KeyName extends Shadow() {
    */
   renderHTML () {
     this.html = /* html */`
-      <section id=section-key-icon>
+      <section id=section-key-icon part=section-key-icon>
         <a-icon-states id=key-icon>
           <template>
             <wct-icon-mdx state="default" title="No encryption key active!" icon-url="../../../../../../img/icons/lock-open-2.svg" size="1.8em" hover-selector="section#section-key-icon"></wct-icon-mdx>
@@ -188,7 +188,7 @@ export default class KeyName extends Shadow() {
             <wct-icon-mdx state="has-key" title="Encryption key active!" icon-url="../../../../../../img/icons/lock.svg" size="1.8em" hover-selector="section#section-key-icon"></wct-icon-mdx>
           </template>
         </a-icon-states>
-        <p id=key-name>Loading...</p>
+        <p id=key-name part=key-name>Loading...</p>
       </section>
     `
     this.html = this.customStyle

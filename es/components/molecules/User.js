@@ -487,7 +487,7 @@ export default class User extends Intersection() {
                 ? JSON.stringify(user[key])
                 : key === 'locationOrigin'
                   ? `<a href="${user[key]}" target=_blank>${user[key]}</a>`
-                  : user[key]
+                  : escapeHTML(user[key])
       }</td>
     `
   }

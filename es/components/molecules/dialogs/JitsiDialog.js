@@ -130,9 +130,15 @@ export default class JitsiDialog extends Dialog {
       this.root.querySelector('dialog').insertAdjacentHTML('beforeend', /* html */`
         <wct-iframe>
           <template>
-            <iframe width="${self.innerWidth}" height="${self.innerHeight}" src="${this.iframeSrc || (this.iframeSrc = `${
-              // @ts-ignore
-              Environment?.jitsis?.[0] || 'https://meet.mgrs.dev'}/${await room}`)}" frameborder="0" allow="autoplay; display-capture; encrypted-media; picture-in-picture; fullscreen; allow-top-navigation; screen-wake-lock; microphone; camera; window-management;"></iframe>
+            {
+              "width": "${self.innerWidth}",
+              "height": "${self.innerHeight}",
+              "src": "${this.iframeSrc || (this.iframeSrc = `${
+                // @ts-ignore
+                Environment?.jitsis?.[0] || 'https://meet.mgrs.dev'}/${await room}`)}",
+              "frameborder": "0",
+              "allow": "autoplay; display-capture; encrypted-media; picture-in-picture; fullscreen; allow-top-navigation; screen-wake-lock; microphone; camera; window-management;"
+            }
           </template>
         </wct-iframe>
       `)

@@ -11,6 +11,7 @@ export default class Input extends Shadow() {
 
     const wormholeUrl = 'https://wormhole.app/'
     let wormholeOpened = false
+    this.uploadDialogMap = new Map()
 
     this.sendEventListener = async (event, input) => {
       let replyToTextObj = null
@@ -62,6 +63,27 @@ export default class Input extends Shadow() {
     }
 
     this.fileUploadClickEventListener = event => {
+      // this.fetchModules([{
+      //   // @ts-ignore
+      //   path: `${this.importMetaUrl}../molecules/dialogs/UploadDialog.js?${Environment?.version || ''}`,
+      //   name: 'chat-m-upload-dialog'
+      // }]).then(async () => {
+        
+      //   if (this.uploadDialogMap.has('in-progress')) {
+      //     this.uploadDialogMap.get('in-progress').show('show-modal')
+      //   } else {
+      //     const div = document.createElement('div')
+      //     div.innerHTML = /* html */`
+      //       <chat-m-upload-dialog
+      //         namespace="dialog-top-slide-in-"
+      //         open="show-modal"
+      //       ></chat-m-upload-dialog>
+      //     `
+      //     this.uploadDialogMap.set('in-progress', div.children[0])
+      //     this.root.appendChild(div.children[0])
+      //   }
+      // })
+      // return
       const input = document.createElement('input')
       input.type = 'file'
       input.multiple = true
