@@ -333,6 +333,7 @@ export default class KeysDialog extends Dialog {
         <wct-menu-icon id="close" no-aria class="open sticky" namespace="menu-icon-close-" no-click background style="--outline-style-focus-visible: none;"></wct-menu-icon>
         <h4 id=title-default>Keys:</h4>
         <h4 id=title-checkbox>Select a key:</h4>
+        <p><a href="?page=/encryption" route target="_self">more info about end-to-end encryption and DCN key usage</a></p>
         <section controls>
           <div id=add-key>
             <a-icon-states loading-size=2>
@@ -348,7 +349,7 @@ export default class KeysDialog extends Dialog {
             <p>Generate key</p>
           </div>
           <div id=upload-key>
-            <wct-icon-mdx title="Generate key" icon-url="../../../../../../img/icons/upload.svg" size="3em" hover-selector="div"></wct-icon-mdx>
+            <wct-icon-mdx title="Upload key" icon-url="../../../../../../img/icons/upload.svg" size="3em" hover-selector="div"></wct-icon-mdx>
             <p>Upload key textfile</p>
           </div>
         </section>

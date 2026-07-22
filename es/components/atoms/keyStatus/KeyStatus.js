@@ -59,7 +59,7 @@ export default class KeyName extends Shadow() {
         this.setAttribute('state', 'key-not-found')
       } else {
         this.keyNameEl.innerHTML = ''
-        this.keyNameEl.textContent = 'No active key!'
+        this.keyNameEl.textContent = 'Caution: No active key!'
         this.customStyle.textContent = ''
         this.iconStates.setAttribute('state', 'default')
         this.setAttribute('state', 'default')
@@ -142,6 +142,13 @@ export default class KeyName extends Shadow() {
         display: flex;
         position: relative;
       }
+      :host([state=default]) > section {
+        transform: scale(0.925);
+        animation: state-default 4s ease infinite;
+      }
+      :host([state=default]) > section > p {
+        text-decoration: underline;
+      }
       :host > section > a-icon-states {
         --svg-filter: drop-shadow(0px 0px 0.075em var(--key-status-svg-filter-color, var(--color-white)));
       }
@@ -170,6 +177,17 @@ export default class KeyName extends Shadow() {
       :host(:hover) > section > p {
         color: var(--color-yellow);
       }
+      @keyframes state-default {
+        0% {
+          transform: scale(0.925);
+        }
+        50% {
+          transform: scale(1.075);
+        }
+        100% {
+          transform: scale(0.925);
+        }
+      }
     `
   }
 
@@ -183,7 +201,7 @@ export default class KeyName extends Shadow() {
       <section id=section-key-icon part=section-key-icon>
         <a-icon-states id=key-icon>
           <template>
-            <wct-icon-mdx state="default" title="No encryption key active!" icon-url="../../../../../../img/icons/lock-open-2.svg" size="1.8em" hover-selector="section#section-key-icon"></wct-icon-mdx>
+            <wct-icon-mdx state="default" title="Careful: No encryption key active!" icon-url="../../../../../../img/icons/lock-open-2.svg" size="1.8em" hover-selector="section#section-key-icon"></wct-icon-mdx>
             <wct-icon-mdx state="decrypted" title="${this.hasAttribute('title') ? this.getAttribute('title') : 'Message successfully decrypted!'}" icon-url="../../../../../../img/icons/lock.svg" size="1.8em" hover-selector="section#section-key-icon"></wct-icon-mdx>
             <wct-icon-mdx state="has-key" title="Encryption key active!" icon-url="../../../../../../img/icons/lock.svg" size="1.8em" hover-selector="section#section-key-icon"></wct-icon-mdx>
           </template>
