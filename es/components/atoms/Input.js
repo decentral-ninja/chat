@@ -68,7 +68,6 @@ export default class Input extends Shadow() {
       //   path: `${this.importMetaUrl}../molecules/dialogs/UploadDialog.js?${Environment?.version || ''}`,
       //   name: 'chat-m-upload-dialog'
       // }]).then(async () => {
-        
       //   if (this.uploadDialogMap.has('in-progress')) {
       //     this.uploadDialogMap.get('in-progress').show('show-modal')
       //   } else {

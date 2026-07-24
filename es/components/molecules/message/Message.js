@@ -339,6 +339,7 @@ export default class Message extends WebWorker(Intersection()) {
       }
       :host li > div > div {
         max-width: 100%;
+        max-width: calc(100% - 1.5em);
       }
       :host li > div > div:has(> chat-a-key-status) {
         flex: 1;
@@ -685,7 +686,15 @@ export default class Message extends WebWorker(Intersection()) {
             <wct-icon-mdx id=reset slot=reset title="reset" icon-url="../../../../../../img/icons/reload.svg" size="2em"></wct-icon-mdx>
             <wct-icon-mdx id=trash slot=trash title="delete" icon-url="../../../../../../img/icons/trash.svg" size="2em"></wct-icon-mdx>
             <chat-a-key-status id=key slot=key is-message-child ${textObj.isSelf ? 'self' : ''}></chat-a-key-status>
-            <div id=error slot=error><wct-icon-mdx title="download" icon-url="../../../../../../img/icons/download.svg" size="4em"></wct-icon-mdx></div>
+            <div id=error slot=error>
+              <wct-icon-mdx title="error" icon-url="../../../../../../img/icons/alert-triangle.svg" size="4em"></wct-icon-mdx> Error: File can not be processed!</span>
+            </div>
+            <div id=deleted slot=deleted>
+              <wct-icon-mdx title="download" icon-url="../../../../../../img/icons/download.svg" size="4em"></wct-icon-mdx></span>
+            </div>
+            <div id=request-key slot=request-key>
+              <chat-a-key-request-button type=file></chat-a-key-request-button>
+            </div>
           </v-webtorrent>`)
         }
         break

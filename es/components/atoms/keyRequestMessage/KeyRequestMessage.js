@@ -202,7 +202,7 @@ export default class KeyRequestMessage extends Shadow() {
               <wct-icon-mdx id=icon title="Request key" icon-url="../../../../../../img/icons/key-square.svg" size="3em" hover-selector="a"></wct-icon-mdx>
               <p>"${
                 // @ts-ignore
-                escapeHTML(this.textObj.key.public?.name || this.textObj.public?.name)}"</p>
+                escapeHTML(keyContainer.public?.name || this.textObj.key.public?.name || this.textObj.public?.name)}"</p>
             </a>
           `
         } else {

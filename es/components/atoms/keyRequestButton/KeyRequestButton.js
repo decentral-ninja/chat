@@ -16,12 +16,12 @@ export default class KeyRequestButton extends Shadow() {
 
     if (this.template) {
       this.textObj = JSON.parse(this.template.content.textContent)
-      /** @type {import('../../../../../event-driven-web-components-prototypes/src/controllers/Crypto.js').ENCRYPTED & {public: {name: string}}} */
-      this.encrypted = this.textObj.encrypted
+      /** @type {import('../../../../../event-driven-web-components-prototypes/src/controllers/Crypto.js').ENCRYPTED & {public: {name: string}}|any} */
+      this.encrypted = this.textObj?.encrypted
     } else {
       this.textObj = textObj
-      /** @type {import('../../../../../event-driven-web-components-prototypes/src/controllers/Crypto.js').ENCRYPTED & {public: {name: string}}} */
-      this.encrypted = this.textObj.encrypted
+      /** @type {import('../../../../../event-driven-web-components-prototypes/src/controllers/Crypto.js').ENCRYPTED & {public: {name: string}}|any} */
+      this.encrypted = this.textObj?.encrypted
     }
 
     this.clickEventListener = event => {
@@ -50,7 +50,7 @@ export default class KeyRequestButton extends Shadow() {
   connectedCallback () {
     if (this.shouldRenderCSS()) this.renderCSS()
     if (this.shouldRenderHTML()) this.renderHTML()
-    this.addEventListener('click', this.clickEventListener, { once: true })
+    this.addEventListener('click', this.clickEventListener)
   }
 
   disconnectedCallback () {
@@ -137,7 +137,7 @@ export default class KeyRequestButton extends Shadow() {
    * @returns Promise<void>
    */
   renderHTML () {
-    if (this.textObj.requested) this.setAttribute('requested', '')
+    if (this.textObj?.requested) this.setAttribute('requested', '')
     this.html = /* html */`
       <section>
         <a href=#>
@@ -152,7 +152,7 @@ export default class KeyRequestButton extends Shadow() {
             // @ts-ignore
             escapeHTML(this.encrypted?.key.public?.name || this.encrypted?.public?.name)}"</p>
         </a>
-        <p>to decrypt this message: "${this.encrypted?.text.substring(0, 10)}..."</p>
+        <p>to decrypt this ${this.getAttribute('type') || 'message'}: "${this.encrypted?.text?.substring(0, 10)}..."</p>
       </section>
     `
     this.renderHexColor()

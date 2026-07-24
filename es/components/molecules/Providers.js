@@ -261,11 +261,6 @@ export default class Providers extends WebWorker(Shadow()) {
       this.dialog?.removeAttribute('online')
       if (lastProvidersEventGetData) Providers.toggleIconStates(this.iconStatesEl, await lastProvidersEventGetData(false), this.hasAttribute('online'), this.performanceIssueProviders?.length)
     }
-    if (navigator.onLine) {
-      this.onlineEventListener()
-    } else {
-      this.offlineEventListener()
-    }
 
     let resizeTimeout = null
     this.resizeEventListener = event => {
@@ -300,6 +295,11 @@ export default class Providers extends WebWorker(Shadow()) {
     self.addEventListener('offline', this.offlineEventListener)
     self.addEventListener('resize', this.resizeEventListener)
     if (this.isConnected) this.connectedCallbackOnce()
+      if (navigator.onLine) {
+      this.onlineEventListener()
+    } else {
+      this.offlineEventListener()
+    }
   }
 
   connectedCallbackOnce () {

@@ -114,11 +114,6 @@ export default class Users extends Shadow() {
       this.dialog?.removeAttribute('online')
       if (lastUsersEventGetData) Users.updateIconStatesEl(this.iconStatesEl, await lastUsersEventGetData(), this.hasAttribute('online'))
     }
-    if (navigator.onLine) {
-      this.onlineEventListener()
-    } else {
-      this.offlineEventListener()
-    }
 
     let resizeTimeout = null
     this.resizeEventListener = event => {
@@ -149,6 +144,11 @@ export default class Users extends Shadow() {
     self.addEventListener('offline', this.offlineEventListener)
     self.addEventListener('resize', this.resizeEventListener)
     self.addEventListener('tab-active', this.resizeEventListener)
+    if (navigator.onLine) {
+      this.onlineEventListener()
+    } else {
+      this.offlineEventListener()
+    }
   }
 
   disconnectedCallback () {
