@@ -11,7 +11,6 @@ export default class Input extends Shadow() {
 
     const wormholeUrl = 'https://wormhole.app/'
     let wormholeOpened = false
-    this.uploadDialogMap = new Map()
 
     this.sendEventListener = async (event, input) => {
       let replyToTextObj = null
@@ -62,33 +61,13 @@ export default class Input extends Shadow() {
       event.target.blur()
     }
 
-    this.fileUploadClickEventListener = event => {
-      // this.fetchModules([{
-      //   // @ts-ignore
-      //   path: `${this.importMetaUrl}../molecules/dialogs/UploadDialog.js?${Environment?.version || ''}`,
-      //   name: 'chat-m-upload-dialog'
-      // }]).then(async () => {
-      //   if (this.uploadDialogMap.has('in-progress')) {
-      //     this.uploadDialogMap.get('in-progress').show('show-modal')
-      //   } else {
-      //     const div = document.createElement('div')
-      //     div.innerHTML = /* html */`
-      //       <chat-m-upload-dialog
-      //         namespace="dialog-top-slide-in-"
-      //         open="show-modal"
-      //       ></chat-m-upload-dialog>
-      //     `
-      //     this.uploadDialogMap.set('in-progress', div.children[0])
-      //     this.root.appendChild(div.children[0])
-      //   }
-      // })
-      // return
-      const input = document.createElement('input')
-      input.type = 'file'
-      input.multiple = true
-      input.onchange = () => this.uploadFiles(input.files)
-      input.click()
-    }
+    this.fileUploadClickEventListener = event => this.uploadDialog.show('show-modal')
+
+    this.chatInputUploadEventListener = event => this.uploadFiles(event.detail.files, event.detail.encrypt, event.detail.text, event.detail.send).then(value => {
+      if (event.detail.target === this.uploadDialog) this.resetUploadDialog()
+    })
+
+    this.chatInputUploadNextEventListener = event => this.resetUploadDialog(true)
 
     this.emojiClickedEventListener = event => {
       this.textarea.focus()
@@ -131,22 +110,6 @@ export default class Input extends Shadow() {
         }
         wormholeOpened = false
       }
-    }
-
-    this.dragoverEventListener = event => event.preventDefault()
-
-    this.dropEventListener = event => {
-      if (!event.dataTransfer?.files?.length) return
-      event.preventDefault()
-      this.uploadFiles(event.dataTransfer.files)
-    }
-
-    this.pasteEventListener = event => {
-      const items = Array.from(event.clipboardData?.items || [])
-      const files = items.filter(item => item.kind === 'file').map(item => item.getAsFile()).filter(Boolean)
-      if (!files.length) return
-      event.preventDefault()
-      this.uploadFiles(files)
     }
 
     // this should fix smartphone issue, where blur triggers before the send button click is registered
@@ -265,11 +228,10 @@ export default class Input extends Shadow() {
     this.fileUpload.addEventListener('click', this.fileUploadClickEventListener)
     this.root.addEventListener('keyup', this.keyupEventListener)
     this.textarea.addEventListener('input', this.inputEventListener)
+    this.addEventListener('chat-input-upload', this.chatInputUploadEventListener)
+    this.addEventListener('chat-input-upload-next', this.chatInputUploadNextEventListener)
     this.addEventListener('emoji-clicked', this.emojiClickedEventListener)
     this.textarea.addEventListener('focus', this.focusEventListener)
-    this.addEventListener('dragover', this.dragoverEventListener)
-    this.addEventListener('drop', this.dropEventListener)
-    document.addEventListener('paste', this.pasteEventListener)
     this.textarea.addEventListener('blur', this.blurEventListener)
     this.globalEventTarget.addEventListener('jitsi-video-started', this.jitsiVideoStartedEventListener)
     this.globalEventTarget.addEventListener('jitsi-video-stopped', this.jitsiVideoStoppedEventListener)
@@ -296,11 +258,10 @@ export default class Input extends Shadow() {
     this.fileUpload.removeEventListener('click', this.fileUploadClickEventListener)
     this.root.removeEventListener('keyup', this.keyupEventListener)
     this.textarea.removeEventListener('input', this.inputEventListener)
+    this.removeEventListener('chat-input-upload', this.chatInputUploadEventListener)
+    this.removeEventListener('chat-input-upload-next', this.chatInputUploadNextEventListener)
     this.removeEventListener('emoji-clicked', this.emojiClickedEventListener)
     this.textarea.removeEventListener('focus', this.focusEventListener)
-    this.removeEventListener('dragover', this.dragoverEventListener)
-    this.removeEventListener('drop', this.dropEventListener)
-    document.removeEventListener('paste', this.pasteEventListener)
     this.textarea.removeEventListener('blur', this.blurEventListener)
     this.globalEventTarget.removeEventListener('jitsi-video-started', this.jitsiVideoStartedEventListener)
     this.globalEventTarget.removeEventListener('jitsi-video-stopped', this.jitsiVideoStoppedEventListener)
@@ -334,8 +295,6 @@ export default class Input extends Shadow() {
   renderCSS () {
     this.css = /* css */`
       :host {
-        --menu-icon-close-background-color-hover: var(--color);
-        --menu-icon-close-background-color: var(--color);
         width: 100%;
       }
       :host > div {
@@ -513,6 +472,10 @@ export default class Input extends Shadow() {
         <wct-icon-mdx id=wormhole title="Upload your files at wormhole and copy/paste the link into the chat to share..." icon-url="../../../../../../img/icons/file-upload.svg" size="3em"></wct-icon-mdx>
         <wct-icon-mdx id=jitsi title="Open voice call conversation" icon-url="../../../../../../img/icons/video.svg" size="3em"></wct-icon-mdx>
       </div>
+      <chat-m-upload-dialog
+        namespace="dialog-top-slide-in-"
+        encryption-checked
+      ></chat-m-upload-dialog>
     `
     return this.fetchModules([
       {
@@ -534,6 +497,11 @@ export default class Input extends Shadow() {
         // @ts-ignore
         path: `${this.importMetaUrl}./keyStatus/KeyStatus.js?${Environment?.version || ''}`,
         name: 'chat-a-key-status'
+      },
+      {
+        // @ts-ignore
+        path: `${this.importMetaUrl}../molecules/dialogs/UploadDialog.js?${Environment?.version || ''}`,
+        name: 'chat-m-upload-dialog'
       }
     ])
   }
@@ -557,7 +525,7 @@ export default class Input extends Shadow() {
     }
   }
 
-  async uploadFiles(files) {
+  async uploadFiles (files, encrypt = true, text = '', send = true) {
     if (!files?.length) return
     const uid = await this.uid
     const room = await (await this.roomPromise).room
@@ -566,16 +534,17 @@ export default class Input extends Shadow() {
     let keyEpoch = null
     let iv = null
     let seedingDoneFunctions = []
-    const keyContainer = await new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-active-room-default-key', {
-      detail: {
-        resolve
-      },
-      bubbles: true,
-      cancelable: true,
-      composed: true
-    })))
-    // TODO: replace confirm with proper upload dialog
-    if (keyContainer && self.confirm(`Do you want to encrypt "${files[0].name}", ... with key "${keyContainer.private.name}"?\n\nNote: Only encrypt private files because encrypting files may break streaming and take longer to download...`)) {
+    const keyContainer = encrypt
+      ? await new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-active-room-default-key', {
+        detail: {
+          resolve
+        },
+        bubbles: true,
+        cancelable: true,
+        composed: true
+      })))
+      : null
+    if (keyContainer) {
       iv = self.crypto.getRandomValues(new Uint8Array(16))
       files = await Promise.all(Array.from(files).map(async file => {
         const { encrypted } = await new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-encrypt', {
@@ -625,7 +594,7 @@ export default class Input extends Shadow() {
       seedingDoneFunctions.forEach(func => func())
       return
     }
-    new Promise(resolve => this.dispatchEvent(new CustomEvent('webtorrent-seed', {
+    return new Promise(resolve => this.dispatchEvent(new CustomEvent('webtorrent-seed', {
       detail: {
         uid,
         room,
@@ -645,9 +614,15 @@ export default class Input extends Shadow() {
       cancelable: true,
       composed: true
     }))).then(({cid}) => [torrent, cid])).then(([torrent, cid]) => {
-      this.textarea.value += `${torrent.magnetURI}&cid=${cid}${keyEpoch ? `&key-epoch=${encodeURIComponent(keyEpoch)}` : ''}${iv ? `&iv=${encodeURIComponent(iv)}` : ''} `
-      this.textarea.focus()
+      this.textarea.value += `${torrent.magnetURI}&cid=${cid}${keyEpoch ? `&key-epoch=${encodeURIComponent(keyEpoch)}` : ''}${iv ? `&iv=${encodeURIComponent(iv)}` : ''} ${text}`
+      const result = this.textarea.value
+      if (send){
+        this.sendEventListener(undefined, this.textarea)
+      } else {
+        this.textarea.focus()
+      }
       seedingDoneFunctions.forEach(func => func())
+      return result
     })
   }
 
@@ -665,6 +640,27 @@ export default class Input extends Shadow() {
 
   get fileUpload () {
     return this.root.querySelector(':host > div > wct-icon-mdx#wormhole')
+  }
+
+  get uploadDialog () {
+    return this.root.querySelector(':host > chat-m-upload-dialog')
+  }
+
+  resetUploadDialog (open = false) {
+    if (this.uploadDialog) {
+      const checked = this.uploadDialog.encryptionCheckbox.checked
+      this.uploadDialog.remove()
+      const div = document.createElement('div')
+      div.innerHTML = /* html */`
+        <chat-m-upload-dialog
+          namespace="dialog-top-slide-in-"
+          ${checked ? 'encryption-checked' : ''}
+          ${open ? 'open=show-modal' : ''}
+        ></chat-m-upload-dialog>
+      `
+      this.root.appendChild(div.children[0])
+      return this.uploadDialog
+    }
   }
 
   get jitsiButton () {

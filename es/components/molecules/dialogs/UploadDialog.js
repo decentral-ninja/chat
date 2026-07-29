@@ -17,21 +17,81 @@ export default class UploadDialog extends Dialog {
   constructor (options = {}, ...args) {
     super({ ...options }, ...args)
 
+    this.inputChangeEventListener = event => {
+      // 1MB = (1024*1024)
+      if (Array.from(this.fileInput.files).reduce((sum, file) => sum + file.size, 0) > (50 * 1024*1024)) {
+        this.setAttribute('large-payload', '')
+      } else {
+        this.removeAttribute('large-payload')
+      }
+    }
+
     this.clickUploadEventListener = event => {
-      
+      this.uploadButton.setAttribute('disabled', '')
+      this.uploadButton.setAttribute('label', 'uploading')
+      this.uploadButtonState.setAttribute('updating', '')
+      this.allFileInputs.forEach(input => input.setAttribute('disabled', ''))
+      this.setAttribute('disabled', '')
+      this.dispatchEvent(new CustomEvent('chat-input-upload', {
+        detail: {
+          files: this.fileInput.files,
+          encrypt: this.encryptionCheckbox.checked,
+          text: this.textarea.value,
+          send: true,
+          target: this
+        },
+        bubbles: true,
+        cancelable: true,
+        composed: true
+      }))
+    }
+
+    this.clickUploadNextEventListener = event => this.dispatchEvent(new CustomEvent('chat-input-upload-next', {
+      bubbles: true,
+      cancelable: true,
+      composed: true
+    }))
+
+    this.dragoverEventListener = event => event.preventDefault()
+
+    this.dropEventListener = event => {
+      if (!event.dataTransfer?.files?.length) return
+      event.preventDefault()
+      this.fileInput.files = event.dataTransfer.files
+    }
+
+    this.pasteEventListener = event => {
+      // Note: There is always a generic file name used for pasted items and the creation date is also different, those files will have a different cid/magnetURI for this reason.
+      const items = Array.from(event.clipboardData?.items || [])
+      const files = items.filter(item => item.kind === 'file').map(item => item.getAsFile()).filter(Boolean)
+      if (!files.length) return
+      event.preventDefault()
+      const dataTransfer = new DataTransfer()
+      files.forEach(file => dataTransfer.items.add(file))
+      this.fileInput.files = dataTransfer.files
     }
   }
 
   connectedCallback () {
     if (this.shouldRenderCustomHTML()) this.renderCustomHTML()
     const result = super.connectedCallback()
+    this.fileInput.addEventListener('change', this.inputChangeEventListener)
     this.uploadButton.addEventListener('click', this.clickUploadEventListener)
+    this.uploadButtonNext.addEventListener('click', this.clickUploadNextEventListener)
+    this.addEventListener('dragover', this.dragoverEventListener)
+    this.addEventListener('drop', this.dropEventListener)
+    this.addEventListener('paste', this.pasteEventListener)
     return result
   }
 
   disconnectedCallback () {
     super.disconnectedCallback()
+    this.fileInput.removeEventListener('change', this.inputChangeEventListener)
     this.uploadButton.removeEventListener('click', this.clickUploadEventListener)
+    this.uploadButtonNext.removeEventListener('click', this.clickUploadNextEventListener)
+    this.removeEventListener('dragover', this.dragoverEventListener)
+    this.removeEventListener('drop', this.dropEventListener)
+    this.removeEventListener('paste', this.pasteEventListener)
     this.close()
   }
 
@@ -61,7 +121,8 @@ export default class UploadDialog extends Dialog {
         display: none;
       }
       :host > dialog > section > div, :host > dialog > section > p {
-        max-width: 60em;
+        width: max(1000px, 75%);
+        max-width: 100%;
         margin: 0 auto;
       }
       :host > dialog > section > div {
@@ -88,14 +149,18 @@ export default class UploadDialog extends Dialog {
         flex: 1;
         min-height: 4em;
       }
+      :host([disabled]) > dialog > section:where([encryption], [files], [message]) > div > *:last-child:not(p):not(section) {
+        background-color: var(--color-disabled);
+        pointer-events: none;
+      }
       :host > dialog > section[encryption] > div > div {
         display: flex;
         align-items: center;
         justify-content: space-between;
       }
       :host > dialog > section[encryption] > div input[type=checkbox] {
-        height: 3em;
-        width: 3em;
+        height: 2em;
+        width: 2em;
       }
       :host > dialog > section[encryption] > div input[type=checkbox]:not(:checked) + chat-a-key-status {
         display: none;
@@ -106,7 +171,7 @@ export default class UploadDialog extends Dialog {
       :host > dialog > section[encryption]:where(:has(> div input[type=checkbox]:not(:checked)), :has(> div chat-a-key-status:not([state=has-key]))) #encryption-active{
         display: none;
       }
-      :host > dialog > section[encryption] #encryption-disabled {
+      :host(:not([large-payload])) > dialog > section[encryption] #encryption-disabled, :host([large-payload]) > dialog > section #encryption-active {
         color: var(--color-error);
       }
       :host > dialog > section[encryption] > div chat-a-key-status::part(key-name) {
@@ -123,7 +188,7 @@ export default class UploadDialog extends Dialog {
         font-size: max(16px, 1em); /* 16px ios mobile focus zoom fix */
         transition: height 0.3s ease-out;
         padding: 1em;
-        min-height: 4.365em;
+        min-height: 8em !important;
         max-height: 50dvh;
         overflow-y: auto;
         outline: none;
@@ -137,7 +202,29 @@ export default class UploadDialog extends Dialog {
         --button-primary-border-color: var(--color-green);
         --button-secondary-color-hover-custom: var(--color-yellow);
         --button-secondary-border-color-hover-custom: var(--color-yellow);
+        --color: var(--button-primary-color-custom);
+        --color-disabled: var(--button-primary-color-custom);
         justify-content: end;
+        display: none;
+      }
+      :host > dialog > section[buttons] wct-button::part(button) {
+          --button-primary-height: 3.5em;
+          gap: 0.25em;
+      }
+      :host > dialog:has(> section[files] > div :where(input[type=file]:valid, input[disabled])) > section[buttons] > div {
+        display: flex;
+      }
+      :host > dialog > hr:last-of-type {
+        display: none;
+      }
+      :host > dialog:has(> section[files] > div :where(input[type=file]:valid, input[disabled])) > hr:last-of-type {
+        display: block;
+      }
+      :host > dialog > section[buttons] > div #upload-next {
+        display: none;
+      }
+      :host > dialog:has(> section[files] > div input[disabled]) > section[buttons] > div #upload-next {
+        display: block;
       }
       @media only screen and (max-width: _max-width_) {
         .desktop-spacer {
@@ -150,7 +237,7 @@ export default class UploadDialog extends Dialog {
           flex-direction: column;
           align-items: center;
         }
-        :host > dialog > section > div {
+        :host > dialog > section:not([buttons]) > div {
           gap: 0;
         }
         :host > dialog > section:where([encryption], [files], [message]) > div > *:last-child:not(p):not(section) {
@@ -177,8 +264,8 @@ export default class UploadDialog extends Dialog {
         <h4 id=title-downloading>Downloading:</h4>
         <section files>
           <div>
-            <p>Choose files:</p>
-            <input type=file multiple />
+            <p>Choose, drop or paste files here:</p>
+            <input id=file-input type=file multiple required />
           </div>
           <div>
             <div class=desktop-spacer>&nbsp;</div>
@@ -190,7 +277,7 @@ export default class UploadDialog extends Dialog {
           <div>
             <p>Encrypt:</p>
             <div>
-              <input type=checkbox checked />
+              <input id=encryption-checkbox type=checkbox ${this.hasAttribute('encryption-checked') ? 'checked' : ''} />
               <chat-a-key-status checkbox></chat-a-key-status>
             </div>
           </div>
@@ -206,13 +293,20 @@ export default class UploadDialog extends Dialog {
         <section message>
           <div>
             <p>Append a message:</p>
-            <textarea enterkeyhint="enter" placeholder="type your message..." rows="2"></textarea>
+            <textarea id=textarea enterkeyhint="enter" placeholder="type your message..." rows="2"></textarea>
           </div>
         </section>
         <hr>
         <section buttons>
           <div>
-            <wct-button id=upload title="upload" namespace="button-primary-" click-no-toggle-active>upload</wct-button>
+            <wct-button id=upload title="upload" namespace="button-primary-" click-no-toggle-active>
+              <a-icon-states class=icon-left>
+                <template>
+                  <wct-icon-mdx state="default" title="Upload" delete icon-url="../../../../../../img/icons/upload.svg" size="1em"></wct-icon-mdx>
+                </template>
+              </a-icon-states>upload
+            </wct-button>
+            <wct-button id=upload-next title="upload next" namespace="button-primary-" click-no-toggle-active><wct-icon-mdx class=icon-left title="Upload" delete icon-url="../../../../../../img/icons/upload.svg" size="1em"></wct-icon-mdx>upload next</wct-button>
           </div>
         </section>
       </dialog>
@@ -222,11 +316,6 @@ export default class UploadDialog extends Dialog {
         // @ts-ignore
         path: `${this.importMetaUrl}../../atoms/menuIcon/MenuIcon.js?${Environment?.version || ''}`,
         name: 'wct-menu-icon'
-      },
-      {
-        // @ts-ignore
-        path: `${this.importMetaUrl}../loadTemplateTag/LoadTemplateTag.js?${Environment?.version || ''}`,
-        name: 'wct-load-template-tag'
       },
       {
         // @ts-ignore
@@ -240,19 +329,38 @@ export default class UploadDialog extends Dialog {
       },
       {
         // @ts-ignore
-        path: `${this.importMetaUrl}../../../../../../components/atoms/iconCombinations/IconCombinations.js?${Environment?.version || ''}`,
-        name: 'a-icon-combinations'
-      },
-      {
-        // @ts-ignore
-        path: `${this.importMetaUrl}../../../../../../components/atoms/keyStatus/KeyStatus.js?${Environment?.version || ''}`,
+        path: `${this.importMetaUrl}../../../../../../chat/es/components/atoms/keyStatus/KeyStatus.js?${Environment?.version || ''}`,
         name: 'chat-a-key-status'
       }
     ])
   }
 
+  get fileInput () {
+    return this.root.querySelector('#file-input')
+  }
+
+  get allFileInputs () {
+    return Array.from(this.root.querySelectorAll('input, textarea'))
+  }
+
+  get encryptionCheckbox () {
+    return this.root.querySelector('#encryption-checkbox')
+  }
+
+  get textarea () {
+    return this.root.querySelector('#textarea')
+  }
+
   get uploadButton () {
-    return this.root.querySelector('#add-key')
+    return this.root.querySelector('#upload')
+  }
+
+  get uploadButtonNext () {
+    return this.root.querySelector('#upload-next')
+  }
+
+  get uploadButtonState () {
+    return this.uploadButton.root.querySelector('a-icon-states')
   }
 
   get globalEventTarget () {
