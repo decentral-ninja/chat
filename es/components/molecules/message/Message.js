@@ -336,6 +336,7 @@ export default class Message extends WebWorker(Intersection()) {
       :host li > div {
         display: flex;
         justify-content: space-between;
+        gap: 0.25em;
       }
       :host li > div > div {
         max-width: 100%;

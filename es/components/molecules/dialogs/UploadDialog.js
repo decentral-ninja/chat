@@ -269,7 +269,7 @@ export default class UploadDialog extends Dialog {
           </div>
           <div>
             <div class=desktop-spacer>&nbsp;</div>
-            <p class=font-size-tiny>Preferably choose one file for upload. Public IPFS gateways often limit one upload to 20MB. DCN is hosting it's own IPFS Gateway (@peerweb.site), <a href="?page=/" route target="_self">please support us to improve file upload performance</a>.</p>
+            <p class=font-size-tiny>Preferably choose one file for upload. Public IPFS gateways often limit one upload to 20MB. DCN is hosting it's own IPFS Gateway (@peerweb.site), <a href="?page=/" route target="_self">please support us to improve file upload performance</a>.<br>Alternatively, use <a href="https://wormhole.app/" target=_blank>wormhole</a> to share large files. </p>
           </div>
         </section>
         <hr>

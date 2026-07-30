@@ -138,7 +138,7 @@ export default class P2pGraph extends Intersection() {
           const graphUserObj = this.add(graph, this.svg, {
             id: key,
             fixed: false,
-            name: user.nickname || key
+            name: (user.nickname || key).replace(/\s\[.*\]/g, '')
           })
           graphUserObj.svgNode.addEventListener('click', event => this.dispatchEvent(new CustomEvent('p2p-graph-click', {
             detail: { graphUserObj, isActive: !!this.svg.querySelector('[style="opacity: 0.2;"]') },

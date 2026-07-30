@@ -401,14 +401,14 @@ export default class User extends Intersection() {
     }
     this.updateOrder(order)
     this.doOnIntersection = () => {
-      if (this.nicknameNode) this.nicknameNode.outerHTML = User.renderNickname(user.nickname, this.user.uid)
-      if (this.awarenessEpochNode) this.awarenessEpochNode.outerHTML = User.renderTableValue('awarenessEpoch', user, allUsers, this.getAttribute('uid'))
+      if (this.nicknameNode) this.nicknameNode.innerHTML = User.renderNickname(user.nickname, this.user.uid, true)
+      if (this.awarenessEpochNode) this.awarenessEpochNode.innerHTML = User.renderTableValue('awarenessEpoch', user, allUsers, this.getAttribute('uid'), true)
       if (this.connectedUsersNode) {
         if (typeof this.connectedUsersNode.children?.[0].update === 'function') {
           User.enrichUserWithFullUserNickname(user.connectedUsers, allUsers)
           this.connectedUsersNode.children[0].update(user.connectedUsers)
         } else {
-          this.connectedUsersNode.outerHTML = User.renderTableValue('connectedUsers', user, allUsers, this.getAttribute('uid'))
+          this.connectedUsersNode.innerHTML = User.renderTableValue('connectedUsers', user, allUsers, this.getAttribute('uid'), true)
         }
       }
       if (this.mutuallyConnectedUsersNode) {
@@ -416,7 +416,7 @@ export default class User extends Intersection() {
           User.enrichUserWithFullUserNickname(user.mutuallyConnectedUsers, allUsers)
           this.mutuallyConnectedUsersNode.children[0].update(user.mutuallyConnectedUsers)
         } else {
-          this.mutuallyConnectedUsersNode.outerHTML = User.renderTableValue('mutuallyConnectedUsers', user, allUsers, this.getAttribute('uid'))
+          this.mutuallyConnectedUsersNode.innerHTML = User.renderTableValue('mutuallyConnectedUsers', user, allUsers, this.getAttribute('uid'), true)
         }
       }
       this.updateHeight()
@@ -454,14 +454,17 @@ export default class User extends Intersection() {
     }, clear ? 0 : 350)
   }
 
-  static renderNickname (nickname, fallbackName = 'none') {
-    return /* html */`<span id=nickname>${escapeHTML(nickname) || fallbackName}</span>`
+  static renderNickname (nickname, fallbackName = 'none', onlyInnerHTML = false) {
+    return /* html */`${onlyInnerHTML ? '' : '<span id=nickname>'}${(escapeHTML(nickname) || fallbackName).replace(/\s\[.*\]/g, '')}${onlyInnerHTML ? '' : '</span>'}`
   }
 
-  static renderTableValue (key, user, allUsers, selfUid) {
+  static renderTableValue (key, user, allUsers, selfUid, onlyInnerHTML = false) {
     if (key === 'mutuallyConnectedUsers' || key === 'connectedUsers') User.enrichUserWithFullUserNickname(user[key], allUsers)
     return /* html */`
-      <td id="${key}">${key === 'mutuallyConnectedUsers' || key === 'connectedUsers'
+      ${onlyInnerHTML
+        ? ''
+        : /* html */`<td id="${key}">`
+      }${key === 'mutuallyConnectedUsers' || key === 'connectedUsers'
         ? /* html */`
           <chat-m-connected-users uid='${selfUid}' ${key === 'connectedUsers' ? 'show-lone-providers' : ''}>
             <template>${JSON.stringify({ connectedUsers: user[key] })}</template>
@@ -488,7 +491,10 @@ export default class User extends Intersection() {
                 : key === 'locationOrigin'
                   ? `<a href="${user[key]}" target=_blank>${user[key]}</a>`
                   : escapeHTML(user[key])
-      }</td>
+      }${onlyInnerHTML
+        ? ''
+        : '</td>'
+      }
     `
   }
 

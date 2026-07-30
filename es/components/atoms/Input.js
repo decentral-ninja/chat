@@ -210,6 +210,13 @@ export default class Input extends Shadow() {
       }
     }
 
+    this.clickEventListener = event => {
+      if (event.composedPath()[0].href === wormholeUrl) {
+        wormholeOpened = true
+        this.uploadDialog.close()
+      }
+    }
+
     /** @type {(any)=>void} */
     this.uidResolve = map => map
     /** @type {Promise<string>} */
@@ -237,6 +244,7 @@ export default class Input extends Shadow() {
     this.globalEventTarget.addEventListener('jitsi-video-stopped', this.jitsiVideoStoppedEventListener)
     this.globalEventTarget.addEventListener('reply-to-message', this.replyToMessageEventListener)
     this.globalEventTarget.addEventListener('yjs-users', this.usersEventListener)
+    this.addEventListener('click', this.clickEventListener)
     if (this.isConnected) this.connectedCallbackOnce()
   }
 
@@ -267,6 +275,7 @@ export default class Input extends Shadow() {
     this.globalEventTarget.removeEventListener('jitsi-video-stopped', this.jitsiVideoStoppedEventListener)
     this.globalEventTarget.removeEventListener('reply-to-message', this.replyToMessageEventListener)
     this.globalEventTarget.removeEventListener('yjs-users', this.usersEventListener)
+    this.removeEventListener('click', this.clickEventListener)
   }
 
   /**
