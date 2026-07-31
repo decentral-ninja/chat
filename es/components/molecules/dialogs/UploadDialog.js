@@ -18,11 +18,68 @@ export default class UploadDialog extends Dialog {
     super({ ...options }, ...args)
 
     this.inputChangeEventListener = event => {
-      // 1MB = (1024*1024)
-      if (Array.from(this.fileInput.files).reduce((sum, file) => sum + file.size, 0) > (50 * 1024*1024)) {
-        this.setAttribute('large-payload', '')
+      if (this.fileInput.files.length) {
+        this.classList.add('valid')
+        // 1MB = (1024*1024)
+        if (Array.from(this.fileInput.files).reduce((sum, file) => sum + file.size, 0) > (50 * 1024*1024)) {
+          this.setAttribute('large-payload', '')
+        } else {
+          this.removeAttribute('large-payload')
+        }
       } else {
+        this.classList.remove('valid')
         this.removeAttribute('large-payload')
+      }
+    }
+
+    this.clickCancelEventListener = event => {
+      this.close()
+      if (!this.textarea.value && !this.hasAttribute('disabled')) this.dispatchEvent(new CustomEvent('chat-input-upload-next', {
+        detail: {
+          open: false,
+          target: this
+        },
+        bubbles: true,
+        cancelable: true,
+        composed: true
+      }))
+    }
+
+    let ipfsDone = false
+    const ipfsProgressMap = new Map()
+    this.ipfsStatusEventListener = event => {
+      if (ipfsDone) return
+      const bytesUploaded = (ipfsProgressMap.has(event.detail.gateway.origin) && event.detail.bytesUploaded !== undefined
+            ? ipfsProgressMap.get(event.detail.gateway.origin) + event.detail.bytesUploaded
+            : event.detail.bytesUploaded) || 0
+      const status = bytesUploaded >= event.detail.torrent.length
+        ? 'done'
+        : event.detail.status
+      switch (status) {
+        case 'progress':
+          if (event.detail.gateway.origin === 'ipfs') {
+            this.uploadButton.setAttribute('label', 'Upload pending...')
+            break
+          }
+          ipfsProgressMap.set(event.detail.gateway.origin, bytesUploaded)
+          this.uploadButton.setAttribute('label', `Uploading to ${event.detail.gateway.origin} - ${(bytesUploaded / event.detail.torrent.length *100).toFixed(1)}%`)
+          break
+        case 'done':
+          ipfsDone = true
+          this.uploadButton.setAttribute('label', 'uploading to IPFS successful - 100%')
+          setTimeout(() => this.dispatchEvent(new CustomEvent('chat-input-upload-next', {
+            detail: {
+              open: false,
+              target: this
+            },
+            bubbles: true,
+            cancelable: true,
+            composed: true
+          })), 2000)
+          break
+        case 'error':
+          this.uploadButton.setAttribute('label', `Failed to upload to ${event.detail.gateway.origin} - 0%`)
+          break
       }
     }
 
@@ -38,7 +95,56 @@ export default class UploadDialog extends Dialog {
           encrypt: this.encryptionCheckbox.checked,
           text: this.textarea.value,
           send: true,
-          target: this
+          target: this,
+          callback: (status, detail) => {
+            switch (status) {
+              case 'accepted':
+                this.uploadButton.setAttribute('label', 'uploading...')
+                break
+              case 'encrypting':
+                this.uploadButton.setAttribute('label', 'encrypting...')
+                break
+              case 'error-encryption':
+                this.uploadButton.setAttribute('label', 'encryption error!')
+                break
+              case 'encryption-done':
+                this.uploadButton.setAttribute('label', 'encryption successful!')
+                break
+              case 'webtorrent-seed':
+                this.uploadButton.setAttribute('label', 'seeding webtorrent...')
+                break
+              case 'webtorrent-seed-done':
+                this.uploadButton.setAttribute('label', 'seeding webtorrent successful!')
+                this.infoHash = detail.torrent.infoHash
+                document.body.addEventListener(`ipfs-progress-${this.infoHash}`, this.ipfsStatusEventListener)
+                document.body.addEventListener(`ipfs-done-${this.infoHash}`, this.ipfsStatusEventListener)
+                document.body.addEventListener(`ipfs-error-${this.infoHash}`, this.ipfsStatusEventListener)
+                break
+              case 'ipfs-seed':
+                this.uploadButton.setAttribute('label', 'uploading to IPFS...')
+                break
+              case 'ipfs-cid-done':
+                this.uploadButton.setAttribute('label', 'content is IPFS valid!')
+                if (detail.torrent.ipfsStatus) this.ipfsStatusEventListener({detail: {
+                  status: detail.torrent.ipfsStatus,
+                  torrent: detail.torrent,
+                  gateway: {origin: 'ipfs'},
+                }})
+                break
+              case 'ipfs-seed-done':
+                this.uploadButton.setAttribute('label', 'uploading to IPFS successful!')
+                setTimeout(() => this.dispatchEvent(new CustomEvent('chat-input-upload-next', {
+                  detail: {
+                    open: false,
+                    target: this
+                  },
+                  bubbles: true,
+                  cancelable: true,
+                  composed: true
+                })), 2000)
+                break
+            }
+          }
         },
         bubbles: true,
         cancelable: true,
@@ -47,6 +153,10 @@ export default class UploadDialog extends Dialog {
     }
 
     this.clickUploadNextEventListener = event => this.dispatchEvent(new CustomEvent('chat-input-upload-next', {
+      detail: {
+        open: true,
+        target: this
+      },
       bubbles: true,
       cancelable: true,
       composed: true
@@ -76,6 +186,7 @@ export default class UploadDialog extends Dialog {
     if (this.shouldRenderCustomHTML()) this.renderCustomHTML()
     const result = super.connectedCallback()
     this.fileInput.addEventListener('change', this.inputChangeEventListener)
+    this.cancelButton.addEventListener('click', this.clickCancelEventListener)
     this.uploadButton.addEventListener('click', this.clickUploadEventListener)
     this.uploadButtonNext.addEventListener('click', this.clickUploadNextEventListener)
     this.addEventListener('dragover', this.dragoverEventListener)
@@ -87,11 +198,17 @@ export default class UploadDialog extends Dialog {
   disconnectedCallback () {
     super.disconnectedCallback()
     this.fileInput.removeEventListener('change', this.inputChangeEventListener)
+    this.cancelButton.removeEventListener('click', this.clickCancelEventListener)
     this.uploadButton.removeEventListener('click', this.clickUploadEventListener)
     this.uploadButtonNext.removeEventListener('click', this.clickUploadNextEventListener)
     this.removeEventListener('dragover', this.dragoverEventListener)
     this.removeEventListener('drop', this.dropEventListener)
     this.removeEventListener('paste', this.pasteEventListener)
+    if (this.infoHash) {
+      document.body.removeEventListener(`ipfs-progress-${this.infoHash}`, this.ipfsStatusEventListener)
+      document.body.removeEventListener(`ipfs-done-${this.infoHash}`, this.ipfsStatusEventListener)
+      document.body.removeEventListener(`ipfs-error-${this.infoHash}`, this.ipfsStatusEventListener)
+    }
     this.close()
   }
 
@@ -205,20 +322,18 @@ export default class UploadDialog extends Dialog {
         --color: var(--button-primary-color-custom);
         --color-disabled: var(--button-primary-color-custom);
         justify-content: end;
+      }
+      :host > dialog > section[buttons] > div :where(#upload, #upload-next) {
         display: none;
       }
       :host > dialog > section[buttons] wct-button::part(button) {
           --button-primary-height: 3.5em;
+          --button-secondary-height: 3.5em;
           gap: 0.25em;
       }
-      :host > dialog:has(> section[files] > div :where(input[type=file]:valid, input[disabled])) > section[buttons] > div {
+      :host > dialog:has(> section[files] > div :where(input[type=file]:valid, input[disabled])) > section[buttons] > div :where(#upload, #upload-next),
+      :host(.valid) > dialog > section[buttons] > div {
         display: flex;
-      }
-      :host > dialog > hr:last-of-type {
-        display: none;
-      }
-      :host > dialog:has(> section[files] > div :where(input[type=file]:valid, input[disabled])) > hr:last-of-type {
-        display: block;
       }
       :host > dialog > section[buttons] > div #upload-next {
         display: none;
@@ -299,6 +414,7 @@ export default class UploadDialog extends Dialog {
         <hr>
         <section buttons>
           <div>
+            <wct-button id=cancel title="close" namespace="button-secondary-" click-no-toggle-active>close</wct-button>
             <wct-button id=upload title="upload" namespace="button-primary-" click-no-toggle-active>
               <a-icon-states class=icon-left>
                 <template>
@@ -351,6 +467,10 @@ export default class UploadDialog extends Dialog {
     return this.root.querySelector('#textarea')
   }
 
+  get cancelButton () {
+    return this.root.querySelector('#cancel')
+  }
+
   get uploadButton () {
     return this.root.querySelector('#upload')
   }
@@ -361,10 +481,5 @@ export default class UploadDialog extends Dialog {
 
   get uploadButtonState () {
     return this.uploadButton.root.querySelector('a-icon-states')
-  }
-
-  get globalEventTarget () {
-    // @ts-ignore
-    return this._globalEventTarget || (this._globalEventTarget = self.Environment?.activeRoute || document.body)
   }
 }

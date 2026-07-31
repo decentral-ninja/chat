@@ -63,11 +63,11 @@ export default class Input extends Shadow() {
 
     this.fileUploadClickEventListener = event => this.uploadDialog.show('show-modal')
 
-    this.chatInputUploadEventListener = event => this.uploadFiles(event.detail.files, event.detail.encrypt, event.detail.text, event.detail.send).then(value => {
-      if (event.detail.target === this.uploadDialog) this.resetUploadDialog()
-    })
+    this.chatInputUploadEventListener = event => this.uploadFiles(event.detail.files, event.detail.encrypt, event.detail.text, event.detail.send, event.detail.callback)
 
-    this.chatInputUploadNextEventListener = event => this.resetUploadDialog(true)
+    this.chatInputUploadNextEventListener = event => {
+      if (event.detail?.target === this.uploadDialog) this.resetUploadDialog(event.detail.open === undefined ? true : event.detail.open)
+    }
 
     this.emojiClickedEventListener = event => {
       this.textarea.focus()
@@ -534,7 +534,7 @@ export default class Input extends Shadow() {
     }
   }
 
-  async uploadFiles (files, encrypt = true, text = '', send = true) {
+  async uploadFiles (files, encrypt = true, text = '', send = true, callback = (status, detail) => {}) {
     if (!files?.length) return
     const uid = await this.uid
     const room = await (await this.roomPromise).room
@@ -553,7 +553,9 @@ export default class Input extends Shadow() {
         composed: true
       })))
       : null
+    callback('accepted', {})
     if (keyContainer) {
+      callback('encrypting', {})
       iv = self.crypto.getRandomValues(new Uint8Array(16))
       files = await Promise.all(Array.from(files).map(async file => {
         const { encrypted } = await new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-encrypt', {
@@ -601,8 +603,11 @@ export default class Input extends Shadow() {
       this.textarea.value += ` ${error}`
       this.textarea.focus()
       seedingDoneFunctions.forEach(func => func())
+      callback('error-encryption', {error})
       return
     }
+    callback('encryption-done', {})
+    callback('webtorrent-seed', {})
     return new Promise(resolve => this.dispatchEvent(new CustomEvent('webtorrent-seed', {
       detail: {
         uid,
@@ -613,16 +618,25 @@ export default class Input extends Shadow() {
       bubbles: true,
       cancelable: true,
       composed: true
-    }))).then(({torrent}) => new Promise(resolveCid => this.dispatchEvent(new CustomEvent('ipfs-seed', {
-      detail: {
-        torrent,
-        input: files,
-        resolveCid
-      },
-      bubbles: true,
-      cancelable: true,
-      composed: true
-    }))).then(({cid}) => [torrent, cid])).then(([torrent, cid]) => {
+    }))).then(({torrent}) => {
+      callback('webtorrent-seed-done', {torrent})
+      callback('ipfs-seed', {})
+      let resolveIpfsGateway = result => result
+      // resolve gets called once an ipfs gateway accepted the upload
+      new Promise(resolve => (resolveIpfsGateway = resolve)).then(([torrent, cid]) => callback('ipfs-seed-done', {torrent, cid}))
+      return new Promise(resolveCid => this.dispatchEvent(new CustomEvent('ipfs-seed', {
+        detail: {
+          torrent,
+          input: files,
+          resolveCid,
+          resolve: resolveIpfsGateway
+        },
+        bubbles: true,
+        cancelable: true,
+        composed: true
+      }))).then(({cid}) => [torrent, cid])
+    }).then(([torrent, cid]) => {
+      callback('ipfs-cid-done', {torrent, cid})
       this.textarea.value += `${torrent.magnetURI}&cid=${cid}${keyEpoch ? `&key-epoch=${encodeURIComponent(keyEpoch)}` : ''}${iv ? `&iv=${encodeURIComponent(iv)}` : ''} ${text}`
       const result = this.textarea.value
       if (send){
