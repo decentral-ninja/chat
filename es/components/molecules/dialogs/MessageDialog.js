@@ -71,7 +71,8 @@ export default class MessageDialog extends Dialog {
     if (this.shouldRenderCustomHTML()) this.renderCustomHTML()
     const result = super.connectedCallback()
     if (this.replyEl) this.replyEl.addEventListener('click', this.clickReplyEventListener)
-    if (this.hasAttribute('self') && this.deleteEl) this.deleteEl.addEventListener('click', this.clickDeleteEventListener)
+    // only people in possession of key can see type=key-request messages and for that are also allowed to delete those
+    if ((this.hasAttribute('self') || this.getAttribute('type') === 'key-request') && this.deleteEl) this.deleteEl.addEventListener('click', this.clickDeleteEventListener)
     this.addEventListener('message-rendered', this.messageRenderedEventListener)
     return result
   }
@@ -132,7 +133,7 @@ export default class MessageDialog extends Dialog {
       :host > dialog #controls > #delete {
         display: none;
       }
-      :host([self]) > dialog #controls > #delete {
+      :host(:where([self], [type=key-request])) > dialog #controls > #delete {
         display: flex;
       }
       :host > dialog chat-m-message::part(li) {

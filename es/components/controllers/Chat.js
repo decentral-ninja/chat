@@ -224,7 +224,8 @@ export const Chat = (ChosenHTMLElement = WebWorker()) => class Chat extends Chos
       await queuePromiseAll
       let index = -1
       // check that the uid of the message to delete is the same as this local users uid
-      if ((event.detail.forceDelete || event.detail.uid === await this.uid) && (index = (await this.array).toArray().findIndex(message => message.timestamp === event.detail.timestamp && message.uid === event.detail.uid)) !== -1) (await this.array).delete(index, 1)
+      // only people in possession of key can see type=key-request messages and for that are also allowed to delete those
+      if ((event.detail.forceDelete || event.detail.uid === await this.uid || event.detail.type === 'key-request') && (index = (await this.array).toArray().findIndex(message => message.timestamp === event.detail.timestamp && message.uid === event.detail.uid)) !== -1) (await this.array).delete(index, 1)
       // @ts-ignore
       queueResolve()
       this.queue.splice(this.queue.indexOf(queuePromise), 1)

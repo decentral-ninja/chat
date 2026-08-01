@@ -61,17 +61,24 @@ export default class Message extends WebWorker(Intersection()) {
           path: `${this.importMetaUrl}../../molecules/dialogs/MessageDialog.js?${Environment?.version || ''}`,
           name: 'chat-m-message-dialog'
         }]).then(async () => {
+          const textObj = await this.textObj
           this.html = /* html */`
             <chat-m-message-dialog
               namespace="dialog-top-slide-in-"
               open="show-modal"
               timestamp="${this.getAttribute('timestamp') || ''}"
               ${this.hasAttribute('self') ? 'self' : ''}
-            ><template>${JSON.stringify(await this.textObj)}</template></chat-m-message-dialog>
+              type="${textObj.type
+                ? escapeHTML(textObj.type)
+                : textObj.encrypted
+                  ? 'encrypted'
+                  : 'default'
+              }"
+            ><template>${JSON.stringify(textObj)}</template></chat-m-message-dialog>
           `
           // @ts-ignore
           this.dialog.dialogPromise.then(async dialog => dialog.querySelector('h4').insertAdjacentHTML('afterend', /* html */`<chat-m-message update-on-intersection timestamp="${this.getAttribute('timestamp') || ''}" uid='${this.getAttribute('uid') || ''}'${this.hasAttribute('self') ? ' self' : ''}${this.textObj.hasError ? ' no-update' : ''} no-dialog show-reply-to next-show-reply-to="true" reply-to-max-height="30dvh">
-            <template>${JSON.stringify(await this.textObj)}</template>
+            <template>${JSON.stringify(textObj)}</template>
           </chat-m-message>`))
         })
       }
