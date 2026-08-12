@@ -61,7 +61,10 @@ export default class Input extends Shadow() {
       event.target.blur()
     }
 
-    this.fileUploadClickEventListener = event => this.uploadDialog.show('show-modal')
+    this.fileUploadClickEventListener = event => {
+      this.uploadDialog.show('show-modal')
+      if (this.textarea.value && !this.uploadDialog.textarea.value) this.uploadDialog.textarea.value = this.textarea.value
+    }
 
     this.chatInputUploadEventListener = event => this.uploadFiles(event.detail.files, event.detail.encrypt, event.detail.text, event.detail.send, event.detail.callback)
 
@@ -637,6 +640,7 @@ export default class Input extends Shadow() {
       }))).then(({cid}) => [torrent, cid])
     }).then(([torrent, cid]) => {
       callback('ipfs-cid-done', {torrent, cid})
+      if (text.includes(this.textarea.value)) this.textarea.value = ''
       this.textarea.value += `${torrent.magnetURI}&cid=${cid}${keyEpoch ? `&key-epoch=${encodeURIComponent(keyEpoch)}` : ''}${iv ? `&iv=${encodeURIComponent(iv)}` : ''} ${text}`
       const result = this.textarea.value
       if (send){

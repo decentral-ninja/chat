@@ -186,6 +186,7 @@ export default class UploadDialog extends Dialog {
     if (this.shouldRenderCustomHTML()) this.renderCustomHTML()
     const result = super.connectedCallback()
     this.fileInput.addEventListener('change', this.inputChangeEventListener)
+    this.fileInput.addEventListener('blur', this.inputChangeEventListener) // some phones did not register the change event, now we force some reevaluation on blur
     this.cancelButton.addEventListener('click', this.clickCancelEventListener)
     this.uploadButton.addEventListener('click', this.clickUploadEventListener)
     this.uploadButtonNext.addEventListener('click', this.clickUploadNextEventListener)
@@ -198,6 +199,7 @@ export default class UploadDialog extends Dialog {
   disconnectedCallback () {
     super.disconnectedCallback()
     this.fileInput.removeEventListener('change', this.inputChangeEventListener)
+    this.fileInput.removeEventListener('blur', this.inputChangeEventListener) // some phones did not register the change event, now we force some reevaluation on blur
     this.cancelButton.removeEventListener('click', this.clickCancelEventListener)
     this.uploadButton.removeEventListener('click', this.clickUploadEventListener)
     this.uploadButtonNext.removeEventListener('click', this.clickUploadNextEventListener)
