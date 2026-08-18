@@ -62,8 +62,8 @@ export default class Input extends Shadow() {
     }
 
     this.fileUploadClickEventListener = event => {
-      this.uploadDialog.show('show-modal')
       if (this.textarea.value && !this.uploadDialog.textarea.value) this.uploadDialog.textarea.value = this.textarea.value
+      this.uploadDialog.show('show-modal')
     }
 
     this.chatInputUploadEventListener = event => this.uploadFiles(event.detail.files, event.detail.encrypt, event.detail.text, event.detail.send, event.detail.callback)
@@ -220,6 +220,20 @@ export default class Input extends Shadow() {
       }
     }
 
+    this.dragoverEventListener = event => event.preventDefault()
+
+    this.dropEventListener = event => {
+      if (!this.uploadDialog.dropEventListener(event)) return
+      if (this.textarea.value && !this.uploadDialog.textarea.value) this.uploadDialog.textarea.value = this.textarea.value
+      this.uploadDialog.show('show-modal')
+    }
+
+    this.pasteEventListener = event => {
+      if (!this.uploadDialog.pasteEventListener(event)) return
+      if (this.textarea.value && !this.uploadDialog.textarea.value) this.uploadDialog.textarea.value = this.textarea.value
+      this.uploadDialog.show('show-modal')
+    }
+
     /** @type {(any)=>void} */
     this.uidResolve = map => map
     /** @type {Promise<string>} */
@@ -248,6 +262,9 @@ export default class Input extends Shadow() {
     this.globalEventTarget.addEventListener('reply-to-message', this.replyToMessageEventListener)
     this.globalEventTarget.addEventListener('yjs-users', this.usersEventListener)
     this.addEventListener('click', this.clickEventListener)
+    this.addEventListener('dragover', this.dragoverEventListener)
+    this.addEventListener('drop', this.dropEventListener)
+    this.addEventListener('paste', this.pasteEventListener)
     if (this.isConnected) this.connectedCallbackOnce()
   }
 
@@ -279,6 +296,9 @@ export default class Input extends Shadow() {
     this.globalEventTarget.removeEventListener('reply-to-message', this.replyToMessageEventListener)
     this.globalEventTarget.removeEventListener('yjs-users', this.usersEventListener)
     this.removeEventListener('click', this.clickEventListener)
+    this.removeEventListener('dragover', this.dragoverEventListener)
+    this.removeEventListener('drop', this.dropEventListener)
+    this.removeEventListener('paste', this.pasteEventListener)
   }
 
   /**

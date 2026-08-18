@@ -18,7 +18,7 @@ export default class UploadDialog extends Dialog {
     super({ ...options }, ...args)
 
     this.inputChangeEventListener = event => {
-      if (this.fileInput.files.length) {
+      if (this.fileInput.files.length && Array.from(this.fileInput.files).every(file => file.size)) {
         this.classList.add('valid')
         // 1MB = (1024*1024)
         if (Array.from(this.fileInput.files).reduce((sum, file) => sum + file.size, 0) > (50 * 1024*1024)) {
@@ -27,6 +27,7 @@ export default class UploadDialog extends Dialog {
           this.removeAttribute('large-payload')
         }
       } else {
+        this.fileInput.files = (new DataTransfer()).files
         this.classList.remove('valid')
         this.removeAttribute('large-payload')
       }
@@ -165,20 +166,24 @@ export default class UploadDialog extends Dialog {
     this.dragoverEventListener = event => event.preventDefault()
 
     this.dropEventListener = event => {
-      if (!event.dataTransfer?.files?.length) return
+      if (!event.dataTransfer?.files?.length) return false
       event.preventDefault()
       this.fileInput.files = event.dataTransfer.files
+      this.inputChangeEventListener()
+      return true
     }
 
     this.pasteEventListener = event => {
       // Note: There is always a generic file name used for pasted items and the creation date is also different, those files will have a different cid/magnetURI for this reason.
       const items = Array.from(event.clipboardData?.items || [])
       const files = items.filter(item => item.kind === 'file').map(item => item.getAsFile()).filter(Boolean)
-      if (!files.length) return
+      if (!files.length) return false
       event.preventDefault()
       const dataTransfer = new DataTransfer()
       files.forEach(file => dataTransfer.items.add(file))
       this.fileInput.files = dataTransfer.files
+      this.inputChangeEventListener()
+      return true
     }
   }
 
