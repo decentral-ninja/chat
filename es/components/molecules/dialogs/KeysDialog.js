@@ -101,15 +101,19 @@ export default class KeysDialog extends Dialog {
         if (!input.files?.length) return
         Array.from(input.files).forEach(file => {
           const reader = new FileReader()
-          reader.onload = () => this.dispatchEvent(new CustomEvent('yjs-set-key', {
+          reader.onload = () => new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-set-key', {
             detail: {
+              resolve,
+              dispatch: true,
               keyContainer: reader.result,
               setActiveRoomDefaultKey: !this.keyEls.some(keyEl => keyEl.hasAttribute('checked') || keyEl.classList.contains('is-default'))
             },
             bubbles: true,
             cancelable: true,
             composed: true
-          }))
+          }))).then(result => {
+            if (!result.error && result.newKey?.key.epoch) this.setActive('epoch', result.newKey.key.epoch, [this.keysDiv], false)
+          })
           reader.readAsText(file)
         })
       }
@@ -434,7 +438,7 @@ export default class KeysDialog extends Dialog {
       ? `<span style="color: red;">Error: ${JSON.stringify(keyContainers.error)}</span>`
       : keyContainers
       // @ts-ignore
-        .sort((a, b) => Math.max(a.private.origin?.timestamp || '', a.private.shared?.[0]?.timestamp || '', a.private.received?.[0]?.timestamp || '', a.private.encrypted?.[0]?.timestamp || '', a.private.decrypted?.[0]?.timestamp || '') - Math.max(b.private.origin?.timestamp || '', b.private.shared?.[0]?.timestamp || '', b.private.received?.[0]?.timestamp || '', b.private.encrypted?.[0]?.timestamp || '', b.private.decrypted?.[0]?.timestamp || ''))
+        .sort((a, b) => Math.max(a.private.origin?.timestamp || '', a.private.origin?.setTimeStamp || '', a.private.shared?.[0]?.timestamp || '', a.private.received?.[0]?.timestamp || '', a.private.encrypted?.[0]?.timestamp || '', a.private.decrypted?.[0]?.timestamp || '') - Math.max(b.private.origin?.timestamp || '', b.private.shared?.[0]?.timestamp || '', b.private.received?.[0]?.timestamp || '', b.private.encrypted?.[0]?.timestamp || '', b.private.decrypted?.[0]?.timestamp || ''))
         .reverse()
         .reduce((acc, keyContainer, i) => {
         /// / render or update
@@ -532,13 +536,13 @@ export default class KeysDialog extends Dialog {
           }
         }
       }
-      if (scroll) {
-        scrollElIntoView(() => {
-          let node
-          if (parentNodes.some(parentNode => (node = parentNode.querySelector('.active')))) return node
-          return null
-        }, ':not([intersecting])', this.dialog, { behavior: 'smooth', block: 'nearest' }, 500)
-      }
+    }
+    if (scroll) {
+      scrollElIntoView(() => {
+        let node
+        if (parentNodes.some(parentNode => (node = parentNode.querySelector(`[${attributeName}='${attributeValue}']`) || parentNode.querySelector('.active')))) return node
+        return null
+      }, ':not([intersecting])', this.dialog, { behavior: 'smooth', block: 'nearest' }, 500)
     }
     if (node) {
       this.setAttribute('active', attributeValue)

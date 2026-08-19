@@ -423,6 +423,8 @@ export default class Input extends Shadow() {
       }
       :host > section > #reply-controls {
         --h4-margin: 0;
+        --menu-icon-close-background-color-hover: var(--color-secondary);
+        --menu-icon-close-background-color: var(--color);
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -646,7 +648,7 @@ export default class Input extends Shadow() {
       callback('ipfs-seed', {})
       let resolveIpfsGateway = result => result
       // resolve gets called once an ipfs gateway accepted the upload
-      new Promise(resolve => (resolveIpfsGateway = resolve)).then(([torrent, cid]) => callback('ipfs-seed-done', {torrent, cid}))
+      new Promise(resolve => (resolveIpfsGateway = resolve)).then(({cid, error}) => [torrent, cid, error]).then(([torrent, cid, error]) => callback(error ? 'error' : 'ipfs-seed-done', {torrent, cid}))
       return new Promise(resolveCid => this.dispatchEvent(new CustomEvent('ipfs-seed', {
         detail: {
           torrent,

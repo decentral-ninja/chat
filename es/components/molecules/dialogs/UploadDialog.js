@@ -20,6 +20,7 @@ export default class UploadDialog extends Dialog {
     this.inputChangeEventListener = event => {
       if (this.fileInput.files.length && Array.from(this.fileInput.files).every(file => file.size)) {
         this.classList.add('valid')
+        this.uploadButton.style.display = 'flex' // force refresh on firefox, has a dialog top layer bug
         // 1MB = (1024*1024)
         if (Array.from(this.fileInput.files).reduce((sum, file) => sum + file.size, 0) > (50 * 1024*1024)) {
           this.setAttribute('large-payload', '')
@@ -29,6 +30,7 @@ export default class UploadDialog extends Dialog {
       } else {
         this.fileInput.files = (new DataTransfer()).files
         this.classList.remove('valid')
+        this.uploadButton.style.display = 'none' // force refresh on firefox, has a dialog top layer bug
         this.removeAttribute('large-payload')
       }
     }
@@ -126,6 +128,14 @@ export default class UploadDialog extends Dialog {
                 break
               case 'ipfs-cid-done':
                 this.uploadButton.setAttribute('label', 'content is IPFS valid!')
+                if (detail.torrent.ipfsStatus) this.ipfsStatusEventListener({detail: {
+                  status: detail.torrent.ipfsStatus,
+                  torrent: detail.torrent,
+                  gateway: {origin: 'ipfs'},
+                }})
+                break
+              case 'error':
+                this.uploadButton.setAttribute('label', 'error uploading, try again!')
                 if (detail.torrent.ipfsStatus) this.ipfsStatusEventListener({detail: {
                   status: detail.torrent.ipfsStatus,
                   torrent: detail.torrent,
@@ -338,8 +348,8 @@ export default class UploadDialog extends Dialog {
           --button-secondary-height: 3.5em;
           gap: 0.25em;
       }
-      :host > dialog:has(> section[files] > div :where(input[type=file]:valid, input[disabled])) > section[buttons] > div :where(#upload, #upload-next),
-      :host(.valid) > dialog > section[buttons] > div {
+      :host(.valid) > dialog > section[buttons] > div,
+      :host > dialog:has(> section[files] > div :where(input[type=file]:valid, input[disabled])) > section[buttons] > div :where(#upload, #upload-next) {
         display: flex;
       }
       :host > dialog > section[buttons] > div #upload-next {
