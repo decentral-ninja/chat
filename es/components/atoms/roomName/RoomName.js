@@ -3,6 +3,7 @@ import { Shadow } from '../../../../../event-driven-web-components-prototypes/sr
 import { escapeHTML } from '../../../../../event-driven-web-components-prototypes/src/helpers/Helpers.js'
 
 /* global self */
+/* global Environment */
 
 /**
 * @export
@@ -153,10 +154,12 @@ export default class RoomName extends Shadow() {
    * @returns Promise<void>
    */
   renderHTML (room) {
-    const roomName = this.roomName ? escapeHTML(this.roomName) : 'Loading...'
+    const loadingString = 'Loading...'
+    const roomName = this.roomName ? escapeHTML(this.roomName) : loadingString
     this.setAttribute('title', roomName)
     this.html = ''
-    this.html = /* html */`<a ${this.hasAttribute('route') ? `route="${this.getAttribute('route')}"` : room?.locationHref ? `route href="${room.locationHref}"` : ''}>
+    // @ts-ignore
+    this.html = /* html */`<a ${this.hasAttribute('route') ? `route="${this.getAttribute('route')}"` : room?.locationHref ? `route href="${room.locationHref}"` : roomName === loadingString ? '' : `route href="?page=/chat&room=${roomName}&${self.Environment?.providerQuery}"`}>
       <div>${roomName}</div>
       <div class=aka>${room?.aka ? escapeHTML(room.aka) : ''}</div>
     </a>`
