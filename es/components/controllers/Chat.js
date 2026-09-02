@@ -394,12 +394,14 @@ export const Chat = (ChosenHTMLElement = WebWorker()) => class Chat extends Chos
   storeTextObjs (textObjs, remove = false) {
     textObjs.forEach(textObj => {
       this.allTextObjsInSync[remove ? 'delete' : 'set'](Chat.getTextObjKey(textObj), textObj)
-      if (remove) this.dispatchEvent(new CustomEvent('chat-deleted', {
-        detail: textObj,
-        bubbles: true,
-        cancelable: true,
-        composed: true
-      }))
+      if (remove) {
+        this.dispatchEvent(new CustomEvent('chat-deleted', {
+          detail: textObj,
+          bubbles: true,
+          cancelable: true,
+          composed: true
+        }))
+      }
     })
     return textObjs
   }

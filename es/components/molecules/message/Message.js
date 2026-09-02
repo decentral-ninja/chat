@@ -89,7 +89,7 @@ export default class Message extends WebWorker(Intersection()) {
     this.webtorrentLoadEventListener = async event => {
       if (this.getAttribute('from-load-template-tag') === 'lazy') {
         // got enhanced with better overflow-anchor at molecules/Chat.js and scrollEventListener
-        /*this.dispatchEvent(new CustomEvent('chat-scroll', {
+        /* this.dispatchEvent(new CustomEvent('chat-scroll', {
           detail: {
             mainScroll: true,
             onLoad: true
@@ -97,7 +97,7 @@ export default class Message extends WebWorker(Intersection()) {
           bubbles: true,
           cancelable: true,
           composed: true
-        }))*/
+        })) */
       } else if (this.hasAttribute('scroll-target')) {
         this.dispatchEvent(new CustomEvent('chat-scroll', {
           detail: {
@@ -197,7 +197,7 @@ export default class Message extends WebWorker(Intersection()) {
       this.renderHTML().then(() => {
         this.addEventListeners()
         updateReadyFunc()
-    })
+      })
     } else {
       this.addEventListeners()
       htmlReadyFunc()
@@ -666,19 +666,21 @@ export default class Message extends WebWorker(Intersection()) {
         </span>`
         break
       default:
-        if (!textObj.text.includes('<')) textObj.text = textObj.text?.replace(/(https?:\/\/[^\s]+)/g, url => {
+        if (!textObj.text.includes('<')) {
+          textObj.text = textObj.text?.replace(/(https?:\/\/[^\s]+)/g, url => {
           // route room on ipfs hosts within the same origin
-          let linkUrl = url
-          if ((url.includes('/ipfs/') || url.includes('.ipfs.')) && url.includes('room=')) {
-            try {
-              const urlObj = new URL(url)
-              linkUrl = urlObj.href.replace(urlObj.origin, location.origin).replace(urlObj.pathname, location.pathname)
-            } catch (error) {
+            let linkUrl = url
+            if ((url.includes('/ipfs/') || url.includes('.ipfs.')) && url.includes('room=')) {
+              try {
+                const urlObj = new URL(url)
+                linkUrl = urlObj.href.replace(urlObj.origin, location.origin).replace(urlObj.pathname, location.pathname)
+              } catch (error) {
               // fail silently
+              }
             }
-          }
-          return /* html */`<a href="${linkUrl}"${linkUrl.includes(location.host) && linkUrl.includes('room=') ? ' route' : ''} target="${linkUrl.includes(location.host) ? '_self' : '_blank'}">${url}</a>`
-        })
+            return /* html */`<a href="${linkUrl}"${linkUrl.includes(location.host) && linkUrl.includes('room=') ? ' route' : ''} target="${linkUrl.includes(location.host) ? '_self' : '_blank'}">${url}</a>`
+          })
+        }
         if (textObj.text.includes('magnet:') && !isInsideDialog) {
           textObj.text = textObj.text?.replace(/(magnet?:[^\s]+)/g, url => /* html */`<v-webtorrent torrent-id="${url}" open uid='${textObj.uid}' room="${roomName}" timestamp="${textObj.timestamp}"${textObj.isSelf ? ' self' : ''}>
             <video hidden slot=video controls></video>

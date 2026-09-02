@@ -242,8 +242,9 @@ export default class ShareDialog extends Dialog {
     const href = `${this.hasAttribute('href')
       ? this.getAttribute('href')
       : location.href}${this.hasAttribute('hash') ? this.getAttribute('hash') : ''}`
-    if (this.hasAttribute('is-active-room')) return this.hasAttribute('room-name') && takeSnapshot
-      ? new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-take-snapshot', {
+    if (this.hasAttribute('is-active-room')) {
+      return this.hasAttribute('room-name') && takeSnapshot
+        ? new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-take-snapshot', {
           detail: {
             resolve
           },
@@ -258,17 +259,18 @@ export default class ShareDialog extends Dialog {
           cancelable: true,
           composed: true
         }))).then(() => `${location.href}${this.hasAttribute('hash') ? this.getAttribute('hash') : ''}`)
-      : Promise.resolve(href)
-    return (this.getAttribute('room-name')
-        ? new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-rooms', {
-          detail: {
-            resolve
-          },
-          bubbles: true,
-          cancelable: true,
-          composed: true
-        })))
         : Promise.resolve(href)
-      ).then(getRoomsResult => this.getAttribute('room-name') ? getRoomsResult.value[this.getAttribute('room-name')].locationHref : getRoomsResult)
+    }
+    return (this.getAttribute('room-name')
+      ? new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-rooms', {
+        detail: {
+          resolve
+        },
+        bubbles: true,
+        cancelable: true,
+        composed: true
+      })))
+      : Promise.resolve(href)
+    ).then(getRoomsResult => this.getAttribute('room-name') ? getRoomsResult.value[this.getAttribute('room-name')].locationHref : getRoomsResult)
   }
 }

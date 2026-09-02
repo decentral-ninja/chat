@@ -567,7 +567,7 @@ export default class Input extends Shadow() {
     if (!Array.isArray(files)) files = Array.from(files)
     let keyEpoch = null
     let iv = null
-    let seedingDoneFunctions = []
+    const seedingDoneFunctions = []
     const keyContainer = encrypt
       ? await new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-active-room-default-key', {
         detail: {
@@ -600,7 +600,7 @@ export default class Input extends Shadow() {
         // temporarily save the stream to OPFS to later feed the encryptedFile to webtorrent, since that does not accept ReadableStream from browser and OPFS lets us avoid using memory by blob in runtime
         const root = await navigator.storage.getDirectory()
         const tempName = `${self.crypto.randomUUID()}-${file.name}.enc'`
-        const handle = await root.getFileHandle(tempName, {create: true})
+        const handle = await root.getFileHandle(tempName, { create: true })
         const writable = await handle.createWritable()
         try {
           await encrypted.text.pipeTo(writable)
@@ -628,7 +628,7 @@ export default class Input extends Shadow() {
       this.textarea.value += ` ${error}`
       this.textarea.focus()
       seedingDoneFunctions.forEach(func => func())
-      callback('error-encryption', {error})
+      callback('error-encryption', { error })
       return
     }
     callback('encryption-done', {})
@@ -643,12 +643,12 @@ export default class Input extends Shadow() {
       bubbles: true,
       cancelable: true,
       composed: true
-    }))).then(({torrent}) => {
-      callback('webtorrent-seed-done', {torrent})
+    }))).then(({ torrent }) => {
+      callback('webtorrent-seed-done', { torrent })
       callback('ipfs-seed', {})
       let resolveIpfsGateway = result => result
       // resolve gets called once an ipfs gateway accepted the upload
-      new Promise(resolve => (resolveIpfsGateway = resolve)).then(({cid, error}) => [torrent, cid, error]).then(([torrent, cid, error]) => callback(error ? 'error' : 'ipfs-seed-done', {torrent, cid}))
+      new Promise(resolve => (resolveIpfsGateway = resolve)).then(({ cid, error }) => [torrent, cid, error]).then(([torrent, cid, error]) => callback(error ? 'error' : 'ipfs-seed-done', { torrent, cid }))
       return new Promise(resolveCid => this.dispatchEvent(new CustomEvent('ipfs-seed', {
         detail: {
           torrent,
@@ -659,13 +659,13 @@ export default class Input extends Shadow() {
         bubbles: true,
         cancelable: true,
         composed: true
-      }))).then(({cid}) => [torrent, cid])
+      }))).then(({ cid }) => [torrent, cid])
     }).then(([torrent, cid]) => {
-      callback('ipfs-cid-done', {torrent, cid})
+      callback('ipfs-cid-done', { torrent, cid })
       if (text.includes(this.textarea.value)) this.textarea.value = ''
       this.textarea.value += `${torrent.magnetURI}&cid=${cid}${keyEpoch ? `&key-epoch=${encodeURIComponent(keyEpoch)}` : ''}${iv ? `&iv=${encodeURIComponent(iv)}` : ''} ${text}`
       const result = this.textarea.value
-      if (send){
+      if (send) {
         this.sendEventListener(undefined, this.textarea)
       } else {
         this.textarea.focus()

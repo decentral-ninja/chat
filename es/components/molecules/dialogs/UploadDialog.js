@@ -22,7 +22,7 @@ export default class UploadDialog extends Dialog {
         this.classList.add('valid')
         this.uploadButton.style.display = 'flex' // force refresh on firefox, has a dialog top layer bug
         // 1MB = (1024*1024)
-        if (Array.from(this.fileInput.files).reduce((sum, file) => sum + file.size, 0) > (50 * 1024*1024)) {
+        if (Array.from(this.fileInput.files).reduce((sum, file) => sum + file.size, 0) > (50 * 1024 * 1024)) {
           this.setAttribute('large-payload', '')
         } else {
           this.removeAttribute('large-payload')
@@ -37,15 +37,17 @@ export default class UploadDialog extends Dialog {
 
     this.clickCancelEventListener = event => {
       this.close()
-      if (!this.textarea.value && !this.hasAttribute('disabled')) this.dispatchEvent(new CustomEvent('chat-input-upload-next', {
-        detail: {
-          open: false,
-          target: this
-        },
-        bubbles: true,
-        cancelable: true,
-        composed: true
-      }))
+      if (!this.textarea.value && !this.hasAttribute('disabled')) {
+        this.dispatchEvent(new CustomEvent('chat-input-upload-next', {
+          detail: {
+            open: false,
+            target: this
+          },
+          bubbles: true,
+          cancelable: true,
+          composed: true
+        }))
+      }
     }
 
     let ipfsDone = false
@@ -53,8 +55,8 @@ export default class UploadDialog extends Dialog {
     this.ipfsStatusEventListener = event => {
       if (ipfsDone) return
       const bytesUploaded = (ipfsProgressMap.has(event.detail.gateway.origin) && event.detail.bytesUploaded !== undefined
-            ? ipfsProgressMap.get(event.detail.gateway.origin) + event.detail.bytesUploaded
-            : event.detail.bytesUploaded) || 0
+        ? ipfsProgressMap.get(event.detail.gateway.origin) + event.detail.bytesUploaded
+        : event.detail.bytesUploaded) || 0
       const status = bytesUploaded >= event.detail.torrent.length
         ? 'done'
         : event.detail.status
@@ -65,7 +67,7 @@ export default class UploadDialog extends Dialog {
             break
           }
           ipfsProgressMap.set(event.detail.gateway.origin, bytesUploaded)
-          this.uploadButton.setAttribute('label', `Uploading to ${event.detail.gateway.origin} - ${(bytesUploaded / event.detail.torrent.length *100).toFixed(1)}%`)
+          this.uploadButton.setAttribute('label', `Uploading to ${event.detail.gateway.origin} - ${(bytesUploaded / event.detail.torrent.length * 100).toFixed(1)}%`)
           break
         case 'done':
           ipfsDone = true
@@ -128,19 +130,27 @@ export default class UploadDialog extends Dialog {
                 break
               case 'ipfs-cid-done':
                 this.uploadButton.setAttribute('label', 'content is IPFS valid!')
-                if (detail.torrent.ipfsStatus) this.ipfsStatusEventListener({detail: {
-                  status: detail.torrent.ipfsStatus,
-                  torrent: detail.torrent,
-                  gateway: {origin: 'ipfs'},
-                }})
+                if (detail.torrent.ipfsStatus) {
+                  this.ipfsStatusEventListener({
+                    detail: {
+                      status: detail.torrent.ipfsStatus,
+                      torrent: detail.torrent,
+                      gateway: { origin: 'ipfs' }
+                    }
+                  })
+                }
                 break
               case 'error':
                 this.uploadButton.setAttribute('label', 'error uploading, try again!')
-                if (detail.torrent.ipfsStatus) this.ipfsStatusEventListener({detail: {
-                  status: detail.torrent.ipfsStatus,
-                  torrent: detail.torrent,
-                  gateway: {origin: 'ipfs'},
-                }})
+                if (detail.torrent.ipfsStatus) {
+                  this.ipfsStatusEventListener({
+                    detail: {
+                      status: detail.torrent.ipfsStatus,
+                      torrent: detail.torrent,
+                      gateway: { origin: 'ipfs' }
+                    }
+                  })
+                }
                 break
               case 'ipfs-seed-done':
                 this.uploadButton.setAttribute('label', 'uploading to IPFS successful!')
