@@ -2,7 +2,6 @@
 import Dialog from '../../../../../web-components-toolbox/src/es/components/molecules/dialog/Dialog.js'
 
 /* global Environment */
-/* global location */
 
 /**
 * @export

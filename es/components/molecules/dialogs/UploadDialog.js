@@ -1,9 +1,8 @@
 // @ts-check
 import Dialog from '../../../../../web-components-toolbox/src/es/components/molecules/dialog/Dialog.js'
 
-/* global self */
 /* global Environment */
-/* global FileReader */
+/* global DataTransfer */
 
 /**
 * @export

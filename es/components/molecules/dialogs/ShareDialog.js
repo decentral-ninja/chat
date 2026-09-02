@@ -3,6 +3,8 @@ import Dialog from '../../../../../web-components-toolbox/src/es/components/mole
 import { escapeHTML } from '../../../../../event-driven-web-components-prototypes/src/helpers/Helpers.js'
 
 /* global Environment */
+/* global self */
+/* global location */
 
 /**
 * @export

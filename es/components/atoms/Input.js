@@ -578,9 +578,9 @@ export default class Input extends Shadow() {
         composed: true
       })))
       : null
-    callback('accepted', {})
+    callback('accepted', {}) // eslint-disable-line
     if (keyContainer) {
-      callback('encrypting', {})
+      callback('encrypting', {}) // eslint-disable-line
       iv = self.crypto.getRandomValues(new Uint8Array(16))
       files = await Promise.all(Array.from(files).map(async file => {
         const { encrypted } = await new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-encrypt', {
@@ -628,11 +628,11 @@ export default class Input extends Shadow() {
       this.textarea.value += ` ${error}`
       this.textarea.focus()
       seedingDoneFunctions.forEach(func => func())
-      callback('error-encryption', { error })
+      callback('error-encryption', { error }) // eslint-disable-line
       return
     }
-    callback('encryption-done', {})
-    callback('webtorrent-seed', {})
+    callback('encryption-done', {}) // eslint-disable-line
+    callback('webtorrent-seed', {}) // eslint-disable-line
     return new Promise(resolve => this.dispatchEvent(new CustomEvent('webtorrent-seed', {
       detail: {
         uid,
@@ -644,16 +644,16 @@ export default class Input extends Shadow() {
       cancelable: true,
       composed: true
     }))).then(({ torrent }) => {
-      callback('webtorrent-seed-done', { torrent })
-      callback('ipfs-seed', {})
+      callback('webtorrent-seed-done', { torrent }) // eslint-disable-line
+      callback('ipfs-seed', {}) // eslint-disable-line
       let resolveIpfsGateway = result => result
       // resolve gets called once an ipfs gateway accepted the upload
-      new Promise(resolve => (resolveIpfsGateway = resolve)).then(({ cid, error }) => [torrent, cid, error]).then(([torrent, cid, error]) => callback(error ? 'error' : 'ipfs-seed-done', { torrent, cid }))
-      return new Promise(resolveCid => this.dispatchEvent(new CustomEvent('ipfs-seed', {
+      new Promise(resolve => (resolveIpfsGateway = resolve)).then(({ cid, error }) => [torrent, cid, error]).then(([torrent, cid, error]) => callback(error ? 'error' : 'ipfs-seed-done', { torrent, cid })) // eslint-disable-line
+      return new Promise(resolve => this.dispatchEvent(new CustomEvent('ipfs-seed', {
         detail: {
           torrent,
           input: files,
-          resolveCid,
+          resolveCid: resolve,
           resolve: resolveIpfsGateway
         },
         bubbles: true,
@@ -661,7 +661,7 @@ export default class Input extends Shadow() {
         composed: true
       }))).then(({ cid }) => [torrent, cid])
     }).then(([torrent, cid]) => {
-      callback('ipfs-cid-done', { torrent, cid })
+      callback('ipfs-cid-done', { torrent, cid }) // eslint-disable-line
       if (text.includes(this.textarea.value)) this.textarea.value = ''
       this.textarea.value += `${torrent.magnetURI}&cid=${cid}${keyEpoch ? `&key-epoch=${encodeURIComponent(keyEpoch)}` : ''}${iv ? `&iv=${encodeURIComponent(iv)}` : ''} ${text}`
       const result = this.textarea.value
