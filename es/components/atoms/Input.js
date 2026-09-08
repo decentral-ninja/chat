@@ -654,7 +654,9 @@ export default class Input extends Shadow() {
           torrent,
           input: files,
           resolveCid: resolve,
-          resolve: resolveIpfsGateway
+          dispatchCid: false,
+          resolve: resolveIpfsGateway,
+          dispatch: true
         },
         bubbles: true,
         cancelable: true,
