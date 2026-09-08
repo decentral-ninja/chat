@@ -49,16 +49,21 @@ export default class UploadDialog extends Dialog {
       }
     }
 
-    let ipfsDone = false
+    let ipfsDoneCounter = 0
     const ipfsProgressMap = new Map()
     this.ipfsStatusEventListener = event => {
-      if (ipfsDone) return
-      const bytesUploaded = (ipfsProgressMap.has(event.detail.gateway.origin) && event.detail.bytesUploaded !== undefined
+      // NOTE: torrent.files.length + 2 (torrentFile + jsonMetaDataFile)
+      if (ipfsDoneCounter >= (event.detail.torrent.files.length + 2) && event.detail.status !== 'error') return
+      const bytesUploaded = (event.detail.gateway && ipfsProgressMap.has(event.detail.gateway.origin) && event.detail.bytesUploaded !== undefined
         ? ipfsProgressMap.get(event.detail.gateway.origin) + event.detail.bytesUploaded
         : event.detail.bytesUploaded) || 0
-      const status = bytesUploaded >= event.detail.torrent.length
+      let status = bytesUploaded >= event.detail.torrent.length
         ? 'done'
         : event.detail.status
+      if (status === 'done') {
+        ipfsDoneCounter++
+        if (ipfsDoneCounter < (event.detail.torrent.files.length + 2)) status = 'progress'
+      }
       switch (status) {
         case 'progress':
           if (event.detail.gateway.origin === 'ipfs') {
@@ -66,10 +71,9 @@ export default class UploadDialog extends Dialog {
             break
           }
           ipfsProgressMap.set(event.detail.gateway.origin, bytesUploaded)
-          this.uploadButton.setAttribute('label', `Uploading to ${event.detail.gateway.origin} - ${(bytesUploaded / event.detail.torrent.length * 100).toFixed(1)}%`)
+          this.uploadButton.setAttribute('label', `Uploading to ${event.detail.gateway.origin}${bytesUploaded ? ` - ${(bytesUploaded / event.detail.torrent.length * 100).toFixed(1)}%` : ''}`)
           break
         case 'done':
-          ipfsDone = true
           this.uploadButton.setAttribute('label', 'uploading to IPFS successful - 100%')
           setTimeout(() => this.dispatchEvent(new CustomEvent('chat-input-upload-next', {
             detail: {
