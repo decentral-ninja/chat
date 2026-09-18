@@ -101,6 +101,7 @@ export default class UploadDialog extends Dialog {
         detail: {
           files: this.fileInput.files,
           encrypt: this.encryptionCheckbox.checked,
+          pause: !this.notPauseCheckbox.checked, // not pause when checked
           text: this.textarea.value,
           send: true,
           target: this,
@@ -154,6 +155,18 @@ export default class UploadDialog extends Dialog {
                     }
                   })
                 }
+                break
+              case 'torrent-paused':
+                this.uploadButton.setAttribute('label', 'Not seeding - keep local only!')
+                setTimeout(() => this.dispatchEvent(new CustomEvent('chat-input-upload-next', {
+                  detail: {
+                    open: false,
+                    target: this
+                  },
+                  bubbles: true,
+                  cancelable: true,
+                  composed: true
+                })), 2000)
                 break
               case 'ipfs-seed-done':
                 this.uploadButton.setAttribute('label', 'uploading to IPFS successful!')
@@ -283,11 +296,11 @@ export default class UploadDialog extends Dialog {
         color: black;
         cursor: pointer;
       }
-      :host > dialog > section:where([encryption], [files], [message]) > div > * {
+      :host > dialog > section:where([encryption], [pause], [files], [message]) > div > * {
         max-width: 75%;
         width: auto;
       }
-      :host > dialog > section:where([encryption], [files], [message]) > div > *:last-child:not(p):not(section) {
+      :host > dialog > section:where([encryption], [pause], [files], [message]) > div > *:last-child:not(p):not(section) {
         font-size: 1rem;
         background-color: white;
         padding: 0.75em;
@@ -296,16 +309,16 @@ export default class UploadDialog extends Dialog {
         flex: 1;
         min-height: 4em;
       }
-      :host([disabled]) > dialog > section:where([encryption], [files], [message]) > div > *:last-child:not(p):not(section) {
+      :host([disabled]) > dialog > section:where([encryption], [pause], [files], [message]) > div > *:last-child:not(p):not(section) {
         background-color: var(--color-disabled);
         pointer-events: none;
       }
-      :host > dialog > section[encryption] > div > div {
+      :host > dialog > section:where([encryption], [pause]) > div > div {
         display: flex;
         align-items: center;
         justify-content: space-between;
       }
-      :host > dialog > section[encryption] > div input[type=checkbox] {
+      :host > dialog > section:where([encryption], [pause]) > div input[type=checkbox] {
         height: 2em;
         width: 2em;
       }
@@ -330,6 +343,9 @@ export default class UploadDialog extends Dialog {
       }
       :host > dialog > section[encryption] > div > section {
         width: 100%;
+      }
+      :host > dialog > section[pause] > div input[type=checkbox]:not(:checked) + label > span[checked], :host > dialog > section[pause] > div input[type=checkbox]:checked + label > span:not([checked]) {
+        display: none;
       }
       :host > dialog > section[message] > div >  textarea {
         font-size: max(16px, 1em); /* 16px ios mobile focus zoom fix */
@@ -435,6 +451,19 @@ export default class UploadDialog extends Dialog {
           </div>
         </section>
         <hr>
+        <section pause>
+          <div>
+            <p>Share:</p>
+            <div>
+              <input id=not-pause-checkbox type=checkbox ${this.hasAttribute('not-pause-checked') ? 'checked' : ''} />
+              <label for=not-pause-checkbox>
+                <span checked>Autostart seeding webtorrent and propagation to IPFS</span>
+                <span>Not seeding - webtorrent and IPFS paused. Local only!</span>
+              </label>
+            </div>
+          </div>
+        </section>
+        <hr>
         <section message>
           <div>
             <p>Append a message:</p>
@@ -491,6 +520,10 @@ export default class UploadDialog extends Dialog {
 
   get encryptionCheckbox () {
     return this.root.querySelector('#encryption-checkbox')
+  }
+
+  get notPauseCheckbox () {
+    return this.root.querySelector('#not-pause-checkbox')
   }
 
   get textarea () {

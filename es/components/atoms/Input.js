@@ -66,7 +66,7 @@ export default class Input extends Shadow() {
       this.uploadDialog.show('show-modal')
     }
 
-    this.chatInputUploadEventListener = event => this.uploadFiles(event.detail.files, event.detail.encrypt, event.detail.text, event.detail.send, event.detail.callback)
+    this.chatInputUploadEventListener = event => this.uploadFiles(event.detail.files, event.detail.encrypt, event.detail.pause, event.detail.text, event.detail.send, event.detail.callback)
 
     this.chatInputUploadNextEventListener = event => {
       if (event.detail?.target === this.uploadDialog) this.resetUploadDialog(event.detail.open === undefined ? true : event.detail.open)
@@ -509,6 +509,7 @@ export default class Input extends Shadow() {
       <chat-m-upload-dialog
         namespace="dialog-top-slide-in-"
         encryption-checked
+        not-pause-checked
       ></chat-m-upload-dialog>
     `
     return this.fetchModules([
@@ -559,7 +560,7 @@ export default class Input extends Shadow() {
     }
   }
 
-  async uploadFiles (files, encrypt = true, text = '', send = true, callback = (status, detail) => {}) {
+  async uploadFiles (files, encrypt = true, pause = false, text = '', send = true, callback = (status, detail) => {}) {
     if (!files?.length) return
     const uid = await this.uid
     const room = await (await this.roomPromise).room
@@ -645,13 +646,23 @@ export default class Input extends Shadow() {
       composed: true
     }))).then(({ torrent }) => {
       callback('webtorrent-seed-done', { torrent }) // eslint-disable-line
+      if (pause) this.dispatchEvent(new CustomEvent('webtorrent-pause', {
+        detail: {
+          pause,
+          torrent
+        },
+        bubbles: true,
+        cancelable: true,
+        composed: true
+      }))
       callback('ipfs-seed', {}) // eslint-disable-line
       let resolveIpfsGateway = result => result
       // resolve gets called once an ipfs gateway accepted the upload
-      new Promise(resolve => (resolveIpfsGateway = resolve)).then(({ cid, error }) => [torrent, cid, error]).then(([torrent, cid, error]) => callback(error ? 'error' : 'ipfs-seed-done', { torrent, cid })) // eslint-disable-line
+      new Promise(resolve => (resolveIpfsGateway = resolve)).then(({ cid, error }) => [torrent, cid, error]).then(([torrent, cid, error]) => callback(error ? 'error' : pause ? 'torrent-paused' : 'ipfs-seed-done', { torrent, cid })) // eslint-disable-line
       return new Promise(resolve => this.dispatchEvent(new CustomEvent('ipfs-seed', {
         detail: {
           torrent,
+          noUpload: pause,
           input: files,
           resolveCid: resolve,
           dispatchCid: false,
@@ -663,9 +674,9 @@ export default class Input extends Shadow() {
         composed: true
       }))).then(({ cid }) => [torrent, cid])
     }).then(([torrent, cid]) => {
-      callback('ipfs-cid-done', { torrent, cid }) // eslint-disable-line
+      callback(pause ? 'torrent-paused' : 'ipfs-cid-done', { torrent, cid }) // eslint-disable-line
       if (text.includes(this.textarea.value)) this.textarea.value = ''
-      this.textarea.value += `${torrent.magnetURI}&cid=${cid}${keyEpoch ? `&key-epoch=${encodeURIComponent(keyEpoch)}` : ''}${iv ? `&iv=${encodeURIComponent(iv)}` : ''} ${text}`
+      this.textarea.value += `${torrent.magnetURI}${cid ? `&cid=${cid}` : ''}${keyEpoch ? `&key-epoch=${encodeURIComponent(keyEpoch)}` : ''}${iv ? `&iv=${encodeURIComponent(iv)}` : ''} ${text}`
       const result = this.textarea.value
       if (send) {
         this.sendEventListener(undefined, this.textarea)
@@ -700,12 +711,14 @@ export default class Input extends Shadow() {
   resetUploadDialog (open = false) {
     if (this.uploadDialog) {
       const checked = this.uploadDialog.encryptionCheckbox.checked
+      const notPauseChecked = this.uploadDialog.notPauseCheckbox.checked
       this.uploadDialog.remove()
       const div = document.createElement('div')
       div.innerHTML = /* html */`
         <chat-m-upload-dialog
           namespace="dialog-top-slide-in-"
           ${checked ? 'encryption-checked' : ''}
+          ${notPauseChecked ? 'not-pause-checked' : ''}
           ${open ? 'open=show-modal' : ''}
         ></chat-m-upload-dialog>
       `
