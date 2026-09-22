@@ -66,12 +66,12 @@ export default class UploadDialog extends Dialog {
       }
       switch (status) {
         case 'progress':
-          if (event.detail.gateway.origin === 'ipfs') {
+          if (event.detail.gateway?.origin === 'ipfs') {
             this.uploadButton.setAttribute('label', 'Upload pending...')
             break
           }
-          ipfsProgressMap.set(event.detail.gateway.origin, bytesUploaded)
-          this.uploadButton.setAttribute('label', `Uploading to ${event.detail.gateway.origin}${bytesUploaded ? ` - ${(bytesUploaded / event.detail.torrent.length * 100).toFixed(1)}%` : ''}`)
+          if (event.detail.gateway?.origin) ipfsProgressMap.set(event.detail.gateway.origin, bytesUploaded)
+          this.uploadButton.setAttribute('label', `Uploading to ${event.detail.gateway?.origin || 'ipfs'}${bytesUploaded ? ` - ${(bytesUploaded / event.detail.torrent.length * 100).toFixed(1)}%` : ''}`)
           break
         case 'done':
           this.uploadButton.setAttribute('label', 'uploading to IPFS successful - 100%')
@@ -86,7 +86,7 @@ export default class UploadDialog extends Dialog {
           })), 2000)
           break
         case 'error':
-          this.uploadButton.setAttribute('label', `Failed to upload to ${event.detail.gateway.origin} - 0%`)
+          this.uploadButton.setAttribute('label', `Failed to upload to ${event.detail.gateway?.origin || 'ipfs'} - 0%`)
           break
       }
     }
