@@ -147,7 +147,11 @@ export default class P2pGraph extends Intersection() {
             composed: true
           })))
           if (this.hasAttribute('providers')) {
-            graph.connect(providersSelfId, key)
+            try {
+              graph.connect(providersSelfId, key)
+            } catch (error) {
+              console.warn('P2P-Graph connect error:', {providersSelfId, key})
+            }
             return
           }
           graphUserObj.svgNode.classList.add(user.isSelf ? 'is-self' : 'other')
@@ -176,7 +180,11 @@ export default class P2pGraph extends Intersection() {
                 composed: true
               })))
             }
-            graph.connect(id, key)
+            try {
+              graph.connect(id, key)
+            } catch (error) {
+              console.warn('P2P-Graph connect error:', {id, key})
+            }
           }
         })
         if (!nodes.length || !users.length) {
