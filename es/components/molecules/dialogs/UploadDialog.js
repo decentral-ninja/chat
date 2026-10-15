@@ -16,6 +16,17 @@ export default class UploadDialog extends Dialog {
   constructor (options = {}, ...args) {
     super({ ...options }, ...args)
 
+    const superShow = this.show
+    this.show = command => {
+      new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-get-providers-event-detail', {
+        detail: { resolve },
+        bubbles: true,
+        cancelable: true,
+        composed: true
+      }))).then(result => result.getData()).then(result => result.getSessionProvidersByStatus()).then(providers => (this.notPauseCheckbox.checked = providers.connected.length))
+      return superShow(command)
+    }
+
     this.inputChangeEventListener = event => {
       if (this.fileInput.files.length && Array.from(this.fileInput.files).every(file => file.size)) {
         this.classList.add('valid')
@@ -292,7 +303,7 @@ export default class UploadDialog extends Dialog {
         align-items: start;
         justify-content: space-between;
       }
-      :host > dialog > section > div input {
+      :host > dialog > section > div input, :host > dialog > section > div [for=not-pause-checkbox] {
         color: black;
         cursor: pointer;
       }
