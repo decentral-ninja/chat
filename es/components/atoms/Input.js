@@ -627,7 +627,7 @@ export default class Input extends Shadow() {
           encryptedFileName.error
             ? file.name
             // can not have a dash in the filename, since this would interrupt with IPFS path
-            : `${encryptedFileName.text.replaceAll('/', '{d}')}${file.name.match(/\.[^.]+$/)?.[0]}`,
+            : `${Input.encodeFileName(encryptedFileName.text)}${file.name.match(/\.[^.]+$/)?.[0]}`,
           {
             type: file.type,
             lastModified: file.lastModified
@@ -700,6 +700,16 @@ export default class Input extends Shadow() {
       seedingDoneFunctions.forEach(func => func())
       return result
     })
+  }
+
+  // a modern implementation would be: return new TextEncoder().encode(name).toBase64({ alphabet: 'base64url', omitPadding: true })
+  static encodeFileName(name) {
+    let binary = ''
+    for (const byte of new TextEncoder().encode(name)) binary += String.fromCharCode(byte);
+    return btoa(binary)
+      .replaceAll('+', '-')
+      .replaceAll('/', '_')
+      .replace(/=+$/, '')
   }
 
   get isMobile () {
