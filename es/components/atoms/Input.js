@@ -598,6 +598,17 @@ export default class Input extends Shadow() {
         if (encrypted.error) return { error: true, message: encrypted.error }
         keyEpoch = encrypted.key.epoch
         iv = encrypted.iv
+        const { encrypted: encryptedFileName } = await new Promise(resolve => this.dispatchEvent(new CustomEvent('yjs-encrypt', {
+          detail: {
+            resolve,
+            text: file.name,
+            key: keyContainer,
+            iv
+          },
+          bubbles: true,
+          cancelable: true,
+          composed: true
+        })))
         // temporarily save the stream to OPFS to later feed the encryptedFile to webtorrent, since that does not accept ReadableStream from browser and OPFS lets us avoid using memory by blob in runtime
         const root = await navigator.storage.getDirectory()
         const tempName = `${self.crypto.randomUUID()}-${file.name}.enc'`
@@ -613,7 +624,10 @@ export default class Input extends Shadow() {
         seedingDoneFunctions.push(() => root.removeEntry(tempName))
         return new File(
           [await handle.getFile()],
-          file.name,
+          encryptedFileName.error
+            ? file.name
+            // can not have a dash in the filename, since this would interrupt with IPFS path
+            : `${encryptedFileName.text.replaceAll('/', '{d}')}${file.name.match(/\.[^.]+$/)?.[0]}`,
           {
             type: file.type,
             lastModified: file.lastModified
