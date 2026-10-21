@@ -704,12 +704,16 @@ export default class Input extends Shadow() {
 
   // a modern implementation would be: return new TextEncoder().encode(name).toBase64({ alphabet: 'base64url', omitPadding: true })
   static encodeFileName(name) {
-    let binary = ''
-    for (const byte of new TextEncoder().encode(name)) binary += String.fromCharCode(byte);
-    return btoa(binary)
-      .replaceAll('+', '-')
-      .replaceAll('/', '_')
-      .replace(/=+$/, '')
+    try {
+      let binary = ''
+      for (const byte of new TextEncoder().encode(name)) binary += String.fromCharCode(byte);
+      return btoa(binary)
+        .replaceAll('+', '-')
+        .replaceAll('/', '_')
+        .replace(/=+$/, '')
+    } catch (error) {
+      return name
+    }
   }
 
   get isMobile () {
