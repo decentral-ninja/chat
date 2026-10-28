@@ -137,7 +137,9 @@ export default class JitsiDialog extends Dialog {
                 // @ts-ignore
                 Environment?.jitsis?.[0] || 'https://meet.mgrs.dev'}/${await room}`)}",
               "frameborder": "0",
-              "allow": "autoplay; display-capture; encrypted-media; picture-in-picture; fullscreen; allow-top-navigation; screen-wake-lock; microphone; camera; window-management;"
+              "allow": "autoplay; display-capture; encrypted-media; picture-in-picture; web-share; clipboard-write; fullscreen; screen-wake-lock; microphone; camera; window-management;",
+              "allowfullscreen": "",
+              "referrerpolicy": "no-referrer-when-downgrade"
             }
           </template>
         </wct-iframe>
