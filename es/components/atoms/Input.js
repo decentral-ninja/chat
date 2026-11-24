@@ -206,7 +206,7 @@ export default class Input extends Shadow() {
       })
     }
 
-    this.usersEventListener = async event => {
+    this.usersEventListener = event => {
       if (event.detail.selfUser?.uid) {
         this.uidResolve(event.detail.selfUser.uid)
         this.globalEventTarget.removeEventListener('yjs-users', this.usersEventListener)

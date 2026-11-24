@@ -185,6 +185,9 @@ export default class Message extends WebWorker(Intersection()) {
       // request most recent synced state
       if (this.hasAttribute('update-on-connected-callback') && !this.hasAttribute('static')) {
         this.doOnIntersection = () => {
+          // TODO: Key not updating when disconnected while key deleted
+          // TODO: if encrypted check on this.keyContainer (force = true) and call this.keysEventListener with possible deleted prop and let this.keysEventListener handle update() + do .then(updateReadyFunc) when finished
+          // TODO: else just call this.update().then(updateReadyFunc)
           this.update().then(updateReadyFunc)
           this.doOnIntersection = null
         }

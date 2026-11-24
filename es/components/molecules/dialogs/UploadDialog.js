@@ -23,6 +23,7 @@ export default class UploadDialog extends Dialog {
         bubbles: true,
         cancelable: true,
         composed: true
+        // TODO: check if no active providers instead current connection status
       }))).then(result => result.getData()).then(result => result.getSessionProvidersByStatus()).then(providers => (this.notPauseCheckbox.checked = providers.connected.length))
       return superShow(command)
     }

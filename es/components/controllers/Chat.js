@@ -64,7 +64,7 @@ export const Chat = (ChosenHTMLElement = WebWorker()) => class Chat extends Chos
   constructor (...args) {
     super(...args)
 
-    this.usersEventListener = async event => {
+    this.usersEventListener = event => {
       if (event.detail.selfUser?.uid) this.uidResolve(event.detail.selfUser.uid)
       this.usersDataResolve(event.detail.getData)
       /**
